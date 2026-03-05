@@ -19,7 +19,7 @@ export default function Home() {
         provider: "",
         model: "",
         systemPrompt: "You are a helpful AI assistant.",
-        temperature: 0.7,
+        temperature: 1.0,
         maxTokens: 2048,
         topP: 1,
         topK: 0,
@@ -44,7 +44,8 @@ export default function Home() {
             return;
         }
         const timer = setTimeout(() => {
-            PrismService.saveConversation(activeId, title, messages, settings.systemPrompt)
+            const { systemPrompt, ...modelSettings } = settings;
+            PrismService.saveConversation(activeId, title, messages, systemPrompt, modelSettings)
                 .catch((err) => console.error("Failed to save system prompt:", err));
         }, 500);
         return () => clearTimeout(timer);
@@ -60,7 +61,9 @@ export default function Home() {
                     cfg.textToText?.defaults?.[prov] ||
                     cfg.textToText?.models?.[prov]?.[0]?.name ||
                     "";
-                setSettings((s) => ({ ...s, provider: prov, model: mod }));
+                const modelDef = (cfg.textToText?.models?.[prov] || []).find((m) => m.name === mod);
+                const temp = modelDef?.defaultTemperature ?? 1.0;
+                setSettings((s) => ({ ...s, provider: prov, model: mod, temperature: temp }));
             })
             .catch(console.error);
 
@@ -93,8 +96,24 @@ export default function Home() {
             setTitle(full.title);
             setMessages(full.messages || []);
             skipSystemPromptSave.current = true;
+
+            // Restore settings — use saved settings, or fall back to
+            // provider/model from the last assistant message (for older conversations).
+            let restoredSettings = full.settings || {};
+            if (!restoredSettings.provider && full.messages?.length) {
+                const lastAssistant = [...(full.messages || [])].reverse().find((m) => m.role === "assistant");
+                if (lastAssistant) {
+                    restoredSettings = {
+                        ...restoredSettings,
+                        provider: lastAssistant.provider || "",
+                        model: lastAssistant.model || "",
+                    };
+                }
+            }
+
             setSettings((s) => ({
                 ...s,
+                ...restoredSettings,
                 systemPrompt: full.systemPrompt || "You are a helpful AI assistant.",
             }));
         } catch (err) {
@@ -120,7 +139,8 @@ export default function Home() {
 
         if (activeId) {
             try {
-                await PrismService.saveConversation(activeId, title, updatedMessages, settings.systemPrompt);
+                const { systemPrompt, ...modelSettings } = settings;
+                await PrismService.saveConversation(activeId, title, updatedMessages, systemPrompt, modelSettings);
             } catch (err) {
                 console.error("Failed to save after deletion:", err);
             }
@@ -128,7 +148,7 @@ export default function Home() {
     };
 
     const handleSend = async (content, images = []) => {
-        const userMsg = { role: "user", content, ...(images.length > 0 ? { images } : {}) };
+        const userMsg = { role: "user", content, timestamp: new Date().toISOString(), ...(images.length > 0 ? { images } : {}) };
         const newMessages = [...messages, userMsg];
         setMessages(newMessages);
         setIsGenerating(true);
@@ -155,6 +175,9 @@ export default function Home() {
                 ? settings.stopSequences.split(",").map((s) => s.trim()).filter(Boolean)
                 : undefined;
 
+            const currentModels = config?.textToText?.models?.[settings.provider] || [];
+            const selectedModelDef = currentModels.find((m) => m.name === settings.model);
+
             const payload = {
                 provider: settings.provider,
                 model: settings.model,
@@ -173,6 +196,9 @@ export default function Home() {
                         thinkingBudget: settings.thinkingBudget || undefined,
                     } : {}),
                     ...(settings.webSearchEnabled ? { webSearch: true } : {}),
+                    ...(settings.webSearchEnabled && selectedModelDef?.webFetch ? { webFetch: true } : {}),
+                    ...(settings.codeExecutionEnabled ? { codeExecution: true } : {}),
+                    ...(settings.urlContextEnabled ? { urlContext: true } : {}),
                 },
             };
 
@@ -181,12 +207,14 @@ export default function Home() {
                 let streamedText = "";
                 let streamedThinking = "";
                 let streamedImages = [];
+                let codeBlocks = [];
 
                 // Add placeholder AI message
                 const placeholderMsg = {
                     role: "assistant",
                     content: "",
                     thinking: "",
+                    timestamp: new Date().toISOString(),
                     provider: settings.provider,
                     model: settings.model,
                 };
@@ -228,12 +256,54 @@ export default function Home() {
                             return updated;
                         });
                     },
+                    onExecutableCode: (code, language) => {
+                        const lang = language || "python";
+                        streamedText += `\n\n\`\`\`exec-${lang}\n${code}\n\`\`\`\n\n`;
+                        codeBlocks.push({ type: "code", code, language: lang });
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            updated[updated.length - 1] = {
+                                ...updated[updated.length - 1],
+                                content: streamedText,
+                            };
+                            return updated;
+                        });
+                    },
+                    onCodeExecutionResult: (output, outcome) => {
+                        streamedText += `\n\n\`\`\`execresult-python\n${output}\n\`\`\`\n\n`;
+                        codeBlocks.push({ type: "result", output, outcome });
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            updated[updated.length - 1] = {
+                                ...updated[updated.length - 1],
+                                content: streamedText,
+                            };
+                            return updated;
+                        });
+                    },
+                    onWebSearchResult: (results) => {
+                        if (results && results.length > 0) {
+                            const citations = results
+                                .map((r) => `[${r.title}](${r.url})`)
+                                .join(" · ");
+                            streamedText += `\n\n> **Sources:** ${citations}\n\n`;
+                            setMessages((prev) => {
+                                const updated = [...prev];
+                                updated[updated.length - 1] = {
+                                    ...updated[updated.length - 1],
+                                    content: streamedText,
+                                };
+                                return updated;
+                            });
+                        }
+                    },
                     onDone: async (data) => {
                         const finalMsg = {
                             role: "assistant",
                             content: streamedText,
                             thinking: streamedThinking || undefined,
                             ...(streamedImages.length > 0 ? { images: streamedImages } : {}),
+                            timestamp: placeholderMsg.timestamp,
                             provider: settings.provider,
                             model: settings.model,
                             usage: data.usage,
@@ -245,11 +315,13 @@ export default function Home() {
                         setMessages(updatedMessages);
 
                         try {
+                            const { systemPrompt, ...modelSettings } = settings;
                             const saved = await PrismService.saveConversation(
                                 currentId,
                                 currentTitle,
                                 updatedMessages,
-                                settings.systemPrompt,
+                                systemPrompt,
+                                modelSettings,
                             );
                             setActiveId(saved.id);
                             loadConversations();
@@ -282,6 +354,7 @@ export default function Home() {
                     config={config}
                     settings={settings}
                     onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
+                    hasAssistantImages={messages.some((m) => m.role === "assistant" && m.images?.length > 0)}
                 />
             </aside>
 
@@ -292,9 +365,9 @@ export default function Home() {
                     isGenerating={isGenerating}
                     onSend={handleSend}
                     onDelete={handleDeleteMessage}
-                    supportsVision={
+                    supportedInputTypes={
                         (config?.textToText?.models?.[settings.provider] || [])
-                            .find((m) => m.name === settings.model)?.vision || false
+                            .find((m) => m.name === settings.model)?.inputTypes || []
                     }
                 />
             </section>

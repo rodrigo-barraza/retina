@@ -34,11 +34,11 @@ export class PrismService {
         return res.json();
     }
 
-    static async saveConversation(id, title, messages, systemPrompt) {
+    static async saveConversation(id, title, messages, systemPrompt, settings) {
         const res = await fetch(`${API_BASE}/conversations`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({ id, title, messages, systemPrompt }),
+            body: JSON.stringify({ id, title, messages, systemPrompt, settings }),
         });
         if (!res.ok) throw new Error("Failed to save conversation");
         return res.json();
@@ -75,7 +75,7 @@ export class PrismService {
      * @returns {Function} close - Call to close the WebSocket early
      */
     static streamText(payload, callbacks) {
-        const { onChunk, onThinking, onImage, onDone, onError } = callbacks;
+        const { onChunk, onThinking, onImage, onExecutableCode, onCodeExecutionResult, onWebSearchResult, onDone, onError } = callbacks;
         const ws = new WebSocket(
             `${WS_BASE}/text-to-text/stream?secret=${encodeURIComponent(SECRET)}`,
         );
@@ -93,6 +93,12 @@ export class PrismService {
                     onThinking(data.content);
                 } else if (data.type === "image" && onImage) {
                     onImage(data.data, data.mimeType);
+                } else if (data.type === "executableCode" && onExecutableCode) {
+                    onExecutableCode(data.code, data.language);
+                } else if (data.type === "codeExecutionResult" && onCodeExecutionResult) {
+                    onCodeExecutionResult(data.output, data.outcome);
+                } else if (data.type === "webSearchResult" && onWebSearchResult) {
+                    onWebSearchResult(data.results);
                 } else if (data.type === "done" && onDone) {
                     onDone(data);
                     ws.close();

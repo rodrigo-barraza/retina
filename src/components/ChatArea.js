@@ -1,12 +1,14 @@
 "use client";
 
-import { Send, Loader2, Trash2, ChevronDown, ChevronRight, Brain, Copy, Check, Image as ImageIcon } from "lucide-react";
+import { Send, Loader2, Trash2, ChevronDown, ChevronRight, Brain, Copy, Check, Paperclip, FileAudio, FileVideo, FileText, Image as ImageIcon } from "lucide-react";
+import ImageAnnotator from "./ImageAnnotator";
 import styles from "./ChatArea.module.css";
 import { useEffect, useRef, useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { DateTime } from "luxon";
 
 function CopyButton({ text }) {
     const [copied, setCopied] = useState(false);
@@ -42,10 +44,21 @@ function FencedCodeBlock({ language, children }) {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    // Detect code execution blocks: exec-python, execresult-python, etc.
+    let displayLabel = language;
+    let syntaxLang = language;
+    if (language.startsWith("exec-")) {
+        syntaxLang = language.replace("exec-", "");
+        displayLabel = `${syntaxLang.toUpperCase()} — EXECUTABLE CODE`;
+    } else if (language.startsWith("execresult-")) {
+        syntaxLang = language.replace("execresult-", "") || "text";
+        displayLabel = `${(syntaxLang || "PYTHON").toUpperCase()} — CODE EXECUTION RESULT`;
+    }
+
     return (
         <div className={styles.codeBlockWrapper}>
             <div className={styles.codeBlockHeader}>
-                <span className={styles.codeBlockLang}>{language}</span>
+                <span className={styles.codeBlockLang}>{displayLabel}</span>
                 <button className={styles.codeBlockCopy} onClick={handleCopy}>
                     {copied ? <Check size={12} /> : <Copy size={12} />}
                     {copied ? "Copied" : "Copy"}
@@ -53,7 +66,7 @@ function FencedCodeBlock({ language, children }) {
             </div>
             <SyntaxHighlighter
                 style={oneDark}
-                language={language}
+                language={syntaxLang}
                 PreTag="div"
                 customStyle={{
                     margin: 0,
@@ -117,9 +130,30 @@ function ThinkingBlock({ thinking }) {
     );
 }
 
-export default function ChatArea({ messages, isGenerating, onSend, onDelete, supportsVision }) {
+// Map model input types to file accept strings
+const TYPE_ACCEPT_MAP = {
+    image: "image/*",
+    audio: "audio/*",
+    video: "video/*",
+    pdf: "application/pdf",
+};
+
+function getMimeCategory(dataUrl) {
+    const match = dataUrl.match(/^data:([\w-]+)\//);
+    if (!match) return "file";
+    const type = match[1];
+    if (type === "application") return "pdf";
+    return type; // image, audio, video
+}
+
+export default function ChatArea({ messages, isGenerating, onSend, onDelete, supportedInputTypes = [] }) {
+    const nonTextTypes = supportedInputTypes.filter((t) => t !== "text");
+    const hasFileInput = nonTextTypes.length > 0;
+    const imageOnly = nonTextTypes.length === 1 && nonTextTypes[0] === "image";
+    const acceptStr = nonTextTypes.map((t) => TYPE_ACCEPT_MAP[t]).filter(Boolean).join(",");
     const [input, setInput] = useState("");
     const [pendingImages, setPendingImages] = useState([]);
+    const [lightboxSrc, setLightboxSrc] = useState(null);
     const endRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -180,6 +214,11 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, sup
                             <div className={styles.messageHeader}>
                                 <div className={styles.roleLabel}>
                                     {msg.role === "user" ? "You" : "Model"}
+                                    {msg.timestamp && (
+                                        <span className={styles.timestamp}>
+                                            {DateTime.fromISO(msg.timestamp).toLocaleString(DateTime.DATETIME_SHORT)}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className={styles.messageActions}>
                                     {msg.content && <CopyButton text={msg.content} />}
@@ -198,7 +237,8 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, sup
                             {msg.images && msg.images.length > 0 && (
                                 <div className={styles.imagePreviewRow}>
                                     {msg.images.map((img, j) => (
-                                        <img key={j} src={img} alt="Attached" className={styles.messageImage} />
+                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                        <img key={j} src={img} alt="Attached" className={styles.messageImage} onClick={() => setLightboxSrc(img)} />
                                     ))}
                                 </div>
                             )}
@@ -239,21 +279,35 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, sup
             <div className={styles.inputWrapper}>
                 {pendingImages.length > 0 && (
                     <div className={styles.pendingImages}>
-                        {pendingImages.map((img, i) => (
-                            <div key={i} className={styles.pendingImageThumb}>
-                                <img src={img} alt="Preview" />
-                                <button onClick={() => removeImage(i)} className={styles.removeImage}>×</button>
-                            </div>
-                        ))}
+                        {pendingImages.map((dataUrl, i) => {
+                            const category = getMimeCategory(dataUrl);
+                            if (category === "image") {
+                                return (
+                                    <div key={i} className={styles.pendingImageThumb}>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={dataUrl} alt="Preview" onClick={() => setLightboxSrc(dataUrl)} />
+                                        <button onClick={() => removeImage(i)} className={styles.removeImage}>×</button>
+                                    </div>
+                                );
+                            }
+                            const Icon = category === "audio" ? FileAudio : category === "video" ? FileVideo : FileText;
+                            return (
+                                <div key={i} className={styles.pendingFileThumb}>
+                                    <Icon size={24} />
+                                    <span className={styles.pendingFileLabel}>{category.toUpperCase()}</span>
+                                    <button onClick={() => removeImage(i)} className={styles.removeImage}>×</button>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
                 <form onSubmit={handleSubmit} className={styles.inputBox}>
-                    {supportsVision && (
+                    {hasFileInput && (
                         <>
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept="image/*"
+                                accept={acceptStr}
                                 multiple
                                 hidden
                                 onChange={handleImageSelect}
@@ -262,9 +316,9 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, sup
                                 type="button"
                                 className={styles.imageUploadBtn}
                                 onClick={() => fileInputRef.current?.click()}
-                                title="Attach image"
+                                title={imageOnly ? "Attach image" : "Attach file"}
                             >
-                                <ImageIcon size={18} />
+                                {imageOnly ? <ImageIcon size={18} /> : <Paperclip size={18} />}
                             </button>
                         </>
                     )}
@@ -288,6 +342,17 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, sup
                     for new line
                 </div>
             </div>
+
+            {lightboxSrc && (
+                <ImageAnnotator
+                    src={lightboxSrc}
+                    onClose={() => setLightboxSrc(null)}
+                    onUseAnnotated={(dataUrl) => {
+                        setPendingImages((prev) => [...prev, dataUrl]);
+                        setLightboxSrc(null);
+                    }}
+                />
+            )}
         </div>
     );
 }

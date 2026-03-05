@@ -108,29 +108,96 @@
   background: #fff;
 }
 
-.capabilities {
+.modalities {
+  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.modalitiesHeader {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.modalityRow {
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
-  margin-top: 4px;
+  gap: 8px;
+  padding: 5px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.capBadge {
-  display: inline-flex;
+.modalityRow:last-child {
+  border-bottom: none;
+}
+
+.modalityIcon {
+  display: flex;
   align-items: center;
-  gap: 3px;
+  color: var(--accent-color);
+  flex-shrink: 0;
+}
+
+.modalityName {
+  font-size: 11px;
+  color: var(--text-primary);
+  text-transform: capitalize;
+  flex: 1;
+}
+
+.modalityStatus {
   font-size: 9px;
   color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 2px 6px;
-  text-transform: capitalize;
+  opacity: 0.5;
 }
 
-.capArrow {
-  color: var(--text-secondary);
-  opacity: 0.5;
-  flex-shrink: 0;
+.modalityStatus.modalityActive {
+  color: #4ade80;
+  opacity: 1;
+}
+
+.modalityUnsupported .modalityIcon {
+  opacity: 0.25;
+}
+
+.modalityUnsupported .modalityName {
+  opacity: 0.35;
+}
+
+.toolsBox {
+  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.toolItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: opacity 0.2s;
+}
+
+.toolItem:last-child {
+  border-bottom: none;
+}
+
+.toolItemDisabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.toolLabel {
+  font-size: 12px;
+  color: var(--text-primary);
 }
