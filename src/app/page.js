@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import { PrismService } from "../services/PrismService";
 import SettingsPanel from "../components/SettingsPanel";
@@ -8,186 +8,307 @@ import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
 
 export default function Home() {
-  const [config, setConfig] = useState(null);
-  const [conversations, setConversations] = useState([]);
+    const [config, setConfig] = useState(null);
+    const [conversations, setConversations] = useState([]);
 
-  const [activeId, setActiveId] = useState(null);
-  const [title, setTitle] = useState("New Conversation");
-  const [messages, setMessages] = useState([]);
+    const [activeId, setActiveId] = useState(null);
+    const [title, setTitle] = useState("New Conversation");
+    const [messages, setMessages] = useState([]);
 
-  const [settings, setSettings] = useState({
-    provider: "",
-    model: "",
-    systemPrompt: "You are a helpful AI assistant.",
-    temperature: 0.7,
-    maxTokens: 2048,
-  });
+    const [settings, setSettings] = useState({
+        provider: "",
+        model: "",
+        systemPrompt: "You are a helpful AI assistant.",
+        temperature: 0.7,
+        maxTokens: 2048,
+        topP: 1,
+        topK: 0,
+        frequencyPenalty: 0,
+        presencePenalty: 0,
+        stopSequences: "",
+        thinkingEnabled: false,
+        reasoningEffort: "high",
+        thinkingLevel: "high",
+        thinkingBudget: "",
+        webSearchEnabled: false,
+    });
 
-  const [isGenerating, setIsGenerating] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const skipSystemPromptSave = useRef(false);
 
-  useEffect(() => {
-    // Load config
-    PrismService.getConfig()
-      .then((cfg) => {
-        setConfig(cfg);
-        const prov = cfg.providerList?.[0] || "";
-        const mod =
-          cfg.textToText?.defaults?.[prov] ||
-          cfg.textToText?.models?.[prov]?.[0]?.name ||
-          "";
-        setSettings((s) => ({ ...s, provider: prov, model: mod }));
-      })
-      .catch(console.error);
+    // Auto-save system prompt on edit (debounced)
+    useEffect(() => {
+        if (!activeId) return;
+        if (skipSystemPromptSave.current) {
+            skipSystemPromptSave.current = false;
+            return;
+        }
+        const timer = setTimeout(() => {
+            PrismService.saveConversation(activeId, title, messages, settings.systemPrompt)
+                .catch((err) => console.error("Failed to save system prompt:", err));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [settings.systemPrompt]);
 
-    // Load history
-    loadConversations();
-  }, []);
+    useEffect(() => {
+        // Load config
+        PrismService.getConfig()
+            .then((cfg) => {
+                setConfig(cfg);
+                const prov = cfg.providerList?.[0] || "";
+                const mod =
+                    cfg.textToText?.defaults?.[prov] ||
+                    cfg.textToText?.models?.[prov]?.[0]?.name ||
+                    "";
+                setSettings((s) => ({ ...s, provider: prov, model: mod }));
+            })
+            .catch(console.error);
 
-  const loadConversations = async () => {
-    try {
-      const hist = await PrismService.getConversations();
-      setConversations(hist);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+        // Load history
+        loadConversations();
+    }, []);
 
-  const handleNewChat = () => {
-    setActiveId(null);
-    setTitle("New Conversation");
-    setMessages([]);
-  };
+    const loadConversations = async () => {
+        try {
+            const hist = await PrismService.getConversations();
+            setConversations(hist);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-  const handleSelectConversation = async (conv) => {
-    if (conv.id === activeId) return;
-    try {
-      const full = await PrismService.getConversation(conv.id);
-      setActiveId(full.id);
-      setTitle(full.title);
-      setMessages(full.messages || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    const handleNewChat = () => {
+        setActiveId(null);
+        setTitle("New Conversation");
+        setMessages([]);
+        skipSystemPromptSave.current = true;
+        setSettings((s) => ({ ...s, systemPrompt: "You are a helpful AI assistant." }));
+    };
 
-  const handleDeleteConversation = async (id) => {
-    try {
-      await PrismService.deleteConversation(id);
-      if (activeId === id) handleNewChat();
-      loadConversations();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    const handleSelectConversation = async (conv) => {
+        if (conv.id === activeId) return;
+        try {
+            const full = await PrismService.getConversation(conv.id);
+            setActiveId(full.id);
+            setTitle(full.title);
+            setMessages(full.messages || []);
+            skipSystemPromptSave.current = true;
+            setSettings((s) => ({
+                ...s,
+                systemPrompt: full.systemPrompt || "You are a helpful AI assistant.",
+            }));
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-  const handleDeleteMessage = async (index) => {
-    if (isGenerating) return;
-    const updatedMessages = [...messages];
-    updatedMessages.splice(index, 1);
-    setMessages(updatedMessages);
+    const handleDeleteConversation = async (id) => {
+        try {
+            await PrismService.deleteConversation(id);
+            if (activeId === id) handleNewChat();
+            loadConversations();
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-    if (activeId) {
-      try {
-        await PrismService.saveConversation(activeId, title, updatedMessages);
-      } catch (err) {
-        console.error("Failed to save after deletion:", err);
-      }
-    }
-  };
+    const handleDeleteMessage = async (index) => {
+        if (isGenerating) return;
+        const updatedMessages = [...messages];
+        updatedMessages.splice(index, 1);
+        setMessages(updatedMessages);
 
-  const handleSend = async (content) => {
-    const userMsg = { role: "user", content };
-    const newMessages = [...messages, userMsg];
-    setMessages(newMessages);
-    setIsGenerating(true);
+        if (activeId) {
+            try {
+                await PrismService.saveConversation(activeId, title, updatedMessages, settings.systemPrompt);
+            } catch (err) {
+                console.error("Failed to save after deletion:", err);
+            }
+        }
+    };
 
-    try {
-      let currentId = activeId;
-      let currentTitle = title;
+    const handleSend = async (content, images = []) => {
+        const userMsg = { role: "user", content, ...(images.length > 0 ? { images } : {}) };
+        const newMessages = [...messages, userMsg];
+        setMessages(newMessages);
+        setIsGenerating(true);
 
-      if (!currentId) {
-        currentTitle =
-          content.substring(0, 30) + (content.length > 30 ? "..." : "");
-        setTitle(currentTitle);
-      }
+        try {
+            let currentId = activeId;
+            let currentTitle = title;
 
-      const payloadMessages = [...systemMsg, ...newMessages].map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-      const payload = {
-        provider: settings.provider,
-        model: settings.model,
-        messages: payloadMessages,
-        options: {
-          temperature: settings.temperature,
-          maxTokens: settings.maxTokens,
-        },
-      };
+            if (!currentId) {
+                currentTitle =
+                    content.substring(0, 30) + (content.length > 30 ? "..." : "");
+                setTitle(currentTitle);
+            }
 
-      const generation = await PrismService.generateText(payload);
+            const systemMsg = settings.systemPrompt
+                ? [{ role: "system", content: settings.systemPrompt }]
+                : [];
+            const payloadMessages = [...systemMsg, ...newMessages].map((m) => ({
+                role: m.role,
+                content: m.content,
+                ...(m.images ? { images: m.images } : {}),
+            }));
+            const stopArray = settings.stopSequences
+                ? settings.stopSequences.split(",").map((s) => s.trim()).filter(Boolean)
+                : undefined;
 
-      const aiMsg = {
-        role: "assistant",
-        content: generation.text,
-        provider: generation.provider,
-        model: generation.model,
-        usage: generation.usage,
-        estimatedCost: generation.estimatedCost,
-      };
+            const payload = {
+                provider: settings.provider,
+                model: settings.model,
+                messages: payloadMessages,
+                options: {
+                    temperature: settings.temperature,
+                    maxTokens: settings.maxTokens,
+                    topP: settings.topP,
+                    topK: settings.topK,
+                    frequencyPenalty: settings.frequencyPenalty,
+                    presencePenalty: settings.presencePenalty,
+                    stopSequences: stopArray?.length ? stopArray : undefined,
+                    ...(settings.thinkingEnabled ? {
+                        reasoningEffort: settings.reasoningEffort,
+                        thinkingLevel: settings.thinkingLevel,
+                        thinkingBudget: settings.thinkingBudget || undefined,
+                    } : {}),
+                    ...(settings.webSearchEnabled ? { webSearch: true } : {}),
+                },
+            };
 
-      const updatedMessages = [...newMessages, aiMsg];
-      setMessages(updatedMessages);
+            // Use WebSocket streaming for real-time text generation
+            await new Promise((resolve, reject) => {
+                let streamedText = "";
+                let streamedThinking = "";
+                let streamedImages = [];
 
-      const saved = await PrismService.saveConversation(
-        currentId,
-        currentTitle,
-        updatedMessages,
-      );
-      setActiveId(saved.id);
-      loadConversations();
-    } catch (error) {
-      console.error(error);
-      setMessages((prev) => [
-        ...prev,
-        { role: "system", content: "Error: " + error.message },
-      ]);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+                // Add placeholder AI message
+                const placeholderMsg = {
+                    role: "assistant",
+                    content: "",
+                    thinking: "",
+                    provider: settings.provider,
+                    model: settings.model,
+                };
+                const msgsWithPlaceholder = [...newMessages, placeholderMsg];
+                setMessages(msgsWithPlaceholder);
 
-  return (
-    <main className={styles.appContainer}>
-      <aside className={styles.leftSidebar}>
-        <div className={styles.glassHeader}>Settings</div>
-        <SettingsPanel
-          config={config}
-          settings={settings}
-          onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
-        />
-      </aside>
+                PrismService.streamText(payload, {
+                    onChunk: (content) => {
+                        streamedText += content;
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            updated[updated.length - 1] = {
+                                ...updated[updated.length - 1],
+                                content: streamedText,
+                            };
+                            return updated;
+                        });
+                    },
+                    onThinking: (content) => {
+                        streamedThinking += content;
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            updated[updated.length - 1] = {
+                                ...updated[updated.length - 1],
+                                thinking: streamedThinking,
+                            };
+                            return updated;
+                        });
+                    },
+                    onImage: (data, mimeType) => {
+                        const dataUrl = `data:${mimeType};base64,${data}`;
+                        streamedImages = [...streamedImages, dataUrl];
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            updated[updated.length - 1] = {
+                                ...updated[updated.length - 1],
+                                images: streamedImages,
+                            };
+                            return updated;
+                        });
+                    },
+                    onDone: async (data) => {
+                        const finalMsg = {
+                            role: "assistant",
+                            content: streamedText,
+                            thinking: streamedThinking || undefined,
+                            ...(streamedImages.length > 0 ? { images: streamedImages } : {}),
+                            provider: settings.provider,
+                            model: settings.model,
+                            usage: data.usage,
+                            totalTime: data.totalTime,
+                            tokensPerSec: data.tokensPerSec,
+                            estimatedCost: data.estimatedCost,
+                        };
+                        const updatedMessages = [...newMessages, finalMsg];
+                        setMessages(updatedMessages);
 
-      <section className={styles.mainChat}>
-        <div className={styles.glassHeader}>{title}</div>
-        <ChatArea
-          messages={messages}
-          isGenerating={isGenerating}
-          onSend={handleSend}
-          onDelete={handleDeleteMessage}
-        />
-      </section>
+                        try {
+                            const saved = await PrismService.saveConversation(
+                                currentId,
+                                currentTitle,
+                                updatedMessages,
+                                settings.systemPrompt,
+                            );
+                            setActiveId(saved.id);
+                            loadConversations();
+                        } catch (saveErr) {
+                            console.error("Save failed:", saveErr);
+                        }
+                        resolve();
+                    },
+                    onError: (err) => {
+                        reject(err);
+                    },
+                });
+            });
+        } catch (error) {
+            console.error(error);
+            setMessages((prev) => [
+                ...prev,
+                { role: "system", content: "Error: " + error.message },
+            ]);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
-      <aside className={styles.rightSidebar}>
-        <div className={styles.glassHeader}>History</div>
-        <HistoryPanel
-          conversations={conversations}
-          activeId={activeId}
-          onSelect={handleSelectConversation}
-          onNew={handleNewChat}
-          onDelete={handleDeleteConversation}
-        />
-      </aside>
-    </main>
-  );
+    return (
+        <main className={styles.appContainer}>
+            <aside className={styles.leftSidebar}>
+                <div className={styles.glassHeader}>Settings</div>
+                <SettingsPanel
+                    config={config}
+                    settings={settings}
+                    onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
+                />
+            </aside>
+
+            <section className={styles.mainChat}>
+                <div className={styles.glassHeader}>{title}</div>
+                <ChatArea
+                    messages={messages}
+                    isGenerating={isGenerating}
+                    onSend={handleSend}
+                    onDelete={handleDeleteMessage}
+                    supportsVision={
+                        (config?.textToText?.models?.[settings.provider] || [])
+                            .find((m) => m.name === settings.model)?.vision || false
+                    }
+                />
+            </section>
+
+            <aside className={styles.rightSidebar}>
+                <div className={styles.glassHeader}>History</div>
+                <HistoryPanel
+                    conversations={conversations}
+                    activeId={activeId}
+                    onSelect={handleSelectConversation}
+                    onNew={handleNewChat}
+                    onDelete={handleDeleteConversation}
+                />
+            </aside>
+        </main>
+    );
 }

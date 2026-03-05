@@ -31,7 +31,8 @@
 }
 
 .formGroup select,
-.formGroup textarea {
+.formGroup textarea,
+.inputField {
   padding: 10px;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid var(--border-color);
@@ -42,7 +43,8 @@
 }
 
 .formGroup select:focus,
-.formGroup textarea:focus {
+.formGroup textarea:focus,
+.inputField:focus {
   border-color: var(--accent-color);
   outline: none;
 }
@@ -50,4 +52,85 @@
 .formGroup input[type="range"] {
   accent-color: var(--accent-color);
   width: 100%;
+}
+
+.disabledRange {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggleSwitch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.toggleSwitch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  transition: background 0.25s;
+}
+
+.toggleSlider::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  background: #ccc;
+  border-radius: 50%;
+  transition: transform 0.25s, background 0.25s;
+}
+
+.toggleSwitch input:checked + .toggleSlider {
+  background: var(--accent-color);
+}
+
+.toggleSwitch input:checked + .toggleSlider::before {
+  transform: translateX(18px);
+  background: #fff;
+}
+
+.capabilities {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.capBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 2px 6px;
+  text-transform: capitalize;
+}
+
+.capArrow {
+  color: var(--text-secondary);
+  opacity: 0.5;
+  flex-shrink: 0;
 }
