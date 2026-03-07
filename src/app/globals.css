@@ -1,6 +1,7 @@
 :root {
   --bg-primary: #0a0a0f;
   --bg-secondary: #13141c;
+  --bg-tertiary: #1a1b26;
   --bg-glass: rgba(19, 20, 28, 0.65);
   --border-color: rgba(255, 255, 255, 0.06);
   --text-primary: #f8f8f8;
@@ -13,6 +14,27 @@
   --border-radius-sm: 6px;
   --border-radius-md: 12px;
   --border-radius-lg: 20px;
+  --select-bg: rgba(0, 0, 0, 0.4);
+  --select-option-bg: #1a1b26;
+  --select-option-text: #f8f8f8;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f5f5f7;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #edeef2;
+  --bg-glass: rgba(255, 255, 255, 0.75);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --text-primary: #1a1a2e;
+  --text-secondary: #64748b;
+  --accent-color: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-glow: rgba(79, 70, 229, 0.2);
+  --danger: #dc2626;
+  --success: #059669;
+  --select-bg: #ffffff;
+  --select-option-bg: #ffffff;
+  --select-option-text: #1a1a2e;
 }
 
 * {
@@ -44,11 +66,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(128, 128, 128, 0.2);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(128, 128, 128, 0.35);
 }
 
 /* Global input/button resets */
@@ -80,6 +102,11 @@ textarea:focus {
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
+select option {
+  background: var(--select-option-bg);
+  color: var(--select-option-text);
+}
+
 /* Utils */
 .glass-panel {
   background: var(--bg-glass);
@@ -87,3 +114,4 @@ textarea:focus {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
 }
+

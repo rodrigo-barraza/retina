@@ -37,13 +37,13 @@
   gap: 12px;
   padding: 15px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border-color);
   transition: background 0.2s;
   position: relative;
 }
 
 .item:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--accent-glow);
 }
 
 .item.active {

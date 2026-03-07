@@ -2,6 +2,7 @@
 
 import { Send, Loader2, Trash2, ChevronDown, ChevronRight, Brain, Copy, Check, Paperclip, FileAudio, FileVideo, FileText, Image as ImageIcon } from "lucide-react";
 import ImageAnnotator from "./ImageAnnotator";
+import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import styles from "./ChatArea.module.css";
 import { useEffect, useRef, useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
@@ -251,7 +252,11 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, sup
                             </div>
                             {msg.usage && (
                                 <div className={styles.meta}>
-                                    {msg.provider} • {msg.model}
+                                    <span className={styles.metaProvider}>
+                                        <ProviderLogo provider={msg.provider} size={13} />
+                                        {PROVIDER_LABELS[msg.provider] || msg.provider}
+                                    </span>
+                                    {" • "}{msg.model}
                                     {` • ${(msg.usage.inputTokens || 0) + (msg.usage.outputTokens || 0)} tokens`}
                                     {msg.content ? ` • ${msg.content.trim().split(/\s+/).filter(Boolean).length} words` : ""}
                                     {msg.totalTime != null ? ` • ${msg.totalTime.toFixed(1)}s` : ""}

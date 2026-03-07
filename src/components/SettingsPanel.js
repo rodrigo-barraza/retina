@@ -1,6 +1,8 @@
 "use client";
 
 import { Settings2, Cpu, Edit3, Type, Image as ImageIcon, Mic, Video, FileText, Globe, Wrench, Code, Monitor, Search } from "lucide-react";
+import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import SelectDropdown from "./SelectDropdown";
 import styles from "./SettingsPanel.module.css";
 
 export default function SettingsPanel({ config, settings, onChange, hasAssistantImages }) {
@@ -8,8 +10,7 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
     const modelsMap = textToText.models || {};
     const providerList = config?.providerList || [];
 
-    const handleProviderChange = (e) => {
-        const pv = e.target.value;
+    const handleProviderChange = (pv) => {
         const defaultMod =
             textToText.defaults?.[pv] || modelsMap[pv]?.[0]?.name || "";
         const modelDef = (modelsMap[pv] || []).find((m) => m.name === defaultMod);
@@ -17,8 +18,7 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
         onChange({ provider: pv, model: defaultMod, temperature: temp });
     };
 
-    const handleModelChange = (e) => {
-        const modelName = e.target.value;
+    const handleModelChange = (modelName) => {
         const modelDef = currentProviderModels.find((m) => m.name === modelName);
         const temp = modelDef?.defaultTemperature ?? 1.0;
         onChange({ model: modelName, temperature: temp });
@@ -38,6 +38,8 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
     const handleReasoningEffortChange = (e) => onChange({ reasoningEffort: e.target.value });
     const handleThinkingLevelChange = (e) => onChange({ thinkingLevel: e.target.value });
     const handleThinkingBudgetChange = (e) => onChange({ thinkingBudget: e.target.value });
+    const handleVerbosityChange = (e) => onChange({ verbosity: e.target.value });
+    const handleReasoningSummaryChange = (e) => onChange({ reasoningSummary: e.target.value });
 
     const currentProviderModels = modelsMap[settings.provider] || [];
     const selectedModelDef = currentProviderModels.find(m => m.name === settings.model);
@@ -53,6 +55,30 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
     const providerToolLabels = TOOL_LABELS[settings.provider] || {};
     const getToolLabel = (tool) => providerToolLabels[tool] || tool;
 
+    // Build options for provider dropdown
+    const providerOptions = providerList
+        .filter((p) => modelsMap[p])
+        .map((p) => {
+            const allDisabled = hasAssistantImages && modelsMap[p]?.every((m) => m.assistantImages === false);
+            return {
+                value: p,
+                label: (PROVIDER_LABELS[p] || p.toUpperCase()) + (allDisabled ? " (no image context)" : ""),
+                icon: <ProviderLogo provider={p} size={18} />,
+                disabled: allDisabled,
+            };
+        });
+
+    // Build options for model dropdown
+    const modelOptions = currentProviderModels.map((m) => {
+        const disabled = hasAssistantImages && m.assistantImages === false;
+        return {
+            value: m.name,
+            label: m.label + (disabled ? " (no image context)" : ""),
+            icon: <ProviderLogo provider={settings.provider} size={18} />,
+            disabled,
+        };
+    });
+
     return (
         <div className={styles.container}>
             <div className={styles.sectionTitle}>
@@ -61,36 +87,25 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
 
             <div className={styles.formGroup}>
                 <label>Provider</label>
-                <select value={settings.provider || ""} onChange={handleProviderChange}>
-                    <option value="" disabled>
-                        Select Provider
-                    </option>
-                    {providerList
-                        .filter((p) => modelsMap[p])
-                        .map((p) => {
-                            const allDisabled = hasAssistantImages && modelsMap[p]?.every((m) => m.assistantImages === false);
-                            return (
-                                <option key={p} value={p} disabled={allDisabled}>
-                                    {p.toUpperCase()}{allDisabled ? " (no image context)" : ""}
-                                </option>
-                            );
-                        })}
-                </select>
+                <SelectDropdown
+                    value={settings.provider || ""}
+                    options={providerOptions}
+                    onChange={handleProviderChange}
+                    placeholder="Select Provider"
+                    icon={<ProviderLogo provider={settings.provider} size={18} />}
+                />
             </div>
 
             {settings.provider && modelsMap[settings.provider] && (
                 <div className={styles.formGroup}>
                     <label>Model</label>
-                    <select value={settings.model || ""} onChange={handleModelChange}>
-                        {modelsMap[settings.provider].map((m) => {
-                            const disabled = hasAssistantImages && m.assistantImages === false;
-                            return (
-                                <option key={m.name} value={m.name} disabled={disabled}>
-                                    {m.label}{disabled ? " (no image context)" : ""}
-                                </option>
-                            );
-                        })}
-                    </select>
+                    <SelectDropdown
+                        value={settings.model || ""}
+                        options={modelOptions}
+                        onChange={handleModelChange}
+                        placeholder="Select Model"
+                        icon={<ProviderLogo provider={settings.provider} size={18} />}
+                    />
                     {selectedModelDef && (() => {
                         const allTypes = ["text", "image", "audio", "video", "pdf"];
                         const inputs = selectedModelDef.inputTypes || [];
@@ -203,7 +218,33 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                 />
             </div>
 
-            {isReasoning && (
+            {isReasoning && selectedModelDef?.responsesAPI && (
+                <>
+                    <div className={styles.formGroup}>
+                        <label>Reasoning Effort</label>
+                        <select value={settings.reasoningEffort || "high"} onChange={handleReasoningEffortChange}>
+                            <option value="none">None</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="xhigh">Extra High</option>
+                        </select>
+                    </div>
+
+                    {selectedModelDef?.reasoningSummary && (
+                        <div className={styles.formGroup}>
+                            <label>Reasoning Summary</label>
+                            <select value={settings.reasoningSummary || "auto"} onChange={handleReasoningSummaryChange}>
+                                <option value="auto">Auto</option>
+                                <option value="concise">Concise</option>
+                                <option value="detailed">Detailed</option>
+                            </select>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {isReasoning && !selectedModelDef?.responsesAPI && (
                 <>
                     <div className={styles.toolsBox}>
                         <div className={styles.toolItem}>
@@ -313,6 +354,18 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                             <span className={styles.toolLabel}>URL Context</span>
                         </div>
                     )}
+                </div>
+            )}
+
+            {selectedModelDef?.verbosity && (
+                <div className={styles.formGroup}>
+                    <label>Verbosity</label>
+                    <select value={settings.verbosity || ""} onChange={handleVerbosityChange}>
+                        <option value="">Default</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
                 </div>
             )}
 

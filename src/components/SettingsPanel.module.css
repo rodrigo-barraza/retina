@@ -34,12 +34,31 @@
 .formGroup textarea,
 .inputField {
   padding: 10px;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--select-bg);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   border-radius: var(--border-radius-sm);
   transition: border-color 0.2s;
   font-size: 14px;
+}
+
+.selectWithIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.selectWithIcon select {
+  padding-left: 36px;
+  width: 100%;
+}
+
+.selectIcon {
+  position: absolute;
+  left: 10px;
+  z-index: 1;
+  pointer-events: none;
+  color: var(--text-secondary);
 }
 
 .formGroup select:focus,

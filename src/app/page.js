@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import { PrismService } from "../services/PrismService";
+import { useTheme } from "../components/ThemeProvider";
+import { Sun, Moon } from "lucide-react";
 import SettingsPanel from "../components/SettingsPanel";
 import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
 
 export default function Home() {
+    const { theme, toggleTheme } = useTheme();
     const [config, setConfig] = useState(null);
     const [conversations, setConversations] = useState([]);
 
@@ -31,6 +34,8 @@ export default function Home() {
         thinkingLevel: "high",
         thinkingBudget: "",
         webSearchEnabled: false,
+        verbosity: "",
+        reasoningSummary: "",
     });
 
     const [isGenerating, setIsGenerating] = useState(false);
@@ -190,7 +195,11 @@ export default function Home() {
                     frequencyPenalty: settings.frequencyPenalty,
                     presencePenalty: settings.presencePenalty,
                     stopSequences: stopArray?.length ? stopArray : undefined,
-                    ...(settings.thinkingEnabled ? {
+                    ...(selectedModelDef?.responsesAPI ? {
+                        reasoningEffort: settings.reasoningEffort || "high",
+                        ...(settings.reasoningSummary ? { reasoningSummary: settings.reasoningSummary } : {}),
+                    } : {}),
+                    ...(!selectedModelDef?.responsesAPI && settings.thinkingEnabled ? {
                         reasoningEffort: settings.reasoningEffort,
                         thinkingLevel: settings.thinkingLevel,
                         thinkingBudget: settings.thinkingBudget || undefined,
@@ -199,6 +208,7 @@ export default function Home() {
                     ...(settings.webSearchEnabled && selectedModelDef?.webFetch ? { webFetch: true } : {}),
                     ...(settings.codeExecutionEnabled ? { codeExecution: true } : {}),
                     ...(settings.urlContextEnabled ? { urlContext: true } : {}),
+                    ...(settings.verbosity ? { verbosity: settings.verbosity } : {}),
                 },
             };
 
@@ -359,7 +369,16 @@ export default function Home() {
             </aside>
 
             <section className={styles.mainChat}>
-                <div className={styles.glassHeader}>{title}</div>
+                <div className={styles.glassHeader}>
+                    <span className={styles.headerTitle}>{title}</span>
+                    <button
+                        className={styles.themeToggle}
+                        onClick={toggleTheme}
+                        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                    >
+                        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                    </button>
+                </div>
                 <ChatArea
                     messages={messages}
                     isGenerating={isGenerating}
