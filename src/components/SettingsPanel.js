@@ -256,13 +256,11 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
             {isReasoning && !selectedModelDef?.responsesAPI && (
                 <>
                     <div className={styles.toolsBox}>
-                        <div className={styles.toolItem}>
-                            <ToggleSwitch
-                                checked={settings.thinkingEnabled || false}
-                                onChange={handleThinkingEnabledChange}
-                                label="Thinking"
-                            />
-                        </div>
+                        <ToggleSwitch
+                            checked={settings.thinkingEnabled || false}
+                            onChange={handleThinkingEnabledChange}
+                            label="Thinking"
+                        />
                     </div>
 
                     {settings.thinkingEnabled && (
@@ -318,42 +316,36 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
             {(selectedModelDef?.webSearch || selectedModelDef?.codeExecution || selectedModelDef?.urlContext) && (
                 <div className={styles.toolsBox}>
                     {selectedModelDef?.webSearch && (
-                        <div className={`${styles.toolItem} ${settings.codeExecutionEnabled ? styles.toolItemDisabled : ""}`}>
-                            <ToggleSwitch
-                                checked={settings.webSearchEnabled || false}
-                                disabled={settings.codeExecutionEnabled}
-                                onChange={(val) => onChange({ webSearchEnabled: val })}
-                                label={getToolLabel("Web Search")}
-                            />
-                        </div>
+                        <ToggleSwitch
+                            checked={settings.webSearchEnabled || false}
+                            disabled={settings.codeExecutionEnabled}
+                            onChange={(val) => onChange({ webSearchEnabled: val })}
+                            label={getToolLabel("Web Search")}
+                        />
                     )}
 
                     {selectedModelDef?.codeExecution && (
-                        <div className={styles.toolItem}>
-                            <ToggleSwitch
-                                checked={settings.codeExecutionEnabled || false}
-                                onChange={(val) => {
-                                    const updates = { codeExecutionEnabled: val };
-                                    if (val) {
-                                        updates.webSearchEnabled = false;
-                                        updates.urlContextEnabled = false;
-                                    }
-                                    onChange(updates);
-                                }}
-                                label="Code Execution"
-                            />
-                        </div>
+                        <ToggleSwitch
+                            checked={settings.codeExecutionEnabled || false}
+                            onChange={(val) => {
+                                const updates = { codeExecutionEnabled: val };
+                                if (val) {
+                                    updates.webSearchEnabled = false;
+                                    updates.urlContextEnabled = false;
+                                }
+                                onChange(updates);
+                            }}
+                            label="Code Execution"
+                        />
                     )}
 
                     {selectedModelDef?.urlContext && (
-                        <div className={`${styles.toolItem} ${settings.codeExecutionEnabled ? styles.toolItemDisabled : ""}`}>
-                            <ToggleSwitch
-                                checked={settings.urlContextEnabled || false}
-                                disabled={settings.codeExecutionEnabled}
-                                onChange={(val) => onChange({ urlContextEnabled: val })}
-                                label="URL Context"
-                            />
-                        </div>
+                        <ToggleSwitch
+                            checked={settings.urlContextEnabled || false}
+                            disabled={settings.codeExecutionEnabled}
+                            onChange={(val) => onChange({ urlContextEnabled: val })}
+                            label="URL Context"
+                        />
                     )}
                 </div>
             )}

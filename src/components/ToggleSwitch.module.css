@@ -4,12 +4,14 @@
   gap: 10px;
   cursor: pointer;
   user-select: none;
+  padding: 8px 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .toggle.disabled {
   opacity: 0.4;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
 /* Track */

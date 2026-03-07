@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import { PrismService } from "../services/PrismService";
+import StorageService from "../services/StorageService";
 import { useTheme } from "../components/ThemeProvider";
 import { Sun, Moon } from "lucide-react";
 import SettingsPanel from "../components/SettingsPanel";
@@ -61,12 +62,24 @@ export default function Home() {
         PrismService.getConfig()
             .then((cfg) => {
                 setConfig(cfg);
-                const prov = cfg.providerList?.[0] || "";
-                const mod =
-                    cfg.textToText?.defaults?.[prov] ||
-                    cfg.textToText?.models?.[prov]?.[0]?.name ||
-                    "";
-                const modelDef = (cfg.textToText?.models?.[prov] || []).find((m) => m.name === mod);
+
+                // Try to restore last-used provider/model from localStorage
+                const savedProvider = StorageService.get("lastProvider");
+                const savedModel = StorageService.get("lastModel");
+                const savedValid = savedProvider
+                    && cfg.providerList?.includes(savedProvider)
+                    && (
+                        (cfg.textToText?.models?.[savedProvider] || []).some((m) => m.name === savedModel)
+                        || (cfg.textToImage?.models?.[savedProvider] || []).some((m) => m.name === savedModel)
+                    );
+
+                const prov = savedValid ? savedProvider : (cfg.providerList?.[0] || "");
+                const mod = savedValid
+                    ? savedModel
+                    : (cfg.textToText?.defaults?.[prov] || cfg.textToText?.models?.[prov]?.[0]?.name || "");
+
+                const modelDef = (cfg.textToText?.models?.[prov] || []).find((m) => m.name === mod)
+                    || (cfg.textToImage?.models?.[prov] || []).find((m) => m.name === mod);
                 const temp = modelDef?.defaultTemperature ?? 1.0;
                 setSettings((s) => ({ ...s, provider: prov, model: mod, temperature: temp }));
             })
@@ -92,6 +105,12 @@ export default function Home() {
         skipSystemPromptSave.current = true;
         setSettings((s) => ({ ...s, systemPrompt: "You are a helpful AI assistant." }));
     };
+
+    // Persist provider/model to localStorage
+    useEffect(() => {
+        if (settings.provider) StorageService.set("lastProvider", settings.provider);
+        if (settings.model) StorageService.set("lastModel", settings.model);
+    }, [settings.provider, settings.model]);
 
     const handleSelectConversation = async (conv) => {
         if (conv.id === activeId) return;

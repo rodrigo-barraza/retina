@@ -121,11 +121,13 @@ function ThinkingBlock({ thinking }) {
                 onClick={() => setCollapsed((c) => !c)}
             >
                 <Brain size={14} />
-                <span>Thinking</span>
+                <span>Thoughts</span>
                 {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
             </button>
             {!collapsed && (
-                <pre className={styles.thinkingContent}>{thinking}</pre>
+                <div className={styles.thinkingContent}>
+                    <MarkdownContent content={thinking} />
+                </div>
             )}
         </div>
     );
