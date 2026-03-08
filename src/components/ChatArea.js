@@ -1,7 +1,8 @@
 "use client";
 
-import { Send, Loader2, Trash2, ChevronDown, ChevronRight, Brain, Copy, Check, Paperclip, FileAudio, FileVideo, FileText, Image as ImageIcon, Type, ArrowLeft, Pencil, RotateCcw, X as XIcon, Mic, Mic2 } from "lucide-react";
+import { Send, Loader2, Trash2, ChevronDown, ChevronRight, ChevronUp, Brain, Copy, Check, Paperclip, FileAudio, FileVideo, FileText, Image as ImageIcon, Type, ArrowLeft, Pencil, RotateCcw, X as XIcon, Mic, Mic2 } from "lucide-react";
 import ImageAnnotator from "./ImageAnnotator";
+import DocumentViewer from "./DocumentViewer";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import styles from "./ChatArea.module.css";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -256,7 +257,7 @@ function MediaPreview({ dataUrl, onClick, compact = false }) {
 
     if (category === "pdf") {
         return (
-            <div className={compact ? styles.pendingFileThumb : styles.mediaCard}>
+            <div className={compact ? styles.pendingFileThumb : styles.mediaCard} onClick={onClick} style={onClick ? { cursor: "pointer" } : undefined}>
                 <FileText size={compact ? 24 : 22} className={styles.mediaCardIcon} />
                 <span className={styles.mediaCardLabel}>PDF</span>
             </div>
@@ -265,7 +266,7 @@ function MediaPreview({ dataUrl, onClick, compact = false }) {
 
     // text / other
     return (
-        <div className={compact ? styles.pendingFileThumb : styles.mediaCard}>
+        <div className={compact ? styles.pendingFileThumb : styles.mediaCard} onClick={onClick} style={onClick ? { cursor: "pointer" } : undefined}>
             <FileText size={compact ? 24 : 22} className={styles.mediaCardIcon} />
             <span className={styles.mediaCardLabel}>{category.toUpperCase()}</span>
         </div>
@@ -289,17 +290,20 @@ const INPUT_MODALITY_META = {
 
 function getAllModelsFromConfig(config) {
     if (!config) return [];
-    const all = [];
+    const seen = new Map();
     const sections = ["textToText", "textToImage"];
     for (const section of sections) {
         const modelsMap = config[section]?.models || {};
         for (const [provider, models] of Object.entries(modelsMap)) {
             for (const model of models) {
-                all.push({ ...model, provider });
+                const key = `${provider}-${model.name}`;
+                if (!seen.has(key)) {
+                    seen.set(key, { ...model, provider });
+                }
             }
         }
     }
-    return all;
+    return [...seen.values()];
 }
 
 
@@ -325,7 +329,30 @@ function getModelsForIO(config, outputType, inputType) {
     );
 }
 
+function formatContextLength(tokens) {
+    if (!tokens) return null;
+    if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(tokens % 1_000_000 === 0 ? 0 : 1)}M`;
+    return `${Math.round(tokens / 1000)}K`;
+}
+
+const ARENA_COLUMNS = [
+    { key: "text", label: "Text" },
+    { key: "code", label: "Code" },
+    { key: "vision", label: "Vision" },
+    { key: "document", label: "Document" },
+    { key: "textToImage", label: "T2I" },
+    { key: "imageEdit", label: "Img Edit" },
+    { key: "search", label: "Search" },
+];
+
+function getVisibleArenaColumns(models) {
+    return ARENA_COLUMNS.filter((col) =>
+        models.some((m) => m.arena && m.arena[col.key] != null)
+    );
+}
+
 export default function ChatArea({ messages, isGenerating, onSend, onDelete, onEdit, onRerun, config, onSelectModel, supportedInputTypes = [] }) {
+    const [modelSort, setModelSort] = useState({ key: null, dir: "desc" });
     const nonTextTypes = supportedInputTypes.filter((t) => t !== "text");
     const hasFileInput = nonTextTypes.length > 0;
     const imageOnly = nonTextTypes.length === 1 && nonTextTypes[0] === "image";
@@ -334,11 +361,11 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
     const [input, setInput] = useState("");
     const [pendingImages, setPendingImages] = useState([]);
     const [lightboxSrc, setLightboxSrc] = useState(null);
-    const [welcomeStep, setWelcomeStep] = useState("home"); // "home" | "outputModels" | "ioPickOutput" | "ioModels"
+    const [docViewerSrc, setDocViewerSrc] = useState(null);
+    const [welcomeStep, setWelcomeStep] = useState("pickOutput"); // "pickOutput" | "pickInput" | "pickModel"
     const [welcomeDone, setWelcomeDone] = useState(false);
     const [selectedOutput, setSelectedOutput] = useState(null);
-    const [ioSelectedInput, setIoSelectedInput] = useState(null);
-    const [ioSelectedOutput, setIoSelectedOutput] = useState(null);
+    const [selectedInput, setSelectedInput] = useState(null);
     const endRef = useRef(null);
     const [editingIndex, setEditingIndex] = useState(null);
     const fileInputRef = useRef(null);
@@ -416,9 +443,10 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
             <div className={styles.messagesList}>
                 {messages.length === 0 && !welcomeDone && (
                     <div className={styles.welcome}>
-                        {welcomeStep === "home" && (
+                        {welcomeStep === "pickOutput" && (
                             <>
-                                <h3>Let&apos;s get this show started</h3>
+                                <h3>What do you wanna make?</h3>
+                                <p className={styles.sectionSubtitle}>Pick an output type to get started</p>
                                 <div className={styles.capabilityGrid}>
                                     {OUTPUT_MODALITIES.map((mod) => {
                                         const Icon = mod.icon;
@@ -429,7 +457,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                                 onClick={() => {
                                                     if (!mod.disabled) {
                                                         setSelectedOutput(mod.key);
-                                                        setWelcomeStep("outputModels");
+                                                        setWelcomeStep("pickInput");
                                                     }
                                                 }}
                                             >
@@ -444,93 +472,31 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                         );
                                     })}
                                 </div>
-
-                                <h3 className={styles.sectionHeading}>Pick your input</h3>
-                                <p className={styles.sectionSubtitle}>Choose what you&apos;ll send, then pick an output</p>
-                                <div className={styles.capabilityGrid}>
-                                    {Object.entries(INPUT_MODALITY_META).map(([key, meta]) => {
-                                        const Icon = meta.icon;
-                                        return (
-                                            <div
-                                                key={key}
-                                                className={styles.capabilityCard}
-                                                onClick={() => {
-                                                    setIoSelectedInput(key);
-                                                    setWelcomeStep("ioPickOutput");
-                                                }}
-                                            >
-                                                <div className={styles.capabilityIcon}>
-                                                    <Icon size={20} />
-                                                </div>
-                                                <div className={styles.capabilityInfo}>
-                                                    <h4>{meta.title}</h4>
-                                                    <p>{meta.subtitle}</p>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
                             </>
                         )}
 
-                        {welcomeStep === "outputModels" && (() => {
-                            const models = getModelsForIO(config, selectedOutput, null);
+                        {welcomeStep === "pickInput" && (() => {
                             const outputMod = OUTPUT_MODALITIES.find((m) => m.key === selectedOutput);
                             return (
                                 <div className={styles.modelListView}>
-                                    <button className={styles.backButton} onClick={() => { setWelcomeStep("home"); setSelectedOutput(null); }}>
+                                    <button className={styles.backButton} onClick={() => { setWelcomeStep("pickOutput"); setSelectedOutput(null); }}>
                                         <ArrowLeft size={18} />
                                     </button>
-                                    <h3>{outputMod?.title}</h3>
-                                    <p className={styles.modelListSubtitle}>{outputMod?.subtitle}</p>
-                                    <div className={styles.modelList}>
-                                        {models.map((model) => (
-                                            <div
-                                                key={`${model.provider}-${model.name}`}
-                                                className={styles.modelRow}
-                                                onClick={() => {
-                                                    onSelectModel(model.provider, model.name);
-                                                    setWelcomeStep("home");
-                                                    setSelectedOutput(null);
-                                                    setWelcomeDone(true);
-                                                }}
-                                            >
-                                                <div className={styles.modelRowIcon}>
-                                                    <ProviderLogo provider={model.provider} size={20} />
-                                                </div>
-                                                <div className={styles.modelRowInfo}>
-                                                    <span className={styles.modelRowName}>{model.label || model.name}</span>
-                                                    <span className={styles.modelRowProvider}>{PROVIDER_LABELS[model.provider] || model.provider}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })()}
-
-                        {welcomeStep === "ioPickOutput" && (() => {
-                            const availableOutputs = getOutputTypesForInput(config, ioSelectedInput);
-                            const inputMeta = INPUT_MODALITY_META[ioSelectedInput];
-                            return (
-                                <div className={styles.modelListView}>
-                                    <button className={styles.backButton} onClick={() => { setWelcomeStep("home"); setIoSelectedInput(null); }}>
-                                        <ArrowLeft size={18} />
-                                    </button>
-                                    <h3>Pick your output</h3>
-                                    <p className={styles.modelListSubtitle}>{inputMeta?.title} input → ?</p>
+                                    <h3>How do you wanna send it?</h3>
+                                    <p className={styles.modelListSubtitle}>Making {outputMod?.title?.toLowerCase()} — now pick your input</p>
                                     <div className={styles.capabilityGrid}>
-                                        {OUTPUT_MODALITIES.map((mod) => {
-                                            const available = availableOutputs.includes(mod.key);
-                                            const Icon = mod.icon;
+                                        {Object.entries(INPUT_MODALITY_META).map(([key, meta]) => {
+                                            const models = getModelsForIO(config, selectedOutput, key);
+                                            const available = models.length > 0;
+                                            const Icon = meta.icon;
                                             return (
                                                 <div
-                                                    key={mod.key}
+                                                    key={key}
                                                     className={`${styles.capabilityCard} ${!available ? styles.capabilityDisabled : ""}`}
                                                     onClick={() => {
                                                         if (available) {
-                                                            setIoSelectedOutput(mod.key);
-                                                            setWelcomeStep("ioModels");
+                                                            setSelectedInput(key);
+                                                            setWelcomeStep("pickModel");
                                                         }
                                                     }}
                                                 >
@@ -538,8 +504,8 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                                         <Icon size={20} />
                                                     </div>
                                                     <div className={styles.capabilityInfo}>
-                                                        <h4>{mod.title}</h4>
-                                                        <p>{mod.subtitle}</p>
+                                                        <h4>{meta.title}</h4>
+                                                        <p>{meta.subtitle}</p>
                                                     </div>
                                                 </div>
                                             );
@@ -549,42 +515,109 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                             );
                         })()}
 
-                        {welcomeStep === "ioModels" && (() => {
-                            const models = getModelsForIO(config, ioSelectedOutput, ioSelectedInput);
-                            const outputMod = OUTPUT_MODALITIES.find((m) => m.key === ioSelectedOutput);
-                            const inputMeta = INPUT_MODALITY_META[ioSelectedInput];
+                        {welcomeStep === "pickModel" && (() => {
+                            const models = getModelsForIO(config, selectedOutput, selectedInput);
+                            const outputMod = OUTPUT_MODALITIES.find((m) => m.key === selectedOutput);
+                            const inputMeta = INPUT_MODALITY_META[selectedInput];
+                            const arenaCols = getVisibleArenaColumns(models);
+                            const hasInputPrice = models.some((m) => m.pricing?.inputPerMillion != null);
+                            const hasOutputPrice = models.some((m) => m.pricing?.outputPerMillion != null);
+                            const hasContext = models.some((m) => m.contextLength != null);
+
+                            const sortKey = modelSort.key;
+                            const sortDir = modelSort.dir;
+                            const sorted = [...models].sort((a, b) => {
+                                let va, vb;
+                                if (sortKey === "context") {
+                                    va = a.contextLength ?? 0; vb = b.contextLength ?? 0;
+                                } else if (sortKey === "input") {
+                                    va = a.pricing?.inputPerMillion ?? Infinity; vb = b.pricing?.inputPerMillion ?? Infinity;
+                                } else if (sortKey === "output") {
+                                    va = a.pricing?.outputPerMillion ?? Infinity; vb = b.pricing?.outputPerMillion ?? Infinity;
+                                } else if (sortKey) {
+                                    va = a.arena?.[sortKey] ?? 0; vb = b.arena?.[sortKey] ?? 0;
+                                } else {
+                                    return 0;
+                                }
+                                return sortDir === "asc" ? va - vb : vb - va;
+                            });
+
+                            const handleSort = (key) => {
+                                setModelSort((prev) => {
+                                    if (prev.key === key) return { key, dir: prev.dir === "desc" ? "asc" : "desc" };
+                                    return { key, dir: "desc" };
+                                });
+                            };
+
+                            const SortIcon = ({ colKey }) => {
+                                if (modelSort.key !== colKey) return null;
+                                return modelSort.dir === "desc"
+                                    ? <ChevronDown size={12} className={styles.sortIcon} />
+                                    : <ChevronUp size={12} className={styles.sortIcon} />;
+                            };
+
                             return (
-                                <div className={styles.modelListView}>
-                                    <button className={styles.backButton} onClick={() => { setWelcomeStep("ioPickOutput"); setIoSelectedOutput(null); }}>
-                                        <ArrowLeft size={18} />
-                                    </button>
-                                    <h3>{inputMeta?.title} → {outputMod?.title}</h3>
-                                    <p className={styles.modelListSubtitle}>Pick a model to get started</p>
-                                    <div className={styles.modelList}>
-                                        {models.map((model) => (
-                                            <div
-                                                key={`${model.provider}-${model.name}`}
-                                                className={styles.modelRow}
-                                                onClick={() => {
-                                                    onSelectModel(model.provider, model.name);
-                                                    setWelcomeStep("home");
-                                                    setIoSelectedInput(null);
-                                                    setIoSelectedOutput(null);
-                                                    setWelcomeDone(true);
-                                                }}
-                                            >
-                                                <div className={styles.modelRowIcon}>
-                                                    <ProviderLogo provider={model.provider} size={20} />
-                                                </div>
-                                                <div className={styles.modelRowInfo}>
-                                                    <span className={styles.modelRowName}>{model.label || model.name}</span>
-                                                    <span className={styles.modelRowProvider}>{PROVIDER_LABELS[model.provider] || model.provider}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {models.length === 0 && (
-                                            <div className={styles.empty}>No models available for this combination</div>
-                                        )}
+                                <div className={styles.modelTableView}>
+                                    <div className={styles.modelTableHeader}>
+                                        <button className={styles.backButton} onClick={() => { setWelcomeStep("pickInput"); setSelectedInput(null); setModelSort({ key: null, dir: "desc" }); }}>
+                                            <ArrowLeft size={18} />
+                                        </button>
+                                        <div>
+                                            <h3>{inputMeta?.title} → {outputMod?.title}</h3>
+                                            <p className={styles.modelListSubtitle}>Pick a model to get started</p>
+                                        </div>
+                                    </div>
+                                    <div className={styles.modelTableScroll}>
+                                        <table className={styles.modelTable}>
+                                            <thead>
+                                                <tr>
+                                                    <th className={styles.modelTh}>Model</th>
+                                                    {hasContext && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("context")}>Context <SortIcon colKey="context" /></th>}
+                                                    {hasInputPrice && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("input")}>Input <SortIcon colKey="input" /></th>}
+                                                    {hasOutputPrice && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("output")}>Output <SortIcon colKey="output" /></th>}
+                                                    {arenaCols.map((col) => (
+                                                        <th key={col.key} className={`${styles.modelTh} ${styles.modelThSortable} ${styles.modelThArena}`} onClick={() => handleSort(col.key)}>
+                                                            {col.label} <SortIcon colKey={col.key} />
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {sorted.map((model) => (
+                                                    <tr
+                                                        key={`${model.provider}-${model.name}`}
+                                                        className={styles.modelTr}
+                                                        onClick={() => {
+                                                            onSelectModel(model.provider, model.name);
+                                                            setWelcomeStep("pickOutput");
+                                                            setSelectedOutput(null);
+                                                            setSelectedInput(null);
+                                                            setWelcomeDone(true);
+                                                            setModelSort({ key: null, dir: "desc" });
+                                                        }}
+                                                    >
+                                                        <td className={styles.modelTdName}>
+                                                            <ProviderLogo provider={model.provider} size={18} />
+                                                            <div className={styles.modelTdNameText}>
+                                                                <span className={styles.modelName}>{model.label || model.name}</span>
+                                                                <span className={styles.modelProvider}>{PROVIDER_LABELS[model.provider] || model.provider}</span>
+                                                            </div>
+                                                        </td>
+                                                        {hasContext && <td className={styles.modelTd}>{model.contextLength ? formatContextLength(model.contextLength) : "—"}</td>}
+                                                        {hasInputPrice && <td className={styles.modelTd}>{model.pricing?.inputPerMillion != null ? `$${model.pricing.inputPerMillion}` : "—"}</td>}
+                                                        {hasOutputPrice && <td className={styles.modelTd}>{model.pricing?.outputPerMillion != null ? `$${model.pricing.outputPerMillion}` : "—"}</td>}
+                                                        {arenaCols.map((col) => (
+                                                            <td key={col.key} className={`${styles.modelTd} ${model.arena?.[col.key] != null ? styles.modelTdArena : styles.modelTdEmpty}`}>
+                                                                {model.arena?.[col.key] ?? "—"}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                                {sorted.length === 0 && (
+                                                    <tr><td colSpan={99} className={styles.empty}>No models available for this combination</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             );
@@ -655,13 +688,19 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                             )}
                             {msg.images && msg.images.length > 0 && (
                                 <div className={styles.imagePreviewRow}>
-                                    {msg.images.map((dataUrl, j) => (
-                                        <MediaPreview
-                                            key={j}
-                                            dataUrl={dataUrl}
-                                            onClick={getMimeCategory(dataUrl) === "image" ? () => setLightboxSrc(dataUrl) : undefined}
-                                        />
-                                    ))}
+                                    {msg.images.map((dataUrl, j) => {
+                                        const cat = getMimeCategory(dataUrl);
+                                        let clickHandler;
+                                        if (cat === "image") clickHandler = () => setLightboxSrc(dataUrl);
+                                        else if (cat === "pdf" || cat === "text") clickHandler = () => setDocViewerSrc(dataUrl);
+                                        return (
+                                            <MediaPreview
+                                                key={j}
+                                                dataUrl={dataUrl}
+                                                onClick={clickHandler}
+                                            />
+                                        );
+                                    })}
                                 </div>
                             )}
                             {msg.role === "user" ? (
@@ -714,7 +753,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                         <div className={styles.pendingImages}>
                             {pendingImages.map((dataUrl, i) => (
                                 <div key={i} className={styles.pendingAttachmentWrap}>
-                                    <MediaPreview dataUrl={dataUrl} compact onClick={getMimeCategory(dataUrl) === "image" ? () => setLightboxSrc(dataUrl) : undefined} />
+                                    <MediaPreview dataUrl={dataUrl} compact onClick={(() => { const c = getMimeCategory(dataUrl); if (c === "image") return () => setLightboxSrc(dataUrl); if (c === "pdf" || c === "text") return () => setDocViewerSrc(dataUrl); return undefined; })()} />
                                     <button type="button" onClick={() => removeImage(i)} className={styles.removeImage}>×</button>
                                 </div>
                             ))}
@@ -781,6 +820,13 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                         setPendingImages((prev) => [...prev, dataUrl]);
                         setLightboxSrc(null);
                     }}
+                />
+            )}
+
+            {docViewerSrc && (
+                <DocumentViewer
+                    dataUrl={docViewerSrc}
+                    onClose={() => setDocViewerSrc(null)}
                 />
             )}
         </div>

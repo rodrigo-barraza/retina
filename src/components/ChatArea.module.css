@@ -24,6 +24,11 @@
   padding: 40px 20px;
 }
 
+.welcome:has(.modelTableView) {
+  max-width: 100%;
+  padding: 40px 32px;
+}
+
 .readyPrompt {
   margin: auto;
   text-align: center;
@@ -78,7 +83,7 @@
 .sectionSubtitle {
   font-size: 13px;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin: 0 0 20px 0;
 }
 
 .capabilityCard {
@@ -146,9 +151,6 @@
 }
 
 .backButton {
-  position: absolute;
-  top: 2px;
-  left: -32px;
   background: none;
   border: none;
   color: var(--text-secondary);
@@ -159,6 +161,7 @@
   align-items: center;
   justify-content: center;
   transition: color 0.2s, background 0.2s;
+  flex-shrink: 0;
 }
 
 .backButton:hover {
@@ -172,55 +175,147 @@
   margin: 0 0 18px 0;
 }
 
-.modelList {
-  display: flex;
-  flex-direction: column;
+/* ---- Sortable Model Table ---- */
+
+.modelTableView {
+  text-align: left;
+  width: 100%;
 }
 
-.modelRow {
+.modelTableHeader {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.modelTableHeader h3 {
+  margin-bottom: 4px;
+}
+
+.modelTableScroll {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.modelTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.modelTh {
+  padding: 10px 14px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
   border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+  user-select: none;
+}
+
+.modelTh:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.modelThSortable {
   cursor: pointer;
-  transition: background 0.15s;
+  transition: color 0.15s;
 }
 
-.modelRow:first-child {
-  border-top: 1px solid var(--border-color);
+.modelThSortable:hover {
+  color: var(--text-primary);
 }
 
-.modelRow:hover {
+.modelThArena {
+  color: var(--accent-color);
+  opacity: 0.7;
+}
+
+.modelThArena:hover {
+  opacity: 1;
+}
+
+.sortIcon {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 2px;
+  opacity: 0.7;
+}
+
+.modelTr {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.modelTr:hover {
   background: var(--bg-secondary);
 }
 
-.modelRowIcon {
+.modelTr:not(:last-child) td {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modelTd {
+  padding: 10px 14px;
+  text-align: right;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.modelTdName {
+  padding: 10px 14px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--accent-glow);
-  flex-shrink: 0;
+  gap: 10px;
+  position: sticky;
+  left: 0;
+  background: var(--bg-primary);
+  z-index: 1;
+  white-space: nowrap;
 }
 
-.modelRowInfo {
+.modelTr:hover .modelTdName {
+  background: var(--bg-secondary);
+}
+
+.modelTdNameText {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
-.modelRowName {
-  font-size: 14px;
+.modelName {
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.modelRowProvider {
-  font-size: 12px;
+.modelProvider {
+  font-size: 11px;
   color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.modelTdArena {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.modelTdEmpty {
+  color: var(--text-secondary);
+  opacity: 0.3;
 }
 
 .empty {

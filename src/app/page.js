@@ -5,7 +5,7 @@ import styles from "./page.module.css";
 import { PrismService } from "../services/PrismService";
 import StorageService from "../services/StorageService";
 import { useTheme } from "../components/ThemeProvider";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Zap, Clock } from "lucide-react";
 import SettingsPanel from "../components/SettingsPanel";
 import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
@@ -13,6 +13,7 @@ import HistoryPanel from "../components/HistoryPanel";
 export default function Home() {
     const { theme, toggleTheme } = useTheme();
     const [config, setConfig] = useState(null);
+    const [inferenceMode, setInferenceMode] = useState(() => StorageService.get("inferenceMode", "async"));
     const [conversations, setConversations] = useState([]);
 
     const [activeId, setActiveId] = useState(null);
@@ -111,6 +112,11 @@ export default function Home() {
         if (settings.provider) StorageService.set("lastProvider", settings.provider);
         if (settings.model) StorageService.set("lastModel", settings.model);
     }, [settings.provider, settings.model]);
+
+    // Persist inference mode to localStorage
+    useEffect(() => {
+        StorageService.set("inferenceMode", inferenceMode);
+    }, [inferenceMode]);
 
     const handleSelectConversation = async (conv) => {
         if (conv.id === activeId) return;
@@ -637,19 +643,36 @@ export default function Home() {
                     settings={settings}
                     onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
                     hasAssistantImages={messages.some((m) => m.role === "assistant" && m.images?.length > 0)}
+                    inferenceMode={inferenceMode}
                 />
             </aside>
 
             <section className={styles.mainChat}>
                 <div className={styles.glassHeader}>
                     <span className={styles.headerTitle}>{title}</span>
-                    <button
-                        className={styles.themeToggle}
-                        onClick={toggleTheme}
-                        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                    >
-                        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                    </button>
+                    <div className={styles.headerControls}>
+                        <button
+                            className={`${styles.modeToggle} ${inferenceMode === "async" ? styles.modeToggleActive : ""}`}
+                            onClick={() => setInferenceMode("async")}
+                            title="Asynchronous — non-realtime models"
+                        >
+                            <Clock size={14} /> Async
+                        </button>
+                        <button
+                            className={`${styles.modeToggle} ${inferenceMode === "sync" ? styles.modeToggleActive : ""}`}
+                            onClick={() => setInferenceMode("sync")}
+                            title="Synchronous — real-time models"
+                        >
+                            <Zap size={14} /> Sync
+                        </button>
+                        <button
+                            className={styles.themeToggle}
+                            onClick={toggleTheme}
+                            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                        >
+                            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                        </button>
+                    </div>
                 </div>
                 <ChatArea
                     messages={messages}

@@ -7,7 +7,7 @@ import ToggleSwitch from "./ToggleSwitch";
 import SystemPromptModal from "./SystemPromptModal";
 import styles from "./SettingsPanel.module.css";
 
-export default function SettingsPanel({ config, settings, onChange, hasAssistantImages }) {
+export default function SettingsPanel({ config, settings, onChange, hasAssistantImages, inferenceMode }) {
     const [showSystemPromptModal, setShowSystemPromptModal] = useState(false);
     const { providers = {}, textToText = {} } = config || {};
     const modelsMap = textToText.models || {};
@@ -228,6 +228,35 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                                 ))}
                             </div>
                         ) : null;
+                    })()}
+                    {(() => {
+                        const arena = selectedModelDef?.arena;
+                        if (!arena) return null;
+                        const arenaLabels = {
+                            text: "Text",
+                            code: "Code",
+                            vision: "Vision",
+                            document: "Document",
+                            textToImage: "Text to Image",
+                            imageEdit: "Image Edit",
+                            search: "Search",
+                        };
+                        const entries = Object.entries(arena).filter(([, v]) => v != null);
+                        if (entries.length === 0) return null;
+                        return (
+                            <div className={styles.modalities}>
+                                <div className={styles.modalitiesHeader}>Arena Scores</div>
+                                {entries.map(([key, value]) => (
+                                    <div key={key} className={styles.modalityRow}>
+                                        <span className={styles.modalityIcon}><Brain size={12} /></span>
+                                        <span className={styles.modalityName}>{arenaLabels[key] || key}</span>
+                                        <span className={`${styles.modalityStatus} ${styles.arenaValue}`}>
+                                            {value}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        );
                     })()}
                     {selectedModelDef?.tools && selectedModelDef.tools.length > 0 && (
                         <div className={styles.modalities}>

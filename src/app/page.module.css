@@ -85,6 +85,43 @@
   color: var(--accent-color);
 }
 
+.headerControls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.modeToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.modeToggle:hover {
+  background: var(--accent-glow);
+  color: var(--accent-color);
+  opacity: 0.8;
+}
+
+.modeToggleActive {
+  opacity: 1;
+  color: var(--accent-color);
+  background: var(--accent-glow);
+}
+
 .chatArea {
   flex: 1;
   overflow-y: auto;
