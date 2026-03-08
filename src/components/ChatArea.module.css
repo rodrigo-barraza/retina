@@ -886,6 +886,17 @@
   margin-bottom: 8px;
 }
 
+.audioPlayer {
+  margin: 8px 0 12px;
+  width: 100%;
+}
+
+.audioPlayer audio {
+  width: 100%;
+  border-radius: 8px;
+  outline: none;
+}
+
 .messageImage {
   max-width: 200px;
   max-height: 200px;

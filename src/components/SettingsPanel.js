@@ -12,11 +12,13 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
     const { providers = {}, textToText = {} } = config || {};
     const textModelsMap = textToText.models || {};
     const audioToTextModelsMap = config?.audioToText?.models || {};
+    const ttsModelsMap = config?.textToSpeech?.models || {};
 
-    // Build a merged models map: textToText + audioToText
+    // Build a merged models map: textToText + audioToText + textToSpeech
     const allProviderKeys = new Set([
         ...Object.keys(textModelsMap),
         ...Object.keys(audioToTextModelsMap),
+        ...Object.keys(ttsModelsMap),
     ]);
     const modelsMap = {};
     for (const p of allProviderKeys) {
@@ -26,10 +28,15 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
             label: `${m.label} (Transcribe)`,
             _isTranscription: true,
         }));
-        // Merge text models first, then transcription models, deduplicated by name
+        const ttsModels = (ttsModelsMap[p] || []).map((m) => ({
+            ...m,
+            label: `${m.label} (TTS)`,
+            _isTTS: true,
+        }));
+        // Merge text models first, then transcription, then TTS — deduplicated by name
         const seen = new Set();
         const merged = [];
-        for (const m of [...textModels, ...sttModels]) {
+        for (const m of [...textModels, ...sttModels, ...ttsModels]) {
             if (!seen.has(m.name)) {
                 seen.add(m.name);
                 merged.push(m);
@@ -75,6 +82,8 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
     const selectedModelDef = currentProviderModels.find(m => m.name === settings.model);
     const isReasoning = selectedModelDef?.thinking || (settings.model || "").includes('o1') || (settings.model || "").includes('o3');
     const isTranscription = selectedModelDef?._isTranscription === true;
+    const isTTS = selectedModelDef?._isTTS === true;
+    const isSpecialModel = isTranscription || isTTS;
 
     // Provider-aware display labels for generic tool names
     const TOOL_LABELS = {
@@ -324,7 +333,30 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                 </div>
             )}
 
-            {!isTranscription && (
+            {isTTS && (() => {
+                const providerVoices = config?.textToSpeech?.voices?.[settings.provider] || [];
+                const defaultVoice = config?.textToSpeech?.defaultVoices?.[settings.provider] || "";
+                const currentVoice = settings.voice || defaultVoice;
+                const voiceOptions = providerVoices.map((v) => ({
+                    value: v.name || v.voice_id || v,
+                    label: `${v.label || v.name || v}${v.gender ? ` (${v.gender})` : ""}`,
+                    icon: <Mic size={18} />,
+                }));
+                return voiceOptions.length > 0 ? (
+                    <div className={styles.formGroup}>
+                        <label>Voice</label>
+                        <SelectDropdown
+                            value={currentVoice}
+                            options={voiceOptions}
+                            onChange={(val) => onChange({ voice: val })}
+                            placeholder="Select Voice"
+                            icon={<Mic size={18} />}
+                        />
+                    </div>
+                ) : null;
+            })()}
+
+            {!isSpecialModel && (
                 <button
                     className={`${styles.systemPromptBtn} ${settings.systemPrompt && settings.systemPrompt !== "You are a helpful AI assistant" && settings.systemPrompt !== "You are a helpful AI assistant." ? styles.systemPromptActive : ""}`}
                     onClick={() => setShowSystemPromptModal(true)}
@@ -334,7 +366,7 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                 </button>
             )}
 
-            {!isTranscription && (
+            {!isSpecialModel && (
             <>
             <div className={styles.sectionTitle}>
                 <Settings2 size={16} /> Parameters

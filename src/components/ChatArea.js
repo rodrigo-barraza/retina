@@ -291,7 +291,7 @@ const INPUT_MODALITY_META = {
 function getAllModelsFromConfig(config) {
     if (!config) return [];
     const seen = new Map();
-    const sections = ["textToText", "textToImage"];
+    const sections = ["textToText", "textToImage", "textToSpeech", "audioToText"];
     for (const section of sections) {
         const modelsMap = config[section]?.models || {};
         for (const [provider, models] of Object.entries(modelsMap)) {
@@ -351,13 +351,13 @@ function getVisibleArenaColumns(models) {
     );
 }
 
-export default function ChatArea({ messages, isGenerating, onSend, onDelete, onEdit, onRerun, config, onSelectModel, supportedInputTypes = [], isTranscriptionModel = false }) {
+export default function ChatArea({ messages, isGenerating, onSend, onDelete, onEdit, onRerun, config, onSelectModel, supportedInputTypes = [], isTranscriptionModel = false, isTTSModel = false }) {
     const [modelSort, setModelSort] = useState({ key: null, dir: "desc" });
     const nonTextTypes = supportedInputTypes.filter((t) => t !== "text");
-    const hasFileInput = nonTextTypes.length > 0;
+    const hasFileInput = !isTTSModel && nonTextTypes.length > 0;
     const imageOnly = nonTextTypes.length === 1 && nonTextTypes[0] === "image";
     const acceptStr = nonTextTypes.map((t) => TYPE_ACCEPT_MAP[t]).filter(Boolean).join(",");
-    const hasAudioInput = supportedInputTypes.includes("audio");
+    const hasAudioInput = !isTTSModel && supportedInputTypes.includes("audio");
     const [input, setInput] = useState("");
     const [pendingImages, setPendingImages] = useState([]);
     const [lightboxSrc, setLightboxSrc] = useState(null);
@@ -567,7 +567,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                             <ArrowLeft size={18} />
                                         </button>
                                         <div>
-                                            <h3>{inputMeta?.title} → {outputMod?.title}</h3>
+                                            <h3>{inputMeta?.title} to {outputMod?.title}</h3>
                                             <p className={styles.modelListSubtitle}>Pick a model to get started</p>
                                         </div>
                                     </div>
@@ -707,6 +707,11 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                     })}
                                 </div>
                             )}
+                            {msg.audio && (
+                                <div className={styles.audioPlayer}>
+                                    <audio controls autoPlay src={msg.audio} />
+                                </div>
+                            )}
                             {msg.role === "user" ? (
                                 <EditableUserMessage
                                     content={msg.content}
@@ -720,14 +725,19 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                     <MarkdownContent content={msg.content} />
                                 </div>
                             )}
-                            {msg.usage && (
+                            {(msg.usage || msg.audio) && msg.role === "assistant" && (
                                 <div className={styles.meta}>
                                     <span className={styles.metaProvider}>
                                         <ProviderLogo provider={msg.provider} size={13} />
                                         {PROVIDER_LABELS[msg.provider] || msg.provider}
                                     </span>
                                     {" • "}{msg.model}
-                                    {` • ${(msg.usage.inputTokens || 0) + (msg.usage.outputTokens || 0)} tokens`}
+                                    {msg.usage?.inputTokens != null || msg.usage?.outputTokens != null
+                                        ? ` • ${(msg.usage.inputTokens || 0) + (msg.usage.outputTokens || 0)} tokens`
+                                        : ""}
+                                    {msg.usage?.characters != null
+                                        ? ` • ${msg.usage.characters} chars`
+                                        : ""}
                                     {msg.content ? ` • ${msg.content.trim().split(/\s+/).filter(Boolean).length} words` : ""}
                                     {msg.totalTime != null ? ` • ${msg.totalTime.toFixed(1)}s` : ""}
                                     {msg.tokensPerSec ? ` • ${msg.tokensPerSec} tok/s` : ""}
@@ -799,7 +809,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Type a message..."
+                                placeholder={isTTSModel ? "Enter text to convert to speech..." : "Type a message..."}
                                 rows={1}
                             />
                         )}

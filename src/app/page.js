@@ -200,6 +200,93 @@ export default function Home() {
         const userMsg = messages[userMsgIndex];
         if (!userMsg || userMsg.role !== "user") return;
 
+        // --- TTS rerun branch ---
+        if (isTTSModel) {
+            const nextMsg = messages[userMsgIndex + 1];
+            const hadAssistantAfter = nextMsg && nextMsg.role === "assistant";
+
+            let newMessages;
+            if (hadAssistantAfter) {
+                newMessages = [
+                    ...messages.slice(0, userMsgIndex + 1),
+                    ...messages.slice(userMsgIndex + 2),
+                ];
+            } else {
+                newMessages = [...messages];
+            }
+
+            setMessages(newMessages);
+            setIsGenerating(true);
+
+            try {
+                let currentId = activeId;
+                let currentTitle = title;
+
+                const defaultVoice = config?.textToSpeech?.defaultVoices?.[settings.provider] || undefined;
+                const requestStart = performance.now();
+
+                const result = await PrismService.generateSpeech({
+                    provider: settings.provider,
+                    text: userMsg.content,
+                    voice: settings.voice || defaultVoice,
+                    model: settings.model,
+                });
+
+                const totalTime = (performance.now() - requestStart) / 1000;
+
+                const ttsModels = config?.textToSpeech?.models?.[settings.provider] || [];
+                const ttsModelDef = ttsModels.find((m) => m.name === settings.model);
+                const charCount = userMsg.content.length;
+                let estimatedCost = null;
+                if (ttsModelDef?.pricing?.perCharacter) {
+                    estimatedCost = charCount * ttsModelDef.pricing.perCharacter;
+                }
+
+                const assistantMsg = {
+                    role: "assistant",
+                    content: "",
+                    audio: result.audioDataUrl,
+                    timestamp: new Date().toISOString(),
+                    provider: settings.provider,
+                    model: settings.model,
+                    totalTime,
+                    usage: { characters: charCount },
+                    estimatedCost,
+                };
+
+                // Insert at the position right after the user message
+                const finalMessages = [...newMessages];
+                finalMessages.splice(userMsgIndex + 1, 0, assistantMsg);
+                setMessages(finalMessages);
+
+                try {
+                    const { systemPrompt, ...modelSettings } = settings;
+                    const saved = await PrismService.saveConversation(
+                        currentId,
+                        currentTitle,
+                        finalMessages,
+                        systemPrompt,
+                        modelSettings,
+                    );
+                    setActiveId(saved.id);
+                    loadConversations();
+                } catch (saveErr) {
+                    console.error("Save failed:", saveErr);
+                }
+            } catch (error) {
+                console.error(error);
+                setMessages((prev) => [
+                    ...prev,
+                    { role: "system", content: "Error: " + error.message },
+                ]);
+            } finally {
+                setIsGenerating(false);
+            }
+            return;
+        }
+
+        // userMsg already declared above
+
         // Collect all messages up to and including this user message
         const historyUpToUser = messages.slice(0, userMsgIndex + 1);
 
@@ -391,27 +478,23 @@ export default function Home() {
                             return updated;
                         });
 
-                        // Save — use a callback to get the latest messages
-                        setMessages((prev) => {
-                            const finalMessages = [...prev];
-                            (async () => {
-                                try {
-                                    const { systemPrompt, ...modelSettings } = settings;
-                                    const saved = await PrismService.saveConversation(
-                                        currentId,
-                                        currentTitle,
-                                        finalMessages,
-                                        systemPrompt,
-                                        modelSettings,
-                                    );
-                                    setActiveId(saved.id);
-                                    loadConversations();
-                                } catch (saveErr) {
-                                    console.error("Save failed:", saveErr);
-                                }
-                            })();
-                            return prev;
-                        });
+                        // Save after updating messages — NOT inside setMessages to avoid double-fires
+                        try {
+                            const allMessages = [...newMessages];
+                            allMessages[insertIndex] = finalMsg;
+                            const { systemPrompt, ...modelSettings } = settings;
+                            const saved = await PrismService.saveConversation(
+                                currentId,
+                                currentTitle,
+                                allMessages,
+                                systemPrompt,
+                                modelSettings,
+                            );
+                            setActiveId(saved.id);
+                            loadConversations();
+                        } catch (saveErr) {
+                            console.error("Save failed:", saveErr);
+                        }
 
                         resolve();
                     },
@@ -437,7 +520,104 @@ export default function Home() {
         return atModels.some((m) => m.name === settings.model);
     })();
 
+    // Check if current model is a text-to-speech (TTS) model
+    const isTTSModel = (() => {
+        const ttsModels = config?.textToSpeech?.models?.[settings.provider] || [];
+        return ttsModels.some((m) => m.name === settings.model);
+    })();
+
     const handleSend = async (content, images = []) => {
+        // --- TTS branch ---
+        if (isTTSModel) {
+            if (!content.trim()) {
+                setMessages((prev) => [
+                    ...prev,
+                    { role: "system", content: "Error: Please enter text to convert to speech." },
+                ]);
+                return;
+            }
+
+            setIsGenerating(true);
+
+            try {
+                let currentId = activeId;
+                let currentTitle = title;
+
+                if (!currentId) {
+                    currentTitle = content.slice(0, 40) || "Speech Generation";
+                    setTitle(currentTitle);
+                }
+
+                const userMsg = {
+                    role: "user",
+                    content,
+                    timestamp: new Date().toISOString(),
+                };
+                setMessages((prev) => [...prev, userMsg]);
+
+                const defaultVoice = config?.textToSpeech?.defaultVoices?.[settings.provider] || undefined;
+                const requestStart = performance.now();
+
+                const result = await PrismService.generateSpeech({
+                    provider: settings.provider,
+                    text: content,
+                    voice: settings.voice || defaultVoice,
+                    model: settings.model,
+                });
+
+                const totalTime = (performance.now() - requestStart) / 1000;
+
+                // Estimate cost from character count and model pricing
+                const ttsModels = config?.textToSpeech?.models?.[settings.provider] || [];
+                const ttsModelDef = ttsModels.find((m) => m.name === settings.model);
+                const charCount = content.length;
+                let estimatedCost = null;
+                if (ttsModelDef?.pricing?.perCharacter) {
+                    estimatedCost = charCount * ttsModelDef.pricing.perCharacter;
+                }
+
+                const assistantMsg = {
+                    role: "assistant",
+                    content: "",
+                    audio: result.audioDataUrl,
+                    timestamp: new Date().toISOString(),
+                    provider: settings.provider,
+                    model: settings.model,
+                    totalTime,
+                    usage: { characters: charCount },
+                    estimatedCost,
+                };
+
+                const updatedMessages = [...messages, userMsg, assistantMsg];
+                setMessages(updatedMessages);
+
+                try {
+                    const { systemPrompt, ...modelSettings } = settings;
+                    const saved = await PrismService.saveConversation(
+                        currentId,
+                        currentTitle,
+                        updatedMessages,
+                        systemPrompt,
+                        modelSettings,
+                    );
+                    currentId = saved.id;
+                    setActiveId(saved.id);
+                    loadConversations();
+                } catch (saveErr) {
+                    console.error("Save failed:", saveErr);
+                }
+            } catch (error) {
+                console.error(error);
+                setMessages((prev) => [
+                    ...prev,
+                    { role: "system", content: "Error: " + error.message },
+                ]);
+            } finally {
+                setIsGenerating(false);
+            }
+            return;
+        }
+
         // --- Audio transcription branch ---
         if (isTranscriptionModel) {
             const audioFiles = images.filter((dataUrl) => {
@@ -463,6 +643,8 @@ export default function Home() {
                     currentTitle = "Audio Transcription";
                     setTitle(currentTitle);
                 }
+
+                const accumulatedMessages = [...messages];
 
                 for (const audioDataUrl of audioFiles) {
                     const userMsg = {
@@ -492,27 +674,24 @@ export default function Home() {
                         estimatedCost: result.estimatedCost || null,
                     };
 
-                    setMessages((prev) => {
-                        const updated = [...prev, assistantMsg];
-                        (async () => {
-                            try {
-                                const { systemPrompt, ...modelSettings } = settings;
-                                const saved = await PrismService.saveConversation(
-                                    currentId,
-                                    currentTitle,
-                                    updated,
-                                    systemPrompt,
-                                    modelSettings,
-                                );
-                                currentId = saved.id;
-                                setActiveId(saved.id);
-                                loadConversations();
-                            } catch (saveErr) {
-                                console.error("Save failed:", saveErr);
-                            }
-                        })();
-                        return updated;
-                    });
+                    setMessages((prev) => [...prev, assistantMsg]);
+                    accumulatedMessages.push(userMsg, assistantMsg);
+
+                    try {
+                        const { systemPrompt, ...modelSettings } = settings;
+                        const saved = await PrismService.saveConversation(
+                            currentId,
+                            currentTitle,
+                            accumulatedMessages,
+                            systemPrompt,
+                            modelSettings,
+                        );
+                        currentId = saved.id;
+                        setActiveId(saved.id);
+                        loadConversations();
+                    } catch (saveErr) {
+                        console.error("Save failed:", saveErr);
+                    }
                 }
             } catch (error) {
                 console.error(error);
@@ -779,6 +958,7 @@ export default function Home() {
                     onRerun={handleRerunTurn}
                     config={config}
                     isTranscriptionModel={isTranscriptionModel}
+                    isTTSModel={isTTSModel}
                     onSelectModel={(provider, modelName) => {
                         const modelDef = (config?.textToText?.models?.[provider] || []).find((m) => m.name === modelName)
                             || (config?.textToImage?.models?.[provider] || []).find((m) => m.name === modelName);
@@ -789,8 +969,10 @@ export default function Home() {
                     supportedInputTypes={
                         isTranscriptionModel
                             ? ["audio"]
-                            : (config?.textToText?.models?.[settings.provider] || [])
-                                .find((m) => m.name === settings.model)?.inputTypes || []
+                            : isTTSModel
+                                ? ["text"]
+                                : (config?.textToText?.models?.[settings.provider] || [])
+                                    .find((m) => m.name === settings.model)?.inputTypes || []
                     }
                 />
             </section>
