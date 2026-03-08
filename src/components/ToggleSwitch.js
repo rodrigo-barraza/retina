@@ -9,20 +9,19 @@ import styles from "./ToggleSwitch.module.css";
  *  onChange  : (checked: boolean) => void
  *  label?    : string  — optional label text rendered beside the track
  *  disabled? : boolean
+ *  size?     : "default" | "small"
  */
 export default function ToggleSwitch({
   checked = false,
   onChange,
   label = "",
   disabled = false,
+  size = "default",
 }) {
-  const handleClick = () => {
-    if (disabled) return;
-    onChange(!checked);
-  };
+  const isSmall = size === "small";
 
   return (
-    <label className={`${styles.toggle} ${disabled ? styles.disabled : ""}`}>
+    <label className={`${styles.toggle} ${disabled ? styles.disabled : ""} ${isSmall ? styles.small : ""}`}>
       <input
         type="checkbox"
         className={styles.hiddenInput}
@@ -32,7 +31,6 @@ export default function ToggleSwitch({
       />
       <span
         className={`${styles.track} ${checked ? styles.active : ""}`}
-        onClick={handleClick}
         role="switch"
         aria-checked={checked}
       >

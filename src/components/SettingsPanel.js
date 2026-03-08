@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Settings2, Cpu, Edit3, Type, Image as ImageIcon, Mic, Video, FileText, Globe, Wrench, Code, Monitor, Search } from "lucide-react";
+import { Settings2, Cpu, Edit3, Type, Image as ImageIcon, Mic, Video, FileText, Globe, Wrench, Code, Monitor, Search, Brain, DollarSign } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import SelectDropdown from "./SelectDropdown";
 import ToggleSwitch from "./ToggleSwitch";
@@ -82,6 +82,63 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
         };
     });
 
+    // Tools that have toggle switches
+    const TOGGLEABLE_TOOLS = new Set(["Thinking", "Web Search", "Google Search", "Web Fetch", "Code Execution", "URL Context"]);
+
+    // Icon map for tools
+    const TOOL_ICONS = {
+        "Thinking": <Brain size={12} />,
+        "Web Search": <Globe size={12} />,
+        "Google Search": <Globe size={12} />,
+        "Web Fetch": <Globe size={12} />,
+        "Function Calling": <Wrench size={12} />,
+        "Code Execution": <Code size={12} />,
+        "Computer Use": <Monitor size={12} />,
+        "File Search": <Search size={12} />,
+        "Image Generation": <ImageIcon size={12} />,
+        "URL Context": <Globe size={12} />,
+    };
+
+    // Get toggle state/handler for a tool
+    const getToolToggle = (tool) => {
+        switch (tool) {
+            case "Thinking":
+                return {
+                    checked: settings.thinkingEnabled || false,
+                    onChange: handleThinkingEnabledChange,
+                    disabled: false,
+                };
+            case "Web Search":
+            case "Google Search":
+            case "Web Fetch":
+                return {
+                    checked: settings.webSearchEnabled || false,
+                    onChange: (val) => onChange({ webSearchEnabled: val }),
+                    disabled: settings.codeExecutionEnabled,
+                };
+            case "Code Execution":
+                return {
+                    checked: settings.codeExecutionEnabled || false,
+                    onChange: (val) => {
+                        const updates = { codeExecutionEnabled: val };
+                        if (val) {
+                            updates.webSearchEnabled = false;
+                            updates.urlContextEnabled = false;
+                        }
+                        onChange(updates);
+                    },
+                    disabled: false,
+                };
+            case "URL Context":
+                return {
+                    checked: settings.urlContextEnabled || false,
+                    onChange: (val) => onChange({ urlContextEnabled: val }),
+                    disabled: settings.codeExecutionEnabled,
+                };
+            default:
+                return null;
+        }
+    };
     return (
         <>
         <div className={styles.container}>
@@ -145,27 +202,59 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                             </div>
                         );
                     })()}
+                    {selectedModelDef?.pricing && (() => {
+                        const PRICING_LABELS = {
+                            inputPerMillion: { label: "Input", unit: "/ 1M tokens" },
+                            outputPerMillion: { label: "Output", unit: "/ 1M tokens" },
+                            audioInputPerMillion: { label: "Audio Input", unit: "/ 1M tokens" },
+                            audioOutputPerMillion: { label: "Audio Output", unit: "/ 1M tokens" },
+                            imageOutputPerMillion: { label: "Image Output", unit: "/ 1M tokens" },
+                            perCharacter: { label: "Per Character", unit: "" },
+                        };
+                        const entries = Object.entries(selectedModelDef.pricing)
+                            .filter(([key]) => PRICING_LABELS[key])
+                            .map(([key, value]) => ({ ...PRICING_LABELS[key], value }));
+                        return entries.length > 0 ? (
+                            <div className={styles.modalities}>
+                                <div className={styles.modalitiesHeader}>Pricing</div>
+                                {entries.map((e) => (
+                                    <div key={e.label} className={styles.modalityRow}>
+                                        <span className={styles.modalityIcon}><DollarSign size={12} /></span>
+                                        <span className={styles.modalityName}>{e.label}</span>
+                                        <span className={`${styles.modalityStatus} ${styles.pricingValue}`}>
+                                            ${e.value} {e.unit}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : null;
+                    })()}
                     {selectedModelDef?.tools && selectedModelDef.tools.length > 0 && (
                         <div className={styles.modalities}>
                             <div className={styles.modalitiesHeader}>Tools</div>
-                            {selectedModelDef.tools.map((tool) => (
-                                <div key={tool} className={styles.modalityRow}>
-                                    <span className={styles.modalityIcon}>
-                                        {tool.includes("Search") && !tool.includes("File") && <Globe size={12} />}
-                                        {tool === "Web Fetch" && <Globe size={12} />}
-                                        {tool === "Function Calling" && <Wrench size={12} />}
-                                        {tool === "Code Execution" && <Code size={12} />}
-                                        {tool === "Computer Use" && <Monitor size={12} />}
-                                        {tool === "File Search" && <Search size={12} />}
-                                        {tool === "Image Generation" && <ImageIcon size={12} />}
-                                        {tool === "URL Context" && <Globe size={12} />}
-                                    </span>
-                                    <span className={styles.modalityName}>{getToolLabel(tool)}</span>
-                                    <span className={`${styles.modalityStatus} ${styles.modalityActive}`}>
-                                        Supported
-                                    </span>
-                                </div>
-                            ))}
+                            {selectedModelDef.tools.map((tool) => {
+                                const toggle = TOGGLEABLE_TOOLS.has(tool) ? getToolToggle(tool) : null;
+                                return (
+                                    <div key={tool} className={`${styles.modalityRow} ${toggle ? styles.toolToggleRow : ""}`}>
+                                        <span className={styles.modalityIcon}>
+                                            {TOOL_ICONS[tool] || <Wrench size={12} />}
+                                        </span>
+                                        <span className={styles.modalityName}>{getToolLabel(tool)}</span>
+                                        {toggle ? (
+                                            <ToggleSwitch
+                                                checked={toggle.checked}
+                                                onChange={toggle.onChange}
+                                                disabled={toggle.disabled}
+                                                size="small"
+                                            />
+                                        ) : (
+                                            <span className={`${styles.modalityStatus} ${styles.modalityActive}`}>
+                                                Supported
+                                            </span>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -250,101 +339,53 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                 </>
             )}
 
-            {isReasoning && !selectedModelDef?.responsesAPI && (
+            {/* Thinking sub-settings — shown when Thinking is toggled on */}
+            {isReasoning && !selectedModelDef?.responsesAPI && settings.thinkingEnabled && (
                 <>
-                    <div className={styles.toolsBox}>
-                        <ToggleSwitch
-                            checked={settings.thinkingEnabled || false}
-                            onChange={handleThinkingEnabledChange}
-                            label="Thinking"
-                        />
-                    </div>
+                    {["openai", "openai-compatible", "anthropic"].includes(settings.provider) && (
+                        <div className={styles.formGroup}>
+                            <label>Reasoning Effort</label>
+                            <SelectDropdown
+                                value={settings.reasoningEffort || "high"}
+                                options={[
+                                    { value: "low", label: "Low" },
+                                    { value: "medium", label: "Medium" },
+                                    { value: "high", label: "High" },
+                                ]}
+                                onChange={handleReasoningEffortChange}
+                            />
+                        </div>
+                    )}
 
-                    {settings.thinkingEnabled && (
-                        <>
-                            {["openai", "openai-compatible", "anthropic"].includes(settings.provider) && (
-                                <div className={styles.formGroup}>
-                                    <label>Reasoning Effort</label>
-                                    <SelectDropdown
-                                        value={settings.reasoningEffort || "high"}
-                                        options={[
-                                            { value: "low", label: "Low" },
-                                            { value: "medium", label: "Medium" },
-                                            { value: "high", label: "High" },
-                                        ]}
-                                        onChange={handleReasoningEffortChange}
-                                    />
-                                </div>
-                            )}
+                    {settings.provider === "google" && (
+                        <div className={styles.formGroup}>
+                            <label>Thinking Level</label>
+                            <SelectDropdown
+                                value={settings.thinkingLevel || "high"}
+                                options={[
+                                    { value: "minimal", label: "Minimal" },
+                                    { value: "low", label: "Low" },
+                                    { value: "medium", label: "Medium" },
+                                    { value: "high", label: "High" },
+                                ]}
+                                onChange={handleThinkingLevelChange}
+                            />
+                        </div>
+                    )}
 
-                            {settings.provider === "google" && (
-                                <div className={styles.formGroup}>
-                                    <label>Thinking Level</label>
-                                    <SelectDropdown
-                                        value={settings.thinkingLevel || "high"}
-                                        options={[
-                                            { value: "minimal", label: "Minimal" },
-                                            { value: "low", label: "Low" },
-                                            { value: "medium", label: "Medium" },
-                                            { value: "high", label: "High" },
-                                        ]}
-                                        onChange={handleThinkingLevelChange}
-                                    />
-                                </div>
-                            )}
-
-                            {["anthropic", "google"].includes(settings.provider) && (
-                                <div className={styles.formGroup}>
-                                    <label>Thinking Budget (Tokens)</label>
-                                    <input
-                                        type="number"
-                                        placeholder="e.g. 1024"
-                                        value={settings.thinkingBudget || ""}
-                                        onChange={handleThinkingBudgetChange}
-                                        className={styles.inputField}
-                                    />
-                                </div>
-                            )}
-                        </>
+                    {["anthropic", "google"].includes(settings.provider) && (
+                        <div className={styles.formGroup}>
+                            <label>Thinking Budget (Tokens)</label>
+                            <input
+                                type="number"
+                                placeholder="e.g. 1024"
+                                value={settings.thinkingBudget || ""}
+                                onChange={handleThinkingBudgetChange}
+                                className={styles.inputField}
+                            />
+                        </div>
                     )}
                 </>
-            )}
-
-            {(selectedModelDef?.webSearch || selectedModelDef?.codeExecution || selectedModelDef?.urlContext) && (
-                <div className={styles.toolsBox}>
-                    {selectedModelDef?.webSearch && (
-                        <ToggleSwitch
-                            checked={settings.webSearchEnabled || false}
-                            disabled={settings.codeExecutionEnabled}
-                            onChange={(val) => onChange({ webSearchEnabled: val })}
-                            label={getToolLabel("Web Search")}
-                        />
-                    )}
-
-                    {selectedModelDef?.codeExecution && (
-                        <ToggleSwitch
-                            checked={settings.codeExecutionEnabled || false}
-                            onChange={(val) => {
-                                const updates = { codeExecutionEnabled: val };
-                                if (val) {
-                                    updates.webSearchEnabled = false;
-                                    updates.urlContextEnabled = false;
-                                }
-                                onChange(updates);
-                            }}
-                            label="Code Execution"
-                        />
-                    )}
-
-                    {selectedModelDef?.urlContext && (
-                        <ToggleSwitch
-                            checked={settings.urlContextEnabled || false}
-                            disabled={settings.codeExecutionEnabled}
-                            onChange={(val) => onChange({ urlContextEnabled: val })}
-                            label="URL Context"
-                        />
-                    )}
-                </div>
             )}
 
             {selectedModelDef?.verbosity && (
