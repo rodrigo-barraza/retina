@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Loader2, Trash2, ChevronDown, ChevronRight, Brain, Copy, Check, Paperclip, FileAudio, FileVideo, FileText, Image as ImageIcon, Type, ArrowLeft, Pencil, RotateCcw, X as XIcon, Mic } from "lucide-react";
+import { Send, Loader2, Trash2, ChevronDown, ChevronRight, Brain, Copy, Check, Paperclip, FileAudio, FileVideo, FileText, Image as ImageIcon, Type, ArrowLeft, Pencil, RotateCcw, X as XIcon, Mic, Mic2 } from "lucide-react";
 import ImageAnnotator from "./ImageAnnotator";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import styles from "./ChatArea.module.css";
@@ -330,16 +330,21 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
     const hasFileInput = nonTextTypes.length > 0;
     const imageOnly = nonTextTypes.length === 1 && nonTextTypes[0] === "image";
     const acceptStr = nonTextTypes.map((t) => TYPE_ACCEPT_MAP[t]).filter(Boolean).join(",");
+    const hasAudioInput = supportedInputTypes.includes("audio");
     const [input, setInput] = useState("");
     const [pendingImages, setPendingImages] = useState([]);
     const [lightboxSrc, setLightboxSrc] = useState(null);
     const [welcomeStep, setWelcomeStep] = useState("home"); // "home" | "outputModels" | "ioPickOutput" | "ioModels"
+    const [welcomeDone, setWelcomeDone] = useState(false);
     const [selectedOutput, setSelectedOutput] = useState(null);
     const [ioSelectedInput, setIoSelectedInput] = useState(null);
     const [ioSelectedOutput, setIoSelectedOutput] = useState(null);
     const endRef = useRef(null);
     const [editingIndex, setEditingIndex] = useState(null);
     const fileInputRef = useRef(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
 
     useEffect(() => {
         endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -376,10 +381,40 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
         }
     };
 
+    const toggleRecording = async () => {
+        if (isRecording) {
+            mediaRecorderRef.current?.stop();
+            setIsRecording(false);
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunksRef.current.push(e.data);
+            };
+            recorder.onstop = () => {
+                const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    setPendingImages((prev) => [...prev, ev.target.result]);
+                };
+                reader.readAsDataURL(blob);
+                stream.getTracks().forEach((t) => t.stop());
+            };
+            mediaRecorderRef.current = recorder;
+            recorder.start();
+            setIsRecording(true);
+        } catch {
+            // Microphone permission denied or unavailable
+        }
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.messagesList}>
-                {messages.length === 0 && (
+                {messages.length === 0 && !welcomeDone && (
                     <div className={styles.welcome}>
                         {welcomeStep === "home" && (
                             <>
@@ -457,6 +492,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                                     onSelectModel(model.provider, model.name);
                                                     setWelcomeStep("home");
                                                     setSelectedOutput(null);
+                                                    setWelcomeDone(true);
                                                 }}
                                             >
                                                 <div className={styles.modelRowIcon}>
@@ -534,6 +570,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                                     setWelcomeStep("home");
                                                     setIoSelectedInput(null);
                                                     setIoSelectedOutput(null);
+                                                    setWelcomeDone(true);
                                                 }}
                                             >
                                                 <div className={styles.modelRowIcon}>
@@ -552,6 +589,13 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                 </div>
                             );
                         })()}
+                    </div>
+                )}
+
+                {messages.length === 0 && welcomeDone && (
+                    <div className={styles.readyPrompt}>
+                        <h3>You&apos;re all set! 🎉</h3>
+                        <p>Your model is ready — start typing below to begin.</p>
                     </div>
                 )}
 
@@ -665,51 +709,63 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
             </div>
 
             <div className={styles.inputWrapper}>
-                {pendingImages.length > 0 && (
-                    <div className={styles.pendingImages}>
-                        {pendingImages.map((dataUrl, i) => (
-                            <div key={i} className={styles.pendingAttachmentWrap}>
-                                <MediaPreview dataUrl={dataUrl} compact onClick={getMimeCategory(dataUrl) === "image" ? () => setLightboxSrc(dataUrl) : undefined} />
-                                <button onClick={() => removeImage(i)} className={styles.removeImage}>×</button>
-                            </div>
-                        ))}
-                    </div>
-                )}
                 <form onSubmit={handleSubmit} className={styles.inputBox}>
-                    {hasFileInput && (
-                        <>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept={acceptStr}
-                                multiple
-                                hidden
-                                onChange={handleImageSelect}
-                            />
+                    {pendingImages.length > 0 && (
+                        <div className={styles.pendingImages}>
+                            {pendingImages.map((dataUrl, i) => (
+                                <div key={i} className={styles.pendingAttachmentWrap}>
+                                    <MediaPreview dataUrl={dataUrl} compact onClick={getMimeCategory(dataUrl) === "image" ? () => setLightboxSrc(dataUrl) : undefined} />
+                                    <button type="button" onClick={() => removeImage(i)} className={styles.removeImage}>×</button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className={styles.inputRow}>
+                        {hasFileInput && (
+                            <>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept={acceptStr}
+                                    multiple
+                                    hidden
+                                    onChange={handleImageSelect}
+                                />
+                                <button
+                                    type="button"
+                                    className={styles.imageUploadBtn}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    title={imageOnly ? "Attach image" : "Attach file"}
+                                >
+                                    {imageOnly ? <ImageIcon size={18} /> : <Paperclip size={18} />}
+                                </button>
+                            </>
+                        )}
+                        {hasAudioInput && (
                             <button
                                 type="button"
-                                className={styles.imageUploadBtn}
-                                onClick={() => fileInputRef.current?.click()}
-                                title={imageOnly ? "Attach image" : "Attach file"}
+                                className={`${styles.imageUploadBtn} ${isRecording ? styles.recordingActive : ""}`}
+                                onClick={toggleRecording}
+                                title={isRecording ? "Stop recording" : "Record voice"}
                             >
-                                {imageOnly ? <ImageIcon size={18} /> : <Paperclip size={18} />}
+                                <Mic2 size={18} />
                             </button>
-                        </>
-                    )}
-                    <textarea
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Type a message..."
-                        rows={1}
-                    />
-                    <button type="submit" disabled={(!input.trim() && pendingImages.length === 0) || isGenerating}>
-                        {isGenerating ? (
-                            <Loader2 size={18} className={styles.spin} />
-                        ) : (
-                            <Send size={18} />
                         )}
-                    </button>
+                        <textarea
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Type a message..."
+                            rows={1}
+                        />
+                        <button type="submit" disabled={(!input.trim() && pendingImages.length === 0) || isGenerating}>
+                            {isGenerating ? (
+                                <Loader2 size={18} className={styles.spin} />
+                            ) : (
+                                <Send size={18} />
+                            )}
+                        </button>
+                    </div>
                 </form>
                 <div className={styles.hint}>
                     Press <kbd>Enter</kbd> to send, <kbd>Shift</kbd> + <kbd>Enter</kbd>{" "}

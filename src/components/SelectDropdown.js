@@ -19,6 +19,8 @@ export default function SelectDropdown({
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
+  const triggerRef = useRef(null);
+  const [menuStyle, setMenuStyle] = useState({});
 
   const selected = options.find((o) => o.value === value);
 
@@ -53,12 +55,28 @@ export default function SelectDropdown({
     return () => document.removeEventListener("keydown", handleKey);
   }, [open]);
 
+  const handleToggle = () => {
+    setOpen((prev) => {
+      if (!prev && triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setMenuStyle({
+          position: "fixed",
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
+      return !prev;
+    });
+  };
+
   return (
     <div className={styles.dropdown} ref={containerRef}>
       <button
         type="button"
+        ref={triggerRef}
         className={`${styles.trigger} ${open ? styles.triggerOpen : ""}`}
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={handleToggle}
       >
         <span className={styles.triggerContent}>
           {icon && <span className={styles.triggerIcon}>{icon}</span>}
@@ -70,7 +88,7 @@ export default function SelectDropdown({
       </button>
 
       {open && (
-        <div className={styles.menu}>
+        <div className={styles.menu} style={menuStyle}>
           {options.map((opt) => (
             <button
               key={opt.value}

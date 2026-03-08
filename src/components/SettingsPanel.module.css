@@ -3,9 +3,32 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  flex: 1;
-  min-height: 0;
+  flex: 1 1 0;
+  height: 0;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.4) transparent;
+}
+
+.container > * {
+  flex-shrink: 0;
+}
+
+.container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.container::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.4);
+  border-radius: 3px;
+}
+
+.container::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.6);
 }
 
 .sectionTitle {
@@ -156,4 +179,36 @@
 .toolLabel {
   font-size: 12px;
   color: var(--text-primary);
+}
+
+.systemPromptBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.systemPromptBtn:hover {
+  border-color: var(--accent-color);
+  color: var(--text-primary);
+}
+
+.systemPromptActive {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: var(--accent-glow);
+}
+
+.systemPromptActive:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent-hover);
 }

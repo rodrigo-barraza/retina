@@ -1,12 +1,14 @@
 "use client";
-
+import { useState } from "react";
 import { Settings2, Cpu, Edit3, Type, Image as ImageIcon, Mic, Video, FileText, Globe, Wrench, Code, Monitor, Search } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import SelectDropdown from "./SelectDropdown";
 import ToggleSwitch from "./ToggleSwitch";
+import SystemPromptModal from "./SystemPromptModal";
 import styles from "./SettingsPanel.module.css";
 
 export default function SettingsPanel({ config, settings, onChange, hasAssistantImages }) {
+    const [showSystemPromptModal, setShowSystemPromptModal] = useState(false);
     const { providers = {}, textToText = {} } = config || {};
     const modelsMap = textToText.models || {};
     const providerList = config?.providerList || [];
@@ -81,6 +83,7 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
     });
 
     return (
+        <>
         <div className={styles.container}>
             <div className={styles.sectionTitle}>
                 <Cpu size={16} /> Model Settings
@@ -168,19 +171,13 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                 </div>
             )}
 
-            <div className={styles.sectionTitle}>
-                <Edit3 size={16} /> Context
-            </div>
-
-            <div className={styles.formGroup}>
-                <label>System Prompt</label>
-                <textarea
-                    rows={5}
-                    placeholder="You are a helpful AI assistant..."
-                    value={settings.systemPrompt}
-                    onChange={handleSystemPromptChange}
-                />
-            </div>
+            <button
+                className={`${styles.systemPromptBtn} ${settings.systemPrompt && settings.systemPrompt !== "You are a helpful AI assistant" && settings.systemPrompt !== "You are a helpful AI assistant." ? styles.systemPromptActive : ""}`}
+                onClick={() => setShowSystemPromptModal(true)}
+            >
+                <Edit3 size={16} />
+                System Prompt
+            </button>
 
             <div className={styles.sectionTitle}>
                 <Settings2 size={16} /> Parameters
@@ -435,5 +432,14 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                 </>
             )}
         </div>
+
+            {showSystemPromptModal && (
+                <SystemPromptModal
+                    activePrompt={settings.systemPrompt}
+                    onApply={(text) => onChange({ systemPrompt: text })}
+                    onClose={() => setShowSystemPromptModal(false)}
+                />
+            )}
+        </>
     );
 }

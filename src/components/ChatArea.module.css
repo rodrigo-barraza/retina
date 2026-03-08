@@ -24,6 +24,35 @@
   padding: 40px 20px;
 }
 
+.readyPrompt {
+  margin: auto;
+  text-align: center;
+  max-width: 400px;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.readyPrompt h3 {
+  font-size: 20px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.readyPrompt p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.recordingActive {
+  color: var(--danger) !important;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .welcome h3 {
   color: var(--text-primary);
   opacity: 0.8;
@@ -587,7 +616,7 @@
   max-width: 800px;
   margin: 0 auto;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
@@ -605,21 +634,27 @@
     0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-.inputBox textarea {
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inputRow textarea {
   flex: 1;
   background: transparent;
   border: none;
   min-height: 24px;
   max-height: 200px;
-  padding: 8px;
+  padding: 8px 4px;
   resize: none;
 }
 
-.inputBox textarea:focus {
+.inputRow textarea:focus {
   box-shadow: none;
 }
 
-.inputBox button {
+.inputRow button[type="submit"] {
   width: 40px;
   height: 40px;
   border-radius: var(--border-radius-sm);
@@ -629,14 +664,15 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
-.inputBox button:hover:not(:disabled) {
+.inputRow button[type="submit"]:hover:not(:disabled) {
   background: var(--accent-hover);
   transform: translateY(-1px);
 }
 
-.inputBox button:disabled {
+.inputRow button[type="submit"]:disabled {
   background: var(--bg-primary);
   color: var(--text-secondary);
 }
@@ -680,11 +716,12 @@
 }
 
 .pendingImages {
-  max-width: 800px;
-  margin: 0 auto 8px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .pendingImageThumb {
