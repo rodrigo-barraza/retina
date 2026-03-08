@@ -442,7 +442,7 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
             {/* Thinking sub-settings — shown when Thinking is toggled on */}
             {isReasoning && !selectedModelDef?.responsesAPI && settings.thinkingEnabled && (
                 <>
-                    {["openai", "openai-compatible", "anthropic"].includes(settings.provider) && (
+                    {["openai", "lm-studio", "anthropic"].includes(settings.provider) && (
                         <div className={styles.formGroup}>
                             <label>Reasoning Effort</label>
                             <SelectDropdown
@@ -543,7 +543,7 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                         </div>
                     )}
 
-                    {["openai", "openai-compatible", "google"].includes(settings.provider) && (
+                    {["openai", "lm-studio", "google"].includes(settings.provider) && (
                         <>
                             <div className={styles.formGroup}>
                                 <label>Frequency Penalty ({settings.frequencyPenalty})</label>

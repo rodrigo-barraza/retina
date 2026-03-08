@@ -8,6 +8,7 @@ function getHeaders() {
     return {
         "Content-Type": "application/json",
         "x-api-secret": SECRET,
+        "x-project": "retina",
     };
 }
 
@@ -77,7 +78,7 @@ export class PrismService {
     static streamText(payload, callbacks) {
         const { onChunk, onThinking, onImage, onExecutableCode, onCodeExecutionResult, onWebSearchResult, onDone, onError } = callbacks;
         const ws = new WebSocket(
-            `${WS_BASE}/text-to-text/stream?secret=${encodeURIComponent(SECRET)}`,
+            `${WS_BASE}/text-to-text/stream?secret=${encodeURIComponent(SECRET)}&project=retina`,
         );
 
         ws.onopen = () => {
