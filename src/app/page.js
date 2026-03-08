@@ -745,6 +745,24 @@ export default function Home() {
                 setTitle(currentTitle);
             }
 
+            // Save immediately with user message so live activity sees it
+            try {
+                const { systemPrompt, ...modelSettings } = settings;
+                const saved = await PrismService.saveConversation(
+                    currentId,
+                    currentTitle,
+                    newMessages,
+                    systemPrompt,
+                    modelSettings,
+                    true, // isGenerating
+                );
+                currentId = saved.id;
+                setActiveId(saved.id);
+                loadConversations();
+            } catch (saveErr) {
+                console.error("Early save failed:", saveErr);
+            }
+
             const systemMsg = settings.systemPrompt
                 ? [{ role: "system", content: settings.systemPrompt }]
                 : [];
@@ -920,6 +938,7 @@ export default function Home() {
                                 updatedMessages,
                                 systemPrompt,
                                 modelSettings,
+                                false, // isGenerating
                             );
                             setActiveId(saved.id);
                             loadConversations();

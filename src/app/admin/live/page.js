@@ -10,13 +10,16 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronUp,
+  Loader,
 } from "lucide-react";
 import { IrisService } from "../../../services/IrisService";
 import { PrismService } from "../../../services/PrismService";
+import MessageList from "../../../components/MessageList";
+import SettingsPanel from "../../../components/SettingsPanel";
 import StatsCard from "../../../components/StatsCard";
 import styles from "./page.module.css";
 
-const REFRESH_INTERVAL = 5000; // 5s
+const REFRESH_INTERVAL = 2000; // 2s
 
 function timeAgo(dateStr) {
   if (!dateStr) return "-";
@@ -38,22 +41,6 @@ function getActivityLevel(dateStr) {
   return "idle";
 }
 
-function getMimeCategory(ref) {
-  if (!ref || typeof ref !== "string") return "file";
-  if (ref.startsWith("minio://")) {
-    const ext = ref.split(".").pop()?.toLowerCase();
-    if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return "image";
-    if (["wav", "mp3", "webm", "ogg"].includes(ext)) return "audio";
-    if (["mp4", "mov", "avi"].includes(ext)) return "video";
-    if (ext === "pdf") return "pdf";
-    return "file";
-  }
-  const match = ref.match(/^data:([\w-]+)\//);
-  if (!match) return "file";
-  const type = match[1];
-  if (type === "application") return "pdf";
-  return type;
-}
 
 export default function LivePage() {
   const [data, setData] = useState(null);
@@ -63,7 +50,12 @@ export default function LivePage() {
   const [expandedId, setExpandedId] = useState(null);
   const [fullConversations, setFullConversations] = useState({});
   const [loadingConv, setLoadingConv] = useState(null);
+  const [config, setConfig] = useState(null);
   const intervalRef = useRef(null);
+
+  useEffect(() => {
+    PrismService.getConfig().then(setConfig).catch(() => {});
+  }, []);
 
   async function loadLive() {
     try {
@@ -71,8 +63,6 @@ export default function LivePage() {
       const result = await IrisService.getLiveActivity(5);
       setData(result);
       setLastRefresh(new Date());
-      // Clear cached full conversations so expanded views get fresh data
-      setFullConversations({});
     } catch (err) {
       setError(err.message);
     } finally {
@@ -97,7 +87,8 @@ export default function LivePage() {
     }
   }, [expandedId]);
 
-  // Re-fetch expanded conversation on each list refresh
+  // Re-fetch expanded conversation on each list refresh, but only update
+  // state if message count changed to avoid scroll-resetting re-renders
   useEffect(() => {
     if (!expandedId || !lastRefresh) return;
     let cancelled = false;
@@ -105,7 +96,15 @@ export default function LivePage() {
       try {
         const full = await IrisService.getConversation(expandedId);
         if (!cancelled) {
-          setFullConversations((prev) => ({ ...prev, [expandedId]: full }));
+          setFullConversations((prev) => {
+            const existing = prev[expandedId];
+            const oldCount = existing?.messages?.length || 0;
+            const newCount = full?.messages?.length || 0;
+            if (newCount !== oldCount) {
+              return { ...prev, [expandedId]: full };
+            }
+            return prev;
+          });
         }
       } catch (err) {
         console.error("Failed to refresh expanded conversation:", err);
@@ -245,6 +244,12 @@ export default function LivePage() {
                           ? "Recent"
                           : "Idle"}
                     </span>
+                    {conv.isGenerating && (
+                      <span className={styles.generatingBadge}>
+                        <Loader size={12} className={styles.spinning} />
+                        Generating
+                      </span>
+                    )}
                     {isExpanded
                       ? <ChevronUp size={16} className={styles.expandIcon} />
                       : <ChevronDown size={16} className={styles.expandIcon} />
@@ -267,52 +272,24 @@ export default function LivePage() {
                     {isLoadingThis ? (
                       <div className={styles.loadingMessages}>Loading messages…</div>
                     ) : fullConv?.messages?.length > 0 ? (
-                      fullConv.messages.map((msg, i) => {
-                        let text = "";
-                        if (typeof msg.content === "string") {
-                          text = msg.content;
-                        } else if (Array.isArray(msg.content)) {
-                          text = msg.content
-                            .filter((p) => p.type === "text")
-                            .map((p) => p.text)
-                            .join("\n");
-                        }
-                        return (
-                          <div
-                            key={i}
-                            className={`${styles.messageRow} ${msg.role === "assistant" ? styles.messageAssistant : msg.role === "system" ? styles.messageSystem : styles.messageUser}`}
-                          >
-                            <span className={styles.messageRole}>{msg.role}</span>
-                            {msg.images && msg.images.length > 0 && (
-                              <div className={styles.mediaRow}>
-                                {msg.images.map((rawUrl, j) => {
-                                  const src = PrismService.getFileUrl(rawUrl);
-                                  const cat = getMimeCategory(rawUrl);
-                                  if (cat === "image") {
-                                    return (
-                                      /* eslint-disable-next-line @next/next/no-img-element */
-                                      <img key={j} src={src} alt="Attached" className={styles.mediaImage} />
-                                    );
-                                  }
-                                  if (cat === "audio") {
-                                    return <audio key={j} controls src={src} preload="metadata" className={styles.audioPlayer} />;
-                                  }
-                                  if (cat === "video") {
-                                    return <video key={j} controls src={src} preload="metadata" className={styles.videoPlayer} />;
-                                  }
-                                  return <span key={j} className={styles.fileLabel}>{cat.toUpperCase()}</span>;
-                                })}
-                              </div>
-                            )}
-                            {msg.audio && (
-                              <div className={styles.mediaRow}>
-                                <audio controls src={PrismService.getFileUrl(msg.audio)} preload="metadata" className={styles.audioPlayer} />
-                              </div>
-                            )}
-                            <div className={styles.messageContent}>{text || (!msg.images?.length && !msg.audio ? "(no text content)" : "")}</div>
+                      <div className={styles.expandedContent}>
+                        {fullConv.settings && (
+                          <div className={styles.settingsSidebar}>
+                            <div className={styles.settingsHeader}>Settings</div>
+                            <SettingsPanel
+                              config={config}
+                              settings={fullConv.settings}
+                              readOnly
+                            />
                           </div>
-                        );
-                      })
+                        )}
+                        <div className={styles.messagesBody}>
+                          <MessageList
+                            messages={fullConv.messages}
+                            readOnly
+                          />
+                        </div>
+                      </div>
                     ) : (
                       <div className={styles.loadingMessages}>No messages in this conversation.</div>
                     )}

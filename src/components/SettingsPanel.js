@@ -7,7 +7,7 @@ import ToggleSwitch from "./ToggleSwitch";
 import SystemPromptModal from "./SystemPromptModal";
 import styles from "./SettingsPanel.module.css";
 
-export default function SettingsPanel({ config, settings, onChange, hasAssistantImages, inferenceMode }) {
+export default function SettingsPanel({ config, settings, onChange, hasAssistantImages, inferenceMode, readOnly = false }) {
     const [showSystemPromptModal, setShowSystemPromptModal] = useState(false);
     const { providers = {}, textToText = {} } = config || {};
     const textModelsMap = textToText.models || {};
@@ -185,25 +185,36 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
 
             <div className={styles.formGroup}>
                 <label>Provider</label>
-                <SelectDropdown
-                    value={settings.provider || ""}
-                    options={providerOptions}
-                    onChange={handleProviderChange}
-                    placeholder="Select Provider"
-                    icon={<ProviderLogo provider={settings.provider} size={18} />}
-                />
-            </div>
-
-            {settings.provider && modelsMap[settings.provider] && (
-                <div className={styles.formGroup}>
-                    <label>Model</label>
+                {readOnly ? (
+                    <div className={styles.readOnlyValue}>
+                        <ProviderLogo provider={settings.provider} size={16} />
+                        {PROVIDER_LABELS[settings.provider] || settings.provider || "-"}
+                    </div>
+                ) : (
                     <SelectDropdown
-                        value={settings.model || ""}
-                        options={modelOptions}
-                        onChange={handleModelChange}
-                        placeholder="Select Model"
+                        value={settings.provider || ""}
+                        options={providerOptions}
+                        onChange={handleProviderChange}
+                        placeholder="Select Provider"
                         icon={<ProviderLogo provider={settings.provider} size={18} />}
                     />
+                )}
+            </div>
+
+            {(readOnly || (settings.provider && modelsMap[settings.provider])) && (
+                <div className={styles.formGroup}>
+                    <label>Model</label>
+                    {readOnly ? (
+                        <div className={styles.readOnlyValue}>{settings.model || "-"}</div>
+                    ) : (
+                        <SelectDropdown
+                            value={settings.model || ""}
+                            options={modelOptions}
+                            onChange={handleModelChange}
+                            placeholder="Select Model"
+                            icon={<ProviderLogo provider={settings.provider} size={18} />}
+                        />
+                    )}
                     {selectedModelDef && (() => {
                         const allTypes = ["text", "image", "audio", "video", "pdf"];
                         const inputs = selectedModelDef.inputTypes || [];
@@ -313,17 +324,29 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                                             {TOOL_ICONS[tool] || <Wrench size={12} />}
                                         </span>
                                         <span className={styles.modalityName}>{getToolLabel(tool)}</span>
-                                        {toggle ? (
-                                            <ToggleSwitch
-                                                checked={toggle.checked}
-                                                onChange={toggle.onChange}
-                                                disabled={toggle.disabled}
-                                                size="small"
-                                            />
+                                        {readOnly ? (
+                                            toggle ? (
+                                                <span className={`${styles.modalityStatus} ${toggle.checked ? styles.modalityActive : ""}`}>
+                                                    {toggle.checked ? "On" : "Off"}
+                                                </span>
+                                            ) : (
+                                                <span className={`${styles.modalityStatus} ${styles.modalityActive}`}>
+                                                    Supported
+                                                </span>
+                                            )
                                         ) : (
-                                            <span className={`${styles.modalityStatus} ${styles.modalityActive}`}>
-                                                Supported
-                                            </span>
+                                            toggle ? (
+                                                <ToggleSwitch
+                                                    checked={toggle.checked}
+                                                    onChange={toggle.onChange}
+                                                    disabled={toggle.disabled}
+                                                    size="small"
+                                                />
+                                            ) : (
+                                                <span className={`${styles.modalityStatus} ${styles.modalityActive}`}>
+                                                    Supported
+                                                </span>
+                                            )
                                         )}
                                     </div>
                                 );
@@ -337,6 +360,14 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                 const providerVoices = config?.textToSpeech?.voices?.[settings.provider] || [];
                 const defaultVoice = config?.textToSpeech?.defaultVoices?.[settings.provider] || "";
                 const currentVoice = settings.voice || defaultVoice;
+                if (readOnly) {
+                    return currentVoice ? (
+                        <div className={styles.formGroup}>
+                            <label>Voice</label>
+                            <div className={styles.readOnlyValue}><Mic size={14} /> {currentVoice}</div>
+                        </div>
+                    ) : null;
+                }
                 const voiceOptions = providerVoices.map((v) => ({
                     value: v.name || v.voice_id || v,
                     label: `${v.label || v.name || v}${v.gender ? ` (${v.gender})` : ""}`,
@@ -356,7 +387,15 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                 ) : null;
             })()}
 
-            {!isSpecialModel && (
+            {/* readOnly: show voice if saved even without TTS model context */}
+            {readOnly && !isTTS && settings.voice && (
+                <div className={styles.formGroup}>
+                    <label>Voice</label>
+                    <div className={styles.readOnlyValue}><Mic size={14} /> {settings.voice}</div>
+                </div>
+            )}
+
+            {!isSpecialModel && !readOnly && (
                 <button
                     className={`${styles.systemPromptBtn} ${settings.systemPrompt && settings.systemPrompt !== "You are a helpful AI assistant" && settings.systemPrompt !== "You are a helpful AI assistant." ? styles.systemPromptActive : ""}`}
                     onClick={() => setShowSystemPromptModal(true)}
@@ -364,6 +403,13 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                     <Edit3 size={16} />
                     System Prompt
                 </button>
+            )}
+
+            {readOnly && settings.systemPrompt && settings.systemPrompt !== "You are a helpful AI assistant" && settings.systemPrompt !== "You are a helpful AI assistant." && (
+                <div className={styles.formGroup}>
+                    <label><Edit3 size={12} /> System Prompt</label>
+                    <div className={styles.readOnlySystemPrompt}>{settings.systemPrompt}</div>
+                </div>
             )}
 
             {!isSpecialModel && (
@@ -379,65 +425,77 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                         <label>
                             Temperature ({thinkingLocked ? "1 — Locked" : settings.temperature})
                         </label>
-                        <input
-                            type="range"
-                            min="0"
-                            max="2"
-                            step="0.1"
-                            value={thinkingLocked ? 1 : settings.temperature}
-                            onChange={handleTempChange}
-                            disabled={thinkingLocked}
-                            className={thinkingLocked ? styles.disabledRange : ""}
-                        />
+                        {!readOnly && (
+                            <input
+                                type="range"
+                                min="0"
+                                max="2"
+                                step="0.1"
+                                value={thinkingLocked ? 1 : settings.temperature}
+                                onChange={handleTempChange}
+                                disabled={thinkingLocked}
+                                className={thinkingLocked ? styles.disabledRange : ""}
+                            />
+                        )}
                     </div>
                 );
             })()}
 
             <div className={styles.formGroup}>
                 <label>Max Tokens ({settings.maxTokens})</label>
-                <input
-                    type="range"
-                    min="256"
-                    max="32000"
-                    step="256"
-                    value={settings.maxTokens}
-                    onChange={handleMaxTokensChange}
-                />
+                {!readOnly && (
+                    <input
+                        type="range"
+                        min="256"
+                        max="32000"
+                        step="256"
+                        value={settings.maxTokens}
+                        onChange={handleMaxTokensChange}
+                    />
+                )}
             </div>
 
-            {isReasoning && selectedModelDef?.responsesAPI && (
+            {(isReasoning && selectedModelDef?.responsesAPI) || (readOnly && settings.reasoningEffort) ? (
                 <>
                     <div className={styles.formGroup}>
                         <label>Reasoning Effort</label>
-                        <SelectDropdown
-                            value={settings.reasoningEffort || "high"}
-                            options={[
-                                { value: "none", label: "None" },
-                                { value: "low", label: "Low" },
-                                { value: "medium", label: "Medium" },
-                                { value: "high", label: "High" },
-                                { value: "xhigh", label: "Extra High" },
-                            ]}
-                            onChange={handleReasoningEffortChange}
-                        />
+                        {readOnly ? (
+                            <div className={styles.readOnlyValue}>{settings.reasoningEffort || "high"}</div>
+                        ) : (
+                            <SelectDropdown
+                                value={settings.reasoningEffort || "high"}
+                                options={[
+                                    { value: "none", label: "None" },
+                                    { value: "low", label: "Low" },
+                                    { value: "medium", label: "Medium" },
+                                    { value: "high", label: "High" },
+                                    { value: "xhigh", label: "Extra High" },
+                                ]}
+                                onChange={handleReasoningEffortChange}
+                            />
+                        )}
                     </div>
 
-                    {selectedModelDef?.reasoningSummary && (
+                    {(selectedModelDef?.reasoningSummary || (readOnly && settings.reasoningSummary)) && (
                         <div className={styles.formGroup}>
                             <label>Reasoning Summary</label>
-                            <SelectDropdown
-                                value={settings.reasoningSummary || "auto"}
-                                options={[
-                                    { value: "auto", label: "Auto" },
-                                    { value: "concise", label: "Concise" },
-                                    { value: "detailed", label: "Detailed" },
-                                ]}
-                                onChange={handleReasoningSummaryChange}
-                            />
+                            {readOnly ? (
+                                <div className={styles.readOnlyValue}>{settings.reasoningSummary || "auto"}</div>
+                            ) : (
+                                <SelectDropdown
+                                    value={settings.reasoningSummary || "auto"}
+                                    options={[
+                                        { value: "auto", label: "Auto" },
+                                        { value: "concise", label: "Concise" },
+                                        { value: "detailed", label: "Detailed" },
+                                    ]}
+                                    onChange={handleReasoningSummaryChange}
+                                />
+                            )}
                         </div>
                     )}
                 </>
-            )}
+            ) : null}
 
             {/* Thinking sub-settings — shown when Thinking is toggled on */}
             {isReasoning && !selectedModelDef?.responsesAPI && settings.thinkingEnabled && (
@@ -504,7 +562,7 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
                 </div>
             )}
 
-            {!isReasoning && (
+            {!isReasoning && !readOnly && (
                 <>
                     <div className={styles.formGroup}>
                         <label>Top P ({settings.topP})</label>
@@ -576,7 +634,7 @@ export default function SettingsPanel({ config, settings, onChange, hasAssistant
             )}
         </div>
 
-            {showSystemPromptModal && (
+            {!readOnly && showSystemPromptModal && (
                 <SystemPromptModal
                     activePrompt={settings.systemPrompt}
                     onApply={(text) => onChange({ systemPrompt: text })}

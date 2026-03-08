@@ -1,6 +1,7 @@
-const API_BASE =
-  process.env.NEXT_PUBLIC_PRISM_URL || "http://localhost:7777";
-const SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET || "iris-admin";
+import { PRISM_URL, ADMIN_SECRET } from "../../secrets.js";
+
+const API_BASE = PRISM_URL;
+const SECRET = ADMIN_SECRET;
 
 function getHeaders() {
   return {

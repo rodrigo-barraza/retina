@@ -1,5 +1,4 @@
 .page {
-  max-width: 1400px;
   animation: fadeIn var(--transition-normal) ease-out;
 }
 

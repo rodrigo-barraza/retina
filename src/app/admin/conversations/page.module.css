@@ -1,5 +1,4 @@
 .page {
-  max-width: 1400px;
   animation: fadeIn var(--transition-normal) ease-out;
 }
 
@@ -164,6 +163,39 @@
   gap: 16px;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.viewerContent {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.settingsSidebar {
+  width: 300px;
+  min-width: 300px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-glass);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settingsHeader {
+  height: 60px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 .viewerBody {

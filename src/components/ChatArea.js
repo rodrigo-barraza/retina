@@ -1,201 +1,14 @@
 "use client";
 
-import { Send, Loader2, Trash2, ChevronDown, ChevronRight, ChevronUp, Brain, Copy, Check, Paperclip, FileAudio, FileVideo, FileText, Image as ImageIcon, Type, ArrowLeft, Pencil, RotateCcw, X as XIcon, Mic, Mic2 } from "lucide-react";
+import { Send, Loader2, ChevronDown, ChevronRight, ChevronUp, Paperclip, FileAudio, FileVideo, FileText, Image as ImageIcon, Type, ArrowLeft, Mic, Mic2 } from "lucide-react";
 import ImageAnnotator from "./ImageAnnotator";
 import DocumentViewer from "./DocumentViewer";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import MessageList from "./MessageList";
 import styles from "./ChatArea.module.css";
-import { useEffect, useRef, useState, useCallback } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useEffect, useRef, useState } from "react";
 import { DateTime } from "luxon";
 import { PrismService } from "../services/PrismService";
-
-function CopyButton({ text }) {
-    const [copied, setCopied] = useState(false);
-
-    const handleCopy = useCallback(async () => {
-        try {
-            await navigator.clipboard.writeText(text);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            // Fallback
-        }
-    }, [text]);
-
-    return (
-        <button
-            className={styles.copyBtn}
-            onClick={handleCopy}
-            title="Copy raw text"
-        >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-        </button>
-    );
-}
-
-function EditableUserMessage({ content, index, onEdit, editing, onCancelEdit }) {
-    const [editValue, setEditValue] = useState(content);
-    const textareaRef = useRef(null);
-    const prevEditing = useRef(false);
-
-    useEffect(() => {
-        if (editing && !prevEditing.current) {
-            setTimeout(() => textareaRef.current?.focus(), 0);
-        }
-        prevEditing.current = editing;
-    }, [editing]);
-
-    const cancelEditing = () => {
-        onCancelEdit();
-        setEditValue(content);
-    };
-
-
-    const saveEdit = () => {
-        if (editValue.trim() && editValue !== content) {
-            onEdit(index, editValue);
-        }
-        onCancelEdit();
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === "Escape") {
-            cancelEditing();
-        } else if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            saveEdit();
-        }
-    };
-
-    if (editing) {
-        return (
-            <div className={styles.editContainer}>
-                <textarea
-                    ref={textareaRef}
-                    className={styles.editTextarea}
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    rows={3}
-                />
-                <div className={styles.editActions}>
-                    <button className={styles.editSaveBtn} onClick={saveEdit} title="Save">
-                        <Check size={14} />
-                        Save
-                    </button>
-                    <button className={styles.editCancelBtn} onClick={cancelEditing} title="Cancel">
-                        <XIcon size={14} />
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    return <div className={styles.text}>{content}</div>;
-}
-
-function FencedCodeBlock({ language, children }) {
-    const codeString = String(children).replace(/\n$/, "");
-    const [copied, setCopied] = useState(false);
-
-    const handleCopy = async () => {
-        await navigator.clipboard.writeText(codeString);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    // Detect code execution blocks: exec-python, execresult-python, etc.
-    let displayLabel = language;
-    let syntaxLang = language;
-    if (language.startsWith("exec-")) {
-        syntaxLang = language.replace("exec-", "");
-        displayLabel = `${syntaxLang.toUpperCase()} — EXECUTABLE CODE`;
-    } else if (language.startsWith("execresult-")) {
-        syntaxLang = language.replace("execresult-", "") || "text";
-        displayLabel = `${(syntaxLang || "PYTHON").toUpperCase()} — CODE EXECUTION RESULT`;
-    }
-
-    return (
-        <div className={styles.codeBlockWrapper}>
-            <div className={styles.codeBlockHeader}>
-                <span className={styles.codeBlockLang}>{displayLabel}</span>
-                <button className={styles.codeBlockCopy} onClick={handleCopy}>
-                    {copied ? <Check size={12} /> : <Copy size={12} />}
-                    {copied ? "Copied" : "Copy"}
-                </button>
-            </div>
-            <SyntaxHighlighter
-                style={oneDark}
-                language={syntaxLang}
-                PreTag="div"
-                customStyle={{
-                    margin: 0,
-                    borderRadius: "0 0 8px 8px",
-                    fontSize: "13px",
-                }}
-            >
-                {codeString}
-            </SyntaxHighlighter>
-        </div>
-    );
-}
-
-function CodeBlock({ children, className, ...rest }) {
-    const match = /language-(\w+)/.exec(className || "");
-
-    if (!match) {
-        return (
-            <code className={`${styles.inlineCode} ${className || ""}`} {...rest}>
-                {children}
-            </code>
-        );
-    }
-
-    return <FencedCodeBlock language={match[1]}>{children}</FencedCodeBlock>;
-}
-
-function MarkdownContent({ content }) {
-    if (!content) return null;
-    return (
-        <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-                code: CodeBlock,
-            }}
-        >
-            {content}
-        </ReactMarkdown>
-    );
-}
-
-function ThinkingBlock({ thinking }) {
-    const [collapsed, setCollapsed] = useState(true);
-
-    if (!thinking) return null;
-
-    return (
-        <div className={styles.thinkingBlock}>
-            <button
-                className={styles.thinkingToggle}
-                onClick={() => setCollapsed((c) => !c)}
-            >
-                <Brain size={14} />
-                <span>Thoughts</span>
-                {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-            </button>
-            {!collapsed && (
-                <div className={styles.thinkingContent}>
-                    <MarkdownContent content={thinking} />
-                </div>
-            )}
-        </div>
-    );
-}
 
 // Map model input types to file accept strings
 const TYPE_ACCEPT_MAP = {
@@ -381,7 +194,6 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
     const [selectedInput, setSelectedInput] = useState(null);
     const [providerFilter, setProviderFilter] = useState(null);
     const endRef = useRef(null);
-    const [editingIndex, setEditingIndex] = useState(null);
     const fileInputRef = useRef(null);
     const [isRecording, setIsRecording] = useState(false);
     const mediaRecorderRef = useRef(null);
@@ -678,123 +490,15 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                     </div>
                 )}
 
-                {messages.map((msg, i) => (
-                    <div
-                        key={i}
-                        className={`${styles.message} ${msg.role === "user" ? styles.userNode : styles.aiNode}`}
-                    >
-                        <div className={styles.avatar}>
-                            {msg.role === "user" ? "U" : "AI"}
-                        </div>
-                        <div className={styles.content}>
-                            <div className={styles.messageHeader}>
-                                <div className={styles.roleLabel}>
-                                    {msg.role === "user" ? "You" : "Model"}
-                                    {msg.timestamp && (
-                                        <span className={styles.timestamp}>
-                                            {DateTime.fromISO(msg.timestamp).toLocaleString(DateTime.DATETIME_SHORT)}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className={styles.messageActions}>
-                                    {msg.role === "user" && (
-                                        <>
-                                            <button
-                                                className={styles.copyBtn}
-                                                onClick={() => {
-                                                    setEditingIndex(editingIndex === i ? null : i);
-                                                }}
-                                                disabled={isGenerating}
-                                                title="Edit message"
-                                            >
-                                                <Pencil size={14} />
-                                            </button>
-                                            <button
-                                                className={styles.copyBtn}
-                                                onClick={() => onRerun(i)}
-                                                disabled={isGenerating}
-                                                title="Rerun this turn"
-                                            >
-                                                <RotateCcw size={14} />
-                                            </button>
-                                        </>
-                                    )}
-                                    {msg.content && <CopyButton text={msg.content} />}
-                                    <button
-                                        className={styles.deleteMsgBtn}
-                                        onClick={() => onDelete(i)}
-                                        title="Delete message"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            </div>
-                            {msg.thinking && (
-                                <ThinkingBlock thinking={msg.thinking} />
-                            )}
-                            {msg.images && msg.images.length > 0 && (
-                                <div className={styles.imagePreviewRow}>
-                                    {msg.images.map((rawUrl, j) => {
-                                        const resolvedUrl = PrismService.getFileUrl(rawUrl);
-                                        const cat = getMimeCategory(rawUrl);
-                                        let clickHandler;
-                                        if (cat === "image") clickHandler = () => setLightboxSrc(resolvedUrl);
-                                        else if (cat === "pdf" || cat === "text") clickHandler = () => setDocViewerSrc(resolvedUrl);
-                                        return (
-                                            <MediaPreview
-                                                key={j}
-                                                dataUrl={rawUrl}
-                                                onClick={clickHandler}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            )}
-                            {msg.audio && (
-                                <div className={styles.audioPlayer}>
-                                    <audio controls autoPlay src={msg.audio} />
-                                </div>
-                            )}
-                            {msg.role === "user" ? (
-                                <EditableUserMessage
-                                    content={msg.content}
-                                    index={i}
-                                    onEdit={onEdit}
-                                    editing={editingIndex === i}
-                                    onCancelEdit={() => setEditingIndex(null)}
-                                />
-                            ) : (
-                                <div className={styles.text}>
-                                    <MarkdownContent content={msg.content} />
-                                </div>
-                            )}
-                            {msg.role === "assistant" && (msg.usage || msg.audio || msg.provider) && (
-                                <div className={styles.meta}>
-                                    <span className={styles.metaProvider}>
-                                        <ProviderLogo provider={msg.provider} size={13} />
-                                        {PROVIDER_LABELS[msg.provider] || msg.provider}
-                                    </span>
-                                    {" • "}{msg.model}
-                                    {msg.voice ? ` • 🔊 ${msg.voice}` : ""}
-                                    {msg.usage?.inputTokens != null || msg.usage?.outputTokens != null
-                                        ? ` • ${(msg.usage.inputTokens || 0) + (msg.usage.outputTokens || 0)} tokens`
-                                        : ""}
-                                    {msg.usage?.characters != null
-                                        ? ` • ${msg.usage.characters} chars`
-                                        : ""}
-                                    {msg.content ? ` • ${msg.content.trim().split(/\s+/).filter(Boolean).length} words` : ""}
-                                    {msg.totalTime != null ? ` • ${msg.totalTime.toFixed(1)}s` : ""}
-                                    {msg.tokensPerSec ? ` • ${msg.tokensPerSec} tok/s` : ""}
-                                    {msg.provider === "lm-studio"
-                                        ? " • $0"
-                                        : msg.estimatedCost
-                                            ? ` • $${msg.estimatedCost.toFixed(5)}`
-                                            : ""}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
+                <MessageList
+                    messages={messages}
+                    isGenerating={isGenerating}
+                    onDelete={onDelete}
+                    onEdit={onEdit}
+                    onRerun={onRerun}
+                    onImageClick={(url) => setLightboxSrc(url)}
+                    onDocClick={(url) => setDocViewerSrc(url)}
+                />
 
                 {isGenerating && messages.length > 0 && !messages[messages.length - 1]?.content && (
                     <div className={`${styles.message} ${styles.aiNode}`}>

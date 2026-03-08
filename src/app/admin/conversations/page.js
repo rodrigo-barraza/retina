@@ -4,13 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import {
   AlertCircle,
   MessageSquare,
-  FileText,
-  FileAudio,
-  FileVideo,
-  Volume2,
 } from "lucide-react";
 import { IrisService } from "../../../services/IrisService";
 import { PrismService } from "../../../services/PrismService";
+import MessageList from "../../../components/MessageList";
+import SettingsPanel from "../../../components/SettingsPanel";
 import styles from "./page.module.css";
 
 export default function ConversationsPage() {
@@ -23,6 +21,11 @@ export default function ConversationsPage() {
   const [selectedConv, setSelectedConv] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [filters, setFilters] = useState({ project: "", search: "" });
+  const [config, setConfig] = useState(null);
+
+  useEffect(() => {
+    PrismService.getConfig().then(setConfig).catch(() => {});
+  }, []);
 
   const LIMIT = 50;
 
@@ -67,97 +70,6 @@ export default function ConversationsPage() {
     setPage(1);
   }
 
-  function getMimeCategory(dataUrl) {
-    if (!dataUrl || typeof dataUrl !== "string") return "file";
-    // Handle minio:// refs by extension
-    if (dataUrl.startsWith("minio://")) {
-      const ext = dataUrl.split(".").pop()?.toLowerCase();
-      if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return "image";
-      if (["wav", "mp3", "webm", "ogg"].includes(ext)) return "audio";
-      if (["mp4", "mov", "avi", "webm"].includes(ext)) return "video";
-      if (ext === "pdf") return "pdf";
-      if (ext === "txt") return "text";
-      return "file";
-    }
-    const match = dataUrl.match(/^data:([\w-]+)\//);
-    if (!match) return "file";
-    const type = match[1];
-    if (type === "application") return "pdf";
-    if (type === "text") return "text";
-    return type;
-  }
-
-  function renderMediaItem(rawUrl, index) {
-    const category = getMimeCategory(rawUrl);
-    const dataUrl = PrismService.getFileUrl(rawUrl);
-
-    if (category === "image") {
-      return (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          key={index}
-          src={dataUrl}
-          alt="Attached image"
-          className={styles.mediaImage}
-        />
-      );
-    }
-
-    if (category === "audio") {
-      return (
-        <div key={index} className={styles.mediaCard}>
-          <FileAudio size={18} className={styles.mediaCardIcon} />
-          <audio controls src={dataUrl} preload="metadata" className={styles.audioPlayer} />
-        </div>
-      );
-    }
-
-    if (category === "video") {
-      return (
-        <div key={index} className={styles.mediaCard}>
-          <video controls src={dataUrl} preload="metadata" className={styles.videoPlayer} />
-        </div>
-      );
-    }
-
-    if (category === "pdf") {
-      return (
-        <div key={index} className={styles.mediaCard}>
-          <FileText size={20} className={styles.mediaCardIcon} />
-          <span className={styles.mediaCardLabel}>PDF Document</span>
-        </div>
-      );
-    }
-
-    return (
-      <div key={index} className={styles.mediaCard}>
-        <FileText size={20} className={styles.mediaCardIcon} />
-        <span className={styles.mediaCardLabel}>{category.toUpperCase()}</span>
-      </div>
-    );
-  }
-
-  function renderMessageContent(msg) {
-    if (typeof msg.content === "string") {
-      return msg.content;
-    }
-    if (Array.isArray(msg.content)) {
-      return msg.content.map((part, i) => {
-        if (part.type === "text") return part.text;
-        if (part.type === "image_url" || part.type === "image") {
-          const src = part.image_url?.url || part.url || part.data;
-          return (
-            <div key={i} className={styles.mediaPreview}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="Attached image" className={styles.mediaImage} />
-            </div>
-          );
-        }
-        return null;
-      });
-    }
-    return JSON.stringify(msg.content);
-  }
 
   const totalPages = Math.ceil(total / LIMIT);
 
@@ -293,7 +205,7 @@ export default function ConversationsPage() {
             </div>
           ) : loadingDetail ? (
             <div className={styles.emptyViewer}>Loading conversation...</div>
-          ) : (
+           ) : (
             <>
               <div className={styles.viewerHeader}>
                 <div className={styles.viewerTitle}>
@@ -315,81 +227,23 @@ export default function ConversationsPage() {
                   )}
                 </div>
               </div>
-              <div className={styles.viewerBody}>
-                {selectedConv.systemPrompt && (
-                  <div className={styles.message}>
-                    <div className={styles.messageHeader}>
-                      <span
-                        className={`${styles.messageRole} ${styles.roleSystem}`}
-                      >
-                        System
-                      </span>
-                    </div>
-                    <div className={styles.messageContent}>
-                      {selectedConv.systemPrompt}
-                    </div>
+              <div className={styles.viewerContent}>
+                {selectedConv.settings && (
+                  <div className={styles.settingsSidebar}>
+                    <div className={styles.settingsHeader}>Settings</div>
+                    <SettingsPanel
+                      config={config}
+                      settings={selectedConv.settings}
+                      readOnly
+                    />
                   </div>
                 )}
-                {(selectedConv.messages || []).map((msg, i) => (
-                  <div key={i} className={styles.message}>
-                    <div className={styles.messageHeader}>
-                      <span
-                        className={`${styles.messageRole} ${
-                          msg.role === "user"
-                            ? styles.roleUser
-                            : msg.role === "system"
-                              ? styles.roleSystem
-                              : styles.roleAssistant
-                        }`}
-                      >
-                        {msg.role}
-                      </span>
-                      {msg.model && (
-                        <span className={styles.messageTime}>{msg.model}</span>
-                      )}
-                      {msg.provider && (
-                        <span className={styles.messageTime}>{msg.provider}</span>
-                      )}
-                    </div>
-                    {msg.images && msg.images.length > 0 && (
-                      <div className={styles.mediaPreview}>
-                        {msg.images.map((dataUrl, j) => renderMediaItem(dataUrl, j))}
-                      </div>
-                    )}
-                    {msg.audio && (
-                      <div className={styles.ttsAudio}>
-                        <Volume2 size={16} className={styles.mediaCardIcon} />
-                        <audio controls src={msg.audio} preload="metadata" className={styles.audioPlayer} />
-                      </div>
-                    )}
-                    {msg.content && (
-                      <div
-                        className={`${styles.messageContent} ${msg.role === "user" ? styles.user : ""}`}
-                      >
-                        {renderMessageContent(msg)}
-                      </div>
-                    )}
-                    {msg.usage && msg.role === "assistant" && (
-                      <div className={styles.usageMeta}>
-                        {msg.usage.inputTokens != null && (
-                          <span>{msg.usage.inputTokens} in</span>
-                        )}
-                        {msg.usage.outputTokens != null && (
-                          <span>{msg.usage.outputTokens} out</span>
-                        )}
-                        {msg.usage.characters != null && (
-                          <span>{msg.usage.characters} chars</span>
-                        )}
-                        {msg.totalTime != null && (
-                          <span>{msg.totalTime.toFixed(1)}s</span>
-                        )}
-                        {msg.estimatedCost != null && (
-                          <span>${msg.estimatedCost.toFixed(5)}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                <div className={styles.viewerBody}>
+                  <MessageList
+                    messages={selectedConv.messages || []}
+                    readOnly
+                  />
+                </div>
               </div>
             </>
           )}

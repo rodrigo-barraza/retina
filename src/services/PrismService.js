@@ -1,8 +1,10 @@
 // API Service for communicating with Prism AI Gateway
 
-const API_BASE = process.env.NEXT_PUBLIC_PRISM_URL || "http://localhost:7777";
-const WS_BASE = process.env.NEXT_PUBLIC_PRISM_WS_URL || "ws://localhost:7777";
-const SECRET = process.env.NEXT_PUBLIC_PRISM_SECRET || "banana";
+import { PRISM_URL, PRISM_WS_URL, PRISM_SECRET } from "../../secrets.js";
+
+const API_BASE = PRISM_URL;
+const WS_BASE = PRISM_WS_URL;
+const SECRET = PRISM_SECRET;
 
 function getHeaders() {
     return {
@@ -55,11 +57,13 @@ export class PrismService {
         return res.json();
     }
 
-    static async saveConversation(id, title, messages, systemPrompt, settings) {
+    static async saveConversation(id, title, messages, systemPrompt, settings, isGenerating) {
+        const body = { id, title, messages, systemPrompt, settings };
+        if (isGenerating !== undefined) body.isGenerating = isGenerating;
         const res = await fetch(`${API_BASE}/conversations`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify({ id, title, messages, systemPrompt, settings }),
+            body: JSON.stringify(body),
         });
         if (!res.ok) throw new Error("Failed to save conversation");
         return res.json();

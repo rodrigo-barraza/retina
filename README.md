@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Retina — AI Chat Interface
 
-## Getting Started
+A feature-rich Next.js frontend for interacting with AI models through the [Prism AI Gateway](../prism). Supports multi-provider chat, streaming responses, image generation, text-to-speech, speech-to-text, and includes a built-in admin dashboard for monitoring usage and costs.
 
-First, run the development server:
+## Prerequisites
+
+- **Node.js** v20+
+- **Prism AI Gateway** — running and accessible (see [Prism README](../prism/README.md))
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure secrets
+
+Copy the example secrets file and fill in your values:
+
+```bash
+cp secrets.example.js secrets.js
+```
+
+Edit `secrets.js` with your real values:
+
+| Variable       | Required | Description                                       |
+| -------------- | -------- | ------------------------------------------------- |
+| `PRISM_URL`    | Yes      | URL of the Prism backend                          |
+| `PRISM_WS_URL` | Yes      | WebSocket URL of the Prism backend                |
+| `PRISM_SECRET` | Yes      | Must match `GATEWAY_SECRET` in Prism's secrets    |
+| `ADMIN_SECRET` | No       | Must match `ADMIN_SECRET` in Prism — needed for the admin dashboard |
+
+> **Note:** `secrets.js` is gitignored — never commit it.
+
+### 3. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Opens on [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Chat
 
-## Learn More
+- **Multi-Provider Chat** — switch between OpenAI, Anthropic, Google, LM Studio, and more
+- **WebSocket Streaming** — real-time token-by-token response rendering
+- **Thinking / Reasoning** — display model thinking output with configurable effort levels
+- **Vision** — attach images and documents (PDFs) to messages for multimodal models
+- **Image Generation** — inline image generation with models like GPT Image and Gemini Image
+- **Web Search** — toggle grounded web search for supported models, with source citations
+- **Code Execution** — server-side code execution results rendered inline
+- **Markdown Rendering** — full markdown with syntax highlighting (via `react-markdown` + `react-syntax-highlighter`)
+- **System Prompts** — modal for creating, selecting, and managing reusable system instructions
+- **Conversation History** — save, load, rename, and delete conversations (stored in Prism/MongoDB)
+- **Message Editing** — edit, delete, or re-run individual messages
+- **Auto-Title** — conversations are automatically titled from the first message
 
-To learn more about Next.js, take a look at the following resources:
+### Text-to-Speech
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Multiple TTS Providers** — OpenAI, Google, ElevenLabs, and Inworld voices
+- **Voice Selection** — per-provider voice picker with gender labels
+- **Inline Audio Playback** — audio responses rendered with playback controls in chat
+- **Cost Estimation** — per-request cost shown based on character/token count
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Speech-to-Text
 
-## Deploy on Vercel
+- **Audio Transcription** — attach audio files and transcribe with OpenAI Whisper or Google models
+- **Multi-File Support** — transcribe multiple audio files in sequence
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Settings
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Model Selection** — grouped by provider with pricing, context length, and arena scores
+- **Generation Parameters** — temperature, max tokens, top-p, top-k, frequency/presence penalty, stop sequences
+- **Tool Toggles** — enable/disable thinking, web search, code execution, and URL context per model
+- **Inference Mode** — switch between async and streaming
+- **Dark / Light Theme** — toggle with persistent preference
+
+### Admin Dashboard (`/admin`)
+
+Requires `ADMIN_SECRET` to be configured in `secrets.js`.
+
+- **Overview** — total requests, tokens, cost, latency, and success rate
+- **Request Logs** (`/admin/requests`) — paginated, filterable request history with full detail view
+- **Conversations** (`/admin/conversations`) — browse all conversations across projects
+- **Live Activity** (`/admin/live`) — real-time view of active conversations
+- **LM Studio** (`/admin/lm-studio`) — load/unload local models remotely
+- **Stats Breakdowns** — per-project, per-model, and per-endpoint analytics
+
+## Tech Stack
+
+| Dependency              | Purpose                          |
+| ----------------------- | -------------------------------- |
+| Next.js 16              | React framework with App Router  |
+| React 19                | UI library                       |
+| react-markdown          | Markdown rendering               |
+| react-syntax-highlighter| Code block syntax highlighting   |
+| remark-gfm              | GitHub-flavored markdown support |
+| lucide-react            | Icon library                     |
+| luxon                   | Date/time formatting             |
+
+## Scripts
+
+```bash
+npm run dev      # Start dev server (port 3000, with file polling for WSL)
+npm run build    # Production build
+npm start        # Start production server
+npm run lint     # Run ESLint
+npm run format   # Format with Prettier
+```
