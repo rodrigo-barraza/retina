@@ -39,6 +39,19 @@
   text-align: left;
 }
 
+.sectionHeading {
+  margin-top: 32px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sectionSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
 .capabilityCard {
   display: flex;
   align-items: flex-start;
@@ -178,6 +191,13 @@
 
 .modelRowProvider {
   font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
   color: var(--text-secondary);
 }
 

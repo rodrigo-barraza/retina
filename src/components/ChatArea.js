@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Loader2, Trash2, ChevronDown, ChevronRight, Brain, Copy, Check, Paperclip, FileAudio, FileVideo, FileText, Image as ImageIcon, Type, ArrowLeft, Pencil, RotateCcw, X as XIcon } from "lucide-react";
+import { Send, Loader2, Trash2, ChevronDown, ChevronRight, Brain, Copy, Check, Paperclip, FileAudio, FileVideo, FileText, Image as ImageIcon, Type, ArrowLeft, Pencil, RotateCcw, X as XIcon, Mic } from "lucide-react";
 import ImageAnnotator from "./ImageAnnotator";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import styles from "./ChatArea.module.css";
@@ -272,30 +272,57 @@ function MediaPreview({ dataUrl, onClick, compact = false }) {
     );
 }
 
-const CAPABILITY_MAP = {
-    text: {
-        title: "Text Generation",
-        subtitle: "Chat, code, and reasoning",
-        configKey: "textToText",
-    },
-    image: {
-        title: "Image Generation",
-        subtitle: "Create and edit images",
-        configKey: "textToImage",
-    },
+const OUTPUT_MODALITIES = [
+    { key: "text", title: "Text", subtitle: "Chat, code, and reasoning", icon: Type },
+    { key: "image", title: "Image", subtitle: "Create and edit images", icon: ImageIcon },
+    { key: "audio", title: "Speech", subtitle: "Text to speech", icon: Mic },
+    { key: "video", title: "Video", subtitle: "Generate videos", icon: FileVideo, disabled: true },
+];
+
+const INPUT_MODALITY_META = {
+    text: { title: "Text", subtitle: "Prompts and conversations", icon: Type },
+    image: { title: "Image", subtitle: "Photos and screenshots", icon: ImageIcon },
+    audio: { title: "Audio", subtitle: "Voice and sound files", icon: FileAudio },
+    video: { title: "Video", subtitle: "Video clips", icon: FileVideo },
+    pdf: { title: "PDF", subtitle: "Documents and papers", icon: FileText },
 };
 
-function getModelsForCapability(config, capabilityKey) {
-    const cap = CAPABILITY_MAP[capabilityKey];
-    if (!cap || !config) return [];
-    const modelsMap = config[cap.configKey]?.models || {};
-    const results = [];
-    for (const [provider, models] of Object.entries(modelsMap)) {
-        for (const model of models) {
-            results.push({ ...model, provider });
+function getAllModelsFromConfig(config) {
+    if (!config) return [];
+    const all = [];
+    const sections = ["textToText", "textToImage"];
+    for (const section of sections) {
+        const modelsMap = config[section]?.models || {};
+        for (const [provider, models] of Object.entries(modelsMap)) {
+            for (const model of models) {
+                all.push({ ...model, provider });
+            }
         }
     }
-    return results;
+    return all;
+}
+
+
+
+
+function getOutputTypesForInput(config, inputType) {
+    const allModels = getAllModelsFromConfig(config);
+    const outputSet = new Set();
+    for (const m of allModels) {
+        if (m.inputTypes?.includes(inputType)) {
+            for (const out of (m.outputTypes || [])) {
+                outputSet.add(out);
+            }
+        }
+    }
+    return [...outputSet];
+}
+
+function getModelsForIO(config, outputType, inputType) {
+    const allModels = getAllModelsFromConfig(config);
+    return allModels.filter(
+        (m) => m.outputTypes?.includes(outputType) && (inputType == null || m.inputTypes?.includes(inputType)),
+    );
 }
 
 export default function ChatArea({ messages, isGenerating, onSend, onDelete, onEdit, onRerun, config, onSelectModel, supportedInputTypes = [] }) {
@@ -306,7 +333,10 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
     const [input, setInput] = useState("");
     const [pendingImages, setPendingImages] = useState([]);
     const [lightboxSrc, setLightboxSrc] = useState(null);
-    const [selectedCapability, setSelectedCapability] = useState(null);
+    const [welcomeStep, setWelcomeStep] = useState("home"); // "home" | "outputModels" | "ioPickOutput" | "ioModels"
+    const [selectedOutput, setSelectedOutput] = useState(null);
+    const [ioSelectedInput, setIoSelectedInput] = useState(null);
+    const [ioSelectedOutput, setIoSelectedOutput] = useState(null);
     const endRef = useRef(null);
     const [editingIndex, setEditingIndex] = useState(null);
     const fileInputRef = useRef(null);
@@ -351,77 +381,177 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
             <div className={styles.messagesList}>
                 {messages.length === 0 && (
                     <div className={styles.welcome}>
-                        {!selectedCapability ? (
+                        {welcomeStep === "home" && (
                             <>
                                 <h3>Let&apos;s get this show started</h3>
                                 <div className={styles.capabilityGrid}>
-                                    <div className={styles.capabilityCard} onClick={() => setSelectedCapability("text")}>
-                                        <div className={styles.capabilityIcon}>
-                                            <Type size={20} />
-                                        </div>
-                                        <div className={styles.capabilityInfo}>
-                                            <h4>Text Generation</h4>
-                                            <p>Chat, code, and reasoning</p>
-                                        </div>
-                                    </div>
-                                    <div className={styles.capabilityCard} onClick={() => setSelectedCapability("image")}>
-                                        <div className={styles.capabilityIcon}>
-                                            <ImageIcon size={20} />
-                                        </div>
-                                        <div className={styles.capabilityInfo}>
-                                            <h4>Image Generation</h4>
-                                            <p>Create and edit images</p>
-                                        </div>
-                                    </div>
-                                    <div className={`${styles.capabilityCard} ${styles.capabilityDisabled}`}>
-                                        <div className={styles.capabilityIcon}>
-                                            <FileAudio size={20} />
-                                        </div>
-                                        <div className={styles.capabilityInfo}>
-                                            <h4>Speech Generation</h4>
-                                            <p>Change text into speech</p>
-                                        </div>
-                                    </div>
-                                    <div className={`${styles.capabilityCard} ${styles.capabilityDisabled}`}>
-                                        <div className={styles.capabilityIcon}>
-                                            <FileVideo size={20} />
-                                        </div>
-                                        <div className={styles.capabilityInfo}>
-                                            <h4>Video Generation</h4>
-                                            <p>Generate videos</p>
-                                        </div>
-                                    </div>
+                                    {OUTPUT_MODALITIES.map((mod) => {
+                                        const Icon = mod.icon;
+                                        return (
+                                            <div
+                                                key={mod.key}
+                                                className={`${styles.capabilityCard} ${mod.disabled ? styles.capabilityDisabled : ""}`}
+                                                onClick={() => {
+                                                    if (!mod.disabled) {
+                                                        setSelectedOutput(mod.key);
+                                                        setWelcomeStep("outputModels");
+                                                    }
+                                                }}
+                                            >
+                                                <div className={styles.capabilityIcon}>
+                                                    <Icon size={20} />
+                                                </div>
+                                                <div className={styles.capabilityInfo}>
+                                                    <h4>{mod.title}</h4>
+                                                    <p>{mod.subtitle}</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <h3 className={styles.sectionHeading}>Pick your input</h3>
+                                <p className={styles.sectionSubtitle}>Choose what you&apos;ll send, then pick an output</p>
+                                <div className={styles.capabilityGrid}>
+                                    {Object.entries(INPUT_MODALITY_META).map(([key, meta]) => {
+                                        const Icon = meta.icon;
+                                        return (
+                                            <div
+                                                key={key}
+                                                className={styles.capabilityCard}
+                                                onClick={() => {
+                                                    setIoSelectedInput(key);
+                                                    setWelcomeStep("ioPickOutput");
+                                                }}
+                                            >
+                                                <div className={styles.capabilityIcon}>
+                                                    <Icon size={20} />
+                                                </div>
+                                                <div className={styles.capabilityInfo}>
+                                                    <h4>{meta.title}</h4>
+                                                    <p>{meta.subtitle}</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </>
-                        ) : (
-                            <div className={styles.modelListView}>
-                                <button className={styles.backButton} onClick={() => setSelectedCapability(null)}>
-                                    <ArrowLeft size={18} />
-                                </button>
-                                <h3>{CAPABILITY_MAP[selectedCapability]?.title}</h3>
-                                <p className={styles.modelListSubtitle}>{CAPABILITY_MAP[selectedCapability]?.subtitle}</p>
-                                <div className={styles.modelList}>
-                                    {getModelsForCapability(config, selectedCapability).map((model) => (
-                                        <div
-                                            key={`${model.provider}-${model.name}`}
-                                            className={styles.modelRow}
-                                            onClick={() => {
-                                                onSelectModel(model.provider, model.name);
-                                                setSelectedCapability(null);
-                                            }}
-                                        >
-                                            <div className={styles.modelRowIcon}>
-                                                <ProviderLogo provider={model.provider} size={20} />
-                                            </div>
-                                            <div className={styles.modelRowInfo}>
-                                                <span className={styles.modelRowName}>{model.label || model.name}</span>
-                                                <span className={styles.modelRowProvider}>{PROVIDER_LABELS[model.provider] || model.provider}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                         )}
+
+                        {welcomeStep === "outputModels" && (() => {
+                            const models = getModelsForIO(config, selectedOutput, null);
+                            const outputMod = OUTPUT_MODALITIES.find((m) => m.key === selectedOutput);
+                            return (
+                                <div className={styles.modelListView}>
+                                    <button className={styles.backButton} onClick={() => { setWelcomeStep("home"); setSelectedOutput(null); }}>
+                                        <ArrowLeft size={18} />
+                                    </button>
+                                    <h3>{outputMod?.title}</h3>
+                                    <p className={styles.modelListSubtitle}>{outputMod?.subtitle}</p>
+                                    <div className={styles.modelList}>
+                                        {models.map((model) => (
+                                            <div
+                                                key={`${model.provider}-${model.name}`}
+                                                className={styles.modelRow}
+                                                onClick={() => {
+                                                    onSelectModel(model.provider, model.name);
+                                                    setWelcomeStep("home");
+                                                    setSelectedOutput(null);
+                                                }}
+                                            >
+                                                <div className={styles.modelRowIcon}>
+                                                    <ProviderLogo provider={model.provider} size={20} />
+                                                </div>
+                                                <div className={styles.modelRowInfo}>
+                                                    <span className={styles.modelRowName}>{model.label || model.name}</span>
+                                                    <span className={styles.modelRowProvider}>{PROVIDER_LABELS[model.provider] || model.provider}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {welcomeStep === "ioPickOutput" && (() => {
+                            const availableOutputs = getOutputTypesForInput(config, ioSelectedInput);
+                            const inputMeta = INPUT_MODALITY_META[ioSelectedInput];
+                            return (
+                                <div className={styles.modelListView}>
+                                    <button className={styles.backButton} onClick={() => { setWelcomeStep("home"); setIoSelectedInput(null); }}>
+                                        <ArrowLeft size={18} />
+                                    </button>
+                                    <h3>Pick your output</h3>
+                                    <p className={styles.modelListSubtitle}>{inputMeta?.title} input → ?</p>
+                                    <div className={styles.capabilityGrid}>
+                                        {OUTPUT_MODALITIES.map((mod) => {
+                                            const available = availableOutputs.includes(mod.key);
+                                            const Icon = mod.icon;
+                                            return (
+                                                <div
+                                                    key={mod.key}
+                                                    className={`${styles.capabilityCard} ${!available ? styles.capabilityDisabled : ""}`}
+                                                    onClick={() => {
+                                                        if (available) {
+                                                            setIoSelectedOutput(mod.key);
+                                                            setWelcomeStep("ioModels");
+                                                        }
+                                                    }}
+                                                >
+                                                    <div className={styles.capabilityIcon}>
+                                                        <Icon size={20} />
+                                                    </div>
+                                                    <div className={styles.capabilityInfo}>
+                                                        <h4>{mod.title}</h4>
+                                                        <p>{mod.subtitle}</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {welcomeStep === "ioModels" && (() => {
+                            const models = getModelsForIO(config, ioSelectedOutput, ioSelectedInput);
+                            const outputMod = OUTPUT_MODALITIES.find((m) => m.key === ioSelectedOutput);
+                            const inputMeta = INPUT_MODALITY_META[ioSelectedInput];
+                            return (
+                                <div className={styles.modelListView}>
+                                    <button className={styles.backButton} onClick={() => { setWelcomeStep("ioPickOutput"); setIoSelectedOutput(null); }}>
+                                        <ArrowLeft size={18} />
+                                    </button>
+                                    <h3>{inputMeta?.title} → {outputMod?.title}</h3>
+                                    <p className={styles.modelListSubtitle}>Pick a model to get started</p>
+                                    <div className={styles.modelList}>
+                                        {models.map((model) => (
+                                            <div
+                                                key={`${model.provider}-${model.name}`}
+                                                className={styles.modelRow}
+                                                onClick={() => {
+                                                    onSelectModel(model.provider, model.name);
+                                                    setWelcomeStep("home");
+                                                    setIoSelectedInput(null);
+                                                    setIoSelectedOutput(null);
+                                                }}
+                                            >
+                                                <div className={styles.modelRowIcon}>
+                                                    <ProviderLogo provider={model.provider} size={20} />
+                                                </div>
+                                                <div className={styles.modelRowInfo}>
+                                                    <span className={styles.modelRowName}>{model.label || model.name}</span>
+                                                    <span className={styles.modelRowProvider}>{PROVIDER_LABELS[model.provider] || model.provider}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {models.length === 0 && (
+                                            <div className={styles.empty}>No models available for this combination</div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 )}
 
