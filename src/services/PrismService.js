@@ -12,7 +12,27 @@ function getHeaders() {
     };
 }
 
+/**
+ * Resolve a file reference to a usable URL.
+ * - `minio://files/abc.png` → `http://localhost:7777/files/files/abc.png?secret=...`
+ * - data URLs and http URLs pass through unchanged.
+ */
+function resolveFileRef(ref) {
+    if (typeof ref === "string" && ref.startsWith("minio://")) {
+        const key = ref.replace("minio://", "");
+        return `${API_BASE}/files/${key}?secret=${encodeURIComponent(SECRET)}`;
+    }
+    return ref;
+}
+
 export class PrismService {
+    /**
+     * Resolve a file reference (minio:// or data URL) to a renderable URL.
+     */
+    static getFileUrl(ref) {
+        return resolveFileRef(ref);
+    }
+
     static async getConfig() {
         const res = await fetch(`${API_BASE}/config`, { headers: getHeaders() });
         if (!res.ok) throw new Error("Failed to fetch config");
@@ -76,7 +96,7 @@ export class PrismService {
      * @returns {Function} close - Call to close the WebSocket early
      */
     static streamText(payload, callbacks) {
-        const { onChunk, onThinking, onImage, onExecutableCode, onCodeExecutionResult, onWebSearchResult, onDone, onError } = callbacks;
+        const { onChunk, onThinking, onImage, onExecutableCode, onCodeExecutionResult, onWebSearchResult, onStatus, onDone, onError } = callbacks;
         const ws = new WebSocket(
             `${WS_BASE}/text-to-text/stream?secret=${encodeURIComponent(SECRET)}&project=retina`,
         );
@@ -106,6 +126,8 @@ export class PrismService {
                 } else if (data.type === "error" && onError) {
                     onError(new Error(data.message));
                     ws.close();
+                } else if (data.type === "status" && onStatus) {
+                    onStatus(data.message);
                 }
             } catch {
                 // Ignore parse errors

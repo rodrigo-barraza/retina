@@ -11,6 +11,7 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { DateTime } from "luxon";
+import { PrismService } from "../services/PrismService";
 
 function CopyButton({ text }) {
     const [copied, setCopied] = useState(false);
@@ -205,6 +206,17 @@ const TYPE_ACCEPT_MAP = {
 };
 
 function getMimeCategory(dataUrl) {
+    if (!dataUrl) return "file";
+    // Handle minio:// refs by extension
+    if (dataUrl.startsWith("minio://")) {
+        const ext = dataUrl.split(".").pop()?.toLowerCase();
+        if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return "image";
+        if (["wav", "mp3", "webm", "ogg"].includes(ext)) return "audio";
+        if (["mp4", "mov", "avi", "webm"].includes(ext)) return "video";
+        if (ext === "pdf") return "pdf";
+        if (ext === "txt") return "text";
+        return "file";
+    }
     const match = dataUrl.match(/^data:([\w-]+)\//);
     if (!match) return "file";
     const type = match[1];
@@ -213,8 +225,9 @@ function getMimeCategory(dataUrl) {
     return type; // image, audio, video
 }
 
-function MediaPreview({ dataUrl, onClick, compact = false }) {
-    const category = getMimeCategory(dataUrl);
+function MediaPreview({ dataUrl: rawDataUrl, onClick, compact = false }) {
+    const dataUrl = PrismService.getFileUrl(rawDataUrl);
+    const category = getMimeCategory(rawDataUrl);
 
     if (category === "image") {
         return (
@@ -340,8 +353,8 @@ const ARENA_COLUMNS = [
     { key: "code", label: "Code" },
     { key: "vision", label: "Vision" },
     { key: "document", label: "Document" },
-    { key: "textToImage", label: "T2I" },
-    { key: "imageEdit", label: "Img Edit" },
+    { key: "image", label: "Image" },
+    { key: "imageEdit", label: "Image Edit" },
     { key: "search", label: "Search" },
 ];
 
@@ -366,6 +379,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
     const [welcomeDone, setWelcomeDone] = useState(false);
     const [selectedOutput, setSelectedOutput] = useState(null);
     const [selectedInput, setSelectedInput] = useState(null);
+    const [providerFilter, setProviderFilter] = useState(null);
     const endRef = useRef(null);
     const [editingIndex, setEditingIndex] = useState(null);
     const fileInputRef = useRef(null);
@@ -520,13 +534,16 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                         })()}
 
                         {welcomeStep === "pickModel" && (() => {
-                            const models = getModelsForIO(config, selectedOutput, selectedInput);
+                            const allModels = getModelsForIO(config, selectedOutput, selectedInput);
+                            const uniqueProviders = [...new Set(allModels.map((m) => m.provider))];
+                            const models = providerFilter ? allModels.filter((m) => m.provider === providerFilter) : allModels;
                             const outputMod = OUTPUT_MODALITIES.find((m) => m.key === selectedOutput);
                             const inputMeta = INPUT_MODALITY_META[selectedInput];
                             const arenaCols = getVisibleArenaColumns(models);
                             const hasInputPrice = models.some((m) => m.pricing?.inputPerMillion != null);
                             const hasOutputPrice = models.some((m) => m.pricing?.outputPerMillion != null);
                             const hasContext = models.some((m) => m.contextLength != null);
+                            const hasSize = models.some((m) => m.size != null);
 
                             const sortKey = modelSort.key;
                             const sortDir = modelSort.dir;
@@ -534,6 +551,8 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                 let va, vb;
                                 if (sortKey === "context") {
                                     va = a.contextLength ?? 0; vb = b.contextLength ?? 0;
+                                } else if (sortKey === "size") {
+                                    va = parseFloat(a.size) || 0; vb = parseFloat(b.size) || 0;
                                 } else if (sortKey === "input") {
                                     va = a.pricing?.inputPerMillion ?? Infinity; vb = b.pricing?.inputPerMillion ?? Infinity;
                                 } else if (sortKey === "output") {
@@ -563,13 +582,34 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                             return (
                                 <div className={styles.modelTableView}>
                                     <div className={styles.modelTableHeader}>
-                                        <button className={styles.backButton} onClick={() => { setWelcomeStep("pickInput"); setSelectedInput(null); setModelSort({ key: null, dir: "desc" }); }}>
+                                        <button className={styles.backButton} onClick={() => { setWelcomeStep("pickInput"); setSelectedInput(null); setModelSort({ key: null, dir: "desc" }); setProviderFilter(null); }}>
                                             <ArrowLeft size={18} />
                                         </button>
                                         <div>
                                             <h3>{inputMeta?.title} to {outputMod?.title}</h3>
                                             <p className={styles.modelListSubtitle}>Pick a model to get started</p>
                                         </div>
+                                        {uniqueProviders.length > 1 && (
+                                            <div className={styles.providerFilters}>
+                                                <button
+                                                    className={`${styles.providerFilterPill} ${!providerFilter ? styles.providerFilterActive : ""}`}
+                                                    onClick={() => setProviderFilter(null)}
+                                                >
+                                                    All
+                                                </button>
+                                                {uniqueProviders.map((p) => (
+                                                    <button
+                                                        key={p}
+                                                        className={`${styles.providerFilterPill} ${providerFilter === p ? styles.providerFilterActive : ""}`}
+                                                        onClick={() => setProviderFilter(providerFilter === p ? null : p)}
+                                                        title={PROVIDER_LABELS[p] || p}
+                                                    >
+                                                        <ProviderLogo provider={p} size={16} />
+                                                        <span>{PROVIDER_LABELS[p] || p}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className={styles.modelTableScroll}>
                                         <table className={styles.modelTable}>
@@ -577,6 +617,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                                 <tr>
                                                     <th className={styles.modelTh}>Model</th>
                                                     {hasContext && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("context")}>Context <SortIcon colKey="context" /></th>}
+                                                    {hasSize && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("size")}>Size <SortIcon colKey="size" /></th>}
                                                     {hasInputPrice && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("input")}>Input <SortIcon colKey="input" /></th>}
                                                     {hasOutputPrice && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("output")}>Output <SortIcon colKey="output" /></th>}
                                                     {arenaCols.map((col) => (
@@ -608,6 +649,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                                             </div>
                                                         </td>
                                                         {hasContext && <td className={styles.modelTd}>{model.contextLength ? formatContextLength(model.contextLength) : "—"}</td>}
+                                                        {hasSize && <td className={styles.modelTd}>{model.size || "—"}</td>}
                                                         {hasInputPrice && <td className={styles.modelTd}>{model.pricing?.inputPerMillion != null ? `$${model.pricing.inputPerMillion}` : "—"}</td>}
                                                         {hasOutputPrice && <td className={styles.modelTd}>{model.pricing?.outputPerMillion != null ? `$${model.pricing.outputPerMillion}` : "—"}</td>}
                                                         {arenaCols.map((col) => (
@@ -692,15 +734,16 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                             )}
                             {msg.images && msg.images.length > 0 && (
                                 <div className={styles.imagePreviewRow}>
-                                    {msg.images.map((dataUrl, j) => {
-                                        const cat = getMimeCategory(dataUrl);
+                                    {msg.images.map((rawUrl, j) => {
+                                        const resolvedUrl = PrismService.getFileUrl(rawUrl);
+                                        const cat = getMimeCategory(rawUrl);
                                         let clickHandler;
-                                        if (cat === "image") clickHandler = () => setLightboxSrc(dataUrl);
-                                        else if (cat === "pdf" || cat === "text") clickHandler = () => setDocViewerSrc(dataUrl);
+                                        if (cat === "image") clickHandler = () => setLightboxSrc(resolvedUrl);
+                                        else if (cat === "pdf" || cat === "text") clickHandler = () => setDocViewerSrc(resolvedUrl);
                                         return (
                                             <MediaPreview
                                                 key={j}
-                                                dataUrl={dataUrl}
+                                                dataUrl={rawUrl}
                                                 onClick={clickHandler}
                                             />
                                         );
@@ -725,7 +768,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                     <MarkdownContent content={msg.content} />
                                 </div>
                             )}
-                            {(msg.usage || msg.audio) && msg.role === "assistant" && (
+                            {msg.role === "assistant" && (msg.usage || msg.audio || msg.provider) && (
                                 <div className={styles.meta}>
                                     <span className={styles.metaProvider}>
                                         <ProviderLogo provider={msg.provider} size={13} />
@@ -742,9 +785,11 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                     {msg.content ? ` • ${msg.content.trim().split(/\s+/).filter(Boolean).length} words` : ""}
                                     {msg.totalTime != null ? ` • ${msg.totalTime.toFixed(1)}s` : ""}
                                     {msg.tokensPerSec ? ` • ${msg.tokensPerSec} tok/s` : ""}
-                                    {msg.estimatedCost
-                                        ? ` • $${msg.estimatedCost.toFixed(5)}`
-                                        : ""}
+                                    {msg.provider === "lm-studio"
+                                        ? " • $0"
+                                        : msg.estimatedCost
+                                            ? ` • $${msg.estimatedCost.toFixed(5)}`
+                                            : ""}
                                 </div>
                             )}
                         </div>
@@ -756,7 +801,7 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                         <div className={styles.avatar}>
                             <Loader2 size={16} className={styles.spin} />
                         </div>
-                        <div className={styles.content}>Generating...</div>
+                        <div className={styles.content}>{messages[messages.length - 1]?.status || "Generating..."}</div>
                     </div>
                 )}
                 <div ref={endRef} />

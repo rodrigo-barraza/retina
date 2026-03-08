@@ -388,6 +388,16 @@ export default function Home() {
                 });
 
                 PrismService.streamText(payload, {
+                    onStatus: (message) => {
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            updated[insertIndex] = {
+                                ...updated[insertIndex],
+                                status: message,
+                            };
+                            return updated;
+                        });
+                    },
                     onChunk: (content) => {
                         streamedText += content;
                         setMessages((prev) => {
@@ -395,6 +405,7 @@ export default function Home() {
                             updated[insertIndex] = {
                                 ...updated[insertIndex],
                                 content: streamedText,
+                                status: undefined,
                             };
                             return updated;
                         });
@@ -798,6 +809,16 @@ export default function Home() {
                 setMessages(msgsWithPlaceholder);
 
                 PrismService.streamText(payload, {
+                    onStatus: (message) => {
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            updated[updated.length - 1] = {
+                                ...updated[updated.length - 1],
+                                status: message,
+                            };
+                            return updated;
+                        });
+                    },
                     onChunk: (content) => {
                         streamedText += content;
                         setMessages((prev) => {
@@ -805,6 +826,7 @@ export default function Home() {
                             updated[updated.length - 1] = {
                                 ...updated[updated.length - 1],
                                 content: streamedText,
+                                status: undefined,
                             };
                             return updated;
                         });

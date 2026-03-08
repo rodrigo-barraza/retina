@@ -10,6 +10,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { IrisService } from "../../../services/IrisService";
+import { PrismService } from "../../../services/PrismService";
 import styles from "./page.module.css";
 
 export default function ConversationsPage() {
@@ -68,6 +69,16 @@ export default function ConversationsPage() {
 
   function getMimeCategory(dataUrl) {
     if (!dataUrl || typeof dataUrl !== "string") return "file";
+    // Handle minio:// refs by extension
+    if (dataUrl.startsWith("minio://")) {
+      const ext = dataUrl.split(".").pop()?.toLowerCase();
+      if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return "image";
+      if (["wav", "mp3", "webm", "ogg"].includes(ext)) return "audio";
+      if (["mp4", "mov", "avi", "webm"].includes(ext)) return "video";
+      if (ext === "pdf") return "pdf";
+      if (ext === "txt") return "text";
+      return "file";
+    }
     const match = dataUrl.match(/^data:([\w-]+)\//);
     if (!match) return "file";
     const type = match[1];
@@ -76,8 +87,9 @@ export default function ConversationsPage() {
     return type;
   }
 
-  function renderMediaItem(dataUrl, index) {
-    const category = getMimeCategory(dataUrl);
+  function renderMediaItem(rawUrl, index) {
+    const category = getMimeCategory(rawUrl);
+    const dataUrl = PrismService.getFileUrl(rawUrl);
 
     if (category === "image") {
       return (
