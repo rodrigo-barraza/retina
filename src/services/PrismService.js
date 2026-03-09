@@ -11,12 +11,13 @@ function getHeaders() {
         "Content-Type": "application/json",
         "x-api-secret": SECRET,
         "x-project": "retina",
+        "x-username": "default",
     };
 }
 
 /**
  * Resolve a file reference to a usable URL.
- * - `minio://files/abc.png` → `http://localhost:7777/files/files/abc.png?secret=...`
+ * - `minio://files/abc.png` → `http://prism.clankerbox.com/files/files/abc.png?secret=...`
  * - data URLs and http URLs pass through unchanged.
  */
 function resolveFileRef(ref) {
@@ -102,7 +103,7 @@ export class PrismService {
     static streamText(payload, callbacks) {
         const { onChunk, onThinking, onImage, onExecutableCode, onCodeExecutionResult, onWebSearchResult, onStatus, onDone, onError } = callbacks;
         const ws = new WebSocket(
-            `${WS_BASE}/text-to-text/stream?secret=${encodeURIComponent(SECRET)}&project=retina`,
+            `${WS_BASE}/text-to-text/stream?secret=${encodeURIComponent(SECRET)}&project=retina&username=default`,
         );
 
         ws.onopen = () => {
