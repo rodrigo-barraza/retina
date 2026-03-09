@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import styles from "./page.module.css";
 import { PrismService } from "../services/PrismService";
 import StorageService from "../services/StorageService";
 import { useTheme } from "../components/ThemeProvider";
-import { Sun, Moon, Zap, Clock } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import SettingsPanel from "../components/SettingsPanel";
 import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
@@ -41,7 +41,18 @@ export default function Home() {
     });
 
     const [isGenerating, setIsGenerating] = useState(false);
+    const [showModelList, setShowModelList] = useState(false);
     const skipSystemPromptSave = useRef(false);
+
+    const uniqueModels = useMemo(() => [...new Set(
+        messages
+            .filter((m) => m.role === "assistant" && m.model)
+            .map((m) => m.model)
+    )], [messages]);
+
+    const totalCost = useMemo(() =>
+        messages.reduce((sum, m) => sum + (m.estimatedCost || 0), 0)
+    , [messages]);
 
     // Auto-save system prompt on edit (debounced)
     useEffect(() => {
@@ -979,21 +990,41 @@ export default function Home() {
             <section className={styles.mainChat}>
                 <div className={styles.glassHeader}>
                     <span className={styles.headerTitle}>{title}</span>
+                    <div className={styles.headerMeta}>
+                        {messages.length > 0 && (
+                            <span>{messages.length} messages</span>
+                        )}
+                        {uniqueModels.length === 1 && (
+                            <span>{uniqueModels[0]}</span>
+                        )}
+                        {uniqueModels.length > 1 && (
+                            <span className={styles.modelDropdownWrapper}>
+                                <button
+                                    className={styles.modelDropdownTrigger}
+                                    onClick={() => setShowModelList((v) => !v)}
+                                >
+                                    {uniqueModels.length} models
+                                </button>
+                                {showModelList && (
+                                    <>
+                                        <div
+                                            className={styles.modelDropdownBackdrop}
+                                            onClick={() => setShowModelList(false)}
+                                        />
+                                        <div className={styles.modelDropdown}>
+                                            {uniqueModels.map((m) => (
+                                                <div key={m} className={styles.modelDropdownItem}>{m}</div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </span>
+                        )}
+                        {totalCost > 0 && (
+                            <span>${totalCost.toFixed(5)}</span>
+                        )}
+                    </div>
                     <div className={styles.headerControls}>
-                        <button
-                            className={`${styles.modeToggle} ${inferenceMode === "async" ? styles.modeToggleActive : ""}`}
-                            onClick={() => setInferenceMode("async")}
-                            title="Asynchronous — non-realtime models"
-                        >
-                            <Clock size={14} /> Async
-                        </button>
-                        <button
-                            className={`${styles.modeToggle} ${inferenceMode === "sync" ? styles.modeToggleActive : ""}`}
-                            onClick={() => setInferenceMode("sync")}
-                            title="Synchronous — real-time models"
-                        >
-                            <Zap size={14} /> Sync
-                        </button>
                         <button
                             className={styles.themeToggle}
                             onClick={toggleTheme}

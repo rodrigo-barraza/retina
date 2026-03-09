@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   AlertCircle,
   MessageSquare,
@@ -20,6 +20,7 @@ export default function ConversationsPage() {
   const [selectedConv, setSelectedConv] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [config, setConfig] = useState(null);
+  const [showModelList, setShowModelList] = useState(false);
 
   useEffect(() => {
     PrismService.getConfig().then(setConfig).catch(() => {});
@@ -65,6 +66,16 @@ export default function ConversationsPage() {
     ? (selectedConv.title || "Untitled Conversation")
     : "Select a conversation";
 
+  const uniqueModels = useMemo(() => [...new Set(
+    (selectedConv?.messages || [])
+      .filter((m) => m.role === "assistant" && m.model)
+      .map((m) => m.model)
+  )], [selectedConv]);
+
+  const totalCost = useMemo(() =>
+    (selectedConv?.messages || []).reduce((sum, m) => sum + (m.estimatedCost || 0), 0)
+  , [selectedConv]);
+
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
@@ -107,8 +118,34 @@ export default function ConversationsPage() {
               <div className={styles.headerMeta}>
                 <span className={styles.metaBadge}>{selectedConv.project}</span>
                 <span>{selectedConv.messages?.length || 0} messages</span>
-                {selectedConv.settings?.model && (
-                  <span>{selectedConv.settings.model}</span>
+                {uniqueModels.length === 1 && (
+                  <span>{uniqueModels[0]}</span>
+                )}
+                {uniqueModels.length > 1 && (
+                  <span className={styles.modelDropdownWrapper}>
+                    <button
+                      className={styles.modelDropdownTrigger}
+                      onClick={() => setShowModelList((v) => !v)}
+                    >
+                      {uniqueModels.length} models
+                    </button>
+                    {showModelList && (
+                      <>
+                        <div
+                          className={styles.modelDropdownBackdrop}
+                          onClick={() => setShowModelList(false)}
+                        />
+                        <div className={styles.modelDropdown}>
+                          {uniqueModels.map((m) => (
+                            <div key={m} className={styles.modelDropdownItem}>{m}</div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </span>
+                )}
+                {totalCost > 0 && (
+                  <span>${totalCost.toFixed(5)}</span>
                 )}
               </div>
             )}
