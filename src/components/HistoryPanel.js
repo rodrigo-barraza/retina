@@ -13,6 +13,7 @@ export default function HistoryPanel({
     onDelete,
     readOnly = false,
     showProject = false,
+    showUsername = false,
 }) {
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -21,6 +22,7 @@ export default function HistoryPanel({
             const q = searchQuery.trim().toLowerCase();
             if ((conv.title || "").toLowerCase().includes(q)) return true;
             if (showProject && (conv.project || "").toLowerCase().includes(q)) return true;
+            if (showUsername && (conv.username || "").toLowerCase().includes(q)) return true;
             return (conv.messages || []).some((m) =>
                 (m.content || "").toLowerCase().includes(q),
             );
@@ -80,6 +82,9 @@ export default function HistoryPanel({
                                 <div className={styles.date}>
                                     {showProject && conv.project && (
                                         <span className={styles.projectTag}>{conv.project}</span>
+                                    )}
+                                    {showUsername && conv.username && conv.username !== "unknown" && (
+                                        <span className={styles.usernameTag}>{conv.username}</span>
                                     )}
                                     {dt}
                                     {totalCost > 0 ? ` • $${totalCost.toFixed(5)}` : ""}

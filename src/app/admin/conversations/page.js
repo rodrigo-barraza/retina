@@ -137,6 +137,9 @@ export default function ConversationsPage() {
             {selectedConv && (
               <div className={styles.headerMeta}>
                 <span className={styles.metaBadge}>{selectedConv.project}</span>
+                {selectedConv.username && selectedConv.username !== "unknown" && (
+                  <span className={styles.userBadge}>{selectedConv.username}</span>
+                )}
                 <span>{selectedConv.messages?.length || 0} messages</span>
                 {uniqueModels.length === 1 && (
                   <span>{uniqueModels[0]}</span>
@@ -211,6 +214,7 @@ export default function ConversationsPage() {
             onSelect={(conv) => selectConversation(conv.id)}
             readOnly
             showProject
+            showUsername
           />
         </aside>
       </div>

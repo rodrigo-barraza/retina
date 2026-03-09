@@ -152,6 +152,17 @@
   margin-right: 6px;
 }
 
+.usernameTag {
+  display: inline-flex;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(245, 158, 11, 0.12);
+  color: rgb(245, 158, 11);
+  margin-right: 6px;
+}
+
 .deleteBtn {
   opacity: 0;
   color: var(--danger);

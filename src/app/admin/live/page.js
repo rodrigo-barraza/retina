@@ -150,6 +150,7 @@ export default function LivePage() {
     id: c.id,
     title: c.title,
     project: c.project,
+    username: c.username,
     updatedAt: c.lastActivity,
     messageCount: c.messageCount,
     isGenerating: c.isGenerating,
@@ -256,6 +257,9 @@ export default function LivePage() {
             {selectedConv && (
               <div className={styles.headerMeta}>
                 <span className={styles.metaBadge}>{selectedConv.project}</span>
+                {selectedConv.username && selectedConv.username !== "unknown" && (
+                  <span className={styles.userBadge}>{selectedConv.username}</span>
+                )}
                 <span>{selectedConv.messages?.length || 0} messages</span>
                 {uniqueModels.length === 1 && (
                   <span>{uniqueModels[0]}</span>
@@ -336,6 +340,7 @@ export default function LivePage() {
             onSelect={(conv) => selectConversation(conv.id)}
             readOnly
             showProject
+            showUsername
           />
         </aside>
       </div>
