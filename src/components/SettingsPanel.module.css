@@ -24,7 +24,7 @@
 
 .container::-webkit-scrollbar-thumb {
   background: rgba(128, 128, 128, 0.4);
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 .container::-webkit-scrollbar-thumb:hover {
@@ -55,8 +55,19 @@
 }
 
 .formGroup select,
-.formGroup textarea,
 .inputField {
+  height: var(--input-height);
+  padding: 0 10px;
+  background: var(--select-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--border-radius-sm);
+  transition: border-color 0.2s;
+  font-size: 14px;
+}
+
+.formGroup textarea {
+  height: auto;
   padding: 10px;
   background: var(--select-bg);
   border: 1px solid var(--border-color);
@@ -186,7 +197,8 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 10px 14px;
+  height: var(--input-height);
+  padding: 0 14px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
@@ -241,7 +253,8 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
-  padding: 8px 10px;
+  height: var(--input-height);
+  padding: 0 10px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);

@@ -11,6 +11,8 @@ export default function HistoryPanel({
     onSelect,
     onNew,
     onDelete,
+    readOnly = false,
+    showProject = false,
 }) {
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -18,6 +20,7 @@ export default function HistoryPanel({
         ? conversations.filter((conv) => {
             const q = searchQuery.trim().toLowerCase();
             if ((conv.title || "").toLowerCase().includes(q)) return true;
+            if (showProject && (conv.project || "").toLowerCase().includes(q)) return true;
             return (conv.messages || []).some((m) =>
                 (m.content || "").toLowerCase().includes(q),
             );
@@ -26,9 +29,11 @@ export default function HistoryPanel({
 
     return (
         <div className={styles.container}>
-            <button className={styles.newBtn} onClick={onNew}>
-                <Plus size={16} /> New Chat
-            </button>
+            {!readOnly && (
+                <button className={styles.newBtn} onClick={onNew}>
+                    <Plus size={16} /> New Chat
+                </button>
+            )}
 
             <div className={styles.searchWrapper}>
                 <Search size={14} className={styles.searchIcon} />
@@ -73,19 +78,24 @@ export default function HistoryPanel({
                                     {conv.title || "Untitled Chat"}
                                 </div>
                                 <div className={styles.date}>
+                                    {showProject && conv.project && (
+                                        <span className={styles.projectTag}>{conv.project}</span>
+                                    )}
                                     {dt}
                                     {totalCost > 0 ? ` • $${totalCost.toFixed(5)}` : ""}
                                 </div>
                             </div>
-                            <button
-                                className={styles.deleteBtn}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDelete(conv.id);
-                                }}
-                            >
-                                <Trash2 size={14} />
-                            </button>
+                            {!readOnly && onDelete && (
+                                <button
+                                    className={styles.deleteBtn}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete(conv.id);
+                                    }}
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            )}
                         </div>
                     );
                 })}

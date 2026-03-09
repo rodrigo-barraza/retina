@@ -115,7 +115,7 @@
   justify-content: center;
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: 2px;
   background: var(--accent-glow);
   color: var(--accent-color);
   flex-shrink: 0;
@@ -156,7 +156,7 @@
   color: var(--text-secondary);
   cursor: pointer;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -212,7 +212,7 @@
   color: var(--text-secondary);
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 20px;
+  border-radius: 2px;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
@@ -231,9 +231,13 @@
   font-weight: 600;
 }
 
+.localModelsSection {
+  margin-bottom: 20px;
+}
+
 .modelTableScroll {
   overflow-x: auto;
-  border-radius: 10px;
+  border-radius: 2px;
   border: 1px solid var(--border-color);
 }
 
@@ -387,7 +391,7 @@
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -492,7 +496,7 @@
   color: var(--text-primary);
   background: var(--bg-secondary);
   border: 1px solid var(--accent-color);
-  border-radius: 8px;
+  border-radius: 2px;
   resize: vertical;
   font-family: inherit;
   box-shadow: 0 0 0 2px var(--accent-glow);
@@ -519,7 +523,7 @@
   font-size: 12px;
   font-weight: 600;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -584,7 +588,7 @@
   margin: 8px 0;
   color: var(--text-secondary);
   background: var(--bg-tertiary);
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 2px 2px 0;
 }
 
 .text a {
@@ -626,14 +630,14 @@
 .inlineCode {
   background: var(--bg-tertiary);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 13px;
   font-family: "JetBrains Mono", "Fira Code", monospace;
 }
 
 .codeBlockWrapper {
   margin: 12px 0;
-  border-radius: 8px;
+  border-radius: 2px;
   overflow: hidden;
   border: 1px solid var(--border-color);
 }
@@ -664,7 +668,7 @@
   cursor: pointer;
   font-size: 12px;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: 2px;
   transition: all 0.15s;
 }
 
@@ -823,7 +827,7 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   padding: 2px 4px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-family: inherit;
   font-size: 10px;
 }
@@ -862,7 +866,7 @@
   position: relative;
   width: 64px;
   height: 64px;
-  border-radius: 8px;
+  border-radius: 2px;
   overflow: hidden;
   border: 1px solid var(--border-color);
 }
@@ -871,7 +875,7 @@
   position: relative;
   width: 64px;
   height: 64px;
-  border-radius: 8px;
+  border-radius: 2px;
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -931,14 +935,14 @@
 
 .audioPlayer audio {
   width: 100%;
-  border-radius: 8px;
+  border-radius: 2px;
   outline: none;
 }
 
 .messageImage {
   max-width: 200px;
   max-height: 200px;
-  border-radius: 8px;
+  border-radius: 2px;
   border: 1px solid var(--border-color);
   object-fit: cover;
   cursor: pointer;
@@ -957,7 +961,7 @@
   padding: 10px 14px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: 2px;
   max-width: 320px;
 }
 
@@ -977,27 +981,27 @@
   height: 32px;
   min-width: 200px;
   max-width: 260px;
-  border-radius: 6px;
+  border-radius: 2px;
 }
 
 .audioPlayerCompact {
   height: 28px;
   min-width: 140px;
   max-width: 180px;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 .videoPreview {
   max-width: 280px;
   max-height: 180px;
-  border-radius: 8px;
+  border-radius: 2px;
   object-fit: contain;
 }
 
 .videoPreviewCompact {
   max-width: 120px;
   max-height: 80px;
-  border-radius: 6px;
+  border-radius: 2px;
   object-fit: contain;
 }
 
@@ -1012,14 +1016,14 @@
   padding: 6px 10px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 2px;
 }
 
 .pendingImg {
   width: 64px;
   height: 64px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 2px;
   border: 1px solid var(--border-color);
   cursor: pointer;
 }
@@ -1065,6 +1069,6 @@
   max-width: 90vw;
   max-height: 90vh;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 2px;
   cursor: default;
 }

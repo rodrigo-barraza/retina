@@ -147,7 +147,7 @@
   max-width: 90vw;
   max-height: calc(90vh - 120px);
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 2px;
   user-select: none;
   -webkit-user-drag: none;
   pointer-events: none;
@@ -157,7 +157,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  border-radius: 8px;
+  border-radius: 2px;
   cursor: crosshair;
   touch-action: none;
 }

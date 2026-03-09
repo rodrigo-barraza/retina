@@ -5,6 +5,7 @@ import ImageAnnotator from "./ImageAnnotator";
 import DocumentViewer from "./DocumentViewer";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import MessageList from "./MessageList";
+import ModelGrid from "./ModelGrid";
 import styles from "./ChatArea.module.css";
 import { useEffect, useRef, useState } from "react";
 import { DateTime } from "luxon";
@@ -351,50 +352,20 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                             const models = providerFilter ? allModels.filter((m) => m.provider === providerFilter) : allModels;
                             const outputMod = OUTPUT_MODALITIES.find((m) => m.key === selectedOutput);
                             const inputMeta = INPUT_MODALITY_META[selectedInput];
-                            const arenaCols = getVisibleArenaColumns(models);
-                            const hasInputPrice = models.some((m) => m.pricing?.inputPerMillion != null);
-                            const hasOutputPrice = models.some((m) => m.pricing?.outputPerMillion != null);
-                            const hasContext = models.some((m) => m.contextLength != null);
-                            const hasSize = models.some((m) => m.size != null);
 
-                            const sortKey = modelSort.key;
-                            const sortDir = modelSort.dir;
-                            const sorted = [...models].sort((a, b) => {
-                                let va, vb;
-                                if (sortKey === "context") {
-                                    va = a.contextLength ?? 0; vb = b.contextLength ?? 0;
-                                } else if (sortKey === "size") {
-                                    va = parseFloat(a.size) || 0; vb = parseFloat(b.size) || 0;
-                                } else if (sortKey === "input") {
-                                    va = a.pricing?.inputPerMillion ?? Infinity; vb = b.pricing?.inputPerMillion ?? Infinity;
-                                } else if (sortKey === "output") {
-                                    va = a.pricing?.outputPerMillion ?? Infinity; vb = b.pricing?.outputPerMillion ?? Infinity;
-                                } else if (sortKey) {
-                                    va = a.arena?.[sortKey] ?? 0; vb = b.arena?.[sortKey] ?? 0;
-                                } else {
-                                    return 0;
-                                }
-                                return sortDir === "asc" ? va - vb : vb - va;
-                            });
-
-                            const handleSort = (key) => {
-                                setModelSort((prev) => {
-                                    if (prev.key === key) return { key, dir: prev.dir === "desc" ? "asc" : "desc" };
-                                    return { key, dir: "desc" };
-                                });
-                            };
-
-                            const SortIcon = ({ colKey }) => {
-                                if (modelSort.key !== colKey) return null;
-                                return modelSort.dir === "desc"
-                                    ? <ChevronDown size={12} className={styles.sortIcon} />
-                                    : <ChevronUp size={12} className={styles.sortIcon} />;
+                            const handleModelSelect = (model) => {
+                                onSelectModel(model.provider || "lm-studio", model.name);
+                                setWelcomeStep("pickOutput");
+                                setSelectedOutput(null);
+                                setSelectedInput(null);
+                                setWelcomeDone(true);
+                                setProviderFilter(null);
                             };
 
                             return (
                                 <div className={styles.modelTableView}>
                                     <div className={styles.modelTableHeader}>
-                                        <button className={styles.backButton} onClick={() => { setWelcomeStep("pickInput"); setSelectedInput(null); setModelSort({ key: null, dir: "desc" }); setProviderFilter(null); }}>
+                                        <button className={styles.backButton} onClick={() => { setWelcomeStep("pickInput"); setSelectedInput(null); setProviderFilter(null); }}>
                                             <ArrowLeft size={18} />
                                         </button>
                                         <div>
@@ -423,60 +394,11 @@ export default function ChatArea({ messages, isGenerating, onSend, onDelete, onE
                                             </div>
                                         )}
                                     </div>
-                                    <div className={styles.modelTableScroll}>
-                                        <table className={styles.modelTable}>
-                                            <thead>
-                                                <tr>
-                                                    <th className={styles.modelTh}>Model</th>
-                                                    {hasContext && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("context")}>Context <SortIcon colKey="context" /></th>}
-                                                    {hasSize && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("size")}>Size <SortIcon colKey="size" /></th>}
-                                                    {hasInputPrice && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("input")}>Input <SortIcon colKey="input" /></th>}
-                                                    {hasOutputPrice && <th className={`${styles.modelTh} ${styles.modelThSortable}`} onClick={() => handleSort("output")}>Output <SortIcon colKey="output" /></th>}
-                                                    {arenaCols.map((col) => (
-                                                        <th key={col.key} className={`${styles.modelTh} ${styles.modelThSortable} ${styles.modelThArena}`} onClick={() => handleSort(col.key)}>
-                                                            {col.label} <SortIcon colKey={col.key} />
-                                                        </th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {sorted.map((model) => (
-                                                    <tr
-                                                        key={`${model.provider}-${model.name}`}
-                                                        className={styles.modelTr}
-                                                        onClick={() => {
-                                                            onSelectModel(model.provider, model.name);
-                                                            setWelcomeStep("pickOutput");
-                                                            setSelectedOutput(null);
-                                                            setSelectedInput(null);
-                                                            setWelcomeDone(true);
-                                                            setModelSort({ key: null, dir: "desc" });
-                                                        }}
-                                                    >
-                                                        <td className={styles.modelTdName}>
-                                                            <ProviderLogo provider={model.provider} size={18} />
-                                                            <div className={styles.modelTdNameText}>
-                                                                <span className={styles.modelName}>{model.label || model.name}</span>
-                                                                <span className={styles.modelProvider}>{PROVIDER_LABELS[model.provider] || model.provider}</span>
-                                                            </div>
-                                                        </td>
-                                                        {hasContext && <td className={styles.modelTd}>{model.contextLength ? formatContextLength(model.contextLength) : "—"}</td>}
-                                                        {hasSize && <td className={styles.modelTd}>{model.size || "—"}</td>}
-                                                        {hasInputPrice && <td className={styles.modelTd}>{model.pricing?.inputPerMillion != null ? `$${model.pricing.inputPerMillion}` : "—"}</td>}
-                                                        {hasOutputPrice && <td className={styles.modelTd}>{model.pricing?.outputPerMillion != null ? `$${model.pricing.outputPerMillion}` : "—"}</td>}
-                                                        {arenaCols.map((col) => (
-                                                            <td key={col.key} className={`${styles.modelTd} ${model.arena?.[col.key] != null ? styles.modelTdArena : styles.modelTdEmpty}`}>
-                                                                {model.arena?.[col.key] ?? "—"}
-                                                            </td>
-                                                        ))}
-                                                    </tr>
-                                                ))}
-                                                {sorted.length === 0 && (
-                                                    <tr><td colSpan={99} className={styles.empty}>No models available for this combination</td></tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    <ModelGrid
+                                        models={models}
+                                        onSelect={handleModelSelect}
+                                        showSearch={models.length > 6}
+                                    />
                                 </div>
                             );
                         })()}

@@ -1,57 +1,34 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Activity,
-  Clock,
-  MessageSquare,
-  User,
   AlertCircle,
-  RefreshCw,
-  ChevronDown,
-  ChevronUp,
   Loader,
+  MessageSquare,
 } from "lucide-react";
 import { IrisService } from "../../../services/IrisService";
 import { PrismService } from "../../../services/PrismService";
 import MessageList from "../../../components/MessageList";
 import SettingsPanel from "../../../components/SettingsPanel";
+import HistoryPanel from "../../../components/HistoryPanel";
 import StatsCard from "../../../components/StatsCard";
 import styles from "./page.module.css";
 
 const REFRESH_INTERVAL = 2000; // 2s
-
-function timeAgo(dateStr) {
-  if (!dateStr) return "-";
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
-
-function getActivityLevel(dateStr) {
-  if (!dateStr) return "idle";
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 2) return "active";
-  if (mins < 5) return "recent";
-  return "idle";
-}
-
 
 export default function LivePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
-  const [fullConversations, setFullConversations] = useState({});
-  const [loadingConv, setLoadingConv] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
+  const [selectedConv, setSelectedConv] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [config, setConfig] = useState(null);
   const intervalRef = useRef(null);
+  const lastFingerprintRef = useRef("");
+  const [fingerprint, setFingerprint] = useState("");
 
   useEffect(() => {
     PrismService.getConfig().then(setConfig).catch(() => {});
@@ -61,8 +38,24 @@ export default function LivePage() {
     try {
       setError(null);
       const result = await IrisService.getLiveActivity(5);
-      setData(result);
-      setLastRefresh(new Date());
+      const convs = result?.conversations || [];
+
+      // Only compare meaningful fields — NOT lastActivity which changes on every auto-save
+      const fingerprint = convs.map((c) =>
+        `${c.id}:${c.messageCount}:${c.isGenerating}`
+      ).join("|");
+
+      if (fingerprint !== lastFingerprintRef.current) {
+        lastFingerprintRef.current = fingerprint;
+        setData(result);
+        setLastRefresh(new Date());
+        setFingerprint(fingerprint);
+      }
+
+      // Auto-select the most recent live conversation on first load
+      if (convs.length > 0 && !selectedId) {
+        selectConversation(convs[0].id);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -70,68 +63,76 @@ export default function LivePage() {
     }
   }
 
-  const toggleExpand = useCallback(async (convId) => {
-    if (expandedId === convId) {
-      setExpandedId(null);
-      return;
-    }
-    setExpandedId(convId);
-    try {
-      setLoadingConv(convId);
-      const full = await IrisService.getConversation(convId);
-      setFullConversations((prev) => ({ ...prev, [convId]: full }));
-    } catch (err) {
-      console.error("Failed to load conversation:", err);
-    } finally {
-      setLoadingConv(null);
-    }
-  }, [expandedId]);
+  // Re-fetch selected conversation only when live fingerprint changes
+  const fingerprintRef = useRef("");
 
-  // Re-fetch expanded conversation on each list refresh, but only update
-  // state if message count changed to avoid scroll-resetting re-renders
   useEffect(() => {
-    if (!expandedId || !lastRefresh) return;
+    if (!selectedId || fingerprint === fingerprintRef.current) return;
+    fingerprintRef.current = fingerprint;
     let cancelled = false;
     (async () => {
       try {
-        const full = await IrisService.getConversation(expandedId);
+        const full = await IrisService.getConversation(selectedId);
         if (!cancelled) {
-          setFullConversations((prev) => {
-            const existing = prev[expandedId];
-            const oldCount = existing?.messages?.length || 0;
-            const newCount = full?.messages?.length || 0;
-            if (newCount !== oldCount) {
-              return { ...prev, [expandedId]: full };
-            }
+          setSelectedConv((prev) => {
+            const oldMsgs = prev?.messages || [];
+            const newMsgs = full?.messages || [];
+            if (oldMsgs.length !== newMsgs.length) return full;
+            // Compare last message content to detect streaming updates
+            const oldLast = oldMsgs[oldMsgs.length - 1];
+            const newLast = newMsgs[newMsgs.length - 1];
+            if (oldLast?.content?.length !== newLast?.content?.length) return full;
             return prev;
           });
         }
       } catch (err) {
-        console.error("Failed to refresh expanded conversation:", err);
+        console.error("Failed to refresh selected conversation:", err);
       }
     })();
     return () => { cancelled = true; };
-  }, [expandedId, lastRefresh]);
+  }, [selectedId, fingerprint]);
 
   useEffect(() => {
     loadLive();
     intervalRef.current = setInterval(loadLive, REFRESH_INTERVAL);
     return () => clearInterval(intervalRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const conversations = data?.conversations || [];
+  const conversations = useMemo(() => data?.conversations || [], [data]);
   const activeCount = data?.activeCount || 0;
 
-  // Separate active vs recent
-  const activeConvs = conversations.filter(
-    (c) => getActivityLevel(c.lastActivity) === "active",
-  );
-  const recentConvs = conversations.filter(
-    (c) => getActivityLevel(c.lastActivity) !== "active",
-  );
+  async function selectConversation(id) {
+    if (id === selectedId) {
+      setSelectedId(null);
+      setSelectedConv(null);
+      return;
+    }
+    setSelectedId(id);
+    setLoadingDetail(true);
+    try {
+      const conv = await IrisService.getConversation(id);
+      setSelectedConv(conv);
+    } catch {
+      setSelectedConv(null);
+    } finally {
+      setLoadingDetail(false);
+    }
+  }
 
-  // Unique projects
-  const uniqueProjects = new Set(conversations.map((c) => c.project));
+  // Memoize history items so HistoryPanel doesn't re-render on every poll
+  const historyItems = useMemo(() => conversations.map((c) => ({
+    id: c.id,
+    title: c.title,
+    project: c.project,
+    updatedAt: c.lastActivity,
+    messageCount: c.messageCount,
+    isGenerating: c.isGenerating,
+  })), [conversations]);
+
+  const convTitle = selectedConv
+    ? (selectedConv.title || "Untitled Conversation")
+    : "Select a conversation";
 
   return (
     <div className={styles.page}>
@@ -142,12 +143,6 @@ export default function LivePage() {
             <span className={styles.liveDotInner} />
             Live
           </span>
-        </div>
-        <div className={styles.refreshInfo}>
-          <RefreshCw size={12} />
-          {lastRefresh
-            ? `Updated ${lastRefresh.toLocaleTimeString()}`
-            : "Loading..."}
         </div>
       </div>
 
@@ -170,136 +165,95 @@ export default function LivePage() {
         />
         <StatsCard
           label="Active Now"
-          value={loading ? "..." : activeConvs.length}
+          value={loading ? "..." : conversations.filter((c) => {
+            const diff = Date.now() - new Date(c.lastActivity).getTime();
+            return diff < 120000;
+          }).length}
           subtitle="Updated in last 2 minutes"
           icon={MessageSquare}
           variant="accent"
           loading={loading}
         />
         <StatsCard
-          label="Active Projects"
-          value={loading ? "..." : uniqueProjects.size}
-          subtitle="With recent activity"
-          icon={User}
+          label="Generating"
+          value={loading ? "..." : conversations.filter((c) => c.isGenerating).length}
+          subtitle="Currently streaming"
+          icon={Loader}
           variant="info"
           loading={loading}
         />
       </div>
 
-      {/* Conversations list */}
-      {conversations.length === 0 && !loading ? (
-        <div className={styles.emptyState}>
-          <Activity size={48} className={styles.emptyIcon} />
-          <div className={styles.emptyTitle}>No active conversations</div>
-          <div className={styles.emptySubtitle}>
-            Conversations will appear here when users interact with Prism
-          </div>
-        </div>
-      ) : (
-        <div className={styles.convStack}>
-          {[...activeConvs, ...recentConvs].map((conv) => {
-            const level = getActivityLevel(conv.lastActivity);
-            const isExpanded = expandedId === conv.id;
-            const fullConv = fullConversations[conv.id];
-            const isLoadingThis = loadingConv === conv.id;
-            return (
-              <div
-                key={conv.id}
-                className={`${styles.convCard} ${level === "active" ? styles.recentActivity : ""} ${isExpanded ? styles.convCardExpanded : ""}`}
-              >
-                <div
-                  className={styles.convCardHeader}
-                  onClick={() => toggleExpand(conv.id)}
-                >
-                  <span className={styles.convTitle}>
-                    {conv.title || "Untitled"}
-                  </span>
-                  <div className={styles.headerRight}>
-                    <div className={styles.convMeta}>
-                      <span className={styles.projectBadge}>{conv.project}</span>
-                      <span className={styles.metaItem}>
-                        <MessageSquare className={styles.metaIcon} />
-                        {conv.messageCount || 0} msgs
-                      </span>
-                      <span className={styles.metaItem}>
-                        <Clock className={styles.metaIcon} />
-                        {timeAgo(conv.lastActivity)}
-                      </span>
-                    </div>
-                    <span
-                      className={`${styles.activityBadge} ${
-                        level === "active"
-                          ? styles.badgeActive
-                          : level === "recent"
-                            ? styles.badgeRecent
-                            : styles.badgeIdle
-                      }`}
-                    >
-                      {level === "active" && (
-                        <span className={styles.liveDotInner} />
-                      )}
-                      {level === "active"
-                        ? "Active"
-                        : level === "recent"
-                          ? "Recent"
-                          : "Idle"}
-                    </span>
-                    {conv.isGenerating && (
-                      <span className={styles.generatingBadge}>
-                        <Loader size={12} className={styles.spinning} />
-                        Generating
-                      </span>
-                    )}
-                    {isExpanded
-                      ? <ChevronUp size={16} className={styles.expandIcon} />
-                      : <ChevronDown size={16} className={styles.expandIcon} />
-                    }
-                  </div>
-                </div>
+      {/* Chat-like 3-panel layout */}
+      <div className={styles.chatContainer}>
+        {/* Settings Sidebar */}
+        <aside className={styles.settingsSidebar}>
+          <div className={styles.glassHeader}>Settings</div>
+          {selectedConv?.settings ? (
+            <SettingsPanel
+              config={config}
+              settings={selectedConv.settings}
+              readOnly
+            />
+          ) : (
+            <div className={styles.emptyPanel}>
+              Select a conversation to view settings
+            </div>
+          )}
+        </aside>
 
-                {!isExpanded && conv.lastMessage && (
-                  <div className={styles.lastMessage}>
-                    <strong>{conv.lastMessageRole || "user"}:</strong>{" "}
-                    {typeof conv.lastMessage === "string"
-                      ? conv.lastMessage.slice(0, 200)
-                      : "..."}
-                    {conv.lastMessage?.length > 200 ? "..." : ""}
-                  </div>
+        {/* Main Viewer */}
+        <section className={styles.mainViewer}>
+          <div className={styles.glassHeader}>
+            <span className={styles.headerTitle}>{convTitle}</span>
+            {selectedConv && (
+              <div className={styles.headerMeta}>
+                <span className={styles.metaBadge}>{selectedConv.project}</span>
+                <span>{selectedConv.messages?.length || 0} messages</span>
+                {selectedConv.settings?.model && (
+                  <span>{selectedConv.settings.model}</span>
                 )}
-
-                {isExpanded && (
-                  <div className={styles.messagesPanel}>
-                    {isLoadingThis ? (
-                      <div className={styles.loadingMessages}>Loading messages…</div>
-                    ) : fullConv?.messages?.length > 0 ? (
-                      <div className={styles.expandedContent}>
-                        {fullConv.settings && (
-                          <div className={styles.settingsSidebar}>
-                            <div className={styles.settingsHeader}>Settings</div>
-                            <SettingsPanel
-                              config={config}
-                              settings={fullConv.settings}
-                              readOnly
-                            />
-                          </div>
-                        )}
-                        <div className={styles.messagesBody}>
-                          <MessageList
-                            messages={fullConv.messages}
-                            readOnly
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className={styles.loadingMessages}>No messages in this conversation.</div>
-                    )}
-                  </div>
+                {selectedConv.isGenerating && (
+                  <span className={styles.generatingBadge}>
+                    <Loader size={12} className={styles.spinning} />
+                    Generating
+                  </span>
                 )}
               </div>
-            );
-          })}
-        </div>
-      )}
+            )}
+          </div>
+          <div className={styles.viewerBody}>
+            {!selectedConv && !loadingDetail ? (
+              <div className={styles.emptyViewer}>
+                <MessageSquare
+                  size={40}
+                  style={{ opacity: 0.3, marginBottom: 12 }}
+                />
+                <div>Select a conversation from Live Activity</div>
+              </div>
+            ) : loadingDetail ? (
+              <div className={styles.emptyViewer}>Loading conversation...</div>
+            ) : (
+              <MessageList
+                messages={selectedConv.messages || []}
+                readOnly
+              />
+            )}
+          </div>
+        </section>
+
+        {/* Live Activity Sidebar */}
+        <aside className={styles.historySidebar}>
+          <div className={styles.glassHeader}>Live Activity</div>
+          <HistoryPanel
+            conversations={historyItems}
+            activeId={selectedId}
+            onSelect={(conv) => selectConversation(conv.id)}
+            readOnly
+            showProject
+          />
+        </aside>
+      </div>
     </div>
   );
 }

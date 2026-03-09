@@ -21,7 +21,7 @@
   height: 24px;
   background: var(--select-bg);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 2px;
   transition: background 0.25s, border-color 0.25s, box-shadow 0.2s;
   flex-shrink: 0;
   cursor: pointer;
@@ -79,7 +79,7 @@
 .small .track {
   width: 30px;
   height: 16px;
-  border-radius: 8px;
+  border-radius: 2px;
 }
 
 .small .knob {

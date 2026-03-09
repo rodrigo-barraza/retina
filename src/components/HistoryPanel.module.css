@@ -6,7 +6,8 @@
 
 .newBtn {
   margin: 15px;
-  padding: 10px;
+  height: var(--input-height);
+  padding: 0 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -40,7 +41,8 @@
 
 .searchInput {
   width: 100%;
-  padding: 8px 10px 8px 32px;
+  height: var(--input-height);
+  padding: 0 10px 0 32px;
   font-size: 12px;
   color: var(--text-primary);
   background: var(--bg-secondary);
@@ -74,7 +76,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 2px;
   transition: color 0.15s, background 0.15s;
 }
 
@@ -137,6 +139,17 @@
 .date {
   font-size: 11px;
   color: var(--text-secondary);
+}
+
+.projectTag {
+  display: inline-flex;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--accent-subtle);
+  color: var(--accent-color);
+  margin-right: 6px;
 }
 
 .deleteBtn {

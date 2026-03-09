@@ -1,0 +1,280 @@
+/* ── ModelGrid (Table) ──────────────────────────────── */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Search ─────────────────────────────────────────── */
+
+.searchWrapper {
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: var(--input-height);
+  padding: 0 10px 0 32px;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+
+  &::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+}
+
+.searchClear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+  }
+}
+
+/* ── Table ─────────────────────────────────────────── */
+
+.tableScroll {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  table-layout: auto;
+}
+
+.th {
+  padding: 10px 14px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+  user-select: none;
+
+  &:first-child {
+    text-align: left;
+    width: 1%;
+    white-space: nowrap;
+  }
+}
+
+.thSortable {
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.sortIcon {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 2px;
+  opacity: 0.7;
+}
+
+.tr {
+  transition: all 0.12s ease;
+
+  &:not(:last-child) td {
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  &.clickable {
+    cursor: pointer;
+  }
+
+  &:hover {
+    .tdName {
+      background: rgba(99, 102, 241, 0.08);
+      border-left: 2px solid var(--accent-color);
+      padding-left: 12px;
+    }
+
+    .td {
+      background: rgba(99, 102, 241, 0.04);
+    }
+  }
+
+  &.loadedRow {
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.04), transparent);
+  }
+}
+
+.td {
+  padding: 10px 14px;
+  text-align: right;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  background: var(--bg-secondary);
+}
+
+.tdName {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  background: var(--bg-primary);
+}
+
+.nameStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modelProvider {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* ── Inline badges (loaded / available / actions) ──── */
+
+.loadedBadge,
+.availableBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.loadedBadge {
+  color: var(--success);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.availableBadge {
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+}
+
+.inlineActions {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.statusDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  opacity: 0.35;
+  flex-shrink: 0;
+
+  &.active {
+    background: var(--success);
+    opacity: 1;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+    animation: pulse 2s ease-in-out infinite;
+  }
+}
+
+/* ── Arena & pricing cells ─────────────────────────── */
+
+.thArena {
+  color: var(--accent-color);
+  opacity: 0.7;
+}
+
+.tdArena {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.tdEmpty {
+  opacity: 0.3;
+}
+
+/* ── Empty state ───────────────────────────────────── */
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ── Animations ────────────────────────────────────── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ── Responsive ────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .th, .td, .tdName {
+    padding: 8px 10px;
+  }
+}
