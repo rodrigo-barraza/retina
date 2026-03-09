@@ -28,6 +28,8 @@ export default function LivePage() {
   const [config, setConfig] = useState(null);
   const intervalRef = useRef(null);
   const lastFingerprintRef = useRef("");
+  const autoSelectedRef = useRef(false);
+  const viewerBodyRef = useRef(null);
   const [fingerprint, setFingerprint] = useState("");
 
   useEffect(() => {
@@ -36,7 +38,6 @@ export default function LivePage() {
 
   async function loadLive() {
     try {
-      setError(null);
       const result = await IrisService.getLiveActivity(5);
       const convs = result?.conversations || [];
 
@@ -52,14 +53,18 @@ export default function LivePage() {
         setFingerprint(fingerprint);
       }
 
-      // Auto-select the most recent live conversation on first load
-      if (convs.length > 0 && !selectedId) {
+      // Auto-select the most recent live conversation on first load only
+      if (convs.length > 0 && !autoSelectedRef.current) {
+        autoSelectedRef.current = true;
         selectConversation(convs[0].id);
       }
+
+      // Only clear error/loading if they were set
+      setError((prev) => prev !== null ? null : prev);
+      setLoading((prev) => prev ? false : prev);
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
+      setLoading((prev) => prev ? false : prev);
     }
   }
 
@@ -98,6 +103,17 @@ export default function LivePage() {
     return () => clearInterval(intervalRef.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Scroll conversation viewer to bottom when a conversation is loaded
+  useEffect(() => {
+    if (!loadingDetail && selectedConv && viewerBodyRef.current) {
+      const el = viewerBodyRef.current;
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, loadingDetail]);
 
   const conversations = useMemo(() => data?.conversations || [], [data]);
   const activeCount = data?.activeCount || 0;
@@ -222,7 +238,7 @@ export default function LivePage() {
               </div>
             )}
           </div>
-          <div className={styles.viewerBody}>
+          <div className={styles.viewerBody} ref={viewerBodyRef}>
             {!selectedConv && !loadingDetail ? (
               <div className={styles.emptyViewer}>
                 <MessageSquare
