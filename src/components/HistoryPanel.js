@@ -174,7 +174,7 @@ export default function HistoryPanel({
                     const dt = DateTime.fromISO(
                         conv.updatedAt || conv.createdAt,
                     ).toRelative();
-                    const totalCost = (conv.messages || []).reduce(
+                    const totalCost = conv.totalCost || (conv.messages || []).reduce(
                         (sum, m) => sum + (m.estimatedCost || 0),
                         0,
                     );
