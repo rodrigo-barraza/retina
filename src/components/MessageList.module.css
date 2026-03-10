@@ -354,3 +354,33 @@
   align-items: center;
   gap: 4px;
 }
+
+/* ── Model Change Divider ── */
+.modelChangeDivider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.modelChangeLine {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+  opacity: 0.5;
+}
+
+.modelChangeLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-color);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0.7;
+}

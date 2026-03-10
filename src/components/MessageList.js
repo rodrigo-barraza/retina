@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -14,6 +14,7 @@ import {
   Pencil,
   RotateCcw,
   X as XIcon,
+  RefreshCw,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import styles from "./MessageList.module.css";
@@ -283,8 +284,42 @@ export default function MessageList({
               ? styles.systemNode
               : styles.aiNode;
 
+        // Detect model swap: show divider above user message when the next
+        // assistant's model differs from the previous assistant's model
+        let showModelChange = false;
+        if (msg.role === "user") {
+          let prevAssistantModel = null;
+          let nextAssistantModel = null;
+          for (let j = i - 1; j >= 0; j--) {
+            if (messages[j].role === "assistant" && messages[j].model) {
+              prevAssistantModel = messages[j].model;
+              break;
+            }
+          }
+          for (let j = i + 1; j < messages.length; j++) {
+            if (messages[j].role === "assistant" && messages[j].model) {
+              nextAssistantModel = messages[j].model;
+              break;
+            }
+          }
+          if (prevAssistantModel && nextAssistantModel && prevAssistantModel !== nextAssistantModel) {
+            showModelChange = true;
+          }
+        }
+
         return (
-          <div key={i} className={`${styles.message} ${roleClass}`}>
+          <React.Fragment key={i}>
+            {showModelChange && (
+              <div className={styles.modelChangeDivider}>
+                <span className={styles.modelChangeLine} />
+                <span className={styles.modelChangeLabel}>
+                  <RefreshCw size={11} />
+                  Model Swap
+                </span>
+                <span className={styles.modelChangeLine} />
+              </div>
+            )}
+            <div className={`${styles.message} ${roleClass}`}>
             <div className={styles.avatar}>
               {msg.role === "user" ? "U" : msg.role === "system" ? "S" : "AI"}
             </div>
@@ -405,7 +440,8 @@ export default function MessageList({
                 </div>
               )}
             </div>
-          </div>
+            </div>
+          </React.Fragment>
         );
       })}
     </div>
