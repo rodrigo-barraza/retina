@@ -414,6 +414,13 @@ export default function MessageList({
                 )
               )}
 
+              {/* User metadata */}
+              {msg.role === "user" && msg.content && (
+                <div className={styles.meta}>
+                  {`${msg.content.trim().split(/\s+/).filter(Boolean).length} words`}
+                </div>
+              )}
+
               {/* Assistant metadata */}
               {msg.role === "assistant" && (msg.usage || msg.audio || msg.provider) && (
                 <div className={styles.meta}>
@@ -425,10 +432,11 @@ export default function MessageList({
                   )}
                   {msg.model && <>{" • "}{msg.model}</>}
                   {msg.voice ? ` • 🔊 ${msg.voice}` : ""}
-                  {msg.usage?.inputTokens != null || msg.usage?.outputTokens != null
-                    ? ` • ${(msg.usage.inputTokens || 0) + (msg.usage.outputTokens || 0)} tokens`
-                    : ""}
-                  {msg.usage?.characters != null ? ` • ${msg.usage.characters} chars` : ""}
+                  {msg.usage?.inputTokens != null && msg.usage?.outputTokens != null
+                    ? ` • ${msg.usage.inputTokens} in · ${msg.usage.outputTokens} out tokens`
+                    : msg.usage?.outputTokens != null
+                      ? ` • ${msg.usage.outputTokens} tokens`
+                      : ""}
                   {msg.content ? ` • ${msg.content.trim().split(/\s+/).filter(Boolean).length} words` : ""}
                   {msg.totalTime != null ? ` • ${msg.totalTime.toFixed(1)}s` : ""}
                   {msg.tokensPerSec ? ` • ${msg.tokensPerSec} tok/s` : ""}
