@@ -257,6 +257,7 @@ export default function ChatArea({
     const [selectedInput, setSelectedInput] = useState(null);
     const endRef = useRef(null);
     const fileInputRef = useRef(null);
+    const textareaRef = useRef(null);
     const [isRecording, setIsRecording] = useState(false);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -320,6 +321,15 @@ export default function ChatArea({
     useEffect(() => {
         endRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isGenerating]);
+
+    // Auto-resize textarea to fit content
+    useEffect(() => {
+        const el = textareaRef.current;
+        if (el) {
+            el.style.height = "auto";
+            el.style.height = el.scrollHeight + "px";
+        }
+    }, [input]);
 
     // Reset welcome flow when starting a new chat
     useEffect(() => {
@@ -736,6 +746,7 @@ export default function ChatArea({
                         )}
                         {!isTranscriptionModel && (
                             <textarea
+                                ref={textareaRef}
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
