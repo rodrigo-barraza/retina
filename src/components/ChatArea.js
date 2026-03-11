@@ -290,6 +290,7 @@ export default function ChatArea({
     systemPrompt,
     onSystemPromptClick,
     readOnly = false,
+    newChatKey = 0,
 }) {
     const [_modelSort, _setModelSort] = useState({ key: null, dir: "desc" });
     const nonTextTypes = supportedInputTypes.filter((t) => t !== "text");
@@ -392,7 +393,7 @@ export default function ChatArea({
             setSelectedOutput(null);
             setSelectedInput(null);
         }
-    }, [messages.length]);
+    }, [messages.length, newChatKey]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -547,10 +548,14 @@ export default function ChatArea({
                     <div className={styles.welcome}>
                         {welcomeStep === "pickOutput" && (
                             <>
-                                <h3>What do you wanna make?</h3>
-                                <p className={styles.sectionSubtitle}>
-                                    Pick an output type to get started
-                                </p>
+                                <div className={styles.stepHeader}>
+                                    <div>
+                                        <h3>What do you wanna make?</h3>
+                                        <p className={styles.sectionSubtitle}>
+                                            Pick an output type to get started
+                                        </p>
+                                    </div>
+                                </div>
                                 <div className={styles.capabilityGrid}>
                                     {OUTPUT_MODALITIES.map((mod) => {
                                         const Icon = mod.icon;
@@ -596,7 +601,7 @@ export default function ChatArea({
                                     (m) => m.key === selectedOutput,
                                 );
                                 return (
-                                    <div className={styles.modelListView}>
+                                    <>
                                         <div className={styles.stepHeader}>
                                             <button
                                                 className={styles.backButton}
@@ -608,8 +613,8 @@ export default function ChatArea({
                                                 <ArrowLeft size={18} />
                                             </button>
                                             <div>
-                                                <h3>How do you wanna send it?</h3>
-                                                <p className={styles.modelListSubtitle}>
+                                                <h3>What do you want to send?</h3>
+                                                <p className={styles.sectionSubtitle}>
                                                     Making {outputMod?.title?.toLowerCase()} — now pick your
                                                     input
                                                 </p>
@@ -648,7 +653,7 @@ export default function ChatArea({
                                                 },
                                             )}
                                         </div>
-                                    </div>
+                                    </>
                                 );
                             })()}
 
@@ -673,7 +678,7 @@ export default function ChatArea({
 
                                 return (
                                     <div className={styles.modelTableView}>
-                                        <div className={styles.modelTableHeader}>
+                                        <div className={styles.stepHeader}>
                                             <button
                                                 className={styles.backButton}
                                                 onClick={() => {
@@ -693,7 +698,7 @@ export default function ChatArea({
                                                         ? "All Models"
                                                         : `${inputMeta?.title} to ${outputMod?.title}`}
                                                 </h3>
-                                                <p className={styles.modelListSubtitle}>
+                                                <p className={styles.sectionSubtitle}>
                                                     Pick a model to get started
                                                 </p>
                                             </div>

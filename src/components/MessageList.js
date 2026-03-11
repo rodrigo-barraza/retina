@@ -26,6 +26,23 @@ import { PrismService } from "../services/PrismService";
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 
+function getOrdinalSuffix(day) {
+    if (day >= 11 && day <= 13) return "th";
+    switch (day % 10) {
+        case 1: return "st";
+        case 2: return "nd";
+        case 3: return "rd";
+        default: return "th";
+    }
+}
+
+function formatTimestamp(isoString) {
+    const dt = DateTime.fromISO(isoString);
+    const day = dt.day;
+    const suffix = getOrdinalSuffix(day);
+    return dt.toFormat(`LLLL d'${suffix},' yyyy '@' h:mm:ss a`);
+}
+
 function getMimeCategory(ref) {
     if (!ref) return "file";
     if (ref.startsWith("minio://")) {
@@ -427,9 +444,7 @@ export default function MessageList({
                                                 : "Model"}
                                         {msg.timestamp && (
                                             <span className={styles.timestamp}>
-                                                {DateTime.fromISO(msg.timestamp).toLocaleString(
-                                                    DateTime.DATETIME_SHORT_WITH_SECONDS,
-                                                )}
+                                                {formatTimestamp(msg.timestamp)}
                                             </span>
                                         )}
                                     </div>
@@ -538,37 +553,41 @@ export default function MessageList({
                                 {msg.role === "assistant" &&
                                     (msg.usage || msg.audio || msg.provider) && (
                                         <div className={styles.meta}>
-                                            {msg.provider && (
-                                                <span className={styles.metaProvider}>
-                                                    <ProviderLogo provider={msg.provider} size={13} />
-                                                    {PROVIDER_LABELS[msg.provider] || msg.provider}
-                                                </span>
-                                            )}
-                                            {msg.model && (
-                                                <>
-                                                    {" • "}
-                                                    {msg.model}
-                                                </>
-                                            )}
-                                            {msg.voice ? ` • 🔊 ${msg.voice}` : ""}
-                                            {msg.usage?.inputTokens != null &&
-                                                msg.usage?.outputTokens != null
-                                                ? ` • ${msg.usage.inputTokens} in · ${msg.usage.outputTokens} out tokens`
-                                                : msg.usage?.outputTokens != null
-                                                    ? ` • ${msg.usage.outputTokens} tokens`
+                                            <div className={styles.metaRow}>
+                                                {msg.provider && (
+                                                    <span className={styles.metaProvider}>
+                                                        <ProviderLogo provider={msg.provider} size={13} />
+                                                        {PROVIDER_LABELS[msg.provider] || msg.provider}
+                                                    </span>
+                                                )}
+                                                {msg.model && (
+                                                    <>
+                                                        {" • "}
+                                                        {msg.model}
+                                                    </>
+                                                )}
+                                            </div>
+                                            <div className={styles.metaRow}>
+                                                {msg.voice ? `🔊 ${msg.voice}` : ""}
+                                                {msg.usage?.inputTokens != null &&
+                                                    msg.usage?.outputTokens != null
+                                                    ? `${msg.voice ? " • " : ""}${msg.usage.inputTokens} in · ${msg.usage.outputTokens} out tokens`
+                                                    : msg.usage?.outputTokens != null
+                                                        ? `${msg.voice ? " • " : ""}${msg.usage.outputTokens} tokens`
+                                                        : ""}
+                                                {msg.content
+                                                    ? ` • ${msg.content.trim().split(/\s+/).filter(Boolean).length} words`
                                                     : ""}
-                                            {msg.content
-                                                ? ` • ${msg.content.trim().split(/\s+/).filter(Boolean).length} words`
-                                                : ""}
-                                            {msg.totalTime != null
-                                                ? ` • ${msg.totalTime.toFixed(1)}s`
-                                                : ""}
-                                            {msg.tokensPerSec ? ` • ${msg.tokensPerSec} tok/s` : ""}
-                                            {msg.provider === "lm-studio"
-                                                ? " • $0"
-                                                : msg.estimatedCost
-                                                    ? ` • $${msg.estimatedCost.toFixed(5)}`
+                                                {msg.totalTime != null
+                                                    ? ` • ${msg.totalTime.toFixed(1)}s`
                                                     : ""}
+                                                {msg.tokensPerSec ? ` • ${msg.tokensPerSec} tok/s` : ""}
+                                                {msg.provider === "lm-studio"
+                                                    ? " • $0"
+                                                    : msg.estimatedCost
+                                                        ? ` • $${msg.estimatedCost.toFixed(5)}`
+                                                        : ""}
+                                            </div>
                                         </div>
                                     )}
                             </div>

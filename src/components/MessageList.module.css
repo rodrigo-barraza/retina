@@ -361,13 +361,20 @@
 
 /* ── Metadata row ── */
 .meta {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-secondary);
   margin-top: 8px;
   display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0.5;
+}
+
+.metaRow {
+  display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0;
-  opacity: 0.7;
 }
 
 .metaProvider {

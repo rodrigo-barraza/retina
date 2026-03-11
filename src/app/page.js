@@ -46,6 +46,7 @@ export default function Home({ initialConversationId = null }) {
     });
 
     const [isGenerating, setIsGenerating] = useState(false);
+    const [newChatKey, setNewChatKey] = useState(0);
     const [showModelList, setShowModelList] = useState(false);
     const [showSystemPromptModal, setShowSystemPromptModal] = useState(false);
     const skipSystemPromptSave = useRef(false);
@@ -176,6 +177,12 @@ export default function Home({ initialConversationId = null }) {
             ...s,
             systemPrompt: "You are a helpful AI assistant.",
         }));
+    };
+
+    // Explicit "New Conversation" button action — also resets the welcome flow
+    const handleNewChatClick = () => {
+        handleNewChat();
+        setNewChatKey((k) => k + 1);
     };
 
     // Persist provider/model to localStorage
@@ -1150,7 +1157,7 @@ export default function Home({ initialConversationId = null }) {
                         conversations={conversations}
                         activeId={activeId}
                         onSelect={handleSelectConversation}
-                        onNew={handleNewChat}
+                        onNew={handleNewChatClick}
                         onDelete={handleDeleteConversation}
                     />
                 }
@@ -1208,6 +1215,7 @@ export default function Home({ initialConversationId = null }) {
                 <ChatArea
                     messages={messages}
                     isGenerating={isGenerating}
+                    newChatKey={newChatKey}
                     onSend={handleSend}
                     onDelete={handleDeleteMessage}
                     onEdit={handleEditMessage}
