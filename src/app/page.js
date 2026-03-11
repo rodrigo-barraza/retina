@@ -1156,36 +1156,38 @@ export default function Home({ initialConversationId = null }) {
                 }
                 headerTitle={title}
                 headerMeta={
-                    <div className={styles.headerMeta}>
-                        {messages.length > 0 && <span>{messages.length} messages</span>}
-                        {uniqueModels.length === 1 && <span>{uniqueModels[0]}</span>}
-                        {uniqueModels.length > 1 && (
-                            <span className={styles.modelDropdownWrapper}>
-                                <button
-                                    className={styles.modelDropdownTrigger}
-                                    onClick={() => setShowModelList((v) => !v)}
-                                >
-                                    {uniqueModels.length} models
-                                </button>
-                                {showModelList && (
-                                    <>
-                                        <div
-                                            className={styles.modelDropdownBackdrop}
-                                            onClick={() => setShowModelList(false)}
-                                        />
-                                        <div className={styles.modelDropdown}>
-                                            {uniqueModels.map((m) => (
-                                                <div key={m} className={styles.modelDropdownItem}>
-                                                    {m}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
-                            </span>
-                        )}
-                        {totalCost > 0 && <span>${totalCost.toFixed(5)}</span>}
-                    </div>
+                    messages.length > 0 ? (
+                        <div className={styles.headerMeta}>
+                            <span>{messages.length} messages</span>
+                            {uniqueModels.length === 1 && <span>{uniqueModels[0]}</span>}
+                            {uniqueModels.length > 1 && (
+                                <span className={styles.modelDropdownWrapper}>
+                                    <button
+                                        className={styles.modelDropdownTrigger}
+                                        onClick={() => setShowModelList((v) => !v)}
+                                    >
+                                        {uniqueModels.length} models
+                                    </button>
+                                    {showModelList && (
+                                        <>
+                                            <div
+                                                className={styles.modelDropdownBackdrop}
+                                                onClick={() => setShowModelList(false)}
+                                            />
+                                            <div className={styles.modelDropdown}>
+                                                {uniqueModels.map((m) => (
+                                                    <div key={m} className={styles.modelDropdownItem}>
+                                                        {m}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </span>
+                            )}
+                            {totalCost > 0 && <span>${totalCost.toFixed(5)}</span>}
+                        </div>
+                    ) : null
                 }
                 headerControls={
                     <div className={styles.headerControls}>

@@ -78,6 +78,12 @@
   text-align: left;
 }
 
+@media (max-width: 600px) {
+  .capabilityGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .sectionHeading {
   margin-top: 32px;
   font-size: 16px;
@@ -156,6 +162,41 @@
 .modelListView h3 {
   text-align: left;
   margin-bottom: 4px;
+}
+
+.stepHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stepHeader h3 {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+.viewAllModelsCard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-color);
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.viewAllModelsCard:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: var(--accent-glow);
 }
 
 .backButton {
@@ -783,7 +824,7 @@
 .inputRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
 }
 
 .inputRow textarea {
@@ -861,6 +902,42 @@
 .imageUploadBtn:hover {
   color: var(--accent-color);
   background: var(--bg-tertiary);
+}
+
+/* Rotating modality icon */
+.rotatingIconContainer {
+  width: 18px;
+  height: 18px;
+  overflow: hidden;
+  position: relative;
+}
+
+.rotatingIconTrack {
+  display: flex;
+  flex-direction: column;
+  transition: none;
+}
+
+.rotatingIconTrack.rotatingIconSlide {
+  animation: iconScrollUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.rotatingIconItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+@keyframes iconScrollUp {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-18px);
+  }
 }
 
 .pendingImages {

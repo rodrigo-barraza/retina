@@ -34,17 +34,19 @@ export default function ThreePanelLayout({
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
-        const storedLeft = localStorage.getItem("panel_left");
-        const storedRight = localStorage.getItem("panel_right");
-        const left =
-            storedLeft !== null ? storedLeft === "true" : window.innerWidth >= 768;
-        const right =
-            storedRight !== null
-                ? storedRight === "true"
-                : window.innerWidth >= 768;
+        const mobile = window.innerWidth < 768;
+        if (mobile) {
+            // On mobile, always start with panels closed
+            setShowLeft(false);
+            setShowRight(false);
+        } else {
+            // On desktop, restore from localStorage (default open)
+            const storedLeft = localStorage.getItem("panel_left");
+            const storedRight = localStorage.getItem("panel_right");
+            setShowLeft(storedLeft !== null ? storedLeft === "true" : true);
+            setShowRight(storedRight !== null ? storedRight === "true" : true);
+        }
         // eslint-disable-next-line react-compiler/react-compiler
-        setShowLeft(left);
-        setShowRight(right);
         setHydrated(true);
     }, []);
 

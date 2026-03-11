@@ -6,8 +6,8 @@ import {
     ChevronDown,
     ChevronRight,
     Paperclip,
-    FileAudio,
-    FileVideo,
+    Volume2,
+    Video,
     FileText,
     Image as ImageIcon,
     Type,
@@ -17,6 +17,7 @@ import {
     Edit3,
     Terminal,
     AlertCircle,
+    LayoutGrid,
 } from "lucide-react";
 import ImageAnnotator from "./ImageAnnotator";
 import DocumentViewer from "./DocumentViewer";
@@ -33,6 +34,58 @@ const TYPE_ACCEPT_MAP = {
     video: "video/*",
     pdf: "application/pdf",
 };
+
+const TYPE_ICON_MAP = {
+    paperclip: Paperclip,
+    image: ImageIcon,
+    audio: Volume2,
+    video: Video,
+    pdf: FileText,
+};
+
+function RotatingUploadIcon({ types, size = 18 }) {
+    // Always include paperclip at the start of the cycle
+    const allTypes = ["paperclip", ...types];
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+
+    useEffect(() => {
+        if (allTypes.length <= 1) return;
+        const interval = setInterval(() => {
+            setIsTransitioning(true);
+            setTimeout(() => {
+                setActiveIndex((prev) => (prev + 1) % allTypes.length);
+                setIsTransitioning(false);
+            }, 300);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [allTypes.length]);
+
+    if (allTypes.length === 1) {
+        const Icon = TYPE_ICON_MAP[allTypes[0]] || Paperclip;
+        return <Icon size={size} />;
+    }
+
+    const currentType = allTypes[activeIndex];
+    const nextType = allTypes[(activeIndex + 1) % allTypes.length];
+    const CurrentIcon = TYPE_ICON_MAP[currentType] || Paperclip;
+    const NextIcon = TYPE_ICON_MAP[nextType] || Paperclip;
+
+    return (
+        <div className={styles.rotatingIconContainer}>
+            <div
+                className={`${styles.rotatingIconTrack} ${isTransitioning ? styles.rotatingIconSlide : ""}`}
+            >
+                <span className={styles.rotatingIconItem}>
+                    <CurrentIcon size={size} />
+                </span>
+                <span className={styles.rotatingIconItem}>
+                    <NextIcon size={size} />
+                </span>
+            </div>
+        </div>
+    );
+}
 
 function getMimeCategory(dataUrl) {
     if (!dataUrl) return "file";
@@ -74,7 +127,7 @@ function MediaPreview({ dataUrl: rawDataUrl, onClick, compact = false }) {
     if (category === "audio") {
         return (
             <div className={compact ? styles.pendingMediaThumb : styles.mediaCard}>
-                <FileAudio size={compact ? 18 : 20} className={styles.mediaCardIcon} />
+                <Volume2 size={compact ? 18 : 20} className={styles.mediaCardIcon} />
                 <audio
                     controls
                     src={dataUrl}
@@ -142,7 +195,7 @@ const OUTPUT_MODALITIES = [
         key: "video",
         title: "Video",
         subtitle: "Generate videos",
-        icon: FileVideo,
+        icon: Video,
         disabled: true,
     },
 ];
@@ -154,8 +207,8 @@ const INPUT_MODALITY_META = {
         subtitle: "Photos and screenshots",
         icon: ImageIcon,
     },
-    audio: { title: "Audio", subtitle: "Voice and sound files", icon: FileAudio },
-    video: { title: "Video", subtitle: "Video clips", icon: FileVideo },
+    audio: { title: "Audio", subtitle: "Voice and sound files", icon: Volume2 },
+    video: { title: "Video", subtitle: "Video clips", icon: Video },
     pdf: { title: "PDF", subtitle: "Documents and papers", icon: FileText },
 };
 
@@ -523,6 +576,17 @@ export default function ChatArea({
                                         );
                                     })}
                                 </div>
+                                <div
+                                    className={styles.viewAllModelsCard}
+                                    onClick={() => {
+                                        setSelectedOutput(null);
+                                        setSelectedInput(null);
+                                        setWelcomeStep("pickModel");
+                                    }}
+                                >
+                                    <LayoutGrid size={16} />
+                                    <span>View all Models</span>
+                                </div>
                             </>
                         )}
 
@@ -533,20 +597,24 @@ export default function ChatArea({
                                 );
                                 return (
                                     <div className={styles.modelListView}>
-                                        <button
-                                            className={styles.backButton}
-                                            onClick={() => {
-                                                setWelcomeStep("pickOutput");
-                                                setSelectedOutput(null);
-                                            }}
-                                        >
-                                            <ArrowLeft size={18} />
-                                        </button>
-                                        <h3>How do you wanna send it?</h3>
-                                        <p className={styles.modelListSubtitle}>
-                                            Making {outputMod?.title?.toLowerCase()} — now pick your
-                                            input
-                                        </p>
+                                        <div className={styles.stepHeader}>
+                                            <button
+                                                className={styles.backButton}
+                                                onClick={() => {
+                                                    setWelcomeStep("pickOutput");
+                                                    setSelectedOutput(null);
+                                                }}
+                                            >
+                                                <ArrowLeft size={18} />
+                                            </button>
+                                            <div>
+                                                <h3>How do you wanna send it?</h3>
+                                                <p className={styles.modelListSubtitle}>
+                                                    Making {outputMod?.title?.toLowerCase()} — now pick your
+                                                    input
+                                                </p>
+                                            </div>
+                                        </div>
                                         <div className={styles.capabilityGrid}>
                                             {Object.entries(INPUT_MODALITY_META).map(
                                                 ([key, meta]) => {
@@ -586,11 +654,10 @@ export default function ChatArea({
 
                         {welcomeStep === "pickModel" &&
                             (() => {
-                                const allModels = getModelsForIO(
-                                    config,
-                                    selectedOutput,
-                                    selectedInput,
-                                );
+                                const isViewAll = !selectedOutput && !selectedInput;
+                                const allModels = isViewAll
+                                    ? getAllModelsFromConfig(config)
+                                    : getModelsForIO(config, selectedOutput, selectedInput);
                                 const outputMod = OUTPUT_MODALITIES.find(
                                     (m) => m.key === selectedOutput,
                                 );
@@ -610,15 +677,21 @@ export default function ChatArea({
                                             <button
                                                 className={styles.backButton}
                                                 onClick={() => {
-                                                    setWelcomeStep("pickInput");
-                                                    setSelectedInput(null);
+                                                    if (isViewAll) {
+                                                        setWelcomeStep("pickOutput");
+                                                    } else {
+                                                        setWelcomeStep("pickInput");
+                                                        setSelectedInput(null);
+                                                    }
                                                 }}
                                             >
                                                 <ArrowLeft size={18} />
                                             </button>
                                             <div>
                                                 <h3>
-                                                    {inputMeta?.title} to {outputMod?.title}
+                                                    {isViewAll
+                                                        ? "All Models"
+                                                        : `${inputMeta?.title} to ${outputMod?.title}`}
                                                 </h3>
                                                 <p className={styles.modelListSubtitle}>
                                                     Pick a model to get started
@@ -726,11 +799,7 @@ export default function ChatArea({
                                     onClick={() => fileInputRef.current?.click()}
                                     title={imageOnly ? "Attach image" : "Attach file"}
                                 >
-                                    {imageOnly ? (
-                                        <ImageIcon size={18} />
-                                    ) : (
-                                        <Paperclip size={18} />
-                                    )}
+                                    <RotatingUploadIcon types={nonTextTypes} size={18} />
                                 </button>
                             </>
                         )}

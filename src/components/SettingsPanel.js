@@ -7,6 +7,7 @@ import {
     Type,
     Image as ImageIcon,
     Mic,
+    Volume2,
     Video,
     FileText,
     Globe,
@@ -280,7 +281,7 @@ export default function SettingsPanel({
                                 const iconMap = {
                                     text: <Type size={12} />,
                                     image: <ImageIcon size={12} />,
-                                    audio: <Mic size={12} />,
+                                    audio: <Volume2 size={12} />,
                                     video: <Video size={12} />,
                                     pdf: <FileText size={12} />,
                                 };
