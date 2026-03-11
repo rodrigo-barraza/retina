@@ -11,7 +11,7 @@ import {
     Volume2,
     FileText as DocIcon,
 } from "lucide-react";
-import ProviderLogo from "./ProviderLogos";
+import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import styles from "./HistoryPanel.module.css";
 import { DateTime } from "luxon";
 import { useState, useMemo } from "react";
@@ -88,13 +88,18 @@ export default function HistoryPanel({
         return MODALITY_FILTERS.filter(({ key }) => set.has(key));
     }, [conversations]);
 
-    // Discover all providers across conversations
+    // Discover all providers across conversations (ordered by PROVIDER_LABELS definition)
     const allProviders = useMemo(() => {
         const set = new Set();
         for (const conv of conversations) {
             for (const p of conv.providers || []) set.add(p);
         }
-        return [...set].sort();
+        const labelOrder = Object.keys(PROVIDER_LABELS);
+        return [...set].sort((a, b) => {
+            const ai = labelOrder.indexOf(a);
+            const bi = labelOrder.indexOf(b);
+            return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
+        });
     }, [conversations]);
 
     const filtered = useMemo(() => {

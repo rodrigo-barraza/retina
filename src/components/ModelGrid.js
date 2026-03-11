@@ -136,24 +136,34 @@ export default function ModelGrid({
     const [activeProvider, setActiveProvider] = useState(null);
     const [activeModality, setActiveModality] = useState(null);
 
-    // Discover all providers from models
+    // Discover all providers from models (ordered by PROVIDER_LABELS definition)
     const allProviders = useMemo(() => {
         const set = new Set();
         for (const m of models) {
             const p = normalizeModel(m).provider;
             if (p) set.add(p);
         }
-        return [...set].sort();
+        const labelOrder = Object.keys(PROVIDER_LABELS);
+        return [...set].sort((a, b) => {
+            const ai = labelOrder.indexOf(a);
+            const bi = labelOrder.indexOf(b);
+            return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
+        });
     }, [models]);
 
-    // Discover all unique modalities from models
+    // Discover all unique modalities from models (ordered by MODALITY_ICONS definition)
     const allModalities = useMemo(() => {
         const set = new Set();
         for (const m of models) {
             for (const t of m.inputTypes || []) set.add(t);
             for (const t of m.outputTypes || []) set.add(t);
         }
-        return [...set].sort();
+        const iconOrder = Object.keys(MODALITY_ICONS);
+        return [...set].sort((a, b) => {
+            const ai = iconOrder.indexOf(a);
+            const bi = iconOrder.indexOf(b);
+            return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
+        });
     }, [models]);
 
     // Apply modality filter, then provider filter, then search
