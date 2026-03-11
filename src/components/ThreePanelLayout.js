@@ -27,12 +27,36 @@ export default function ThreePanelLayout({
     headerControls = null,
     children,
 }) {
-    const [showLeft, setShowLeft] = useState(() =>
-        typeof window !== "undefined" ? window.innerWidth >= 768 : true,
-    );
-    const [showRight, setShowRight] = useState(() =>
-        typeof window !== "undefined" ? window.innerWidth >= 768 : true,
-    );
+    const [showLeft, setShowLeft] = useState(() => {
+        if (typeof window === "undefined") return true;
+        const stored = localStorage.getItem("panel_left");
+        return stored !== null ? stored === "true" : window.innerWidth >= 768;
+    });
+    const [showRight, setShowRight] = useState(() => {
+        if (typeof window === "undefined") return true;
+        const stored = localStorage.getItem("panel_right");
+        return stored !== null ? stored === "true" : window.innerWidth >= 768;
+    });
+
+    const toggleLeft = () => {
+        const next = !showLeft;
+        setShowLeft(next);
+        localStorage.setItem("panel_left", String(next));
+        if (next && window.innerWidth < 768) {
+            setShowRight(false);
+            localStorage.setItem("panel_right", "false");
+        }
+    };
+
+    const toggleRight = () => {
+        const next = !showRight;
+        setShowRight(next);
+        localStorage.setItem("panel_right", String(next));
+        if (next && window.innerWidth < 768) {
+            setShowLeft(false);
+            localStorage.setItem("panel_left", "false");
+        }
+    };
 
     return (
         <div className={styles.container}>
@@ -49,11 +73,7 @@ export default function ThreePanelLayout({
                 <div className={styles.glassHeader}>
                     <button
                         className={styles.headerToggle}
-                        onClick={() => {
-                            const next = !showLeft;
-                            setShowLeft(next);
-                            if (next && window.innerWidth < 768) setShowRight(false);
-                        }}
+                        onClick={toggleLeft}
                         title={showLeft ? `Hide ${leftTitle.toLowerCase()}` : `Show ${leftTitle.toLowerCase()}`}
                     >
                         <Settings size={16} />
@@ -63,11 +83,7 @@ export default function ThreePanelLayout({
                     {headerControls}
                     <button
                         className={styles.headerToggle}
-                        onClick={() => {
-                            const next = !showRight;
-                            setShowRight(next);
-                            if (next && window.innerWidth < 768) setShowLeft(false);
-                        }}
+                        onClick={toggleRight}
                         title={showRight ? `Hide ${rightTitle.toLowerCase()}` : `Show ${rightTitle.toLowerCase()}`}
                     >
                         <History size={16} />
