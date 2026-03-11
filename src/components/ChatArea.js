@@ -16,6 +16,7 @@ import {
     Mic2,
     Edit3,
     Terminal,
+    AlertCircle,
 } from "lucide-react";
 import ImageAnnotator from "./ImageAnnotator";
 import DocumentViewer from "./DocumentViewer";
@@ -371,7 +372,52 @@ export default function ChatArea({
                         </div>
                     )}
 
-                {messages.length === 0 && !welcomeDone && (
+                {messages.length === 0 && !welcomeDone && config?.availableProviders?.length === 0 && (
+                    <div className={styles.welcome}>
+                        <div style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 16,
+                            padding: "48px 24px",
+                            textAlign: "center",
+                        }}>
+                            <div style={{
+                                width: 56,
+                                height: 56,
+                                borderRadius: "50%",
+                                background: "rgba(251, 191, 36, 0.12)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}>
+                                <AlertCircle size={28} style={{ color: "var(--warning, #fbbf24)" }} />
+                            </div>
+                            <h3 style={{ margin: 0, fontSize: 18, color: "var(--text-primary)" }}>
+                                No Providers Configured
+                            </h3>
+                            <p style={{
+                                margin: 0,
+                                fontSize: 14,
+                                color: "var(--text-secondary)",
+                                maxWidth: 400,
+                                lineHeight: 1.6,
+                            }}>
+                                Please set up your API keys or LM Studio URL in the{" "}
+                                <code style={{
+                                    padding: "2px 6px",
+                                    borderRadius: 2,
+                                    background: "var(--bg-tertiary)",
+                                    fontSize: 13,
+                                    fontFamily: "var(--font-mono, monospace)",
+                                }}>secrets.js</code>{" "}
+                                file to get started!
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {messages.length === 0 && !welcomeDone && config?.availableProviders?.length > 0 && (
                     <div className={styles.welcome}>
                         {welcomeStep === "pickOutput" && (
                             <>
