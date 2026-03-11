@@ -204,42 +204,6 @@
   margin-bottom: 4px;
 }
 
-.providerFilters {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-  flex-wrap: wrap;
-}
-
-.providerFilterPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 2px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.providerFilterPill:hover {
-  border-color: rgba(99, 102, 241, 0.35);
-  color: var(--text-primary);
-  background: var(--bg-tertiary);
-}
-
-.providerFilterActive {
-  border-color: var(--accent-color);
-  color: var(--accent-color);
-  background: var(--accent-glow);
-  font-weight: 600;
-}
 
 .localModelsSection {
   margin-bottom: 20px;

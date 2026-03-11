@@ -134,6 +134,7 @@ export default function ModelGrid({
     const [searchQuery, setSearchQuery] = useState("");
     const [sort, setSort] = useState({ key: null, dir: "desc" });
     const [activeProvider, setActiveProvider] = useState(null);
+    const [activeModality, setActiveModality] = useState(null);
 
     // Discover all providers from models
     const allProviders = useMemo(() => {
@@ -145,10 +146,28 @@ export default function ModelGrid({
         return [...set].sort();
     }, [models]);
 
-    // Apply provider filter first, then search
-    const providerFiltered = activeProvider
-        ? models.filter((m) => normalizeModel(m).provider === activeProvider)
+    // Discover all unique modalities from models
+    const allModalities = useMemo(() => {
+        const set = new Set();
+        for (const m of models) {
+            for (const t of m.inputTypes || []) set.add(t);
+            for (const t of m.outputTypes || []) set.add(t);
+        }
+        return [...set].sort();
+    }, [models]);
+
+    // Apply modality filter, then provider filter, then search
+    const modalityFiltered = activeModality
+        ? models.filter(
+            (m) =>
+                (m.inputTypes || []).includes(activeModality) ||
+                (m.outputTypes || []).includes(activeModality),
+        )
         : models;
+
+    const providerFiltered = activeProvider
+        ? modalityFiltered.filter((m) => normalizeModel(m).provider === activeProvider)
+        : modalityFiltered;
 
     const filtered = searchQuery.trim()
         ? providerFiltered.filter((m) => {
@@ -244,6 +263,30 @@ export default function ModelGrid({
                             </button>
                         )}
                     </div>
+                )}
+                {allModalities.length >= 2 && (
+                    <div className={styles.filterBar}>
+                        {allModalities.map((t) => {
+                            const m = MODALITY_ICONS[t];
+                            if (!m) return null;
+                            const Icon = m.icon;
+                            return (
+                                <button
+                                    key={t}
+                                    className={`${styles.filterBtn} ${activeModality === t ? styles.filterBtnActive : ""}`}
+                                    onClick={() =>
+                                        setActiveModality(activeModality === t ? null : t)
+                                    }
+                                    title={m.title}
+                                >
+                                    <Icon size={14} />
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+                {showProviderFilter && allProviders.length >= 2 && allModalities.length >= 2 && (
+                    <div className={styles.filterDivider} />
                 )}
                 {showProviderFilter && allProviders.length >= 2 && (
                     <div className={styles.filterBar}>

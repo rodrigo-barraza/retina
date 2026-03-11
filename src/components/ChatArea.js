@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import ImageAnnotator from "./ImageAnnotator";
 import DocumentViewer from "./DocumentViewer";
-import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import MessageList from "./MessageList";
 import ModelGrid from "./ModelGrid";
 import styles from "./ChatArea.module.css";
@@ -256,7 +255,6 @@ export default function ChatArea({
     const [welcomeDone, setWelcomeDone] = useState(false);
     const [selectedOutput, setSelectedOutput] = useState(null);
     const [selectedInput, setSelectedInput] = useState(null);
-    const [providerFilter, setProviderFilter] = useState(null);
     const endRef = useRef(null);
     const fileInputRef = useRef(null);
     const [isRecording, setIsRecording] = useState(false);
@@ -518,12 +516,6 @@ export default function ChatArea({
                                     selectedOutput,
                                     selectedInput,
                                 );
-                                const uniqueProviders = [
-                                    ...new Set(allModels.map((m) => m.provider)),
-                                ];
-                                const models = providerFilter
-                                    ? allModels.filter((m) => m.provider === providerFilter)
-                                    : allModels;
                                 const outputMod = OUTPUT_MODALITIES.find(
                                     (m) => m.key === selectedOutput,
                                 );
@@ -535,7 +527,6 @@ export default function ChatArea({
                                     setSelectedOutput(null);
                                     setSelectedInput(null);
                                     setWelcomeDone(true);
-                                    setProviderFilter(null);
                                 };
 
                                 return (
@@ -546,7 +537,6 @@ export default function ChatArea({
                                                 onClick={() => {
                                                     setWelcomeStep("pickInput");
                                                     setSelectedInput(null);
-                                                    setProviderFilter(null);
                                                 }}
                                             >
                                                 <ArrowLeft size={18} />
@@ -559,36 +549,11 @@ export default function ChatArea({
                                                     Pick a model to get started
                                                 </p>
                                             </div>
-                                            {uniqueProviders.length > 1 && (
-                                                <div className={styles.providerFilters}>
-                                                    <button
-                                                        className={`${styles.providerFilterPill} ${!providerFilter ? styles.providerFilterActive : ""}`}
-                                                        onClick={() => setProviderFilter(null)}
-                                                    >
-                                                        All
-                                                    </button>
-                                                    {uniqueProviders.map((p) => (
-                                                        <button
-                                                            key={p}
-                                                            className={`${styles.providerFilterPill} ${providerFilter === p ? styles.providerFilterActive : ""}`}
-                                                            onClick={() =>
-                                                                setProviderFilter(
-                                                                    providerFilter === p ? null : p,
-                                                                )
-                                                            }
-                                                            title={PROVIDER_LABELS[p] || p}
-                                                        >
-                                                            <ProviderLogo provider={p} size={16} />
-                                                            <span>{PROVIDER_LABELS[p] || p}</span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
                                         </div>
                                         <ModelGrid
-                                            models={models}
+                                            models={allModels}
                                             onSelect={handleModelSelect}
-                                            showSearch={models.length > 6}
+                                            showSearch={allModels.length > 6}
                                         />
                                     </div>
                                 );

@@ -89,6 +89,14 @@
   flex-shrink: 0;
 }
 
+.filterDivider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+
 .filterBtn {
   display: inline-flex;
   align-items: center;
