@@ -207,23 +207,24 @@
   background: var(--bg-glass);
 }
 
-/* Sidebar toggle buttons — static flex items */
-.sidebarToggle {
+/* Header toggle buttons (settings / history) */
+.headerToggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
-  background: var(--bg-glass);
+  border-radius: 2px;
+  background: none;
   border: none;
-  border-left: 1px solid var(--border-color);
-  border-right: 1px solid var(--border-color);
   color: var(--text-secondary);
   cursor: pointer;
   opacity: 0.6;
+  transition: all 0.2s;
 }
 
-.sidebarToggle:hover {
+.headerToggle:hover {
   background: var(--accent-glow);
   color: var(--accent-color);
   opacity: 1;
@@ -254,36 +255,5 @@
 
   .sidebarHidden {
     display: none;
-  }
-
-  .glassHeader {
-    padding-left: 48px;
-    padding-right: 48px;
-  }
-
-  .sidebarToggle {
-    position: fixed;
-    top: 0;
-    z-index: 250;
-    width: 40px;
-    height: 56px;
-    border-radius: 0;
-    opacity: 1;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-  }
-
-  .sidebarToggle:first-of-type {
-    left: 0;
-    right: auto;
-  }
-
-  .sidebarToggle:last-of-type {
-    right: 0;
-    left: auto;
-  }
-
-  .mobileHidden {
-    display: none !important;
   }
 }

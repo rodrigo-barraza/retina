@@ -1,0 +1,66 @@
+/* ── SliderComponent ──────────────────────────────── */
+/* Styled to match ToggleSwitch: track + knob + fill */
+
+.slider {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 6px 0;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.slider.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Track bar */
+.track {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: var(--select-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  overflow: visible;
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+}
+
+/* Filled portion */
+.fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--accent-color);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+/* Knob circle */
+.knob {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border: 2px solid var(--accent-color);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.15s;
+  pointer-events: none;
+
+  &:hover {
+    box-shadow:
+      0 1px 4px rgba(0, 0, 0, 0.2),
+      0 0 0 4px var(--accent-glow);
+  }
+}

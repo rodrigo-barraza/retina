@@ -1111,20 +1111,19 @@ export default function Home() {
                 />
             </aside>
 
-            <button
-                className={`${styles.sidebarToggle} ${showHistory && !showSettings ? styles.mobileHidden : ""}`}
-                onClick={() => {
-                    const next = !showSettings;
-                    setShowSettings(next);
-                    if (next && window.innerWidth < 768) setShowHistory(false);
-                }}
-                title={showSettings ? "Hide settings" : "Show settings"}
-            >
-                <Settings size={14} />
-            </button>
-
             <section className={styles.mainChat}>
                 <div className={styles.glassHeader}>
+                    <button
+                        className={styles.headerToggle}
+                        onClick={() => {
+                            const next = !showSettings;
+                            setShowSettings(next);
+                            if (next && window.innerWidth < 768) setShowHistory(false);
+                        }}
+                        title={showSettings ? "Hide settings" : "Show settings"}
+                    >
+                        <Settings size={16} />
+                    </button>
                     <span className={styles.headerTitle}>{title}</span>
                     <div className={styles.headerMeta}>
                         {messages.length > 0 && <span>{messages.length} messages</span>}
@@ -1169,6 +1168,17 @@ export default function Home() {
                             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
                         </button>
                     </div>
+                    <button
+                        className={styles.headerToggle}
+                        onClick={() => {
+                            const next = !showHistory;
+                            setShowHistory(next);
+                            if (next && window.innerWidth < 768) setShowSettings(false);
+                        }}
+                        title={showHistory ? "Hide history" : "Show history"}
+                    >
+                        <History size={16} />
+                    </button>
                 </div>
                 <ChatArea
                     messages={messages}
@@ -1210,18 +1220,6 @@ export default function Home() {
                     onSystemPromptClick={() => setShowSystemPromptModal(true)}
                 />
             </section>
-
-            <button
-                className={`${styles.sidebarToggle} ${showSettings && !showHistory ? styles.mobileHidden : ""}`}
-                onClick={() => {
-                    const next = !showHistory;
-                    setShowHistory(next);
-                    if (next && window.innerWidth < 768) setShowSettings(false);
-                }}
-                title={showHistory ? "Hide history" : "Show history"}
-            >
-                <History size={14} />
-            </button>
 
             <aside
                 className={`${styles.rightSidebar} ${!showHistory ? styles.sidebarHidden : ""}`}

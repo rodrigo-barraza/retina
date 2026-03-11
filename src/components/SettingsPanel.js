@@ -20,6 +20,7 @@ import {
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import SelectDropdown from "./SelectDropdown";
 import ToggleSwitch from "./ToggleSwitch";
+import SliderComponent from "./SliderComponent";
 import SystemPromptModal from "./SystemPromptModal";
 import styles from "./SettingsPanel.module.css";
 
@@ -87,17 +88,17 @@ export default function SettingsPanel({
     };
     const _handleSystemPromptChange = (e) =>
         onChange({ systemPrompt: e.target.value });
-    const handleTempChange = (e) =>
-        onChange({ temperature: parseFloat(e.target.value) });
-    const handleMaxTokensChange = (e) =>
-        onChange({ maxTokens: parseInt(e.target.value) });
-    const handleTopPChange = (e) =>
-        onChange({ topP: parseFloat(e.target.value) });
-    const handleTopKChange = (e) => onChange({ topK: parseInt(e.target.value) });
-    const handleFreqPenaltyChange = (e) =>
-        onChange({ frequencyPenalty: parseFloat(e.target.value) });
-    const handlePresPenaltyChange = (e) =>
-        onChange({ presencePenalty: parseFloat(e.target.value) });
+    const handleTempChange = (val) =>
+        onChange({ temperature: val });
+    const handleMaxTokensChange = (val) =>
+        onChange({ maxTokens: val });
+    const handleTopPChange = (val) =>
+        onChange({ topP: val });
+    const handleTopKChange = (val) => onChange({ topK: val });
+    const handleFreqPenaltyChange = (val) =>
+        onChange({ frequencyPenalty: val });
+    const handlePresPenaltyChange = (val) =>
+        onChange({ presencePenalty: val });
     const handleStopSeqChange = (e) =>
         onChange({ stopSequences: e.target.value });
     const handleThinkingEnabledChange = (val) =>
@@ -552,15 +553,13 @@ export default function SettingsPanel({
                                         {thinkingLocked ? "1 — Locked" : settings.temperature})
                                     </label>
                                     {!readOnly && (
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="2"
-                                            step="0.1"
+                                        <SliderComponent
+                                            min={0}
+                                            max={2}
+                                            step={0.1}
                                             value={thinkingLocked ? 1 : settings.temperature}
                                             onChange={handleTempChange}
                                             disabled={thinkingLocked}
-                                            className={thinkingLocked ? styles.disabledRange : ""}
                                         />
                                     )}
                                 </div>
@@ -570,11 +569,10 @@ export default function SettingsPanel({
                         <div className={styles.formGroup}>
                             <label>Max Tokens ({settings.maxTokens})</label>
                             {!readOnly && (
-                                <input
-                                    type="range"
-                                    min="256"
-                                    max="32000"
-                                    step="256"
+                                <SliderComponent
+                                    min={256}
+                                    max={32000}
+                                    step={256}
                                     value={settings.maxTokens}
                                     onChange={handleMaxTokensChange}
                                 />
@@ -702,11 +700,10 @@ export default function SettingsPanel({
                             <>
                                 <div className={styles.formGroup}>
                                     <label>Top P ({settings.topP})</label>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="1"
-                                        step="0.05"
+                                    <SliderComponent
+                                        min={0}
+                                        max={1}
+                                        step={0.05}
                                         value={settings.topP}
                                         onChange={handleTopPChange}
                                     />
@@ -726,11 +723,10 @@ export default function SettingsPanel({
                                 {["anthropic", "google"].includes(settings.provider) && (
                                     <div className={styles.formGroup}>
                                         <label>Top K ({settings.topK})</label>
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            step="1"
+                                        <SliderComponent
+                                            min={0}
+                                            max={100}
+                                            step={1}
                                             value={settings.topK}
                                             onChange={handleTopKChange}
                                         />
@@ -745,11 +741,10 @@ export default function SettingsPanel({
                                                 <label>
                                                     Frequency Penalty ({settings.frequencyPenalty})
                                                 </label>
-                                                <input
-                                                    type="range"
-                                                    min="-2"
-                                                    max="2"
-                                                    step="0.1"
+                                                <SliderComponent
+                                                    min={-2}
+                                                    max={2}
+                                                    step={0.1}
                                                     value={settings.frequencyPenalty}
                                                     onChange={handleFreqPenaltyChange}
                                                 />
@@ -759,11 +754,10 @@ export default function SettingsPanel({
                                                 <label>
                                                     Presence Penalty ({settings.presencePenalty})
                                                 </label>
-                                                <input
-                                                    type="range"
-                                                    min="-2"
-                                                    max="2"
-                                                    step="0.1"
+                                                <SliderComponent
+                                                    min={-2}
+                                                    max={2}
+                                                    step={0.1}
                                                     value={settings.presencePenalty}
                                                     onChange={handlePresPenaltyChange}
                                                 />
