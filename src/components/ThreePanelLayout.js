@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, History } from "lucide-react";
 import styles from "./ThreePanelLayout.module.css";
 
@@ -27,16 +27,25 @@ export default function ThreePanelLayout({
     headerControls = null,
     children,
 }) {
-    const [showLeft, setShowLeft] = useState(() => {
-        if (typeof window === "undefined") return true;
-        const stored = localStorage.getItem("panel_left");
-        return stored !== null ? stored === "true" : window.innerWidth >= 768;
-    });
-    const [showRight, setShowRight] = useState(() => {
-        if (typeof window === "undefined") return true;
-        const stored = localStorage.getItem("panel_right");
-        return stored !== null ? stored === "true" : window.innerWidth >= 768;
-    });
+    // Start with panels visible (matches SSR), then sync from localStorage after mount
+    const [showLeft, setShowLeft] = useState(true);
+    const [showRight, setShowRight] = useState(true);
+    const [hydrated, setHydrated] = useState(false);
+
+    useEffect(() => {
+        const storedLeft = localStorage.getItem("panel_left");
+        const storedRight = localStorage.getItem("panel_right");
+        const left =
+            storedLeft !== null ? storedLeft === "true" : window.innerWidth >= 768;
+        const right =
+            storedRight !== null
+                ? storedRight === "true"
+                : window.innerWidth >= 768;
+        // eslint-disable-next-line react-compiler/react-compiler
+        setShowLeft(left);
+        setShowRight(right);
+        setHydrated(true);
+    }, []);
 
     const toggleLeft = () => {
         const next = !showLeft;
@@ -58,11 +67,15 @@ export default function ThreePanelLayout({
         }
     };
 
+    // Suppress the CSS transition on first paint so panels don't animate from open→closed
+    const transitionStyle = hydrated ? undefined : { transition: "none" };
+
     return (
         <div className={styles.container}>
             {/* Left Sidebar */}
             <aside
                 className={`${styles.leftSidebar} ${!showLeft ? styles.sidebarHidden : ""}`}
+                style={transitionStyle}
             >
                 <div className={styles.sidebarHeader}>{leftTitle}</div>
                 {leftPanel}
@@ -95,6 +108,7 @@ export default function ThreePanelLayout({
             {/* Right Sidebar */}
             <aside
                 className={`${styles.rightSidebar} ${!showRight ? styles.sidebarHidden : ""}`}
+                style={transitionStyle}
             >
                 <div className={styles.sidebarHeader}>{rightTitle}</div>
                 {rightPanel}
