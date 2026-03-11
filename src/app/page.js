@@ -423,6 +423,7 @@ export default function Home() {
                         : {}),
                     ...(!selectedModelDef?.responsesAPI && settings.thinkingEnabled
                         ? {
+                            thinkingEnabled: true,
                             reasoningEffort: settings.reasoningEffort,
                             thinkingLevel: settings.thinkingLevel,
                             thinkingBudget: settings.thinkingBudget || undefined,
@@ -918,6 +919,7 @@ export default function Home() {
                         : {}),
                     ...(!selectedModelDef?.responsesAPI && settings.thinkingEnabled
                         ? {
+                            thinkingEnabled: true,
                             reasoningEffort: settings.reasoningEffort,
                             thinkingLevel: settings.thinkingLevel,
                             thinkingBudget: settings.thinkingBudget || undefined,
