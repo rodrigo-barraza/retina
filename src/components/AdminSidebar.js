@@ -22,7 +22,7 @@ const NAV_ITEMS = [
     { href: "/admin/requests", label: "Requests", icon: ScrollText },
     { href: "/admin/conversations", label: "Conversations", icon: MessageSquare },
     { href: "/admin/pricing", label: "Pricing", icon: DollarSign },
-    { href: "/admin/lm-studio", label: "LM Studio", icon: Server },
+    { href: "/admin/models", label: "Models", icon: Server },
     { href: "/admin/live", label: "Live Activity", icon: Activity, live: true },
 ];
 

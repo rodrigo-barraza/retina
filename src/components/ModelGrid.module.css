@@ -6,10 +6,19 @@
   gap: 12px;
 }
 
+/* ── Toolbar (search + provider filters) ───────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 /* ── Search ─────────────────────────────────────────── */
 
 .searchWrapper {
   position: relative;
+  flex: 1;
 }
 
 .searchIcon {
@@ -69,6 +78,41 @@
     color: var(--text-primary);
     background: var(--bg-tertiary);
   }
+}
+
+/* ── Provider Filters ──────────────────────────────── */
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.filterBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 2px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+
+  &:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+}
+
+.filterBtnActive {
+  background: var(--accent-glow);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 /* ── Table ─────────────────────────────────────────── */
