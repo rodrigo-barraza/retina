@@ -277,7 +277,7 @@ export default function WorkflowCanvas({
     );
 
     // Render input/output ports
-    const renderPorts = (node, inputTypes, outputTypes, configOffset = 0) => {
+    const renderPorts = (node, inputTypes, outputTypes, configOffset = 0, isNodeRunning = false) => {
         const nodeWidth = node.nodeType ? ASSET_NODE_WIDTH : NODE_WIDTH;
         const portStartY = HEADER_HEIGHT + configOffset + 8;
 
@@ -290,15 +290,19 @@ export default function WorkflowCanvas({
                     const isCompatible = connecting && connecting.sourceModality === modality && connecting.sourceNodeId !== node.id;
                     const isHovered = hoveredPort?.nodeId === node.id && hoveredPort?.type === "input" && hoveredPort?.modality === modality;
                     const Icon = MODALITY_ICONS[modality]?.icon;
+                    // Check if any running node is connected to this input port
+                    const hasRunningSource = connections.some(
+                        (c) => c.targetNodeId === node.id && c.targetModality === modality && nodeStatuses[c.sourceNodeId] === "running"
+                    );
 
                     return (
                         <g key={`in-${modality}-${i}`}>
                             <circle
                                 cx={0}
                                 cy={portY}
-                                r={isHovered && isCompatible ? PORT_RADIUS + 2 : PORT_RADIUS}
-                                fill={isCompatible ? color : "var(--bg-tertiary)"}
-                                stroke={color}
+                                r={isHovered && isCompatible ? PORT_RADIUS + 2 : hasRunningSource ? PORT_RADIUS + 2 : PORT_RADIUS}
+                                fill={hasRunningSource ? "url(#prism-gradient)" : isCompatible ? color : "var(--bg-tertiary)"}
+                                stroke={hasRunningSource ? "url(#prism-gradient)" : color}
                                 strokeWidth={2}
                                 className={`${styles.port} ${isCompatible ? styles.portCompatible : ""}`}
                                 onClick={(e) => handleInputPortClick(e, node.id, modality)}
@@ -331,9 +335,9 @@ export default function WorkflowCanvas({
                             <circle
                                 cx={nodeWidth}
                                 cy={portY}
-                                r={isActive ? PORT_RADIUS + 2 : PORT_RADIUS}
-                                fill={isActive ? color : "var(--bg-tertiary)"}
-                                stroke={color}
+                                r={isActive || isNodeRunning ? PORT_RADIUS + 2 : PORT_RADIUS}
+                                fill={isNodeRunning ? "url(#prism-gradient)" : isActive ? color : "var(--bg-tertiary)"}
+                                stroke={isNodeRunning ? "url(#prism-gradient)" : color}
                                 strokeWidth={2}
                                 className={`${styles.port} ${styles.portOutput}`}
                                 onClick={(e) => handleOutputPortClick(e, node.id, modality, i)}
@@ -535,7 +539,7 @@ export default function WorkflowCanvas({
 
                 {/* Ports — offset by config height when expanded */}
                 <g transform={`translate(0, ${configHeight})`}>
-                    {renderPorts(node, inputTypes, outputTypes)}
+                    {renderPorts(node, inputTypes, outputTypes, 0, isRunning)}
                 </g>
 
                 {/* Result display area — only when outputs toggled on */}
@@ -798,7 +802,7 @@ export default function WorkflowCanvas({
                 })()}
 
                 {/* Ports below content + info area */}
-                {renderPorts(node, inputTypes, outputTypes, isExpanded ? getAssetContentHeight(node) + (isViewer ? 0 : ASSET_INFO_HEIGHT) : 0)}
+                {renderPorts(node, inputTypes, outputTypes, isExpanded ? getAssetContentHeight(node) + (isViewer ? 0 : ASSET_INFO_HEIGHT) : 0, isRunning)}
             </g>
         );
     };
