@@ -295,6 +295,38 @@ export default function WorkflowsPage() {
         [workflowId],
     );
 
+    // Change the model on an existing node
+    const handleChangeModel = useCallback(
+        (nodeId, newModel) => {
+            setNodes((prev) =>
+                prev.map((n) => {
+                    if (n.id !== nodeId || n.nodeType) return n;
+                    return {
+                        ...n,
+                        modelName: newModel.name,
+                        provider: newModel.provider,
+                        displayName: newModel.display_name || newModel.label || newModel.name,
+                        inputTypes: newModel.inputTypes || [],
+                        outputTypes: newModel.outputTypes || [],
+                        supportsSystemPrompt: newModel.supportsSystemPrompt !== false,
+                    };
+                }),
+            );
+
+            // Remove connections whose modalities are no longer valid
+            const newInputTypes = new Set(newModel.inputTypes || []);
+            const newOutputTypes = new Set(newModel.outputTypes || []);
+            setConnections((prev) =>
+                prev.filter((c) => {
+                    if (c.targetNodeId === nodeId && !newInputTypes.has(c.targetModality)) return false;
+                    if (c.sourceNodeId === nodeId && !newOutputTypes.has(c.sourceModality)) return false;
+                    return true;
+                }),
+            );
+        },
+        [],
+    );
+
     // New workflow
     const handleNewWorkflow = useCallback(() => {
         setWorkflowId(null);
@@ -373,10 +405,12 @@ export default function WorkflowsPage() {
                         node={selectedNode}
                         connections={connections}
                         nodes={nodes}
+                        allModels={modelsWithModalities}
                         nodeResults={nodeResults}
                         nodeStatuses={nodeStatuses}
                         onUpdateNodeConfig={handleUpdateNodeConfig}
                         onUpdateNodeContent={handleUpdateNodeContent}
+                        onChangeModel={handleChangeModel}
                         onClose={() => setSelectedNodeId(null)}
                     />
                 )}

@@ -1,6 +1,7 @@
 "use client";
 
-import { Eye, Type, Volume2, Upload, X, Maximize2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Eye, Type, Volume2, Upload, X, Maximize2, Search, ChevronDown } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowSidebar";
 import styles from "./WorkflowInspector.module.css";
@@ -12,23 +13,62 @@ export default function WorkflowInspector({
     node,
     connections,
     nodes,
+    allModels = [],
     nodeResults,
     nodeStatuses,
     onUpdateNodeConfig,
     onUpdateNodeContent,
+    onChangeModel,
     onClose,
 }) {
+    // Model change state (hooks must be called before any early return)
+    const [modelSearch, setModelSearch] = useState("");
+    const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+
+    const isModel = node ? !node.nodeType : false;
+
+    // Find incoming / outgoing connections
+    const incoming = useMemo(
+        () => (connections || []).filter((c) => node && c.targetNodeId === node.id),
+        [connections, node],
+    );
+    const outgoing = useMemo(
+        () => (connections || []).filter((c) => node && c.sourceNodeId === node.id),
+        [connections, node],
+    );
+
+    // Compute compatible models based on connections
+    const compatibleModels = useMemo(() => {
+        if (!isModel) return [];
+        const requiredInputs = incoming.map((c) => c.targetModality);
+        const requiredOutputs = outgoing.map((c) => c.sourceModality);
+
+        return allModels.filter((m) => {
+            const mInputs = m.inputTypes || [];
+            const mOutputs = m.outputTypes || [];
+            if (requiredInputs.length > 0 && !requiredInputs.every((mod) => mInputs.includes(mod))) return false;
+            if (requiredOutputs.length > 0 && !requiredOutputs.every((mod) => mOutputs.includes(mod))) return false;
+            return true;
+        });
+    }, [isModel, incoming, outgoing, allModels]);
+
+    // Filtered by search
+    const filteredModels = useMemo(() => {
+        if (!modelSearch.trim()) return compatibleModels;
+        const q = modelSearch.trim().toLowerCase();
+        return compatibleModels.filter((m) => {
+            const name = m.display_name || m.label || m.name || "";
+            const provider = m.provider || "";
+            return name.toLowerCase().includes(q) || provider.toLowerCase().includes(q);
+        });
+    }, [compatibleModels, modelSearch]);
+
     if (!node) return null;
 
     const status = nodeStatuses?.[node.id];
     const results = nodeResults?.[node.id];
-    const isModel = !node.nodeType;
     const isInput = node.nodeType === "input";
     const isViewer = node.nodeType === "viewer";
-
-    // Find incoming / outgoing connections
-    const incoming = (connections || []).filter((c) => c.targetNodeId === node.id);
-    const outgoing = (connections || []).filter((c) => c.sourceNodeId === node.id);
 
     const getNodeLabel = (id) => {
         const n = (nodes || []).find((nd) => nd.id === id);
@@ -79,6 +119,97 @@ export default function WorkflowInspector({
 
             {/* Scrollable body */}
             <div className={styles.body}>
+                {/* Model selector — model nodes only */}
+                {isModel && (
+                    <section className={styles.section}>
+                        <label className={styles.sectionLabel}>Model</label>
+                        <div className={styles.modelSelector}>
+                            <button
+                                className={`${styles.modelSelectorTrigger} ${modelDropdownOpen ? styles.modelSelectorTriggerOpen : ""}`}
+                                onClick={() => setModelDropdownOpen((prev) => !prev)}
+                            >
+                                <span className={styles.modelSelectorContent}>
+                                    <ProviderLogo provider={node.provider} size={14} />
+                                    <span className={styles.modelSelectorLabel}>
+                                        {node.displayName || node.modelName}
+                                    </span>
+                                </span>
+                                <ChevronDown
+                                    size={12}
+                                    className={`${styles.modelSelectorChevron} ${modelDropdownOpen ? styles.modelSelectorChevronOpen : ""}`}
+                                />
+                            </button>
+
+                            {modelDropdownOpen && (
+                                <div className={styles.modelDropdown}>
+                                    <div className={styles.modelDropdownSearch}>
+                                        <Search size={11} className={styles.modelDropdownSearchIcon} />
+                                        <input
+                                            type="text"
+                                            className={styles.modelDropdownSearchInput}
+                                            placeholder="Search models…"
+                                            value={modelSearch}
+                                            onChange={(e) => setModelSearch(e.target.value)}
+                                            autoFocus
+                                        />
+                                        {modelSearch && (
+                                            <button
+                                                className={styles.modelDropdownSearchClear}
+                                                onClick={() => setModelSearch("")}
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className={styles.modelDropdownList}>
+                                        {filteredModels.length === 0 ? (
+                                            <div className={styles.modelDropdownEmpty}>
+                                                No compatible models found
+                                            </div>
+                                        ) : (
+                                            filteredModels.map((m) => {
+                                                const key = `${m.provider}:${m.name}`;
+                                                const isCurrent = m.name === node.modelName && m.provider === node.provider;
+                                                return (
+                                                    <button
+                                                        key={key}
+                                                        className={`${styles.modelDropdownItem} ${isCurrent ? styles.modelDropdownItemActive : ""}`}
+                                                        onClick={() => {
+                                                            onChangeModel?.(node.id, m);
+                                                            setModelDropdownOpen(false);
+                                                            setModelSearch("");
+                                                        }}
+                                                    >
+                                                        <ProviderLogo provider={m.provider} size={13} />
+                                                        <span className={styles.modelDropdownItemName}>
+                                                            {m.display_name || m.label || m.name}
+                                                        </span>
+                                                        <span className={styles.modelDropdownItemModalities}>
+                                                            {(m.inputTypes || []).map((t) => {
+                                                                const mod = MODALITY_ICONS[t];
+                                                                if (!mod) return null;
+                                                                const Icon = mod.icon;
+                                                                return <Icon key={`in-${t}`} size={9} style={{ color: mod.color }} />;
+                                                            })}
+                                                            <span className={styles.modelDropdownItemArrow}>→</span>
+                                                            {(m.outputTypes || []).map((t) => {
+                                                                const mod = MODALITY_ICONS[t];
+                                                                if (!mod) return null;
+                                                                const Icon = mod.icon;
+                                                                return <Icon key={`out-${t}`} size={9} style={{ color: mod.color }} />;
+                                                            })}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                )}
+
                 {/* System Prompt — model nodes that support it */}
                 {isModel && node.supportsSystemPrompt !== false && (
                     <section className={styles.section}>
