@@ -1,0 +1,392 @@
+"use client";
+
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { ArrowLeft, Sun, Moon, Play, Square, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { PrismService } from "../../services/PrismService";
+import WorkflowService from "../../services/WorkflowService";
+import { executeWorkflow } from "../../services/WorkflowExecutor";
+import WorkflowSidebar from "../../components/WorkflowSidebar";
+import WorkflowCanvas from "../../components/WorkflowCanvas";
+import WorkflowInspector from "../../components/WorkflowInspector";
+import { useTheme } from "../../components/ThemeProvider";
+import styles from "./page.module.css";
+
+const MODEL_SECTIONS = [
+    "textToText",
+    "textToImage",
+    "textToSpeech",
+    "imageToText",
+    "audioToText",
+    "embedding",
+];
+
+/**
+ * Flatten all model groups from the config into a single array with unique
+ * provider:name entries, tagged with provider and modalities.
+ */
+function flattenConfigModels(config) {
+    if (!config) return [];
+    const modelsMap = new Map();
+
+    for (const section of MODEL_SECTIONS) {
+        const providers = config[section]?.models || {};
+        for (const [provider, models] of Object.entries(providers)) {
+            for (const m of models) {
+                const key = `${provider}:${m.name}`;
+                if (!modelsMap.has(key)) {
+                    modelsMap.set(key, { ...m, provider });
+                } else {
+                    // Merge modalities and data from other sections
+                    const existing = modelsMap.get(key);
+                    const mergedInput = [
+                        ...new Set([...(existing.inputTypes || []), ...(m.inputTypes || [])]),
+                    ];
+                    const mergedOutput = [
+                        ...new Set([...(existing.outputTypes || []), ...(m.outputTypes || [])]),
+                    ];
+                    modelsMap.set(key, {
+                        ...existing,
+                        inputTypes: mergedInput,
+                        outputTypes: mergedOutput,
+                        arena: { ...(existing.arena || {}), ...(m.arena || {}) },
+                    });
+                }
+            }
+        }
+    }
+
+    return [...modelsMap.values()];
+}
+
+function generateNodeId() {
+    return `node_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function generateConnectionId() {
+    return `conn_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+export default function WorkflowsPage() {
+    const { theme, toggleTheme } = useTheme();
+    const [_config, setConfig] = useState(null);
+    const [allModels, setAllModels] = useState([]);
+    const [savedWorkflows, setSavedWorkflows] = useState(() =>
+        WorkflowService.getWorkflows(),
+    );
+    const [toast, setToast] = useState(null);
+
+    // Current workflow state
+    const [workflowId, setWorkflowId] = useState(null);
+    const [workflowName, setWorkflowName] = useState("Untitled Workflow");
+    const [nodes, setNodes] = useState([]);
+    const [connections, setConnections] = useState([]);
+
+    // Execution state
+    const [isRunning, setIsRunning] = useState(false);
+    const [nodeStatuses, setNodeStatuses] = useState({}); // nodeId → "running" | "done" | "error"
+    const [nodeResults, setNodeResults] = useState({}); // nodeId → { text?, image?, audio? }
+    const abortRef = useRef(false);
+
+    // Selection state
+    const [selectedNodeId, setSelectedNodeId] = useState(null);
+    const selectedNode = nodes.find((n) => n.id === selectedNodeId) || null;
+
+    // Load config
+    useEffect(() => {
+        PrismService.getConfig()
+            .then((cfg) => {
+                setConfig(cfg);
+                setAllModels(flattenConfigModels(cfg));
+            })
+            .catch(console.error);
+    }, []);
+
+    const showToast = (message, type = "success") => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    // Filter models to only those with clear modalities
+    const modelsWithModalities = useMemo(() => {
+        return allModels.filter(
+            (m) =>
+                (m.inputTypes && m.inputTypes.length > 0) ||
+                (m.outputTypes && m.outputTypes.length > 0),
+        );
+    }, [allModels]);
+
+    // Add a new node from the sidebar
+    const handleAddNode = useCallback(
+        (model) => {
+            const newNode = {
+                id: generateNodeId(),
+                modelName: model.name,
+                provider: model.provider,
+                displayName: model.display_name || model.label || model.name,
+                inputTypes: model.inputTypes || [],
+                outputTypes: model.outputTypes || [],
+                position: {
+                    x: 80 + nodes.length * 60 + Math.random() * 40,
+                    y: 80 + nodes.length * 40 + Math.random() * 40,
+                },
+            };
+            setNodes((prev) => [...prev, newNode]);
+        },
+        [nodes.length],
+    );
+
+    // Add a new asset node (input asset or output viewer)
+    const handleAddAsset = useCallback(
+        (modality, type) => {
+            const isViewer = type === "viewer";
+            const newNode = {
+                id: generateNodeId(),
+                nodeType: type, // "input" or "viewer"
+                modality,
+                content: "",
+                contentType: isViewer ? modality : undefined,
+                // Input assets have output ports only
+                // Viewers have input ports + pass-through output ports
+                inputTypes: isViewer ? ["text", "image", "audio"] : [],
+                outputTypes: isViewer ? ["text", "image", "audio"] : [modality],
+                position: {
+                    x: 80 + nodes.length * 60 + Math.random() * 40,
+                    y: 80 + nodes.length * 40 + Math.random() * 40,
+                },
+            };
+            setNodes((prev) => [...prev, newNode]);
+        },
+        [nodes.length],
+    );
+
+    // Update content of an asset node
+    const handleUpdateNodeContent = useCallback((nodeId, content) => {
+        setNodes((prev) =>
+            prev.map((n) => (n.id === nodeId ? { ...n, content } : n)),
+        );
+    }, []);
+
+    // Update config of a model node (systemPrompt, staticInputs, etc.)
+    const handleUpdateNodeConfig = useCallback((nodeId, key, value) => {
+        setNodes((prev) =>
+            prev.map((n) => (n.id === nodeId ? { ...n, [key]: value } : n)),
+        );
+    }, []);
+
+    // Run the workflow
+    const handleRunWorkflow = useCallback(async () => {
+        setIsRunning(true);
+        setNodeStatuses({});
+        setNodeResults({});
+        abortRef.current = false;
+
+        try {
+            await executeWorkflow(nodes, connections, {
+                onNodeStart: (nodeId) => {
+                    if (abortRef.current) return;
+                    setNodeStatuses((prev) => ({ ...prev, [nodeId]: "running" }));
+                },
+                onNodeComplete: (nodeId, outputs) => {
+                    if (abortRef.current) return;
+                    setNodeStatuses((prev) => ({ ...prev, [nodeId]: "done" }));
+                    setNodeResults((prev) => ({ ...prev, [nodeId]: outputs }));
+
+                    // Update viewer nodes with received content
+                    setNodes((prev) =>
+                        prev.map((n) => {
+                            if (n.id !== nodeId || n.nodeType !== "viewer") return n;
+                            // Pick the first non-empty output as display content
+                            const firstOutput = Object.entries(outputs).find(([, v]) => v);
+                            if (firstOutput) {
+                                return { ...n, content: firstOutput[1], contentType: firstOutput[0] };
+                            }
+                            return n;
+                        }),
+                    );
+                },
+                onNodeError: (nodeId, error) => {
+                    if (abortRef.current) return;
+                    setNodeStatuses((prev) => ({ ...prev, [nodeId]: "error" }));
+                    setNodeResults((prev) => ({ ...prev, [nodeId]: { error: error.message } }));
+                },
+            });
+        } catch (err) {
+            showToast(`Execution failed: ${err.message}`, "error");
+        } finally {
+            setIsRunning(false);
+        }
+    }, [nodes, connections]);
+
+    const handleStopWorkflow = useCallback(() => {
+        abortRef.current = true;
+        setIsRunning(false);
+    }, []);
+
+    // Update node position (drag)
+    const handleUpdateNodePosition = useCallback((nodeId, position) => {
+        setNodes((prev) =>
+            prev.map((n) => (n.id === nodeId ? { ...n, position } : n)),
+        );
+    }, []);
+
+    // Delete a node and its connections
+    const handleDeleteNode = useCallback((nodeId) => {
+        setNodes((prev) => prev.filter((n) => n.id !== nodeId));
+        setConnections((prev) =>
+            prev.filter(
+                (c) => c.sourceNodeId !== nodeId && c.targetNodeId !== nodeId,
+            ),
+        );
+    }, []);
+
+    // Add a connection
+    const handleAddConnection = useCallback((conn) => {
+        setConnections((prev) => [
+            ...prev,
+            { ...conn, id: generateConnectionId() },
+        ]);
+    }, []);
+
+    // Delete a connection
+    const handleDeleteConnection = useCallback((connId) => {
+        setConnections((prev) => prev.filter((c) => c.id !== connId));
+    }, []);
+
+    // Save current workflow
+    const handleSaveWorkflow = useCallback(() => {
+        const workflow = {
+            id: workflowId,
+            name: workflowName || "Untitled Workflow",
+            nodes,
+            connections,
+        };
+        const saved = WorkflowService.saveWorkflow(workflow);
+        setWorkflowId(saved.id);
+        setSavedWorkflows(WorkflowService.getWorkflows());
+        showToast("Workflow saved");
+    }, [workflowId, workflowName, nodes, connections]);
+
+    // Load a saved workflow
+    const handleLoadWorkflow = useCallback((id) => {
+        const wf = WorkflowService.getWorkflow(id);
+        if (!wf) return;
+        setWorkflowId(wf.id);
+        setWorkflowName(wf.name || "Untitled Workflow");
+        setNodes(wf.nodes || []);
+        setConnections(wf.connections || []);
+        showToast("Workflow loaded");
+    }, []);
+
+    // Delete a saved workflow
+    const handleDeleteWorkflow = useCallback(
+        (id) => {
+            WorkflowService.deleteWorkflow(id);
+            setSavedWorkflows(WorkflowService.getWorkflows());
+            if (workflowId === id) {
+                setWorkflowId(null);
+                setWorkflowName("Untitled Workflow");
+                setNodes([]);
+                setConnections([]);
+            }
+            showToast("Workflow deleted");
+        },
+        [workflowId],
+    );
+
+    // New workflow
+    const handleNewWorkflow = useCallback(() => {
+        setWorkflowId(null);
+        setWorkflowName("Untitled Workflow");
+        setNodes([]);
+        setConnections([]);
+    }, []);
+
+    return (
+        <div className={styles.page}>
+            {/* Header */}
+            <header className={styles.header}>
+                <div className={styles.headerLeft}>
+                    <Link href="/" className={styles.backBtn}>
+                        <ArrowLeft size={16} />
+                    </Link>
+                    <h1 className={styles.headerTitle}>Workflows</h1>
+                    <span className={styles.headerBadge}>
+                        {nodes.length} nodes · {connections.length} connections
+                    </span>
+                </div>
+                <div className={styles.headerRight}>
+                    {isRunning ? (
+                        <button className={`${styles.runBtn} ${styles.runBtnStop}`} onClick={handleStopWorkflow}>
+                            <Square size={14} />
+                            Stop
+                        </button>
+                    ) : (
+                        <button
+                            className={styles.runBtn}
+                            onClick={handleRunWorkflow}
+                            disabled={nodes.length === 0}
+                        >
+                            <Play size={14} />
+                            Run
+                        </button>
+                    )}
+                    {isRunning && <Loader2 size={16} className={styles.spinner} />}
+                    <button className={styles.themeToggle} onClick={toggleTheme}>
+                        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                    </button>
+                </div>
+            </header>
+
+            {/* Body */}
+            <div className={styles.body}>
+                <WorkflowSidebar
+                    models={modelsWithModalities}
+                    workflows={savedWorkflows}
+                    activeWorkflowId={workflowId}
+                    onAddNode={handleAddNode}
+                    onAddAsset={handleAddAsset}
+                    onLoadWorkflow={handleLoadWorkflow}
+                    onDeleteWorkflow={handleDeleteWorkflow}
+                    onNewWorkflow={handleNewWorkflow}
+                    onSaveWorkflow={handleSaveWorkflow}
+                    workflowName={workflowName}
+                    onWorkflowNameChange={setWorkflowName}
+                />
+                <WorkflowCanvas
+                    nodes={nodes}
+                    connections={connections}
+                    onUpdateNodePosition={handleUpdateNodePosition}
+                    onDeleteNode={handleDeleteNode}
+                    onAddConnection={handleAddConnection}
+                    onDeleteConnection={handleDeleteConnection}
+                    onUpdateNodeContent={handleUpdateNodeContent}
+                    onUpdateNodeConfig={handleUpdateNodeConfig}
+                    nodeStatuses={nodeStatuses}
+                    nodeResults={nodeResults}
+                    selectedNodeId={selectedNodeId}
+                    onSelectNode={setSelectedNodeId}
+                />
+                {selectedNode && (
+                    <WorkflowInspector
+                        node={selectedNode}
+                        connections={connections}
+                        nodes={nodes}
+                        nodeResults={nodeResults}
+                        nodeStatuses={nodeStatuses}
+                        onUpdateNodeConfig={handleUpdateNodeConfig}
+                        onUpdateNodeContent={handleUpdateNodeContent}
+                        onClose={() => setSelectedNodeId(null)}
+                    />
+                )}
+            </div>
+
+            {/* Toast */}
+            {toast && (
+                <div className={`${styles.toast} ${styles[toast.type] || ""}`}>
+                    {toast.message}
+                </div>
+            )}
+        </div>
+    );
+}

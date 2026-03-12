@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import styles from "./page.module.css";
 import { PrismService } from "../services/PrismService";
 import StorageService from "../services/StorageService";
 import { useTheme } from "../components/ThemeProvider";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Workflow } from "lucide-react";
 import SettingsPanel from "../components/SettingsPanel";
 import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
@@ -1198,6 +1199,14 @@ export default function Home({ initialConversationId = null }) {
                 }
                 headerControls={
                     <div className={styles.headerControls}>
+                        <Link
+                            href="/workflows"
+                            className={styles.modeToggle}
+                            title="Workflows"
+                        >
+                            <Workflow size={14} />
+                            Workflows
+                        </Link>
                         <button
                             className={styles.themeToggle}
                             onClick={toggleTheme}

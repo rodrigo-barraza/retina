@@ -1,0 +1,312 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import {
+    Search,
+    X,
+    Plus,
+    Trash2,
+    FolderOpen,
+    Save,
+    Type,
+    Image,
+    Volume2,
+    Video,
+    FileText,
+    Hash,
+    ChevronDown,
+    ChevronRight,
+    Package,
+    Eye,
+} from "lucide-react";
+import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import styles from "./WorkflowSidebar.module.css";
+
+const MODALITY_ICONS = {
+    text: { icon: Type, label: "Text", color: "#6366f1" },
+    image: { icon: Image, label: "Image", color: "#10b981" },
+    audio: { icon: Volume2, label: "Audio", color: "#f59e0b" },
+    video: { icon: Video, label: "Video", color: "#f43f5e" },
+    pdf: { icon: FileText, label: "PDF", color: "#64748b" },
+    embedding: { icon: Hash, label: "Embedding", color: "#06b6d4" },
+};
+
+/**
+ * Group models by their primary modality pattern (e.g. "Text → Image").
+ */
+function groupModelsByModality(models) {
+    const groups = {};
+
+    for (const model of models) {
+        const inputLabel = (model.inputTypes || []).map((t) => MODALITY_ICONS[t]?.label || t).join(", ") || "Any";
+        const outputLabel = (model.outputTypes || []).map((t) => MODALITY_ICONS[t]?.label || t).join(", ") || "Any";
+        const groupKey = `${inputLabel} → ${outputLabel}`;
+
+        if (!groups[groupKey]) {
+            groups[groupKey] = [];
+        }
+        groups[groupKey].push(model);
+    }
+
+    return groups;
+}
+
+export default function WorkflowSidebar({
+    models = [],
+    workflows = [],
+    activeWorkflowId,
+    onAddNode,
+    onAddAsset,
+    onLoadWorkflow,
+    onDeleteWorkflow,
+    onNewWorkflow,
+    onSaveWorkflow,
+    workflowName,
+    onWorkflowNameChange,
+}) {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [collapsedGroups, setCollapsedGroups] = useState({});
+    const [activeTab, setActiveTab] = useState("models"); // "models" | "saved"
+
+    const filteredModels = useMemo(() => {
+        if (!searchQuery.trim()) return models;
+        const q = searchQuery.trim().toLowerCase();
+        return models.filter((m) => {
+            const name = m.display_name || m.label || m.name || "";
+            const provider = PROVIDER_LABELS[m.provider] || m.provider || "";
+            return name.toLowerCase().includes(q) || provider.toLowerCase().includes(q);
+        });
+    }, [models, searchQuery]);
+
+    const groupedModels = useMemo(() => groupModelsByModality(filteredModels), [filteredModels]);
+
+    const toggleGroup = (key) => {
+        setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    return (
+        <div className={styles.sidebar}>
+            {/* Workflow name + actions */}
+            <div className={styles.workflowHeader}>
+                <input
+                    type="text"
+                    className={styles.workflowNameInput}
+                    value={workflowName}
+                    onChange={(e) => onWorkflowNameChange(e.target.value)}
+                    placeholder="Untitled Workflow"
+                />
+                <div className={styles.workflowActions}>
+                    <button
+                        className={styles.actionBtn}
+                        onClick={onNewWorkflow}
+                        title="New Workflow"
+                    >
+                        <Plus size={14} />
+                    </button>
+                    <button
+                        className={styles.actionBtn}
+                        onClick={onSaveWorkflow}
+                        title="Save Workflow"
+                    >
+                        <Save size={14} />
+                    </button>
+                </div>
+            </div>
+
+            {/* Tab bar */}
+            <div className={styles.tabs}>
+                <button
+                    className={`${styles.tab} ${activeTab === "models" ? styles.tabActive : ""}`}
+                    onClick={() => setActiveTab("models")}
+                >
+                    <Plus size={12} />
+                    Models
+                </button>
+                <button
+                    className={`${styles.tab} ${activeTab === "saved" ? styles.tabActive : ""}`}
+                    onClick={() => setActiveTab("saved")}
+                >
+                    <FolderOpen size={12} />
+                    Saved ({workflows.length})
+                </button>
+            </div>
+
+            {activeTab === "models" && (
+                <div className={styles.modelsPanel}>
+                    {/* Asset buttons */}
+                    <div className={styles.assetSection}>
+                        <div className={styles.assetSectionLabel}>
+                            <Package size={11} />
+                            Assets
+                        </div>
+                        <div className={styles.assetButtons}>
+                            <button
+                                className={styles.assetBtn}
+                                onClick={() => onAddAsset("text", "input")}
+                                title="Add Text Input"
+                            >
+                                <Type size={12} style={{ color: "#6366f1" }} />
+                                <span>Text Input</span>
+                            </button>
+                            <button
+                                className={styles.assetBtn}
+                                onClick={() => onAddAsset("image", "input")}
+                                title="Add Image Input"
+                            >
+                                <Image size={12} style={{ color: "#10b981" }} />
+                                <span>Image Input</span>
+                            </button>
+                            <button
+                                className={styles.assetBtn}
+                                onClick={() => onAddAsset("audio", "input")}
+                                title="Add Audio Input"
+                            >
+                                <Volume2 size={12} style={{ color: "#f59e0b" }} />
+                                <span>Audio Input</span>
+                            </button>
+                            <button
+                                className={styles.assetBtn}
+                                onClick={() => onAddAsset("text", "viewer")}
+                                title="Add Output Viewer"
+                            >
+                                <Eye size={12} style={{ color: "#a78bfa" }} />
+                                <span>Output Viewer</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Search */}
+                    <div className={styles.searchWrapper}>
+                        <Search size={13} className={styles.searchIcon} />
+                        <input
+                            type="text"
+                            className={styles.searchInput}
+                            placeholder="Search models…"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        {searchQuery && (
+                            <button
+                                className={styles.searchClear}
+                                onClick={() => setSearchQuery("")}
+                            >
+                                <X size={12} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Grouped model list */}
+                    <div className={styles.modelList}>
+                        {Object.entries(groupedModels).map(([groupKey, groupModels]) => (
+                            <div key={groupKey} className={styles.modelGroup}>
+                                <button
+                                    className={styles.groupHeader}
+                                    onClick={() => toggleGroup(groupKey)}
+                                >
+                                    {collapsedGroups[groupKey] ? (
+                                        <ChevronRight size={12} />
+                                    ) : (
+                                        <ChevronDown size={12} />
+                                    )}
+                                    <span className={styles.groupLabel}>{groupKey}</span>
+                                    <span className={styles.groupCount}>{groupModels.length}</span>
+                                </button>
+                                {!collapsedGroups[groupKey] && (
+                                    <div className={styles.groupItems}>
+                                        {groupModels.map((model) => (
+                                            <button
+                                                key={`${model.provider}-${model.name}`}
+                                                className={styles.modelItem}
+                                                onClick={() => onAddNode(model)}
+                                                title={`Add ${model.display_name || model.name}`}
+                                            >
+                                                <ProviderLogo provider={model.provider} size={14} />
+                                                <div className={styles.modelInfo}>
+                                                    <span className={styles.modelName}>
+                                                        {model.display_name || model.label || model.name}
+                                                    </span>
+                                                    <span className={styles.modelModalities}>
+                                                        {(model.inputTypes || []).map((t) => {
+                                                            const m = MODALITY_ICONS[t];
+                                                            if (!m) return null;
+                                                            const Icon = m.icon;
+                                                            return (
+                                                                <Icon
+                                                                    key={`in-${t}`}
+                                                                    size={10}
+                                                                    style={{ color: m.color }}
+                                                                />
+                                                            );
+                                                        })}
+                                                        <span className={styles.arrow}>→</span>
+                                                        {(model.outputTypes || []).map((t) => {
+                                                            const m = MODALITY_ICONS[t];
+                                                            if (!m) return null;
+                                                            const Icon = m.icon;
+                                                            return (
+                                                                <Icon
+                                                                    key={`out-${t}`}
+                                                                    size={10}
+                                                                    style={{ color: m.color }}
+                                                                />
+                                                            );
+                                                        })}
+                                                    </span>
+                                                </div>
+                                                <Plus size={12} className={styles.addIcon} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {activeTab === "saved" && (
+                <div className={styles.savedPanel}>
+                    {workflows.length === 0 ? (
+                        <div className={styles.emptyState}>
+                            <FolderOpen size={24} />
+                            <span>No saved workflows yet</span>
+                        </div>
+                    ) : (
+                        <div className={styles.workflowList}>
+                            {workflows.map((wf) => (
+                                <div
+                                    key={wf.id}
+                                    className={`${styles.workflowItem} ${wf.id === activeWorkflowId ? styles.workflowItemActive : ""}`}
+                                >
+                                    <button
+                                        className={styles.workflowItemContent}
+                                        onClick={() => onLoadWorkflow(wf.id)}
+                                    >
+                                        <span className={styles.workflowItemName}>
+                                            {wf.name || "Untitled Workflow"}
+                                        </span>
+                                        <span className={styles.workflowItemMeta}>
+                                            {wf.nodes?.length || 0} nodes · {wf.connections?.length || 0} connections
+                                        </span>
+                                    </button>
+                                    <button
+                                        className={styles.deleteBtn}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeleteWorkflow(wf.id);
+                                        }}
+                                        title="Delete workflow"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+export { MODALITY_ICONS };

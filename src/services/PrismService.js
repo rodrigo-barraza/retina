@@ -195,6 +195,46 @@ export class PrismService {
     }
 
     /**
+     * Generate an image from text.
+     * @param {Object} payload - { provider, model, prompt, images?, options? }
+     * @returns {Promise<{ images: string[], text?: string }>}
+     */
+    static async generateImage(payload) {
+        const res = await fetch(`${API_BASE}/text-to-image`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || "Failed to generate image");
+        }
+
+        return res.json();
+    }
+
+    /**
+     * Caption / describe an image (image-to-text).
+     * @param {Object} payload - { provider, model, images, prompt? }
+     * @returns {Promise<{ text: string }>}
+     */
+    static async captionImage(payload) {
+        const res = await fetch(`${API_BASE}/image-to-text`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || "Failed to caption image");
+        }
+
+        return res.json();
+    }
+
+    /**
      * Transcribe an audio file to text.
      * @param {Object} payload - { provider, audio (base64 or data URL), mimeType?, model?, language?, prompt?, conversationId?, userMessage? }
      * @returns {Promise<{ text, usage?, estimatedCost?, totalTime? }>}
