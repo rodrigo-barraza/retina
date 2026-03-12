@@ -117,11 +117,17 @@ export default function WorkflowCanvas({
         [nodes, screenToSvg, onSelectNode],
     );
 
-    // Panning
+    // Panning — starts when clicking on empty canvas background
     const handleCanvasMouseDown = useCallback(
         (e) => {
             if (e.button !== 0) return;
-            if (e.target === containerRef.current || e.target === svgRef.current) {
+            // Allow pan from: container div, SVG element, grid background,
+            // or any SVG child that isn't inside a node/connection group
+            const el = e.target;
+            const isContainerOrSvg = el === containerRef.current || el === svgRef.current;
+            const isGridBg = el.classList?.contains?.(styles.gridBackground);
+            const isInsideInteractive = el.closest?.(`.${styles.nodeGroup}, .${styles.connectionGroup}`);
+            if (isContainerOrSvg || isGridBg || (!isInsideInteractive && containerRef.current?.contains(el))) {
                 onSelectNode?.(null);
                 setIsPanning(true);
                 panStart.current = {
@@ -392,15 +398,19 @@ export default function WorkflowCanvas({
                 {isExpanded && (
                     <foreignObject x={4} y={HEADER_HEIGHT + 2} width={NODE_WIDTH - 8} height={CONFIG_AREA_HEIGHT - 4}>
                         <div className={styles.nodeConfig}>
-                            <label className={styles.nodeConfigLabel}>System Prompt</label>
-                            <textarea
-                                className={styles.nodeConfigTextarea}
-                                value={node.systemPrompt || ""}
-                                onChange={(e) => onUpdateNodeConfig?.(node.id, "systemPrompt", e.target.value)}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                placeholder="Instructions for this model..."
-                                rows={2}
-                            />
+                            {node.supportsSystemPrompt !== false && (
+                                <>
+                                    <label className={styles.nodeConfigLabel}>System Prompt</label>
+                                    <textarea
+                                        className={styles.nodeConfigTextarea}
+                                        value={node.systemPrompt || ""}
+                                        onChange={(e) => onUpdateNodeConfig?.(node.id, "systemPrompt", e.target.value)}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        placeholder="Instructions for this model..."
+                                        rows={2}
+                                    />
+                                </>
+                            )}
                             <label className={styles.nodeConfigLabel}>User Prompt</label>
                             <textarea
                                 className={styles.nodeConfigTextarea}
@@ -707,7 +717,7 @@ export default function WorkflowCanvas({
     return (
         <div
             ref={containerRef}
-            className={styles.canvas}
+            className={`${styles.canvas}${isPanning ? ` ${styles.panning}` : ""}`}
             onMouseDown={handleCanvasMouseDown}
         >
             <div

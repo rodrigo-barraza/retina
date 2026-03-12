@@ -2,8 +2,12 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  cursor: default;
+  cursor: grab;
   user-select: none;
+}
+
+.canvas.panning {
+  cursor: grabbing;
 }
 
 .gridBackground {

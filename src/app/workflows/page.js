@@ -126,6 +126,7 @@ export default function WorkflowsPage() {
                 displayName: model.display_name || model.label || model.name,
                 inputTypes: model.inputTypes || [],
                 outputTypes: model.outputTypes || [],
+                supportsSystemPrompt: model.supportsSystemPrompt !== false,
                 position: {
                     x: 80 + nodes.length * 60 + Math.random() * 40,
                     y: 80 + nodes.length * 40 + Math.random() * 40,

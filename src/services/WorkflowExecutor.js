@@ -7,22 +7,23 @@ import { PrismService } from "./PrismService";
 /**
  * Determine which Prism endpoint to use based on the model's modalities
  * and the types of inputs it's receiving.
+ *
+ * textToText handles images via the `images` field in messages and
+ * properly sends system prompts as system messages, so we prefer it
+ * over the dedicated imageToText captioning endpoint.
  */
 function resolveEndpoint(node, inputData) {
-    const hasImageInput = inputData.some((d) => d.type === "image");
     const hasAudioInput = inputData.some((d) => d.type === "audio");
     const outputsImage = (node.outputTypes || []).includes("image");
     const outputsAudio = (node.outputTypes || []).includes("audio");
 
-    // Image captioning: image in → text out
-    if (hasImageInput && !outputsImage) return "imageToText";
-    // Image generation: text in → image out
-    if (!hasImageInput && outputsImage) return "textToImage";
+    // Image generation: → image output
+    if (outputsImage) return "textToImage";
     // Audio transcription: audio in → text out
     if (hasAudioInput && !outputsAudio) return "audioToText";
-    // TTS: text in → audio out
-    if (!hasAudioInput && outputsAudio) return "textToSpeech";
-    // Default: text-to-text (also handles multimodal like Gemini)
+    // TTS: → audio output
+    if (outputsAudio) return "textToSpeech";
+    // Default: text-to-text (handles multimodal inputs including images)
     return "textToText";
 }
 
@@ -100,7 +101,8 @@ async function executeModelNode(node, inputData) {
         const result = await PrismService.generateImage({
             provider: node.provider,
             model: node.modelName,
-            prompt: node.systemPrompt ? `${node.systemPrompt}\n\n${prompt}` : prompt,
+            prompt,
+            systemPrompt: node.systemPrompt || undefined,
             images: images.length > 0 ? images : undefined,
         });
 
@@ -114,27 +116,6 @@ async function executeModelNode(node, inputData) {
         if (result.text) {
             outputs.text = result.text;
         }
-    } else if (endpoint === "imageToText") {
-        const images = inputData.filter((d) => d.type === "image").map((d) => d.data);
-        const textInput = inputData.find((d) => d.type === "text")?.data;
-        // userPrompt takes precedence as the instruction for captioning
-        let prompt;
-        if (node.userPrompt) {
-            prompt = textInput ? `${node.userPrompt}\n\n${textInput}` : node.userPrompt;
-        } else if (node.systemPrompt) {
-            prompt = textInput ? `${node.systemPrompt}\n\n${textInput}` : node.systemPrompt;
-        } else {
-            prompt = textInput || "Describe this image";
-        }
-
-        const result = await PrismService.captionImage({
-            provider: node.provider,
-            model: node.modelName,
-            images,
-            prompt,
-        });
-
-        outputs.text = result.text || "";
     } else if (endpoint === "audioToText") {
         const audio = inputData.find((d) => d.type === "audio")?.data || "";
         const result = await PrismService.transcribeAudio({

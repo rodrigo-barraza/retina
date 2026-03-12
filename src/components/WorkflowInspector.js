@@ -79,8 +79,8 @@ export default function WorkflowInspector({
 
             {/* Scrollable body */}
             <div className={styles.body}>
-                {/* System Prompt — model nodes only */}
-                {isModel && (
+                {/* System Prompt — model nodes that support it */}
+                {isModel && node.supportsSystemPrompt !== false && (
                     <section className={styles.section}>
                         <label className={styles.sectionLabel}>System Prompt</label>
                         <textarea
