@@ -239,7 +239,7 @@ export default function RequestsPage() {
                     >
                         <option value="">All</option>
                         <option value="/chat">/chat</option>
-                        <option value="/voice">/voice</option>
+                        <option value="/audio">/audio</option>
                         <option value="/embed">/embed</option>
                     </select>
                 </div>

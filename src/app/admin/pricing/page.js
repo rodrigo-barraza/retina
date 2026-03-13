@@ -16,7 +16,7 @@ import styles from "./page.module.css";
 
 const ENDPOINT_LABELS = {
     "chat": "Chat",
-    "voice": "Voice",
+    "audio": "Audio",
     "embed": "Embed",
 };
 

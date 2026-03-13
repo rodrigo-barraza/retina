@@ -113,6 +113,22 @@
   cursor: not-allowed;
 }
 
+.modelTypeBadge {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-color);
+  background: var(--accent-glow);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
+  border-radius: 4px;
+  padding: 4px 10px;
+}
+
 .modalities {
   margin-top: 8px;
   border: 1px solid var(--border-color);

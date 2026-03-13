@@ -273,6 +273,14 @@ export default function SettingsPanel({
                                 icon={<ProviderLogo provider={settings.provider} size={18} />}
                             />
                         )}
+                        {selectedModelDef?.modelType && (
+                            <div className={styles.modelTypeBadge}>
+                                {selectedModelDef.modelType === "conversation" && <Type size={12} />}
+                                {selectedModelDef.modelType === "audio" && <Volume2 size={12} />}
+                                {selectedModelDef.modelType === "embed" && <Cpu size={12} />}
+                                {selectedModelDef.modelType} model
+                            </div>
+                        )}
                         {selectedModelDef &&
                             (() => {
                                 const allTypes = ["text", "image", "audio", "video", "pdf"];

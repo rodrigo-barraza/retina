@@ -1,9 +1,8 @@
 // API Service for communicating with Prism AI Gateway
 
-import { PRISM_URL, PRISM_WS_URL, PRISM_SECRET } from "../../secrets.js";
+import { PRISM_URL, PRISM_SECRET } from "../../secrets.js";
 
 const API_BASE = PRISM_URL;
-const WS_BASE = PRISM_WS_URL;
 const SECRET = PRISM_SECRET;
 
 function getHeaders() {
@@ -122,10 +121,10 @@ export class PrismService {
     }
 
     /**
-     * Stream text generation via WebSocket.
+     * Stream text generation via SSE (Server-Sent Events).
      * @param {Object} payload - { provider, model, messages, options, conversationId?, userMessage? }
-     * @param {Object} callbacks - { onChunk, onThinking, onDone, onError }
-     * @returns {Function} close - Call to close the WebSocket early
+     * @param {Object} callbacks - { onChunk, onThinking, onImage, onExecutableCode, onCodeExecutionResult, onWebSearchResult, onStatus, onDone, onError }
+     * @returns {Function} abort - Call to cancel the stream early
      */
     static streamText(payload, callbacks) {
         const {
@@ -139,59 +138,77 @@ export class PrismService {
             onDone,
             onError,
         } = callbacks;
-        const ws = new WebSocket(
-            `${WS_BASE}/ws/chat?secret=${encodeURIComponent(SECRET)}&project=retina&username=default`,
-        );
 
-        ws.onopen = () => {
-            ws.send(JSON.stringify(payload));
-        };
+        const controller = new AbortController();
 
-        ws.onmessage = (event) => {
+        (async () => {
             try {
-                const data = JSON.parse(event.data);
-                if (data.type === "chunk" && onChunk) {
-                    onChunk(data.content);
-                } else if (data.type === "thinking" && onThinking) {
-                    onThinking(data.content);
-                } else if (data.type === "image" && onImage) {
-                    onImage(data.data, data.mimeType);
-                } else if (data.type === "executableCode" && onExecutableCode) {
-                    onExecutableCode(data.code, data.language);
-                } else if (
-                    data.type === "codeExecutionResult" &&
-                    onCodeExecutionResult
-                ) {
-                    onCodeExecutionResult(data.output, data.outcome);
-                } else if (data.type === "webSearchResult" && onWebSearchResult) {
-                    onWebSearchResult(data.results);
-                } else if (data.type === "done" && onDone) {
-                    onDone(data);
-                    ws.close();
-                } else if (data.type === "error" && onError) {
-                    onError(new Error(data.message));
-                    ws.close();
-                } else if (data.type === "status" && onStatus) {
-                    onStatus(data.message);
+                const res = await fetch(`${API_BASE}/chat`, {
+                    method: "POST",
+                    headers: getHeaders(),
+                    body: JSON.stringify(payload),
+                    signal: controller.signal,
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    if (onError) onError(new Error(err.message || `HTTP ${res.status}`));
+                    return;
                 }
-            } catch {
-                // Ignore parse errors
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+
+                    // Parse SSE lines: "data: {...}\n\n"
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop(); // Keep incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (!line.startsWith("data: ")) continue;
+                        const json = line.slice(6); // Remove "data: " prefix
+                        if (!json) continue;
+
+                        try {
+                            const data = JSON.parse(json);
+                            if (data.type === "chunk" && onChunk) {
+                                onChunk(data.content);
+                            } else if (data.type === "thinking" && onThinking) {
+                                onThinking(data.content);
+                            } else if (data.type === "image" && onImage) {
+                                onImage(data.data, data.mimeType);
+                            } else if (data.type === "executableCode" && onExecutableCode) {
+                                onExecutableCode(data.code, data.language);
+                            } else if (data.type === "codeExecutionResult" && onCodeExecutionResult) {
+                                onCodeExecutionResult(data.output, data.outcome);
+                            } else if (data.type === "webSearchResult" && onWebSearchResult) {
+                                onWebSearchResult(data.results);
+                            } else if (data.type === "status" && onStatus) {
+                                onStatus(data.message);
+                            } else if (data.type === "done" && onDone) {
+                                onDone(data);
+                            } else if (data.type === "error" && onError) {
+                                onError(new Error(data.message));
+                            }
+                        } catch {
+                            // Ignore JSON parse errors on individual lines
+                        }
+                    }
+                }
+            } catch (err) {
+                if (err.name === "AbortError") return; // Cancelled by caller
+                if (onError) onError(err);
             }
-        };
+        })();
 
-        ws.onerror = () => {
-            if (onError) onError(new Error("WebSocket connection error"));
-        };
-
-        ws.onclose = () => {
-            // Connection closed
-        };
-
-        return () => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.close();
-            }
-        };
+        // Return abort function (same interface as the old ws.close())
+        return () => controller.abort();
     }
 
     /**
@@ -260,7 +277,7 @@ export class PrismService {
      * @returns {Promise<{ audioDataUrl: string }>}
      */
     static async generateSpeech(payload) {
-        const res = await fetch(`${API_BASE}/voice`, {
+        const res = await fetch(`${API_BASE}/audio`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify(payload),
