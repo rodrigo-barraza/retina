@@ -5,6 +5,7 @@ import { X, Undo2, Eraser, Send, Pen } from "lucide-react";
 import styles from "./ImageAnnotator.module.css";
 
 const COLORS = [
+  { value: "#000000", label: "Black" },
   { value: "#ef4444", label: "Red" },
   { value: "#facc15", label: "Yellow" },
   { value: "#22c55e", label: "Green" },

@@ -470,6 +470,11 @@
   margin-top: 3px;
 }
 
+.messageImageWrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .messageImageThumb {
   width: 100%;
   height: auto;
@@ -481,6 +486,75 @@
 
   &:hover {
     opacity: 0.8;
+  }
+}
+
+.messageImageRemove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+
+  .messageImageWrapper:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    background: rgba(244, 63, 94, 0.8);
+  }
+}
+
+.messageUploadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    color: var(--accent-color);
+    background: var(--accent-subtle);
+  }
+}
+
+.messageActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.messageDrawBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  background: transparent;
+  border: none;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    color: var(--accent-color);
+    background: var(--accent-subtle);
   }
 }
 

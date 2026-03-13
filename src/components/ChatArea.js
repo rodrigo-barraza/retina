@@ -18,8 +18,10 @@ import {
     Terminal,
     AlertCircle,
     LayoutGrid,
+    Pencil,
 } from "lucide-react";
 import ImageAnnotator from "./ImageAnnotator";
+import DrawingCanvas from "./DrawingCanvas";
 import DocumentViewer from "./DocumentViewer";
 import MessageList from "./MessageList";
 import ModelGrid from "./ModelGrid";
@@ -317,6 +319,7 @@ export default function ChatArea({
     const audioChunksRef = useRef([]);
     const [systemPromptExpanded, setSystemPromptExpanded] = useState(true);
     const [isDragging, setIsDragging] = useState(false);
+    const [showDrawing, setShowDrawing] = useState(false);
     const dragCounter = useRef(0);
 
     // Check if a file matches the accepted types
@@ -364,6 +367,25 @@ export default function ChatArea({
         const files = Array.from(e.dataTransfer?.files || []);
         const accepted = files.filter(isFileAccepted);
         for (const file of accepted) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                setPendingImages((prev) => [...prev, ev.target.result]);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handlePaste = (e) => {
+        if (!hasFileInput) return;
+        const items = Array.from(e.clipboardData?.items || []);
+        const files = items
+            .filter((item) => item.kind === "file")
+            .map((item) => item.getAsFile())
+            .filter(Boolean)
+            .filter(isFileAccepted);
+        if (files.length === 0) return;
+        e.preventDefault();
+        for (const file of files) {
             const reader = new FileReader();
             reader.onload = (ev) => {
                 setPendingImages((prev) => [...prev, ev.target.result]);
@@ -757,6 +779,7 @@ export default function ChatArea({
                     onDragLeave={handleDragLeave}
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
+                    onPaste={handlePaste}
                 >
                     {isDragging && (
                         <div className={styles.dragOverlay}>
@@ -811,12 +834,22 @@ export default function ChatArea({
                                 </button>
                             </>
                         )}
+                        {supportedInputTypes.includes("image") && !isTTSModel && (
+                            <button
+                                type="button"
+                                className={styles.imageUploadBtn}
+                                onClick={() => setShowDrawing(true)}
+                                title="Create drawing"
+                            >
+                                <Pencil size={18} />
+                            </button>
+                        )}
                         {hasAudioInput && (
                             <button
                                 type="button"
                                 className={`${styles.imageUploadBtn} ${isRecording ? styles.recordingActive : ""}`}
                                 onClick={toggleRecording}
-                                title={isRecording ? "Stop recording" : "Record voice"}
+                                title={isRecording ? "Stop recording" : "Record Audio"}
                             >
                                 <Mic2 size={18} />
                             </button>
@@ -874,6 +907,16 @@ export default function ChatArea({
                 <DocumentViewer
                     dataUrl={docViewerSrc}
                     onClose={() => setDocViewerSrc(null)}
+                />
+            )}
+
+            {showDrawing && (
+                <DrawingCanvas
+                    onClose={() => setShowDrawing(false)}
+                    onSave={(dataUrl) => {
+                        setPendingImages((prev) => [...prev, dataUrl]);
+                        setShowDrawing(false);
+                    }}
                 />
             )}
         </div>

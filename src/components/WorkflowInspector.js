@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Eye, Type, Volume2, Upload, X, Maximize2, Search, ChevronDown, Paperclip, Plus, Trash2, MessageSquare } from "lucide-react";
+import { Eye, Type, Volume2, X, Maximize2, Search, ChevronDown, Paperclip, Plus, Trash2, MessageSquare, ImagePlus, Pencil } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowSidebar";
 import { PrismService } from "../services/PrismService";
+import DrawingCanvas from "./DrawingCanvas";
 import styles from "./WorkflowInspector.module.css";
 
 /**
@@ -48,6 +49,12 @@ export default function WorkflowInspector({
     // Model change state (hooks must be called before any early return)
     const [modelSearch, setModelSearch] = useState("");
     const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+
+    // Drawing canvas state: { msgIdx, imgIdx? (edit), src? (edit) } | null
+    const [drawingState, setDrawingState] = useState(null);
+
+    // Whether the current model supports image inputs
+    const modelAcceptsImage = node ? (node.inputTypes || []).includes("image") : false;
 
     const isModel = node ? !node.nodeType : false;
 
@@ -284,15 +291,68 @@ export default function WorkflowInspector({
                                     />
                                     {msg.images?.length > 0 && (
                                         <div className={styles.messageImages}>
-                                            {msg.images.map((img, imgIdx) => (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img
-                                                    key={imgIdx}
-                                                    src={PrismService.getFileUrl(img)}
-                                                    alt={`Attachment ${imgIdx + 1}`}
-                                                    className={styles.messageImageThumb}
+                                            {msg.images.map((img, imgIdx) => {
+                                                const imgSrc = typeof img === "string" && img.startsWith("data:") ? img : PrismService.getFileUrl(img);
+                                                return (
+                                                    <div key={imgIdx} className={styles.messageImageWrapper}>
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img
+                                                            src={imgSrc}
+                                                            alt={`Attachment ${imgIdx + 1}`}
+                                                            className={styles.messageImageThumb}
+                                                            onClick={() => setDrawingState({ msgIdx: idx, imgIdx, src: imgSrc })}
+                                                            title="Click to edit drawing"
+                                                        />
+                                                        <button
+                                                            className={styles.messageImageRemove}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const msgs = [...getNodeMessages(node)];
+                                                                const updatedImages = [...(msgs[idx].images || [])];
+                                                                updatedImages.splice(imgIdx, 1);
+                                                                msgs[idx] = { ...msgs[idx], images: updatedImages };
+                                                                onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                                            }}
+                                                            title="Remove image"
+                                                        >
+                                                            <X size={8} />
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    {/* Upload button: user always, assistant when model accepts image, never system */}
+                                    {(msg.role === "user" || (msg.role === "assistant" && modelAcceptsImage)) && (
+                                        <div className={styles.messageActions}>
+                                            <label className={styles.messageUploadBtn} title="Upload image">
+                                                <ImagePlus size={12} />
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className={styles.fileInput}
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        const reader = new FileReader();
+                                                        reader.onload = () => {
+                                                            const msgs = [...getNodeMessages(node)];
+                                                            const existing = msgs[idx].images || [];
+                                                            msgs[idx] = { ...msgs[idx], images: [...existing, reader.result] };
+                                                            onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                                        };
+                                                        reader.readAsDataURL(file);
+                                                        e.target.value = "";
+                                                    }}
                                                 />
-                                            ))}
+                                            </label>
+                                            <button
+                                                className={styles.messageDrawBtn}
+                                                onClick={() => setDrawingState({ msgIdx: idx })}
+                                                title="Create drawing"
+                                            >
+                                                <Pencil size={12} />
+                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -392,63 +452,7 @@ export default function WorkflowInspector({
                     </section>
                 )}
 
-                {/* Static Inputs — model nodes */}
-                {isModel && (
-                    <section className={styles.section}>
-                        <label className={styles.sectionLabel}>Static Input</label>
-                        {node.staticInputs?.image ? (
-                            <div className={styles.previewContainer}>
-                                <img /* eslint-disable-line @next/next/no-img-element */
-                                    src={node.staticInputs.image}
-                                    alt="Static input"
-                                    className={styles.previewImage}
-                                />
-                                <button
-                                    className={styles.clearBtn}
-                                    onClick={() => onUpdateNodeConfig?.(node.id, "staticInputs", { ...node.staticInputs, image: null })}
-                                >
-                                    Remove
-                                </button>
-                            </div>
-                        ) : node.staticInputs?.audio ? (
-                            <div className={styles.previewContainer}>
-                                <div className={styles.audioIndicator}>
-                                    <Volume2 size={16} />
-                                    <span>Audio file attached</span>
-                                </div>
-                                <button
-                                    className={styles.clearBtn}
-                                    onClick={() => onUpdateNodeConfig?.(node.id, "staticInputs", { ...node.staticInputs, audio: null })}
-                                >
-                                    Remove
-                                </button>
-                            </div>
-                        ) : (
-                            <label className={styles.uploadArea}>
-                                <Upload size={16} />
-                                <span>Attach image or audio</span>
-                                <input
-                                    type="file"
-                                    accept="image/*,audio/*"
-                                    className={styles.fileInput}
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (!file) return;
-                                        const reader = new FileReader();
-                                        reader.onload = () => {
-                                            const modality = file.type.startsWith("image") ? "image" : "audio";
-                                            onUpdateNodeConfig?.(node.id, "staticInputs", {
-                                                ...node.staticInputs,
-                                                [modality]: reader.result,
-                                            });
-                                        };
-                                        reader.readAsDataURL(file);
-                                    }}
-                                />
-                            </label>
-                        )}
-                    </section>
-                )}
+
 
                 {/* Connections */}
                 {(incoming.length > 0 || outgoing.length > 0) && (
@@ -607,6 +611,30 @@ export default function WorkflowInspector({
                     <code className={styles.nodeId}>{node.id}</code>
                 </section>
             </div>
+
+            {/* Drawing Canvas Modal */}
+            {drawingState && (
+                <DrawingCanvas
+                    src={drawingState.src || null}
+                    onClose={() => setDrawingState(null)}
+                    onSave={(dataUrl) => {
+                        const msgs = [...getNodeMessages(node)];
+                        const { msgIdx, imgIdx } = drawingState;
+                        if (imgIdx != null) {
+                            // Edit mode: replace existing image
+                            const updatedImages = [...(msgs[msgIdx].images || [])];
+                            updatedImages[imgIdx] = dataUrl;
+                            msgs[msgIdx] = { ...msgs[msgIdx], images: updatedImages };
+                        } else {
+                            // Create mode: append new drawing
+                            const existing = msgs[msgIdx].images || [];
+                            msgs[msgIdx] = { ...msgs[msgIdx], images: [...existing, dataUrl] };
+                        }
+                        onUpdateNodeConfig?.(node.id, "messages", msgs);
+                        setDrawingState(null);
+                    }}
+                />
+            )}
         </div>
     );
 }
