@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { X, Upload, Type, Volume2, Eye, Loader2, Check, AlertTriangle, Settings, Paperclip } from "lucide-react";
+import { X, Upload, Type, Volume2, Eye, Loader2, Check, AlertTriangle, Settings, Paperclip, MessageSquare } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowSidebar";
 import styles from "./WorkflowCanvas.module.css";
@@ -476,28 +476,13 @@ export default function WorkflowCanvas({
                 {inputsExpanded && (
                     <foreignObject x={4} y={HEADER_HEIGHT + 2} width={NODE_WIDTH - 8} height={CONFIG_AREA_HEIGHT - 4}>
                         <div className={styles.nodeConfig}>
-                            {node.supportsSystemPrompt !== false && (
-                                <>
-                                    <label className={styles.nodeConfigLabel}>System Prompt</label>
-                                    <textarea
-                                        className={styles.nodeConfigTextarea}
-                                        value={node.systemPrompt || ""}
-                                        onChange={(e) => onUpdateNodeConfig?.(node.id, "systemPrompt", e.target.value)}
-                                        onMouseDown={(e) => e.stopPropagation()}
-                                        placeholder="Instructions for this model..."
-                                        rows={2}
-                                    />
-                                </>
-                            )}
-                            <label className={styles.nodeConfigLabel}>User Prompt</label>
-                            <textarea
-                                className={styles.nodeConfigTextarea}
-                                value={node.userPrompt || ""}
-                                onChange={(e) => onUpdateNodeConfig?.(node.id, "userPrompt", e.target.value)}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                placeholder="What to do with piped input..."
-                                rows={2}
-                            />
+                            <div className={styles.nodeConfigMessages}>
+                                <MessageSquare size={11} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                                <span className={styles.nodeConfigMessageCount}>
+                                    {(node.messages?.length || (node.systemPrompt ? 2 : 1))} messages
+                                </span>
+                                <span className={styles.nodeConfigMessageHint}>Edit in inspector →</span>
+                            </div>
                             <label className={styles.nodeConfigLabel}>Static Input</label>
                             <div className={styles.nodeConfigUpload}>
                                 {node.staticInputs?.image ? (
@@ -556,6 +541,10 @@ export default function WorkflowCanvas({
                                 <div className={styles.modelResultAudio}>
                                     <Volume2 size={14} />
                                     <span>Audio generated</span>
+                                </div>
+                            ) : results.embedding ? (
+                                <div className={styles.modelResultText} style={{ fontFamily: "monospace", fontSize: "10px" }}>
+                                    [{results.embedding.length} dims]
                                 </div>
                             ) : results.text ? (
                                 <div className={styles.modelResultText}>{results.text}</div>
@@ -695,6 +684,11 @@ export default function WorkflowCanvas({
                                                         style={{ width: "100%", height: 28 }}
                                                         onMouseDown={(e) => e.stopPropagation()}
                                                     />
+                                                )}
+                                                {node.receivedOutputs.embedding && (
+                                                    <div className={styles.viewerText} style={{ fontFamily: "monospace", fontSize: "10px" }}>
+                                                        [{node.receivedOutputs.embedding.length} dims] [{node.receivedOutputs.embedding.slice(0, 4).map((v) => v.toFixed(4)).join(", ")}…]
+                                                    </div>
                                                 )}
                                                 {node.receivedOutputs.video && (
                                                     <video

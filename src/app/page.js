@@ -7,7 +7,7 @@ import styles from "./page.module.css";
 import { PrismService } from "../services/PrismService";
 import StorageService from "../services/StorageService";
 import { useTheme } from "../components/ThemeProvider";
-import { Sun, Moon, Workflow } from "lucide-react";
+import { Sun, Moon, Workflow, Send } from "lucide-react";
 import SettingsPanel from "../components/SettingsPanel";
 import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
@@ -1199,6 +1199,39 @@ export default function Home({ initialConversationId = null }) {
                 }
                 headerControls={
                     <div className={styles.headerControls}>
+                        {messages.length > 0 && (
+                            <button
+                                className={styles.modeToggle}
+                                title="Send this conversation to a workflow"
+                                onClick={() => {
+                                    const convMessages = [];
+                                    if (settings.systemPrompt) {
+                                        convMessages.push({ role: "system", content: settings.systemPrompt });
+                                    }
+                                    messages.forEach((m) => {
+                                        convMessages.push({
+                                            role: m.role,
+                                            content: m.content || "",
+                                            ...(m.images?.length > 0 ? { images: m.images } : {}),
+                                            ...(m.audio ? { audio: m.audio } : {}),
+                                        });
+                                    });
+                                    sessionStorage.setItem(
+                                        "workflow_import_conversation",
+                                        JSON.stringify({
+                                            messages: convMessages,
+                                            provider: settings.provider,
+                                            model: settings.model,
+                                            title: title,
+                                        }),
+                                    );
+                                    router.push("/workflows?import=conversation");
+                                }}
+                            >
+                                <Send size={13} />
+                                To Workflow
+                            </button>
+                        )}
                         <Link
                             href="/workflows"
                             className={styles.modeToggle}

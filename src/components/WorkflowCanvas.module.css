@@ -450,6 +450,29 @@
   box-sizing: border-box;
 }
 
+.nodeConfigMessages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+}
+
+.nodeConfigMessageCount {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.nodeConfigMessageHint {
+  font-size: 9px;
+  color: var(--text-muted);
+  opacity: 0.6;
+  margin-left: auto;
+}
+
 .nodeConfigLabel {
   font-size: 9px;
   font-weight: 600;

@@ -21,7 +21,6 @@ const ENDPOINT_LABELS = {
     "audio-to-text": "Audio → Text",
     "image-to-text": "Image → Text",
     "text-to-speech": "Text → Speech",
-    "text-to-embedding": "Text → Embedding",
 };
 
 function formatNumber(n) {

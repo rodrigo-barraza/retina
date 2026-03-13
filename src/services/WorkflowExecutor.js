@@ -16,7 +16,10 @@ function resolveEndpoint(node, inputData) {
     const hasAudioInput = inputData.some((d) => d.type === "audio");
     const outputsImage = (node.outputTypes || []).includes("image");
     const outputsAudio = (node.outputTypes || []).includes("audio");
+    const outputsEmbedding = (node.outputTypes || []).includes("embedding");
 
+    // Embedding generation: → embedding output
+    if (outputsEmbedding) return "modalityToEmbedding";
     // Image generation: → image output
     if (outputsImage) return "textToImage";
     // Audio transcription: audio in → text out
@@ -60,29 +63,60 @@ async function executeModelNode(node, inputData) {
     const outputs = {};
 
     if (endpoint === "textToText") {
-        // Build messages in the format Prism expects:
-        // { role: "user", content: "text", images: [dataUrl, ...] }
+        // Collect piped inputs from connections
         const textParts = inputData.filter((d) => d.type === "text").map((d) => d.data);
         const imageParts = inputData.filter((d) => d.type === "image").map((d) => d.data);
-        // Combine user prompt (explicit instruction) with piped text inputs
         const pipedText = textParts.join("\n\n");
-        const content = node.userPrompt
-            ? (pipedText ? `${node.userPrompt}\n\n${pipedText}` : node.userPrompt)
-            : pipedText || "";
 
-        const systemMsg = node.systemPrompt
-            ? [{ role: "system", content: node.systemPrompt }]
-            : [];
-        const userMsg = {
-            role: "user",
-            content,
-            ...(imageParts.length > 0 ? { images: imageParts } : {}),
-        };
+        let finalMessages;
+
+        if (node.messages && node.messages.length > 0) {
+            // Use the full conversation messages array, preserving images/audio
+            finalMessages = node.messages.map((m) => ({
+                role: m.role,
+                content: m.content || "",
+                ...(m.images?.length > 0 ? { images: m.images } : {}),
+                ...(m.audio ? { audio: m.audio } : {}),
+            }));
+
+            // Append piped text/images to the last user message (or add a new one)
+            const lastUserIdx = finalMessages.map((m, i) => ({ m, i })).filter(({ m }) => m.role === "user").pop()?.i;
+            if (lastUserIdx !== undefined && (pipedText || imageParts.length > 0)) {
+                const lastUser = finalMessages[lastUserIdx];
+                finalMessages[lastUserIdx] = {
+                    ...lastUser,
+                    content: pipedText ? (lastUser.content ? `${lastUser.content}\n\n${pipedText}` : pipedText) : lastUser.content,
+                    ...(imageParts.length > 0 ? { images: imageParts } : {}),
+                };
+            } else if (pipedText || imageParts.length > 0) {
+                // No user message exists — create one for piped input
+                finalMessages.push({
+                    role: "user",
+                    content: pipedText || "",
+                    ...(imageParts.length > 0 ? { images: imageParts } : {}),
+                });
+            }
+        } else {
+            // Legacy: build from systemPrompt/userPrompt
+            const content = node.userPrompt
+                ? (pipedText ? `${node.userPrompt}\n\n${pipedText}` : node.userPrompt)
+                : pipedText || "";
+
+            const systemMsg = node.systemPrompt
+                ? [{ role: "system", content: node.systemPrompt }]
+                : [];
+            const userMsg = {
+                role: "user",
+                content,
+                ...(imageParts.length > 0 ? { images: imageParts } : {}),
+            };
+            finalMessages = [...systemMsg, userMsg];
+        }
 
         const result = await PrismService.generateText({
             provider: node.provider,
             model: node.modelName,
-            messages: [...systemMsg, userMsg],
+            messages: finalMessages,
         });
 
         outputs.text = result.text || result.content || "";
@@ -93,13 +127,40 @@ async function executeModelNode(node, inputData) {
     } else if (endpoint === "textToImage") {
         const pipedPrompt = inputData.find((d) => d.type === "text")?.data || "";
         const rawImages = inputData.filter((d) => d.type === "image").map((d) => d.data);
-        // userPrompt takes precedence; piped text is appended
-        const prompt = node.userPrompt
-            ? (pipedPrompt ? `${node.userPrompt}\n\n${pipedPrompt}` : node.userPrompt)
-            : pipedPrompt;
+
+        let prompt;
+        let systemPrompt;
+        const messageImages = [];
+
+        if (node.messages && node.messages.length > 0) {
+            // Extract from messages array: last user message = prompt, system message = systemPrompt
+            const systemMsg = node.messages.find((m) => m.role === "system");
+            const userMsgs = node.messages.filter((m) => m.role === "user");
+            const lastUser = userMsgs[userMsgs.length - 1];
+
+            systemPrompt = systemMsg?.content || undefined;
+            const userContent = lastUser?.content || "";
+            prompt = pipedPrompt
+                ? (userContent ? `${userContent}\n\n${pipedPrompt}` : pipedPrompt)
+                : userContent;
+
+            // Collect images from all user messages
+            userMsgs.forEach((m) => {
+                if (m.images?.length > 0) messageImages.push(...m.images);
+            });
+        } else {
+            // Legacy: use systemPrompt/userPrompt fields
+            systemPrompt = node.systemPrompt || undefined;
+            prompt = node.userPrompt
+                ? (pipedPrompt ? `${node.userPrompt}\n\n${pipedPrompt}` : node.userPrompt)
+                : pipedPrompt;
+        }
+
+        // Merge piped images + message images
+        const allRawImages = [...rawImages, ...messageImages];
 
         // Convert data URLs → { imageData, mimeType } objects for Prism/providers
-        const images = rawImages.map((img) => {
+        const images = allRawImages.map((img) => {
             if (typeof img === "string" && img.startsWith("data:")) {
                 const match = img.match(/^data:([^;]+);base64,(.+)$/);
                 if (match) {
@@ -114,7 +175,7 @@ async function executeModelNode(node, inputData) {
             provider: node.provider,
             model: node.modelName,
             prompt,
-            systemPrompt: node.systemPrompt || undefined,
+            systemPrompt,
             images: images.length > 0 ? images : undefined,
         });
 
@@ -147,6 +208,27 @@ async function executeModelNode(node, inputData) {
         });
 
         outputs.audio = result.audioDataUrl || "";
+    } else if (endpoint === "modalityToEmbedding") {
+        const textParts = inputData.filter((d) => d.type === "text").map((d) => d.data);
+        const imageParts = inputData.filter((d) => d.type === "image").map((d) => d.data);
+        const audioPart = inputData.find((d) => d.type === "audio")?.data;
+
+        const payload = {
+            provider: node.provider,
+            model: node.modelName,
+        };
+
+        // Combine user prompt with piped text
+        const pipedText = textParts.join("\n\n");
+        const combinedText = node.userPrompt
+            ? (pipedText ? `${node.userPrompt}\n\n${pipedText}` : node.userPrompt)
+            : pipedText;
+        if (combinedText) payload.text = combinedText;
+        if (imageParts.length > 0) payload.images = imageParts;
+        if (audioPart) payload.audio = audioPart;
+
+        const result = await PrismService.generateEmbedding(payload);
+        outputs.embedding = result.embedding;
     }
 
     return outputs;

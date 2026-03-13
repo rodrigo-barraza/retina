@@ -369,6 +369,144 @@
   opacity: 0.6;
 }
 
+/* ── Conversation Messages ── */
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.messageRow {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-sm);
+}
+
+.messageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-radius: 3px;
+  border: 1px solid;
+  cursor: pointer;
+  background: transparent;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+.messageDeleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--transition-fast);
+
+  .messageRow:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    color: #f43f5e;
+    background: rgba(244, 63, 94, 0.1);
+  }
+}
+
+.messageTextarea {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  line-height: 1.4;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  min-height: 36px;
+
+  &:focus {
+    border-color: var(--accent-color);
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
+  }
+}
+
+.messageImages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.messageImageThumb {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 3px;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.addMessageBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background: var(--accent-subtle);
+  }
+}
+
 /* ── Model Selector ── */
 .modelSelector {
   position: relative;

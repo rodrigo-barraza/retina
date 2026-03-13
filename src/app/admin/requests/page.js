@@ -243,7 +243,6 @@ export default function RequestsPage() {
                         <option value="/text-to-speech">/text-to-speech</option>
                         <option value="/audio-to-text">/audio-to-text</option>
                         <option value="/image-to-text">/image-to-text</option>
-                        <option value="/text-to-embedding">/text-to-embedding</option>
                     </select>
                 </div>
                 <div className={styles.filterGroup}>

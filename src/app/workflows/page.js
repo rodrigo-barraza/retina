@@ -103,6 +103,34 @@ export default function WorkflowsPage() {
             .catch(console.error);
     }, []);
 
+    // Import conversation from homepage (sessionStorage handoff)
+    useEffect(() => {
+        const raw = sessionStorage.getItem("workflow_import_conversation");
+        if (!raw) return;
+        sessionStorage.removeItem("workflow_import_conversation");
+        try {
+            const data = JSON.parse(raw);
+            if (data.messages && data.messages.length > 0) {
+                const importedNode = {
+                    id: generateNodeId(),
+                    modelName: data.model || "",
+                    provider: data.provider || "",
+                    displayName: data.model || "Imported Conversation",
+                    inputTypes: ["text"],
+                    outputTypes: ["text"],
+                    supportsSystemPrompt: true,
+                    messages: data.messages,
+                    position: { x: 200, y: 120 },
+                };
+                setNodes((prev) => [...prev, importedNode]);
+                setWorkflowName(data.title ? `${data.title} (workflow)` : "Imported Conversation");
+                showToast(`Imported conversation with ${data.messages.length} messages`);
+            }
+        } catch (err) {
+            console.error("Failed to import conversation:", err);
+        }
+    }, []);
+
     const showToast = (message, type = "success") => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
@@ -128,6 +156,10 @@ export default function WorkflowsPage() {
                 inputTypes: model.inputTypes || [],
                 outputTypes: model.outputTypes || [],
                 supportsSystemPrompt: model.supportsSystemPrompt !== false,
+                messages: [
+                    { role: "system", content: "" },
+                    { role: "user", content: "" },
+                ],
                 position: {
                     x: 80 + nodes.length * 60 + Math.random() * 40,
                     y: 80 + nodes.length * 40 + Math.random() * 40,

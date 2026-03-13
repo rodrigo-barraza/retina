@@ -1,10 +1,33 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Eye, Type, Volume2, Upload, X, Maximize2, Search, ChevronDown, Paperclip } from "lucide-react";
+import { Eye, Type, Volume2, Upload, X, Maximize2, Search, ChevronDown, Paperclip, Plus, Trash2, MessageSquare } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowSidebar";
+import { PrismService } from "../services/PrismService";
 import styles from "./WorkflowInspector.module.css";
+
+/**
+ * Role cycle order for clicking the role badge.
+ */
+const ROLE_CYCLE = ["system", "user", "assistant"];
+const ROLE_COLORS = {
+  system: "#f59e0b",
+  user: "#6366f1",
+  assistant: "#10b981",
+};
+
+/**
+ * Convert legacy systemPrompt/userPrompt to a messages array.
+ * Returns the existing messages array if already present.
+ */
+function getNodeMessages(node) {
+  if (node.messages && node.messages.length > 0) return node.messages;
+  const msgs = [];
+  if (node.systemPrompt) msgs.push({ role: "system", content: node.systemPrompt });
+  msgs.push({ role: "user", content: node.userPrompt || "" });
+  return msgs;
+}
 
 /**
  * Right-side inspector panel that shows details about the selected workflow node.
@@ -211,32 +234,84 @@ export default function WorkflowInspector({
                     </section>
                 )}
 
-                {/* System Prompt — model nodes that support it */}
-                {isModel && node.supportsSystemPrompt !== false && (
-                    <section className={styles.section}>
-                        <label className={styles.sectionLabel}>System Prompt</label>
-                        <textarea
-                            className={styles.textarea}
-                            value={node.systemPrompt || ""}
-                            onChange={(e) => onUpdateNodeConfig?.(node.id, "systemPrompt", e.target.value)}
-                            placeholder="Instructions for this model..."
-                            rows={3}
-                        />
-                    </section>
-                )}
-
-                {/* User Prompt — model nodes only */}
+                {/* Conversation Messages — model nodes */}
                 {isModel && (
                     <section className={styles.section}>
-                        <label className={styles.sectionLabel}>User Prompt</label>
-                        <textarea
-                            className={styles.textarea}
-                            value={node.userPrompt || ""}
-                            onChange={(e) => onUpdateNodeConfig?.(node.id, "userPrompt", e.target.value)}
-                            placeholder="What should this model do with its input?"
-                            rows={3}
-                        />
-                        <span className={styles.fieldHint}>Combined with piped input when executed</span>
+                        <label className={styles.sectionLabel}>
+                            <MessageSquare size={10} style={{ marginRight: 4 }} />
+                            Messages ({getNodeMessages(node).length})
+                        </label>
+                        <div className={styles.messageList}>
+                            {getNodeMessages(node).map((msg, idx) => (
+                                <div key={idx} className={styles.messageRow}>
+                                    <div className={styles.messageHeader}>
+                                        <button
+                                            className={styles.roleBadge}
+                                            style={{ background: `${ROLE_COLORS[msg.role]}20`, color: ROLE_COLORS[msg.role], borderColor: `${ROLE_COLORS[msg.role]}40` }}
+                                            onClick={() => {
+                                                const msgs = [...getNodeMessages(node)];
+                                                const nextRole = ROLE_CYCLE[(ROLE_CYCLE.indexOf(msg.role) + 1) % ROLE_CYCLE.length];
+                                                msgs[idx] = { ...msgs[idx], role: nextRole };
+                                                onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                            }}
+                                            title="Click to change role"
+                                        >
+                                            {msg.role}
+                                        </button>
+                                        {getNodeMessages(node).length > 1 && (
+                                            <button
+                                                className={styles.messageDeleteBtn}
+                                                onClick={() => {
+                                                    const msgs = getNodeMessages(node).filter((_, i) => i !== idx);
+                                                    onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                                }}
+                                                title="Remove message"
+                                            >
+                                                <Trash2 size={10} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <textarea
+                                        className={styles.messageTextarea}
+                                        value={msg.content || ""}
+                                        onChange={(e) => {
+                                            const msgs = [...getNodeMessages(node)];
+                                            msgs[idx] = { ...msgs[idx], content: e.target.value };
+                                            onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                        }}
+                                        placeholder={msg.role === "system" ? "System instructions..." : msg.role === "user" ? "User message..." : "Assistant response..."}
+                                        rows={2}
+                                    />
+                                    {msg.images?.length > 0 && (
+                                        <div className={styles.messageImages}>
+                                            {msg.images.map((img, imgIdx) => (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img
+                                                    key={imgIdx}
+                                                    src={PrismService.getFileUrl(img)}
+                                                    alt={`Attachment ${imgIdx + 1}`}
+                                                    className={styles.messageImageThumb}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <button
+                            className={styles.addMessageBtn}
+                            onClick={() => {
+                                const msgs = [...getNodeMessages(node)];
+                                const lastRole = msgs[msgs.length - 1]?.role;
+                                const nextRole = lastRole === "user" ? "assistant" : "user";
+                                msgs.push({ role: nextRole, content: "" });
+                                onUpdateNodeConfig?.(node.id, "messages", msgs);
+                            }}
+                        >
+                            <Plus size={11} />
+                            Add Message
+                        </button>
+                        <span className={styles.fieldHint}>Piped input is appended to the last user message</span>
                     </section>
                 )}
 
@@ -440,6 +515,22 @@ export default function WorkflowInspector({
                                 <audio controls src={results.audio} className={styles.resultAudio} />
                             </div>
                         )}
+
+                        {results.embedding && (
+                            <div className={styles.resultBlock}>
+                                <span className={styles.resultType}>Embedding [{results.embedding.length} dims]</span>
+                                <div className={styles.resultText} style={{ fontSize: "11px", fontFamily: "monospace", maxHeight: "120px", overflow: "auto" }}>
+                                    [{results.embedding.slice(0, 8).map((v) => v.toFixed(6)).join(", ")}{results.embedding.length > 8 ? ", …" : ""}]
+                                </div>
+                                <button
+                                    className={styles.clearBtn}
+                                    style={{ marginTop: "4px" }}
+                                    onClick={() => navigator.clipboard.writeText(JSON.stringify(results.embedding))}
+                                >
+                                    Copy All
+                                </button>
+                            </div>
+                        )}
                     </section>
                 )}
 
@@ -481,6 +572,22 @@ export default function WorkflowInspector({
                             <div className={styles.resultBlock}>
                                 <span className={styles.resultType}>Audio</span>
                                 <audio controls src={node.receivedOutputs.audio} className={styles.resultAudio} />
+                            </div>
+                        )}
+
+                        {node.receivedOutputs.embedding && (
+                            <div className={styles.resultBlock}>
+                                <span className={styles.resultType}>Embedding [{node.receivedOutputs.embedding.length} dims]</span>
+                                <div className={styles.resultText} style={{ fontSize: "11px", fontFamily: "monospace", maxHeight: "120px", overflow: "auto" }}>
+                                    [{node.receivedOutputs.embedding.slice(0, 8).map((v) => v.toFixed(6)).join(", ")}{node.receivedOutputs.embedding.length > 8 ? ", …" : ""}]
+                                </div>
+                                <button
+                                    className={styles.clearBtn}
+                                    style={{ marginTop: "4px" }}
+                                    onClick={() => navigator.clipboard.writeText(JSON.stringify(node.receivedOutputs.embedding))}
+                                >
+                                    Copy All
+                                </button>
                             </div>
                         )}
                     </section>

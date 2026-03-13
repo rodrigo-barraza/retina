@@ -288,4 +288,24 @@ export class PrismService {
         );
         return { audioDataUrl: `data:${contentType};base64,${base64}` };
     }
+
+    /**
+     * Generate embeddings from any modality.
+     * @param {Object} payload - { provider, model?, text?, images?, audio?, video?, pdf?, taskType?, dimensions? }
+     * @returns {Promise<{ embedding: number[], dimensions: number, provider: string, model: string }>}
+     */
+    static async generateEmbedding(payload) {
+        const res = await fetch(`${API_BASE}/modality-to-embedding`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || "Failed to generate embedding");
+        }
+
+        return res.json();
+    }
 }
