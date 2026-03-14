@@ -306,7 +306,7 @@ export class PrismService {
    * @returns {Promise<{ audioDataUrl: string }>}
    */
   static async generateSpeech(payload) {
-    const res = await fetch(`${API_BASE}/audio`, {
+    const res = await fetch(`${API_BASE}/text-to-audio`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload),
