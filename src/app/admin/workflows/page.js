@@ -285,6 +285,30 @@ export default function AdminWorkflowsPage() {
                 </div>
               </section>
 
+              {/* System Prompt */}
+              {inspectedNode.systemPrompt && (
+                <section className={styles.inspectorSection}>
+                  <label className={styles.inspectorLabel}>System Prompt</label>
+                  <pre className={styles.inspectorPre}>{inspectedNode.systemPrompt}</pre>
+                </section>
+              )}
+
+              {/* Input */}
+              {inspectedNode.input && (
+                <section className={styles.inspectorSection}>
+                  <label className={styles.inspectorLabel}>Input</label>
+                  <pre className={styles.inspectorPre}>{inspectedNode.input}</pre>
+                </section>
+              )}
+
+              {/* Output */}
+              {inspectedNode.output && (
+                <section className={styles.inspectorSection}>
+                  <label className={styles.inspectorLabel}>Output</label>
+                  <pre className={styles.inspectorPre}>{inspectedNode.output}</pre>
+                </section>
+              )}
+
               {/* Connections */}
               {selectedWorkflow?.connections?.length > 0 && (
                 <section className={styles.inspectorSection}>

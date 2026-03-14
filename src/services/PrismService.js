@@ -217,10 +217,31 @@ export class PrismService {
      * @returns {Promise<{ images: string[], text?: string }>}
      */
     static async generateImage(payload) {
+        // Build a messages array from the prompt — /chat requires it
+        const { prompt, images, systemPrompt, ...rest } = payload;
+        const userMessage = {
+            role: "user",
+            content: prompt || "",
+        };
+
+        // Attach images as data URLs if present
+        if (images && images.length > 0) {
+            userMessage.images = images.map((img) => {
+                if (typeof img === "string") return img;
+                return `data:${img.mimeType || "image/png"};base64,${img.imageData}`;
+            });
+        }
+
+        const body = {
+            ...rest,
+            messages: [userMessage],
+        };
+        if (systemPrompt) body.systemPrompt = systemPrompt;
+
         const res = await fetch(`${API_BASE}/chat?stream=false`, {
             method: "POST",
             headers: getHeaders(),
-            body: JSON.stringify(payload),
+            body: JSON.stringify(body),
         });
 
         if (!res.ok) {

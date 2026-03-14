@@ -339,6 +339,22 @@
   opacity: 0.6;
 }
 
+.inspectorPre {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-sm, 4px);
+  padding: 8px 10px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 180px;
+  overflow-y: auto;
+  font-family: var(--font-mono, monospace);
+}
+
 .inspectorModalities {
   display: flex;
   align-items: center;
