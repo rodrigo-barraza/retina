@@ -796,8 +796,8 @@ export default function WorkflowCanvas({
                                 )}
                             </foreignObject>
 
-                            {/* Expandable info section — skip for viewers */}
-                            {!isViewer && (
+                            {/* Expandable info section — skip for viewers and text inputs */}
+                            {!isViewer && node.modality !== "text" && (
                                 <foreignObject x={4} y={HEADER_HEIGHT + contentH + 2} width={width - 8} height={ASSET_INFO_HEIGHT - 4}>
                                     <div className={styles.nodeConfig}>
                                         <label className={styles.nodeConfigLabel}>Node ID</label>

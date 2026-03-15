@@ -752,8 +752,8 @@ export default function WorkflowInspector({
                     </section>
                 )}
 
-                {/* Generated Results — model nodes only */}
-                {results && !results.error && !isViewer && (
+                {/* Generated Results — model nodes only (hide for text input assets) */}
+                {results && !results.error && !isViewer && !(isInput && node.modality === "text") && (
                     <section className={styles.section}>
                         <label className={styles.sectionLabel}>Generated Output</label>
 
@@ -878,11 +878,13 @@ export default function WorkflowInspector({
                     </section>
                 )}
 
-                {/* Node ID (debug) */}
-                <section className={styles.section}>
-                    <label className={styles.sectionLabel}>Node ID</label>
-                    <code className={styles.nodeId}>{node.id}</code>
-                </section>
+                {/* Node ID (debug) — hide for text input assets */}
+                {!(isInput && node.modality === "text") && (
+                    <section className={styles.section}>
+                        <label className={styles.sectionLabel}>Node ID</label>
+                        <code className={styles.nodeId}>{node.id}</code>
+                    </section>
+                )}
             </div>
 
             {/* Drawing Canvas Modal */}
