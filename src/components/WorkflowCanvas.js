@@ -109,7 +109,7 @@ export default function WorkflowCanvas({
     [pan, zoom],
   );
 
-  // Node dragging
+  // Node dragging (mouse)
   const handleNodeMouseDown = useCallback(
     (e, nodeId) => {
       if (e.button !== 0) return;
@@ -118,6 +118,41 @@ export default function WorkflowCanvas({
       const node = nodes.find((n) => n.id === nodeId);
       if (!node) return;
       const svgPos = screenToSvg(e.clientX, e.clientY);
+      setDragging({
+        nodeId,
+        offsetX: svgPos.x - node.position.x,
+        offsetY: svgPos.y - node.position.y,
+      });
+    },
+    [nodes, screenToSvg, onSelectNode],
+  );
+
+  // ── Touch support ──
+  const touchRef = useRef({ type: null, lastDist: 0, nodeId: null });
+
+  const getTouchDist = (touches) => {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const getTouchCenter = (touches, rect) => ({
+    x: (touches[0].clientX + touches[1].clientX) / 2 - rect.left,
+    y: (touches[0].clientY + touches[1].clientY) / 2 - rect.top,
+  });
+
+  // Node dragging (touch)
+  const handleNodeTouchStart = useCallback(
+    (e, nodeId) => {
+      if (e.touches.length !== 1) return;
+      e.stopPropagation();
+      e.preventDefault();
+      onSelectNode?.(nodeId);
+      const node = nodes.find((n) => n.id === nodeId);
+      if (!node) return;
+      const touch = e.touches[0];
+      const svgPos = screenToSvg(touch.clientX, touch.clientY);
+      touchRef.current = { type: "drag", nodeId };
       setDragging({
         nodeId,
         offsetX: svgPos.x - node.position.x,
@@ -356,12 +391,118 @@ export default function WorkflowCanvas({
     window.addEventListener("mouseup", handleMouseUp);
     const container = containerRef.current;
     container?.addEventListener("wheel", handleWheel, { passive: false });
+
+    // ── Touch handlers ──
+    const handleTouchStart = (e) => {
+      if (!container?.contains(e.target)) return;
+
+      if (e.touches.length === 2) {
+        // Pinch-zoom start
+        e.preventDefault();
+        touchRef.current = {
+          type: "pinch",
+          lastDist: getTouchDist(e.touches),
+          nodeId: null,
+        };
+        return;
+      }
+
+      if (e.touches.length === 1 && touchRef.current.type !== "drag") {
+        // Canvas pan start (only if not already dragging a node)
+        const touch = e.touches[0];
+        const el = e.target;
+        const isInsideNode = el.closest?.("[data-workflow-node]");
+        if (!isInsideNode) {
+          e.preventDefault();
+          touchRef.current = { type: "pan", nodeId: null, lastDist: 0 };
+          setIsPanning(true);
+          panStart.current = {
+            x: touch.clientX,
+            y: touch.clientY,
+            panX: pan.x,
+            panY: pan.y,
+          };
+        }
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      const t = touchRef.current;
+
+      if (t.type === "pinch" && e.touches.length === 2) {
+        e.preventDefault();
+        const rect = container?.getBoundingClientRect();
+        if (!rect) return;
+        const newDist = getTouchDist(e.touches);
+        const center = getTouchCenter(e.touches, rect);
+        const scale = newDist / t.lastDist;
+        const currentZoom = zoomRef.current;
+        const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentZoom * scale));
+        const ratio = newZoom / currentZoom;
+        zoomRef.current = newZoom;
+        setPan((prev) => ({
+          x: center.x - ratio * (center.x - prev.x),
+          y: center.y - ratio * (center.y - prev.y),
+        }));
+        setZoom(newZoom);
+        touchRef.current.lastDist = newDist;
+        return;
+      }
+
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+
+      if (t.type === "drag" && dragging) {
+        e.preventDefault();
+        const svgPos = screenToSvg(touch.clientX, touch.clientY);
+        onUpdateNodePosition(dragging.nodeId, {
+          x: svgPos.x - dragging.offsetX,
+          y: svgPos.y - dragging.offsetY,
+        });
+        return;
+      }
+
+      if (t.type === "pan" && isPanning) {
+        e.preventDefault();
+        setPan({
+          x: panStart.current.panX + (touch.clientX - panStart.current.x),
+          y: panStart.current.panY + (touch.clientY - panStart.current.y),
+        });
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (e.touches.length === 0) {
+        if (dragging) setDragging(null);
+        if (isPanning) setIsPanning(false);
+        touchRef.current = { type: null, lastDist: 0, nodeId: null };
+      } else if (e.touches.length === 1 && touchRef.current.type === "pinch") {
+        // Went from 2 fingers to 1 — switch to pan
+        const touch = e.touches[0];
+        touchRef.current = { type: "pan", nodeId: null, lastDist: 0 };
+        setIsPanning(true);
+        panStart.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+          panX: pan.x,
+          panY: pan.y,
+        };
+      }
+    };
+
+    container?.addEventListener("touchstart", handleTouchStart, { passive: false });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd);
+
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
       container?.removeEventListener("wheel", handleWheel);
+      container?.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [handleMouseMove, handleMouseUp, handleWheel]);
+  }, [handleMouseMove, handleMouseUp, handleWheel, pan, dragging, isPanning, screenToSvg, onUpdateNodePosition]);
 
   // Keyboard copy-paste
   useEffect(() => {
@@ -667,6 +808,7 @@ export default function WorkflowCanvas({
               connections={connections}
               nodeStatuses={nodeStatuses}
               onMouseDown={handleNodeMouseDown}
+              onTouchStart={handleNodeTouchStart}
               onInputPortClick={handleInputPortClick}
               onOutputPortClick={handleOutputPortClick}
               onPortHover={setHoveredPort}

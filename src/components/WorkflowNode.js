@@ -193,6 +193,7 @@ function NodeShell({
   headerActionsWidth = 26,
   typeBadge,
   onMouseDown,
+  onTouchStart,
   onDelete,
   // Port props
   inputTypes,
@@ -230,6 +231,7 @@ function NodeShell({
       data-workflow-node
       data-node-id={node.id}
       onMouseDown={(e) => onMouseDown(e, node.id)}
+      onTouchStart={(e) => onTouchStart?.(e, node.id)}
     >
       {/* Body */}
       <rect
@@ -246,7 +248,7 @@ function NodeShell({
       <rect x={0} y={HEADER_HEIGHT - 3} width={width} height={3} className={styles.nodeHeader} style={headerStyle} />
 
       {/* Drag area with header content */}
-      <g className={styles.nodeDragArea} onMouseDown={(e) => onMouseDown(e, node.id)} style={{ cursor: "grab" }}>
+      <g className={styles.nodeDragArea} onMouseDown={(e) => onMouseDown(e, node.id)} onTouchStart={(e) => onTouchStart?.(e, node.id)} style={{ cursor: "grab" }}>
         <rect x={0} y={0} width={width - headerActionsWidth - 8} height={HEADER_HEIGHT} fill="transparent" />
         <foreignObject x={8} y={0} width={width - headerActionsWidth - 16} height={HEADER_HEIGHT}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, height: "100%", paddingTop: 1 }}>
@@ -318,6 +320,7 @@ function ModelNode(props) {
     isSelected,
     isExpanded,
     onMouseDown,
+    onTouchStart,
     onDelete,
     onUpdateConfig,
   } = props;
@@ -382,6 +385,7 @@ function ModelNode(props) {
       headerActionsWidth={actionsWidth}
       typeBadge="AI Model"
       onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
       onDelete={onDelete}
       inputTypes={inputTypes}
       outputTypes={outputTypes}
@@ -472,6 +476,7 @@ function AssetNode(props) {
     isSelected,
     isExpanded,
     onMouseDown,
+    onTouchStart,
     onDelete,
     onUpdateContent,
     onUpdateFileInput,
@@ -617,6 +622,7 @@ function AssetNode(props) {
       headerActionsWidth={actionsWidth}
       typeBadge={node.customName ? typeLabel : null}
       onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
       onDelete={onDelete}
       inputTypes={inputTypes}
       outputTypes={outputTypes}

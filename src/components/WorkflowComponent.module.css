@@ -2,6 +2,7 @@
   flex: 1;
   display: flex;
   overflow: hidden;
+  position: relative;
 }
 
 .sidebarWrapper {
@@ -16,4 +17,88 @@
 .sidebarHidden {
   width: 0;
   min-width: 0;
+}
+
+/* ── Inspector wrapper ── */
+.inspectorWrapper {
+  display: flex;
+  flex-shrink: 0;
+  height: 100%;
+}
+
+/* ── Mobile overrides ── */
+@media (max-width: 767px) {
+  .sidebarWrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: calc(100% - 60px);
+    min-width: calc(100% - 60px);
+    z-index: 200;
+    background: var(--bg-secondary);
+    transition: opacity 0.25s ease;
+    opacity: 1;
+  }
+
+  .sidebarHidden {
+    width: calc(100% - 60px);
+    min-width: calc(100% - 60px);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .sidebarBackdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 60px;
+    z-index: 199;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    cursor: pointer;
+  }
+
+  /* Inspector: bottom sheet on mobile */
+  .inspectorWrapper {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: auto;
+    max-height: 60vh;
+    z-index: 210;
+    animation: slideUpSheet 0.25s ease-out;
+  }
+
+  .inspectorWrapper > * {
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+    width: 100%;
+    max-height: 60vh;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+  }
+
+  @keyframes slideUpSheet {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .inspectorBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 209;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
 }
