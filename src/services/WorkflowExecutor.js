@@ -68,8 +68,23 @@ async function executeModelNode(node, inputData) {
         // Collect piped inputs from connections
         const textParts = inputData.filter((d) => d.type === "text").map((d) => d.data);
         const imageParts = inputData.filter((d) => d.type === "image").map((d) => d.data);
+        const audioParts = inputData.filter((d) => d.type === "audio").map((d) => d.data);
+        const videoParts = inputData.filter((d) => d.type === "video").map((d) => d.data);
+        const pdfParts = inputData.filter((d) => d.type === "pdf").map((d) => d.data);
         const conversationParts = inputData.filter((d) => d.type === "conversation").map((d) => d.data);
         const pipedText = textParts.join("\n\n");
+        const hasMedia = imageParts.length > 0 || audioParts.length > 0 || videoParts.length > 0 || pdfParts.length > 0;
+
+        // Helper: merge piped media fields into a message
+        const buildMediaFields = (existing = {}) => {
+            const fields = {};
+            const imgs = [...(existing.images || []), ...imageParts];
+            if (imgs.length > 0) fields.images = imgs;
+            if (existing.audio || audioParts[0]) fields.audio = existing.audio || audioParts[0];
+            if (existing.video || videoParts[0]) fields.video = existing.video || videoParts[0];
+            if (existing.pdf || pdfParts[0]) fields.pdf = existing.pdf || pdfParts[0];
+            return fields;
+        };
 
         let finalMessages;
 
@@ -82,49 +97,53 @@ async function executeModelNode(node, inputData) {
                     content: m.content || "",
                     ...(m.images?.length > 0 ? { images: m.images } : {}),
                     ...(m.audio ? { audio: m.audio } : {}),
+                    ...(m.video ? { video: m.video } : {}),
+                    ...(m.pdf ? { pdf: m.pdf } : {}),
                 }))
-                .filter((m) => m.content || m.images?.length > 0 || m.audio);
+                .filter((m) => m.content || m.images?.length > 0 || m.audio || m.video || m.pdf);
 
-            // Append piped text/images to the last user message (or add a new one)
+            // Append piped text/media to the last user message (or add a new one)
             const lastUserIdx = finalMessages.map((m, i) => ({ m, i })).filter(({ m }) => m.role === "user").pop()?.i;
-            if (lastUserIdx !== undefined && (pipedText || imageParts.length > 0)) {
+            if (lastUserIdx !== undefined && (pipedText || hasMedia)) {
                 const lastUser = finalMessages[lastUserIdx];
                 finalMessages[lastUserIdx] = {
                     ...lastUser,
                     content: pipedText ? (lastUser.content ? `${lastUser.content}\n\n${pipedText}` : pipedText) : lastUser.content,
-                    ...(imageParts.length > 0 ? { images: [...(lastUser.images || []), ...imageParts] } : {}),
+                    ...buildMediaFields(lastUser),
                 };
-            } else if (pipedText || imageParts.length > 0) {
+            } else if (pipedText || hasMedia) {
                 finalMessages.push({
                     role: "user",
                     content: pipedText || "",
-                    ...(imageParts.length > 0 ? { images: imageParts } : {}),
+                    ...buildMediaFields(),
                 });
             }
         } else if (node.messages && node.messages.length > 0) {
-            // Use the full conversation messages array, preserving images/audio
+            // Use the full conversation messages array, preserving all media
             finalMessages = node.messages.map((m) => ({
                 role: m.role,
                 content: m.content || "",
                 ...(m.images?.length > 0 ? { images: m.images } : {}),
                 ...(m.audio ? { audio: m.audio } : {}),
+                ...(m.video ? { video: m.video } : {}),
+                ...(m.pdf ? { pdf: m.pdf } : {}),
             }));
 
-            // Append piped text/images to the last user message (or add a new one)
+            // Append piped text/media to the last user message (or add a new one)
             const lastUserIdx = finalMessages.map((m, i) => ({ m, i })).filter(({ m }) => m.role === "user").pop()?.i;
-            if (lastUserIdx !== undefined && (pipedText || imageParts.length > 0)) {
+            if (lastUserIdx !== undefined && (pipedText || hasMedia)) {
                 const lastUser = finalMessages[lastUserIdx];
                 finalMessages[lastUserIdx] = {
                     ...lastUser,
                     content: pipedText ? (lastUser.content ? `${lastUser.content}\n\n${pipedText}` : pipedText) : lastUser.content,
-                    ...(imageParts.length > 0 ? { images: imageParts } : {}),
+                    ...buildMediaFields(lastUser),
                 };
-            } else if (pipedText || imageParts.length > 0) {
+            } else if (pipedText || hasMedia) {
                 // No user message exists — create one for piped input
                 finalMessages.push({
                     role: "user",
                     content: pipedText || "",
-                    ...(imageParts.length > 0 ? { images: imageParts } : {}),
+                    ...buildMediaFields(),
                 });
             }
         } else {
@@ -139,7 +158,7 @@ async function executeModelNode(node, inputData) {
             const userMsg = {
                 role: "user",
                 content,
-                ...(imageParts.length > 0 ? { images: imageParts } : {}),
+                ...buildMediaFields(),
             };
             finalMessages = [...systemMsg, userMsg];
         }

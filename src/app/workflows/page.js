@@ -307,7 +307,7 @@ export default function WorkflowsPage() {
      * If the new modality differs, remove any incompatible outgoing connections.
      * When content is cleared (removed), reset modality and outputTypes and remove all outgoing connections.
      */
-    const handleUpdateFileInput = useCallback((nodeId, content, mimeType) => {
+    const handleUpdateFileInput = useCallback(async (nodeId, content, mimeType) => {
         pushUndo();
         let newModality = null;
         if (content && mimeType) {
@@ -340,6 +340,25 @@ export default function WorkflowsPage() {
                 return c.sourceModality === newModality;
             }),
         );
+
+        // Upload to MinIO and replace data URL with minio:// ref
+        if (content && content.startsWith("data:")) {
+            try {
+                const { ref } = await PrismService.uploadFile(content);
+                if (ref) {
+                    setNodes((prev) =>
+                        prev.map((n) => {
+                            if (n.id !== nodeId) return n;
+                            // Only replace if content still matches (user didn't swap it)
+                            if (n.content === content) return { ...n, content: ref };
+                            return n;
+                        }),
+                    );
+                }
+            } catch {
+                // Upload failed — keep the data URL as fallback
+            }
+        }
     }, []);
 
     // Update config of a model node (systemPrompt, staticInputs, etc.)
