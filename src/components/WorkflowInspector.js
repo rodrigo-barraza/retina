@@ -13,9 +13,9 @@ import { PrismService } from "../services/PrismService";
 import styles from "./WorkflowInspector.module.css";
 
 const STORAGE_KEY = "workflow-inspector-width";
-const MIN_WIDTH = 300;
+const MIN_WIDTH = 320;
 const MAX_WIDTH = 800;
-const DEFAULT_WIDTH = 400;
+const DEFAULT_WIDTH = 320;
 
 function getStoredWidth() {
     try {

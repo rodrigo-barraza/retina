@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { ArrowLeft, Sun, Moon, Play, Square, Loader2, Download, Upload, Undo2, RotateCcw } from "lucide-react";
+import { ArrowLeft, Sun, Moon, Play, Square, Loader2, Download, Upload, Undo2, RotateCcw, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PrismService } from "../../services/PrismService";
 import WorkflowService from "../../services/WorkflowService";
 import { executeWorkflow } from "../../services/WorkflowExecutor";
 import WorkflowComponent from "../../components/WorkflowComponent";
+import ProviderLogo from "../../components/ProviderLogos";
+import { MODALITY_ICONS } from "../../components/WorkflowNodeConstants";
 import { useTheme } from "../../components/ThemeProvider";
 import styles from "./page.module.css";
 
@@ -762,6 +764,19 @@ export default function WorkflowsPage({ initialWorkflowId }) {
         setSelectedNodeId(newNode.id);
     }, []);
 
+    // Derive header stats from current nodes
+    const workflowStats = useMemo(() => {
+        const modelNodes = nodes.filter((n) => !n.nodeType);
+        const models = [...new Map(modelNodes.map((n) => [`${n.provider}:${n.modelName}`, { provider: n.provider, name: n.displayName || n.modelName }])).values()];
+        const modalities = new Set();
+        for (const n of nodes) {
+            for (const t of n.inputTypes || []) if (t !== "conversation") modalities.add(t);
+            for (const t of n.outputTypes || []) if (t !== "conversation") modalities.add(t);
+        }
+        const conversationCount = modelNodes.length;
+        return { models, modalities: [...modalities], conversationCount };
+    }, [nodes]);
+
     return (
         <div className={styles.page}>
             {/* Header */}
@@ -774,6 +789,32 @@ export default function WorkflowsPage({ initialWorkflowId }) {
                     <span className={styles.headerBadge}>
                         {nodes.length} nodes · {edges.length} edges
                     </span>
+                    {workflowStats.modalities.length > 0 && (
+                        <span className={styles.headerBadge}>
+                            {workflowStats.modalities.map((mod) => {
+                                const info = MODALITY_ICONS[mod];
+                                if (!info) return null;
+                                const Icon = info.icon;
+                                return <Icon key={mod} size={11} style={{ color: info.color }} title={info.label} />;
+                            })}
+                        </span>
+                    )}
+                    {workflowStats.models.length > 0 && (
+                        <span className={styles.headerBadge}>
+                            {workflowStats.models.map((m) => (
+                                <span key={`${m.provider}:${m.name}`} className={styles.headerModelTag} title={m.name}>
+                                    <ProviderLogo provider={m.provider} size={11} />
+                                    {m.name}
+                                </span>
+                            ))}
+                        </span>
+                    )}
+                    {workflowStats.conversationCount > 0 && (
+                        <span className={styles.headerBadge} title="Conversations created per run">
+                            <MessageSquare size={11} />
+                            {workflowStats.conversationCount}
+                        </span>
+                    )}
                 </div>
                 <div className={styles.headerRight}>
                     <button
