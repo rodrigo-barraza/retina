@@ -164,20 +164,27 @@ export default function WorkflowsPage() {
         setTimeout(() => setToast(null), 3000);
     };
 
-    // Push current state to undo stack
+    // Keep a ref with the latest state so pushUndo never goes stale
+    const currentStateRef = useRef({ workflowId: null, workflowName: "Untitled Workflow", nodes: [], connections: [] });
+    useEffect(() => {
+        currentStateRef.current = { workflowId, workflowName, nodes, connections };
+    }, [workflowId, workflowName, nodes, connections]);
+
+    // Push current state to undo stack (stable ref — no dependency issues)
     const pushUndo = useCallback(() => {
+        const { workflowId: wId, workflowName: wName, nodes: n, connections: c } = currentStateRef.current;
         const snapshot = {
-            workflowId,
-            workflowName,
-            nodes: JSON.parse(JSON.stringify(nodes)),
-            connections: JSON.parse(JSON.stringify(connections)),
+            workflowId: wId,
+            workflowName: wName,
+            nodes: JSON.parse(JSON.stringify(n)),
+            connections: JSON.parse(JSON.stringify(c)),
         };
         undoStackRef.current.push(snapshot);
         if (undoStackRef.current.length > 100) {
             undoStackRef.current.shift();
         }
         setUndoCount(undoStackRef.current.length);
-    }, [workflowId, workflowName, nodes, connections]);
+    }, []);
 
     // Undo last action
     const handleUndo = useCallback(() => {

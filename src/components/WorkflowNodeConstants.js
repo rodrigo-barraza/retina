@@ -31,8 +31,8 @@ export const MIN_MODALITY_ICONS_FOR_BASE = 3;
 export const PORT_RADIUS = 7;
 export const HEADER_HEIGHT = 36;
 export const PORT_SECTION_HEIGHT = 24;
-export const ASSET_CONTENT_HEIGHT = 180;
-export const ASSET_CONTENT_HEIGHT_COMPACT = 40;
+export const ASSET_CONTENT_HEIGHT = 175;
+export const ASSET_CONTENT_HEIGHT_COMPACT = 175;
 export const CONFIG_AREA_HEIGHT = 160;
 export const ASSET_INFO_HEIGHT = 80;
 
@@ -67,19 +67,8 @@ export function getNodeWidth(node) {
   return NODE_WIDTH_BASE + extraIcons * MODALITY_ICON_WIDTH;
 }
 
-export function getAssetContentHeight(node) {
-  if (node.nodeType === "viewer") {
-    const outputs = node.receivedOutputs;
-    if (!outputs || Object.keys(outputs).length === 0) return ASSET_CONTENT_HEIGHT_COMPACT + 20;
-    let h = 8;
-    if (outputs.image) h += 140;
-    if (outputs.text) h += 50;
-    if (outputs.audio) h += 36;
-    if (outputs.video) h += 140;
-    return Math.max(h, ASSET_CONTENT_HEIGHT_COMPACT + 20);
-  }
-  if (node.modality === "image") return ASSET_CONTENT_HEIGHT;
-  return ASSET_CONTENT_HEIGHT_COMPACT;
+export function getAssetContentHeight() {
+  return ASSET_CONTENT_HEIGHT;
 }
 
 export function getAssetInfoHeight(node) {
