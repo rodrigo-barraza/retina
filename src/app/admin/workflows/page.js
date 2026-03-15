@@ -69,9 +69,8 @@ export default function AdminWorkflowsPage() {
     return selectedWorkflow?.nodeResults || {};
   }, [selectedWorkflow]);
 
-  const nodeStatuses = useMemo(() => {
-    return selectedWorkflow?.nodeStatuses || {};
-  }, [selectedWorkflow]);
+  // nodeStatuses are ephemeral runtime state — always empty for read-only view
+  const nodeStatuses = useMemo(() => ({}), []);
 
   // Local node state for drag-to-rearrange (not persisted)
   const [localNodes, setLocalNodes] = useState([]);

@@ -600,7 +600,6 @@ export default function WorkflowsPage() {
                 nodes,
                 connections,
                 nodeResults,
-                nodeStatuses,
             };
             const saved = await WorkflowService.saveWorkflow(workflow);
             const newId = saved.id || saved._id;
@@ -611,7 +610,7 @@ export default function WorkflowsPage() {
         } catch (err) {
             showToast(`Failed to save: ${err.message}`, "error");
         }
-    }, [workflowId, workflowName, nodes, connections, nodeResults, nodeStatuses]);
+    }, [workflowId, workflowName, nodes, connections, nodeResults]);
 
     // Load a saved workflow
     const handleLoadWorkflow = useCallback(async (id) => {
@@ -624,7 +623,7 @@ export default function WorkflowsPage() {
             setNodes(wf.nodes || []);
             setConnections(wf.connections || []);
             setNodeResults(wf.nodeResults || {});
-            setNodeStatuses(wf.nodeStatuses || {});
+            setNodeStatuses({});
             showToast("Workflow loaded");
         } catch (err) {
             showToast(`Failed to load: ${err.message}`, "error");

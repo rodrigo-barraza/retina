@@ -217,6 +217,7 @@ function ModelNode(props) {
       className={styles.nodeGroup}
       data-workflow-node
       data-node-id={node.id}
+      onMouseDown={(e) => onMouseDown(e, node.id)}
     >
       <rect
         width={width}
@@ -411,6 +412,7 @@ function AssetNode(props) {
       className={styles.nodeGroup}
       data-workflow-node
       data-node-id={node.id}
+      onMouseDown={(e) => onMouseDown(e, node.id)}
     >
       {/* Body with accent border */}
       <rect

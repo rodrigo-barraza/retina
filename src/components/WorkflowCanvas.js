@@ -133,22 +133,24 @@ export default function WorkflowCanvas({
     [dragging, connecting, isPanning, screenToSvg, onUpdateNodePosition],
   );
 
-  // ── Continuous collision repulsion via requestAnimationFrame ──
+  // ── Collision repulsion via requestAnimationFrame (only while dragging) ──
   // Keep refs to the latest values so the RAF loop always sees fresh state.
   const nodesRef = useRef(nodes);
   const onUpdatePosRef = useRef(onUpdateNodePosition);
   const draggingRef = useRef(dragging);
   const rafRef = useRef(null);
+  const settleCountRef = useRef(0);
+  const collisionTickRef = useRef(null);
 
   useEffect(() => { nodesRef.current = nodes; }, [nodes]);
   useEffect(() => { onUpdatePosRef.current = onUpdateNodePosition; }, [onUpdateNodePosition]);
   useEffect(() => { draggingRef.current = dragging; }, [dragging]);
 
+  // Define the tick function once via ref so it can self-schedule
   useEffect(() => {
-    const PUSH_FACTOR = 0.35; // fraction of overlap to resolve per frame (smooth)
-    const MIN_PUSH = 0.5;    // stop pushing below this threshold
+    const PUSH_FACTOR = 0.35;
+    const MIN_PUSH = 0.5;
 
-    // Read actual rendered size from DOM
     const getNodeBox = (node) => {
       const svg = svgRef.current;
       if (!svg) return { w: getNodeWidth(node), h: getNodeHeight(node) };
@@ -158,10 +160,10 @@ export default function WorkflowCanvas({
       return { w: bbox.width, h: bbox.height };
     };
 
-    const tick = () => {
+    collisionTickRef.current = () => {
       const currentNodes = nodesRef.current;
       const dragId = draggingRef.current?.nodeId || null;
-      const updates = {}; // { nodeId: { x, y } }
+      const updates = {};
 
       for (let a = 0; a < currentNodes.length; a++) {
         for (let b = a + 1; b < currentNodes.length; b++) {
@@ -179,7 +181,6 @@ export default function WorkflowCanvas({
           const overlapY = (boxA.h / 2 + boxB.h / 2 + COLLISION_PADDING) - Math.abs(aCy - bCy);
 
           if (overlapX > MIN_PUSH && overlapY > MIN_PUSH) {
-            // Determine which node(s) to push
             const aIsDragged = nA.id === dragId;
             const bIsDragged = nB.id === dragId;
 
@@ -187,15 +188,12 @@ export default function WorkflowCanvas({
               const push = overlapX * PUSH_FACTOR;
               const dir = bCx >= aCx ? 1 : -1;
               if (aIsDragged) {
-                // Only push B
                 if (!updates[nB.id]) updates[nB.id] = { ...nB.position };
                 updates[nB.id].x += dir * push;
               } else if (bIsDragged) {
-                // Only push A
                 if (!updates[nA.id]) updates[nA.id] = { ...nA.position };
                 updates[nA.id].x -= dir * push;
               } else {
-                // Neither dragged — push both equally
                 const half = push / 2;
                 if (!updates[nA.id]) updates[nA.id] = { ...nA.position };
                 if (!updates[nB.id]) updates[nB.id] = { ...nB.position };
@@ -223,19 +221,35 @@ export default function WorkflowCanvas({
         }
       }
 
-      // Apply all position updates
+      const hasUpdates = Object.keys(updates).length > 0;
       for (const [id, pos] of Object.entries(updates)) {
         onUpdatePosRef.current(id, pos);
       }
 
-      rafRef.current = requestAnimationFrame(tick);
+      // Keep running while dragging, or settle for a few frames after release
+      if (draggingRef.current) {
+        settleCountRef.current = 30;
+        rafRef.current = requestAnimationFrame(collisionTickRef.current);
+      } else if (settleCountRef.current > 0 && hasUpdates) {
+        settleCountRef.current--;
+        rafRef.current = requestAnimationFrame(collisionTickRef.current);
+      } else {
+        rafRef.current = null;
+      }
     };
 
-    rafRef.current = requestAnimationFrame(tick);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, []); // runs once, reads current state via refs
+  }, []);
+
+  // Start collision loop when dragging begins
+  useEffect(() => {
+    if (dragging && !rafRef.current && collisionTickRef.current) {
+      settleCountRef.current = 30;
+      rafRef.current = requestAnimationFrame(collisionTickRef.current);
+    }
+  }, [dragging]);
 
   const handleMouseUp = useCallback(() => {
     if (dragging) setDragging(null);
