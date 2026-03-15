@@ -351,6 +351,7 @@ function AssetNode(props) {
     onUpdateFileInput,
     onUpdateConfig,
     onToggleExpand,
+    readOnly = false,
   } = props;
 
   const portProps = usePortProps(props);
@@ -380,7 +381,7 @@ function AssetNode(props) {
   const contentH = getAssetContentHeight(node);
   const portRows = Math.max(inputTypes.length, outputTypes.length, 1);
   const portsHeight = portRows * PORT_SECTION_HEIGHT + 12;
-  const conversationBtnHeight = isConversation && inputTypes.length > 0 ? 24 : 0;
+  const conversationBtnHeight = isConversation && inputTypes.length > 0 && !readOnly ? 24 : 0;
   const nodeHeight = HEADER_HEIGHT + (isExpanded ? contentH : 0) + portsHeight + conversationBtnHeight;
 
   return (
@@ -589,8 +590,8 @@ function AssetNode(props) {
         {...portProps}
       />
 
-      {/* Add/Remove message pair buttons for conversation nodes (only when connected) */}
-      {isConversation && inputTypes.length > 0 && (
+      {/* Add/Remove message pair buttons for conversation nodes (only when connected and editable) */}
+      {isConversation && inputTypes.length > 0 && !readOnly && (
         <foreignObject
           x={4}
           y={nodeHeight - conversationBtnHeight}

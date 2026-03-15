@@ -28,6 +28,7 @@ export default function WorkflowCanvas({
   nodeResults = {},
   selectedNodeId,
   onSelectNode,
+  readOnly = false,
 }) {
   const svgRef = useRef(null);
   const containerRef = useRef(null);
@@ -444,6 +445,7 @@ export default function WorkflowCanvas({
               onUpdateConfig={onUpdateNodeConfig}
               onUpdateFileInput={onUpdateFileInput}
               onToggleExpand={handleToggleExpand}
+              readOnly={readOnly}
             />
           ))}
         </g>

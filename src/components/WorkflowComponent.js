@@ -120,6 +120,7 @@ export default function WorkflowComponent({
         nodeResults={nodeResults}
         selectedNodeId={selectedNodeId}
         onSelectNode={onSelectNode}
+        readOnly={readOnly}
       />
       {selectedNode && (
         <WorkflowInspector

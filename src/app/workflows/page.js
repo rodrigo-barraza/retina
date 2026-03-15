@@ -347,7 +347,6 @@ export default function WorkflowsPage() {
 
     // Update config of a model node (systemPrompt, staticInputs, etc.)
     const handleUpdateNodeConfig = useCallback((nodeId, key, value) => {
-        console.log("[DEBUG handleUpdateNodeConfig]", { nodeId, key, valueLength: Array.isArray(value) ? value.length : typeof value });
         setNodes((prev) =>
             prev.map((n) => {
                 if (n.id !== nodeId) return n;
@@ -355,9 +354,7 @@ export default function WorkflowsPage() {
                 // Regenerate compound ports when messages change on conversation input nodes
                 if (key === "messages" && n.nodeType === "input" && n.modality === "conversation") {
                     updated.inputTypes = buildConversationPorts(value, n.supportedModalities || ["text"]);
-                    console.log("[DEBUG] Rebuilt inputTypes:", updated.inputTypes, "supportedModalities:", n.supportedModalities);
                 }
-                console.log("[DEBUG] Updated node:", { id: updated.id, messages: updated.messages?.length, inputTypes: updated.inputTypes?.length });
                 return updated;
             }),
         );
@@ -380,7 +377,7 @@ export default function WorkflowsPage() {
         );
 
         try {
-            await executeWorkflow(nodes, connections, {
+            const { conversationIds } = await executeWorkflow(nodes, connections, {
                 onNodeStart: (nodeId) => {
                     if (abortRef.current) return;
                     setNodeStatuses((prev) => ({ ...prev, [nodeId]: "running" }));
@@ -451,13 +448,20 @@ export default function WorkflowsPage() {
                         }),
                     );
                 },
+                workflowId,
             });
+
+            // Link generated conversations to this workflow
+            if (workflowId && conversationIds?.length > 0) {
+                PrismService.patchWorkflowConversations(workflowId, conversationIds)
+                    .catch((err) => console.error("Failed to link conversations to workflow:", err));
+            }
         } catch (err) {
             showToast(`Execution failed: ${err.message}`, "error");
         } finally {
             setIsRunning(false);
         }
-    }, [nodes, connections]);
+    }, [nodes, connections, workflowId]);
 
     const handleStopWorkflow = useCallback(() => {
         abortRef.current = true;

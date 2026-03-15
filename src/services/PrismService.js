@@ -223,13 +223,13 @@ export class PrismService {
    * @returns {Promise<{ images: string[], text?: string }>}
    */
   static async generateImage(payload) {
-    const { prompt, images, systemPrompt, ...rest } = payload;
-    const userMessage = {
+    const { prompt, images, systemPrompt, conversationId, conversationMeta, userMessage: callerUserMessage, ...rest } = payload;
+    const userMessage = callerUserMessage || {
       role: "user",
       content: prompt || "",
     };
 
-    if (images?.length > 0) {
+    if (images?.length > 0 && !userMessage.images) {
       userMessage.images = images.map((img) => {
         if (typeof img === "string") return img;
         return `data:${img.mimeType || "image/png"};base64,${img.imageData}`;
@@ -241,6 +241,9 @@ export class PrismService {
       messages: [userMessage],
     };
     if (systemPrompt) body.systemPrompt = systemPrompt;
+    if (conversationId) body.conversationId = conversationId;
+    if (conversationMeta) body.conversationMeta = conversationMeta;
+    if (callerUserMessage) body.userMessage = callerUserMessage;
 
     return PrismService._request("/chat?stream=false", { body });
   }
@@ -362,5 +365,18 @@ export class PrismService {
    */
   static async deleteWorkflow(id) {
     return PrismService._request(`/workflows/${id}`, { method: "DELETE" });
+  }
+
+  /**
+   * Append conversation IDs to a workflow (generated during execution).
+   * @param {string} id - Workflow ID
+   * @param {string[]} conversationIds - Conversation IDs to append
+   * @returns {Promise<{ success: boolean }>}
+   */
+  static async patchWorkflowConversations(id, conversationIds) {
+    return PrismService._request(`/workflows/${id}/conversations`, {
+      method: "PATCH",
+      body: { conversationIds },
+    });
   }
 }
