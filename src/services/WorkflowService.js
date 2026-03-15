@@ -30,7 +30,7 @@ const WorkflowService = {
 
   /**
    * Save or update a workflow.
-   * @param {object} workflow - { id?, name, nodes, connections, nodeResults?, nodeStatuses? }
+   * @param {object} workflow - { id?, name, nodes, edges, nodeResults?, nodeStatuses? }
    * @returns {Promise<object>} The saved workflow with id
    */
   async saveWorkflow(workflow) {
