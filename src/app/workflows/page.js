@@ -308,6 +308,7 @@ export default function WorkflowsPage() {
      * When content is cleared (removed), reset modality and outputTypes and remove all outgoing connections.
      */
     const handleUpdateFileInput = useCallback((nodeId, content, mimeType) => {
+        pushUndo();
         let newModality = null;
         if (content && mimeType) {
             if (mimeType.startsWith("image/")) newModality = "image";

@@ -3,6 +3,7 @@
 import { X, Upload, Eye, Loader2, Check, AlertTriangle, Paperclip, MessageSquare, Plus, Minus } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import AudioRecorderComponent from "./AudioRecorderComponent";
+import AssetInputOptions from "./AssetInputOptions";
 import { MODALITY_ICONS } from "./WorkflowSidebar";
 import {
   MODALITY_COLORS,
@@ -562,20 +563,10 @@ function AssetNode(props) {
                       </button>
                     </div>
                   ) : (
-                    <label className={styles.assetUploadLabel}>
-                      <Paperclip size={14} />
-                      <span>Drop or upload file</span>
-                      <input
-                        type="file"
-                        accept="image/*,audio/*,video/*,.pdf,.txt,.md,.json,.csv"
-                        className={styles.assetFileInput}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleFileInputChange(node.id, file, onUpdateFileInput);
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
-                      />
-                    </label>
+                    <AssetInputOptions
+                      compact
+                      onFile={(dataUrl, mimeType) => onUpdateFileInput?.(node.id, dataUrl, mimeType)}
+                    />
                   )}
                 </div>
               )}

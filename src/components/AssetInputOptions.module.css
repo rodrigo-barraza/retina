@@ -1,0 +1,144 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  gap: 6px;
+  padding: 4px;
+}
+
+.compact {
+  padding: 2px;
+  gap: 4px;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.optionGrid {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.optionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 6px 10px;
+  font-size: 10px;
+  transition: all 0.15s;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+  }
+}
+
+.compact .optionBtn {
+  padding: 5px;
+  flex: 0 0 auto;
+}
+
+.dropZone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+  border: 1px dashed var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 4px;
+  color: var(--text-muted, #666);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 4px;
+
+  &:hover {
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+/* ── Webcam ── */
+.webcamPreview {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  gap: 4px;
+}
+
+.webcamVideo {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #000;
+  transform: scaleX(-1);
+}
+
+.webcamActions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.captureBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 3px solid #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+  }
+}
+
+.cancelBtn {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+  }
+}
+
+/* ── Audio recording ── */
+.audioRecWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}

@@ -6,6 +6,7 @@ import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowSidebar";
 import MarkdownContent from "./MarkdownContent";
 import AudioRecorderComponent from "./AudioRecorderComponent";
+import AssetInputOptions from "./AssetInputOptions";
 
 import styles from "./WorkflowInspector.module.css";
 
@@ -297,34 +298,9 @@ export default function WorkflowInspector({
                                 </button>
                             </div>
                         ) : (
-                            <label
-                                className={styles.uploadArea}
-                                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const file = e.dataTransfer?.files?.[0];
-                                    if (!file) return;
-                                    const reader = new FileReader();
-                                    reader.onload = () => onUpdateFileInput?.(node.id, reader.result, file.type);
-                                    reader.readAsDataURL(file);
-                                }}
-                            >
-                                <Paperclip size={16} />
-                                <span>Drop or upload file</span>
-                                <input
-                                    type="file"
-                                    accept="image/*,audio/*,video/*,.pdf,.txt,.md,.json,.csv"
-                                    className={styles.fileInput}
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (!file) return;
-                                        const reader = new FileReader();
-                                        reader.onload = () => onUpdateFileInput?.(node.id, reader.result, file.type);
-                                        reader.readAsDataURL(file);
-                                    }}
-                                />
-                            </label>
+                            <AssetInputOptions
+                                onFile={(dataUrl, mimeType) => onUpdateFileInput?.(node.id, dataUrl, mimeType)}
+                            />
                         )}
                     </section>
                 )}

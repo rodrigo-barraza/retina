@@ -35,7 +35,15 @@ export default function WorkflowCanvas({
   const [dragging, setDragging] = useState(null);
   const [connecting, setConnecting] = useState(null);
   const [connectingMouse, setConnectingMouse] = useState(null);
-  const [expandedInputs, setExpandedInputs] = useState(new Set());
+  const [expandedInputs, setExpandedInputs] = useState(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = localStorage.getItem("workflow-expanded-nodes");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [isPanning, setIsPanning] = useState(false);
@@ -238,6 +246,9 @@ export default function WorkflowCanvas({
       const next = new Set(prev);
       if (next.has(nodeId)) next.delete(nodeId);
       else next.add(nodeId);
+      try {
+        localStorage.setItem("workflow-expanded-nodes", JSON.stringify([...next]));
+      } catch { /* ignore */ }
       return next;
     });
   }, []);
