@@ -97,7 +97,7 @@ function getNodeHeight(node, isExpanded = false) {
         const inputCount = (node.inputTypes || []).length;
         const outputCount = (node.outputTypes || []).length;
         const portRows = Math.max(inputCount, outputCount, 1);
-        const infoHeight = node.nodeType === "viewer" ? 0 : ASSET_INFO_HEIGHT;
+        const infoHeight = (node.nodeType === "viewer" || node.modality === "text") ? 0 : ASSET_INFO_HEIGHT;
         const contentHeight = isExpanded ? getAssetContentHeight(node) + infoHeight : 0;
         return HEADER_HEIGHT + contentHeight + portRows * PORT_SECTION_HEIGHT + 12;
     }
@@ -816,7 +816,7 @@ export default function WorkflowCanvas({
                 })()}
 
                 {/* Ports below content + info area */}
-                {renderPorts(node, inputTypes, outputTypes, isExpanded ? getAssetContentHeight(node) + (isViewer ? 0 : ASSET_INFO_HEIGHT) : 0, isRunning)}
+                {renderPorts(node, inputTypes, outputTypes, isExpanded ? getAssetContentHeight(node) + ((isViewer || node.modality === "text") ? 0 : ASSET_INFO_HEIGHT) : 0, isRunning)}
             </g>
         );
     };
