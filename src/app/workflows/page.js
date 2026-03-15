@@ -456,6 +456,14 @@ export default function WorkflowsPage() {
                         }),
                     );
                 },
+                onNodeContentUpdate: (nodeId, newContent) => {
+                    setNodes((prev) =>
+                        prev.map((n) => {
+                            if (n.id !== nodeId) return n;
+                            return { ...n, content: newContent };
+                        }),
+                    );
+                },
             });
         } catch (err) {
             showToast(`Execution failed: ${err.message}`, "error");

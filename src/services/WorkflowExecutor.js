@@ -60,7 +60,7 @@ async function resolveToDataUrl(ref) {
  * @param {Array<{type: string, data: string}>} inputData - Collected inputs from connections
  * @returns {Promise<Object>} - { [modality]: data }
  */
-async function executeModelNode(node, inputData) {
+async function executeModelNode(node, inputData, { onNodeContentUpdate } = {}) {
     const endpoint = resolveEndpoint(node, inputData);
     const outputs = {};
 
@@ -171,6 +171,35 @@ async function executeModelNode(node, inputData) {
             model: node.modelName,
             messages: finalMessages,
         });
+
+        // Propagate minio refs returned by Prism back to input node content
+        if (result.messages && onNodeContentUpdate) {
+            // Build a map from data URL → minio ref by comparing what we sent vs what came back
+            const refMap = new Map();
+            for (let i = 0; i < finalMessages.length; i++) {
+                const sent = finalMessages[i];
+                const returned = result.messages[i];
+                if (!returned) continue;
+                for (const field of ["images", "audio", "video", "pdf"]) {
+                    const sentArr = sent[field];
+                    const retArr = returned[field];
+                    if (!sentArr || !retArr) continue;
+                    for (let j = 0; j < sentArr.length; j++) {
+                        if (sentArr[j]?.startsWith("data:") && retArr[j]?.startsWith("minio://")) {
+                            refMap.set(sentArr[j], retArr[j]);
+                        }
+                    }
+                }
+            }
+            // Update upstream input nodes whose content was a data URL
+            if (refMap.size > 0) {
+                for (const input of inputData) {
+                    if (input.sourceNodeId && refMap.has(input.data)) {
+                        onNodeContentUpdate(input.sourceNodeId, refMap.get(input.data));
+                    }
+                }
+            }
+        }
 
         outputs.text = result.text || result.content || "";
         // Some models return inline images
@@ -349,7 +378,7 @@ function topologicalSort(nodes, connections) {
  * @param {Function} onNodeError - Called when a node errors (nodeId, error)
  * @param {Function} onViewerPartial - Called when a viewer receives partial output (viewerNodeId, partialOutputs)
  */
-export async function executeWorkflow(nodes, connections, { onNodeStart, onNodeComplete, onNodeError, onViewerPartial }) {
+export async function executeWorkflow(nodes, connections, { onNodeStart, onNodeComplete, onNodeError, onViewerPartial, onNodeContentUpdate }) {
     const sortedIds = topologicalSort(nodes, connections);
     const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
@@ -464,6 +493,7 @@ export async function executeWorkflow(nodes, connections, { onNodeStart, onNodeC
                     inputData.push({
                         type: conn.targetModality,
                         data: sourceOutputs[conn.sourceModality],
+                        sourceNodeId: conn.sourceNodeId,
                     });
                 }
             }
@@ -478,7 +508,7 @@ export async function executeWorkflow(nodes, connections, { onNodeStart, onNodeC
             }
 
             // Execute the model
-            const outputs = await executeModelNode(node, inputData);
+            const outputs = await executeModelNode(node, inputData, { onNodeContentUpdate });
             nodeOutputs[nodeId] = outputs;
             onNodeComplete?.(nodeId, outputs);
 
