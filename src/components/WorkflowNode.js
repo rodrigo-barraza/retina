@@ -92,10 +92,15 @@ function NodePorts({
               stroke={hasPrismSource ? (hasDoneSource ? "url(#done-gradient)" : "url(#prism-gradient)") : color}
               strokeWidth={2}
               className={`${styles.port} ${isCompatible ? styles.portCompatible : ""}`}
+              data-node-id={node.id}
+              data-port-type="input"
+              data-port-modality={portId}
               onClick={(e) => onInputPortClick(e, node.id, portId)}
               onMouseEnter={() => onPortHover({ nodeId: node.id, type: "input", modality: portId })}
               onMouseLeave={onPortLeave}
-            />
+            >
+              <title>{`IN · ${label} · ${node.id}`}</title>
+            </circle>
             {Icon && (
               <foreignObject x={8} y={portY - 7} width={14} height={14} style={{ pointerEvents: "none" }}>
                 <div style={{ display: "flex", alignItems: "center" }}>
@@ -127,10 +132,15 @@ function NodePorts({
               stroke={isNodeRunning ? nodeStatusGradient : color}
               strokeWidth={2}
               className={`${styles.port} ${styles.portOutput}`}
+              data-node-id={node.id}
+              data-port-type="output"
+              data-port-modality={modality}
               onClick={(e) => onOutputPortClick(e, node.id, modality, i)}
               onMouseEnter={() => onPortHover({ nodeId: node.id, type: "output", modality })}
               onMouseLeave={onPortLeave}
-            />
+            >
+              <title>{`OUT · ${MODALITY_ICONS[modality]?.label || modality} · ${node.id}`}</title>
+            </circle>
             {Icon && (
               <foreignObject x={nodeWidth - 22} y={portY - 7} width={14} height={14} style={{ pointerEvents: "none" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
