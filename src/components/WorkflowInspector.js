@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Eye, Type, Volume2, X, Maximize2, Search, ChevronDown, Paperclip } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowNodeConstants";
@@ -33,6 +33,14 @@ export default function WorkflowInspector({
     // Model change state (hooks must be called before any early return)
     const [modelSearch, setModelSearch] = useState("");
     const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+    const textareaRef = useRef(null);
+
+    const autoResizeTextarea = useCallback((el) => {
+        if (!el) return;
+        textareaRef.current = el;
+        el.style.height = "auto";
+        el.style.height = el.scrollHeight + "px";
+    }, []);
 
 
 
@@ -241,28 +249,61 @@ export default function WorkflowInspector({
                     </section>
                 )}
 
+                {/* Input Ports */}
+                {incoming.length > 0 && (
+                    <section className={styles.section}>
+                        <label className={styles.sectionLabel}>Input Ports</label>
+                        <div className={styles.connectionList}>
+                            {incoming.map((c) => (
+                                <div key={c.id} className={styles.connectionItem}>
+                                    <span className={styles.connectionDot} style={{ background: MODALITY_ICONS[c.targetModality]?.color || "#888" }} />
+                                    <span className={styles.connectionFrom}>{getNodeLabel(c.sourceNodeId)}</span>
+                                    <span className={styles.connectionArrow}>→</span>
+                                    <span className={styles.connectionModality}>{c.targetModality}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
 
-
-
+                {/* Output Ports */}
+                {outgoing.length > 0 && (
+                    <section className={styles.section}>
+                        <label className={styles.sectionLabel}>Output Ports</label>
+                        <div className={styles.connectionList}>
+                            {outgoing.map((c) => (
+                                <div key={c.id} className={styles.connectionItem}>
+                                    <span className={styles.connectionModality}>{c.sourceModality}</span>
+                                    <span className={styles.connectionArrow}>→</span>
+                                    <span className={styles.connectionTo}>{getNodeLabel(c.targetNodeId)}</span>
+                                    <span className={styles.connectionDot} style={{ background: MODALITY_ICONS[c.sourceModality]?.color || "#888" }} />
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
 
                 {/* Content — text input assets */}
                 {isInput && node.modality === "text" && (
-                    <section className={styles.section}>
+                    <section className={`${styles.section} ${styles.scrollableSection}`}>
                         <label className={styles.sectionLabel}>Content</label>
                         <textarea
+                            ref={autoResizeTextarea}
                             className={styles.textarea}
                             value={node.content || ""}
-                            onChange={readOnly ? undefined : (e) => onUpdateNodeContent?.(node.id, e.target.value)}
+                            onChange={readOnly ? undefined : (e) => {
+                                onUpdateNodeContent?.(node.id, e.target.value);
+                                autoResizeTextarea(e.target);
+                            }}
                             readOnly={readOnly}
                             placeholder="Enter text..."
-                            rows={4}
                         />
                     </section>
                 )}
 
                 {/* Content — file input assets (image, audio, or empty) */}
                 {isInput && node.modality !== "text" && node.modality !== "conversation" && (
-                    <section className={styles.section}>
+                    <section className={`${styles.section} ${styles.scrollableSection}`}>
                         <label className={styles.sectionLabel}>Content</label>
                         {node.content ? (
                             <div className={styles.previewContainer}>
@@ -308,7 +349,6 @@ export default function WorkflowInspector({
                         )}
                     </section>
                 )}
-
 
                 {/* Conversation messages — conversation input nodes */}
                 {isInput && node.modality === "conversation" && (node.messages || []).length > 0 && (() => {
@@ -356,42 +396,17 @@ export default function WorkflowInspector({
                         2,
                     );
                     return (
-                        <section className={styles.section}>
+                        <section className={`${styles.section} ${styles.scrollableSection}`}>
                             <label className={styles.sectionLabel}>Conversation</label>
                             <MarkdownContent content={`\`\`\`json\n${messagesJson}\n\`\`\``} />
                         </section>
                     );
                 })()}
 
-                {/* Connections */}
-                {(incoming.length > 0 || outgoing.length > 0) && (
-                    <section className={styles.section}>
-                        <label className={styles.sectionLabel}>Connections</label>
-                        <div className={styles.connectionList}>
-                            {incoming.map((c) => (
-                                <div key={c.id} className={styles.connectionItem}>
-                                    <span className={styles.connectionDot} style={{ background: MODALITY_ICONS[c.targetModality]?.color || "#888" }} />
-                                    <span className={styles.connectionFrom}>{getNodeLabel(c.sourceNodeId)}</span>
-                                    <span className={styles.connectionArrow}>→</span>
-                                    <span className={styles.connectionModality}>{c.targetModality}</span>
-                                </div>
-                            ))}
-                            {outgoing.map((c) => (
-                                <div key={c.id} className={styles.connectionItem}>
-                                    <span className={styles.connectionModality}>{c.sourceModality}</span>
-                                    <span className={styles.connectionArrow}>→</span>
-                                    <span className={styles.connectionTo}>{getNodeLabel(c.targetNodeId)}</span>
-                                    <span className={styles.connectionDot} style={{ background: MODALITY_ICONS[c.sourceModality]?.color || "#888" }} />
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-
                 {/* Generated Results — model nodes only */}
                 {results && !results.error && !isViewer && !isInput && (
-                    <section className={styles.section}>
-                        <label className={styles.sectionLabel}>Generated Output</label>
+                    <section className={`${styles.section} ${styles.scrollableSection}`}>
+                        <label className={styles.sectionLabel}>Generated Text Output</label>
 
                         {results.image && (
                             <div className={styles.resultBlock}>
@@ -417,7 +432,6 @@ export default function WorkflowInspector({
 
                         {results.text && (
                             <div className={styles.resultBlock}>
-                                <span className={styles.resultType}>Text</span>
                                 <div className={styles.resultText}>{results.text}</div>
                             </div>
                         )}
@@ -449,7 +463,7 @@ export default function WorkflowInspector({
 
                 {/* Viewer received content — show all types */}
                 {isViewer && node.receivedOutputs && Object.keys(node.receivedOutputs).length > 0 && (
-                    <section className={styles.section}>
+                    <section className={`${styles.section} ${styles.scrollableSection}`}>
                         <label className={styles.sectionLabel}>Received Content</label>
 
                         {node.receivedOutputs.image && (
@@ -476,7 +490,6 @@ export default function WorkflowInspector({
 
                         {node.receivedOutputs.text && (
                             <div className={styles.resultBlock}>
-                                <span className={styles.resultType}>Text</span>
                                 <div className={styles.resultText}>{node.receivedOutputs.text}</div>
                             </div>
                         )}
@@ -513,7 +526,6 @@ export default function WorkflowInspector({
                         <div className={styles.errorBlock}>{results.error}</div>
                     </section>
                 )}
-
 
             </div>
 

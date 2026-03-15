@@ -115,6 +115,11 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
+.scrollableSection {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
 .sectionLabel {
   display: block;
   font-size: 9px;
@@ -135,7 +140,8 @@
   background: var(--bg-primary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--border-radius-sm);
-  resize: vertical;
+  resize: none;
+  overflow: hidden;
   outline: none;
   box-sizing: border-box;
   min-height: 48px;
