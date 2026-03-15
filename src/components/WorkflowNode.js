@@ -72,7 +72,14 @@ function NodePorts({
           const roleLabel = ROLE_LABELS[msg?.role] || msg?.role || `#${compound.index}`;
           const roleCount = nodeMessages.slice(0, compound.index).filter((m) => m.role === msg?.role).length;
           const numberedRole = roleCount > 0 ? `${roleLabel} ${roleCount + 1}` : roleLabel;
-          label = `${numberedRole} ${label}`;
+          // System prompt: show just the role label, no modality suffix
+          if (msg?.role === "system") {
+            label = numberedRole;
+          } else {
+            // Pluralize non-text modalities (arrays accept multiple sources)
+            const modLabel = baseMod !== "text" ? `${label}s` : label;
+            label = `${numberedRole} ${modLabel}`;
+          }
         }
 
         return (

@@ -21,7 +21,7 @@ export const ASSET_ICONS = {
 };
 
 // ── Role labels for conversation compound ports ──
-export const ROLE_LABELS = { system: "Sys", user: "User", assistant: "Asst" };
+export const ROLE_LABELS = { system: "System Prompt", user: "User", assistant: "Assistant" };
 
 // ── Dimension Constants ──
 export const NODE_WIDTH_BASE = 220;

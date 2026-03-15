@@ -68,9 +68,9 @@ function buildConversationPorts(messages, supportedModalities = ["text"]) {
     for (let i = 0; i < messages.length; i++) {
         const msg = messages[i];
         ports.push(`${i}.text`);
-        // Only user messages get extra modality ports (image, audio, etc.)
-        // System and assistant messages are text-only
-        if (msg.role === "user") {
+        // User and assistant messages get extra modality ports (image, audio, etc.)
+        // System messages are text-only (system prompt)
+        if (msg.role === "user" || msg.role === "assistant") {
             for (const mod of supportedModalities) {
                 if (mod !== "text") {
                     ports.push(`${i}.${mod}`);
