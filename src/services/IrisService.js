@@ -39,20 +39,24 @@ export class IrisService {
         return fetchJSON(`/stats${query ? `?${query}` : ""}`);
     }
 
-    static async getProjectStats() {
-        return fetchJSON("/stats/projects");
+    static async getProjectStats(params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return fetchJSON(`/stats/projects${query ? `?${query}` : ""}`);
     }
 
-    static async getModelStats() {
-        return fetchJSON("/stats/models");
+    static async getModelStats(params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return fetchJSON(`/stats/models${query ? `?${query}` : ""}`);
     }
 
     static async getEndpointStats() {
         return fetchJSON("/stats/endpoints");
     }
 
-    static async getTimeline(hours = 24) {
-        return fetchJSON(`/stats/timeline?hours=${hours}`);
+    static async getTimeline(hours = 24, params = {}) {
+        const allParams = { hours, ...params };
+        const query = new URLSearchParams(allParams).toString();
+        return fetchJSON(`/stats/timeline?${query}`);
     }
 
     static async getCostStats(params = {}) {

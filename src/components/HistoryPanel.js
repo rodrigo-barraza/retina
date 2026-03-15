@@ -67,6 +67,18 @@ export default function HistoryPanel({
         tags.push({ label: conv.project, style: { background: "var(--accent-subtle)", color: "var(--accent-color)" } });
       }
 
+      // Extract the most recent model name from assistant messages
+      const msgs = conv.messages || [];
+      let modelName = conv.model || null;
+      if (!modelName) {
+        for (let i = msgs.length - 1; i >= 0; i--) {
+          if (msgs[i].role === "assistant" && msgs[i].model) {
+            modelName = msgs[i].model;
+            break;
+          }
+        }
+      }
+
       return {
         id: conv.id,
         title: conv.title || "Untitled Chat",
@@ -77,6 +89,7 @@ export default function HistoryPanel({
         providers: conv.providers || [],
         tags,
         username: conv.username,
+        modelName,
         searchText: (conv.messages || []).map((m) => m.content || "").join(" "),
       };
     });

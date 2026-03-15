@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -9,6 +9,7 @@ import {
   Clock,
   AlertCircle,
   CheckCircle,
+  TrendingUp,
 } from "lucide-react";
 import { IrisService } from "../../services/IrisService";
 import StatsCard from "../../components/StatsCard";
@@ -23,6 +24,14 @@ const PROVIDER_COLORS = [
   "#3b82f6",
   "#ef4444",
   "#06b6d4",
+];
+
+const TIME_RANGES = [
+  { key: "day", label: "24h", hours: 24 },
+  { key: "week", label: "7d", hours: 168 },
+  { key: "month", label: "30d", hours: 720 },
+  { key: "year", label: "1y", hours: 8760 },
+  { key: "all", label: "All", hours: 0 },
 ];
 
 function formatNumber(n) {
@@ -43,6 +52,14 @@ function formatLatency(ms) {
   return `${Math.round(ms)}ms`;
 }
 
+function getDateRange(rangeKey) {
+  if (rangeKey === "all") return {};
+  const range = TIME_RANGES.find((r) => r.key === rangeKey);
+  if (!range) return {};
+  const from = new Date(Date.now() - range.hours * 60 * 60 * 1000).toISOString();
+  return { from };
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [projectStats, setProjectStats] = useState([]);
@@ -52,43 +69,67 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        setLoading(true);
-        setError(null);
+  // Time range
+  const [timeRange, setTimeRange] = useState("day");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [useCustom, setUseCustom] = useState(false);
 
-        const [statsData, projects, models, timelineData, requestsData] =
-          await Promise.all([
-            IrisService.getStats(),
-            IrisService.getProjectStats(),
-            IrisService.getModelStats(),
-            IrisService.getTimeline(24),
-            IrisService.getRequests({
-              limit: 10,
-              sort: "timestamp",
-              order: "desc",
-            }),
-          ]);
+  // Hovering chart
+  const [hoveredBar, setHoveredBar] = useState(null);
 
-        setStats(statsData);
-        setProjectStats(projects);
-        setModelStats(models);
-        setTimeline(timelineData);
-        setRecentRequests(requestsData.data || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+  const dateParams = useMemo(() => {
+    if (useCustom && (customFrom || customTo)) {
+      const p = {};
+      if (customFrom) p.from = new Date(customFrom).toISOString();
+      if (customTo) p.to = new Date(customTo + "T23:59:59").toISOString();
+      return p;
     }
+    return getDateRange(timeRange);
+  }, [timeRange, useCustom, customFrom, customTo]);
 
+  const timelineHours = useMemo(() => {
+    if (useCustom) return 720; // 30 days for custom range
+    const range = TIME_RANGES.find((r) => r.key === timeRange);
+    return range?.hours || 24;
+  }, [timeRange, useCustom]);
+
+  const loadDashboard = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [statsData, projects, models, timelineData, requestsData] =
+        await Promise.all([
+          IrisService.getStats(dateParams),
+          IrisService.getProjectStats(dateParams),
+          IrisService.getModelStats(dateParams),
+          IrisService.getTimeline(timelineHours, dateParams),
+          IrisService.getRequests({
+            limit: 10,
+            sort: "timestamp",
+            order: "desc",
+            ...dateParams,
+          }),
+        ]);
+
+      setStats(statsData);
+      setProjectStats(projects);
+      setModelStats(models);
+      setTimeline(timelineData);
+      setRecentRequests(requestsData.data || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [dateParams, timelineHours]);
+
+  useEffect(() => {
     loadDashboard();
     const interval = setInterval(loadDashboard, 60000);
     return () => clearInterval(interval);
-  }, []);
-
-  const maxTimelineRequests = Math.max(...timeline.map((t) => t.requests), 1);
+  }, [loadDashboard]);
 
   // Build provider distribution from model stats
   const providerMap = {};
@@ -106,6 +147,24 @@ export default function DashboardPage() {
   const donutCircumference = 2 * Math.PI * donutRadius;
   let donutOffset = 0;
 
+  // Top 10 models
+  const topModels = [...modelStats]
+    .sort((a, b) => b.totalRequests - a.totalRequests)
+    .slice(0, 10);
+
+  // Chart data
+  const maxTimelineRequests = Math.max(...timeline.map((t) => t.requests), 1);
+  const chartWidth = 600;
+  const chartHeight = 140;
+  const chartPadding = { top: 10, right: 10, bottom: 24, left: 40 };
+  const plotW = chartWidth - chartPadding.left - chartPadding.right;
+  const plotH = chartHeight - chartPadding.top - chartPadding.bottom;
+
+  const timeRangeLabel = useMemo(() => {
+    const range = TIME_RANGES.find((r) => r.key === timeRange);
+    return range?.label || "Custom";
+  }, [timeRange]);
+
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
@@ -113,6 +172,47 @@ export default function DashboardPage() {
         <p className={styles.pageSubtitle}>
           Prism AI Gateway — Overview &amp; Analytics
         </p>
+      </div>
+
+      {/* ── Time Range Toolbar ── */}
+      <div className={styles.timeToolbar}>
+        <div className={styles.timePills}>
+          {TIME_RANGES.map((r) => (
+            <button
+              key={r.key}
+              className={`${styles.timePill} ${!useCustom && timeRange === r.key ? styles.timePillActive : ""}`}
+              onClick={() => {
+                setUseCustom(false);
+                setTimeRange(r.key);
+              }}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+        <div className={styles.datePicker}>
+          <input
+            type="date"
+            className={styles.dateInput}
+            value={customFrom}
+            onChange={(e) => {
+              setCustomFrom(e.target.value);
+              setUseCustom(true);
+            }}
+            placeholder="From"
+          />
+          <span className={styles.dateArrow}>→</span>
+          <input
+            type="date"
+            className={styles.dateInput}
+            value={customTo}
+            onChange={(e) => {
+              setCustomTo(e.target.value);
+              setUseCustom(true);
+            }}
+            placeholder="To"
+          />
+        </div>
       </div>
 
       {error && (
@@ -127,7 +227,7 @@ export default function DashboardPage() {
         <StatsCard
           label="Total Requests"
           value={loading ? "..." : formatNumber(stats?.totalRequests)}
-          subtitle="Last 24 hours"
+          subtitle={useCustom ? "Custom range" : `Last ${timeRangeLabel}`}
           icon={Activity}
           variant="accent"
           loading={loading}
@@ -183,39 +283,157 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Charts Row */}
+      {/* ── Charts Row ── */}
       <div className={styles.chartsRow}>
+        {/* Requests Timeline Chart */}
         <div className={styles.chartCard}>
-          <div className={styles.chartTitle}>Requests (Last 24h)</div>
-          <div className={styles.barChart}>
+          <div className={styles.chartTitle}>
+            <TrendingUp size={14} />
+            Requests Over Time
+          </div>
+          <div className={styles.chartSvgWrapper}>
             {timeline.length > 0 ? (
-              timeline.map((t, i) => (
-                <div
-                  key={i}
-                  className={styles.bar}
-                  style={{
-                    height: `${(t.requests / maxTimelineRequests) * 100}%`,
-                  }}
-                  data-tooltip={`${t.hour?.slice(11) || ""}:00 — ${t.requests} req`}
-                />
-              ))
-            ) : (
-              <div
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--text-muted)",
-                  fontSize: 13,
-                }}
+              <svg
+                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                className={styles.chartSvg}
+                preserveAspectRatio="none"
               >
+                {/* Y-axis grid lines */}
+                {[0.25, 0.5, 0.75, 1].map((pct) => (
+                  <g key={pct}>
+                    <line
+                      x1={chartPadding.left}
+                      y1={chartPadding.top + plotH * (1 - pct)}
+                      x2={chartPadding.left + plotW}
+                      y2={chartPadding.top + plotH * (1 - pct)}
+                      stroke="var(--border-subtle)"
+                      strokeDasharray="3 3"
+                    />
+                    <text
+                      x={chartPadding.left - 6}
+                      y={chartPadding.top + plotH * (1 - pct) + 3}
+                      fill="var(--text-muted)"
+                      fontSize="8"
+                      textAnchor="end"
+                    >
+                      {formatNumber(Math.round(maxTimelineRequests * pct))}
+                    </text>
+                  </g>
+                ))}
+
+                {/* Area fill */}
+                <path
+                  d={(() => {
+                    const pts = timeline.map((t, i) => {
+                      const x = chartPadding.left + (i / (timeline.length - 1 || 1)) * plotW;
+                      const y = chartPadding.top + plotH - (t.requests / maxTimelineRequests) * plotH;
+                      return `${x},${y}`;
+                    });
+                    return `M${pts[0]} ${pts.map((p) => `L${p}`).join(" ")} L${chartPadding.left + plotW},${chartPadding.top + plotH} L${chartPadding.left},${chartPadding.top + plotH} Z`;
+                  })()}
+                  fill="url(#areaGrad)"
+                  opacity="0.3"
+                />
+
+                {/* Line */}
+                <path
+                  d={timeline
+                    .map((t, i) => {
+                      const x = chartPadding.left + (i / (timeline.length - 1 || 1)) * plotW;
+                      const y = chartPadding.top + plotH - (t.requests / maxTimelineRequests) * plotH;
+                      return `${i === 0 ? "M" : "L"}${x},${y}`;
+                    })
+                    .join(" ")}
+                  fill="none"
+                  stroke="var(--accent-color)"
+                  strokeWidth="2"
+                  strokeLinejoin="round"
+                />
+
+                {/* Hover bars */}
+                {timeline.map((t, i) => {
+                  const x = chartPadding.left + (i / (timeline.length - 1 || 1)) * plotW;
+                  const y = chartPadding.top + plotH - (t.requests / maxTimelineRequests) * plotH;
+                  const barW = plotW / timeline.length;
+                  return (
+                    <g key={i}>
+                      <rect
+                        x={x - barW / 2}
+                        y={chartPadding.top}
+                        width={barW}
+                        height={plotH}
+                        fill="transparent"
+                        onMouseEnter={() => setHoveredBar(i)}
+                        onMouseLeave={() => setHoveredBar(null)}
+                      />
+                      {hoveredBar === i && (
+                        <>
+                          <circle cx={x} cy={y} r="3" fill="var(--accent-color)" />
+                          <rect
+                            x={x - 36}
+                            y={y - 22}
+                            width="72"
+                            height="16"
+                            rx="3"
+                            fill="var(--bg-secondary)"
+                            stroke="var(--border-color)"
+                          />
+                          <text
+                            x={x}
+                            y={y - 11}
+                            fill="var(--text-primary)"
+                            fontSize="8"
+                            textAnchor="middle"
+                          >
+                            {t.requests} req
+                          </text>
+                        </>
+                      )}
+                    </g>
+                  );
+                })}
+
+                {/* X-axis labels */}
+                {timeline
+                  .filter(
+                    (_, i) =>
+                      i === 0 ||
+                      i === timeline.length - 1 ||
+                      i % Math.max(1, Math.floor(timeline.length / 6)) === 0,
+                  )
+                  .map((t, _j, arr) => {
+                    const i = timeline.indexOf(t);
+                    const x = chartPadding.left + (i / (timeline.length - 1 || 1)) * plotW;
+                    return (
+                      <text
+                        key={i}
+                        x={x}
+                        y={chartHeight - 4}
+                        fill="var(--text-muted)"
+                        fontSize="7"
+                        textAnchor="middle"
+                      >
+                        {t.hour?.slice(11) || ""}h
+                      </text>
+                    );
+                  })}
+
+                <defs>
+                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--accent-color)" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="var(--accent-color)" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            ) : (
+              <div className={styles.chartEmpty}>
                 {loading ? "Loading..." : "No data yet"}
               </div>
             )}
           </div>
         </div>
 
+        {/* Provider Distribution */}
         <div className={styles.chartCard}>
           <div className={styles.chartTitle}>Provider Distribution</div>
           <div className={styles.donutContainer}>
@@ -262,12 +480,7 @@ export default function DashboardPage() {
                 </div>
               </>
             ) : (
-              <div
-                style={{
-                  color: "var(--text-muted)",
-                  fontSize: 13,
-                }}
-              >
+              <div className={styles.chartEmpty}>
                 {loading ? "Loading..." : "No data yet"}
               </div>
             )}
@@ -275,7 +488,121 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Two-column: Recent Requests + Project Breakdown */}
+      {/* ── Top Models + Top Providers ── */}
+      <div className={styles.twoCol}>
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Top Models</h2>
+          </div>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Provider</th>
+                <th>Requests</th>
+                <th>Cost</th>
+                <th>Avg Latency</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topModels.length > 0 ? (
+                topModels.map((m, i) => (
+                  <tr key={`${m.provider}-${m.model}-${i}`}>
+                    <td style={{ fontWeight: 500, color: "var(--text-primary)" }}>
+                      {m.model}
+                    </td>
+                    <td>
+                      <span className={styles.badgeProvider}>{m.provider}</span>
+                    </td>
+                    <td>{formatNumber(m.totalRequests)}</td>
+                    <td>{formatCost(m.totalCost)}</td>
+                    <td>{formatLatency(m.avgLatency)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={5}
+                    style={{
+                      textAlign: "center",
+                      color: "var(--text-muted)",
+                      padding: 24,
+                    }}
+                  >
+                    {loading ? "Loading..." : "No data yet"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Top Providers</h2>
+          </div>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Requests</th>
+                <th>% Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {providerEntries.length > 0 ? (
+                providerEntries.map(([provider, count], i) => (
+                  <tr key={provider}>
+                    <td style={{ fontWeight: 500, color: "var(--text-primary)" }}>
+                      <span className={styles.providerRow}>
+                        <span
+                          className={styles.legendDot}
+                          style={{
+                            background:
+                              PROVIDER_COLORS[i % PROVIDER_COLORS.length],
+                          }}
+                        />
+                        {provider}
+                      </span>
+                    </td>
+                    <td>{formatNumber(count)}</td>
+                    <td>
+                      <div className={styles.shareBar}>
+                        <div
+                          className={styles.shareBarFill}
+                          style={{
+                            width: `${(count / totalProviderRequests) * 100}%`,
+                            background:
+                              PROVIDER_COLORS[i % PROVIDER_COLORS.length],
+                          }}
+                        />
+                        <span>
+                          {((count / totalProviderRequests) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={3}
+                    style={{
+                      textAlign: "center",
+                      color: "var(--text-muted)",
+                      padding: 24,
+                    }}
+                  >
+                    {loading ? "Loading..." : "No data yet"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Recent Requests + Projects ── */}
       <div className={styles.twoCol}>
         {/* Recent Requests */}
         <div className={styles.section}>

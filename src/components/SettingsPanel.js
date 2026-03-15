@@ -293,29 +293,32 @@ export default function SettingsPanel({
                                     video: <Video size={12} />,
                                     pdf: <FileText size={12} />,
                                 };
-                                const modalities = allTypes.map((t) => {
-                                    const isIn = inputs.includes(t);
-                                    const isOut = outputs.includes(t);
-                                    let status = "Not supported";
-                                    if (isIn && isOut) status = "Input & Output";
-                                    else if (isIn) status = "Input only";
-                                    else if (isOut) status = "Output only";
-                                    return { type: t, status, supported: isIn || isOut };
-                                });
+                                const modalities = allTypes
+                                    .map((t) => {
+                                        const isIn = inputs.includes(t);
+                                        const isOut = outputs.includes(t);
+                                        let status = null;
+                                        if (isIn && isOut) status = "Input & Output";
+                                        else if (isIn) status = "Input only";
+                                        else if (isOut) status = "Output only";
+                                        return { type: t, status, supported: isIn || isOut };
+                                    })
+                                    .filter((m) => m.supported);
+                                if (modalities.length === 0) return null;
                                 return (
                                     <div className={styles.modalities}>
                                         <div className={styles.modalitiesHeader}>Modalities</div>
                                         {modalities.map((m) => (
                                             <div
                                                 key={m.type}
-                                                className={`${styles.modalityRow} ${!m.supported ? styles.modalityUnsupported : ""}`}
+                                                className={styles.modalityRow}
                                             >
                                                 <span className={styles.modalityIcon}>
                                                     {iconMap[m.type]}
                                                 </span>
                                                 <span className={styles.modalityName}>{m.type}</span>
                                                 <span
-                                                    className={`${styles.modalityStatus} ${m.supported ? styles.modalityActive : ""}`}
+                                                    className={`${styles.modalityStatus} ${styles.modalityActive}`}
                                                 >
                                                     {m.status}
                                                 </span>

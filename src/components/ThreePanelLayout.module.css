@@ -205,4 +205,10 @@
     left: 0;
     right: auto;
   }
+
+  /* Ensure header + toggle buttons stay above sidebar overlays */
+  .glassHeader {
+    position: relative;
+    z-index: 201;
+  }
 }

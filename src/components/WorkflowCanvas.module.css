@@ -178,3 +178,14 @@
   color: var(--accent-color);
   border-color: var(--accent-color);
 }
+
+/* ── Mobile: ensure toolbar stays accessible ── */
+@media (max-width: 767px) {
+  .canvasToolbar {
+    z-index: 10;
+  }
+
+  .instructions {
+    display: none;
+  }
+}

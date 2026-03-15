@@ -222,6 +222,20 @@
   }
 }
 
+.modelTag {
+  display: inline-flex;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tag {
   display: inline-flex;
   padding: 1px 5px;

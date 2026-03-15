@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import WorkflowSidebar from "./WorkflowSidebar";
 import WorkflowCanvas from "./WorkflowCanvas";
 import WorkflowInspector from "./WorkflowInspector";
@@ -73,6 +73,14 @@ export default function WorkflowComponent({
   onChangeModel,
 }) {
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const safePosition = readOnly ? (onUpdateNodePosition || noop) : (onUpdateNodePosition || noop);
 
@@ -83,8 +91,15 @@ export default function WorkflowComponent({
   }, [onSelectNode]);
 
   const handleToggleSidebar = useCallback(() => {
-    setSidebarVisible((v) => !v);
-  }, []);
+    setSidebarVisible((v) => {
+      const next = !v;
+      // On mobile, close inspector when opening sidebar
+      if (next && window.innerWidth < 768) {
+        onSelectNode?.(null);
+      }
+      return next;
+    });
+  }, [onSelectNode]);
 
   // When loading a workflow on mobile, auto-hide sidebar
   const handleLoadWorkflowWithHide = useCallback((...args) => {
@@ -93,6 +108,14 @@ export default function WorkflowComponent({
     }
     onLoadWorkflow?.(...args);
   }, [onLoadWorkflow]);
+
+  // On mobile, close sidebar when selecting a node (opening inspector)
+  const handleSelectNode = useCallback((nodeId) => {
+    if (nodeId && window.innerWidth < 768) {
+      setSidebarVisible(false);
+    }
+    onSelectNode?.(nodeId);
+  }, [onSelectNode]);
 
   return (
     <div className={styles.body}>
@@ -113,6 +136,10 @@ export default function WorkflowComponent({
           loading={loading}
         />
       </div>
+      {/* Mobile sidebar backdrop */}
+      {isMobile && sidebarVisible && (
+        <div className={styles.sidebarBackdrop} onClick={handleToggleSidebar} />
+      )}
       <WorkflowCanvas
         nodes={nodes}
         connections={connections}
@@ -127,29 +154,35 @@ export default function WorkflowComponent({
         nodeStatuses={nodeStatuses}
         nodeResults={nodeResults}
         selectedNodeId={selectedNodeId}
-        onSelectNode={onSelectNode}
+        onSelectNode={handleSelectNode}
         activeWorkflowId={activeWorkflowId}
         readOnly={readOnly}
         isLoadingWorkflow={isLoadingWorkflow}
         sidebarVisible={sidebarVisible}
         onToggleSidebar={handleToggleSidebar}
       />
+      {/* Inspector: bottom sheet on mobile, side panel on desktop */}
       {selectedNode && (
-        <WorkflowInspector
-          node={selectedNode}
-          connections={connections}
-          nodes={nodes}
-          allModels={readOnly ? [] : (allModels || [])}
-          nodeResults={nodeResults}
-          nodeStatuses={nodeStatuses}
-          onUpdateNodeConfig={readOnly ? noop : (onUpdateNodeConfig || noop)}
-          onUpdateNodeContent={readOnly ? noop : (onUpdateNodeContent || noop)}
-          onUpdateFileInput={readOnly ? noop : (onUpdateFileInput || noop)}
-          onChangeModel={readOnly ? noop : (onChangeModel || noop)}
-          onSelectNode={onSelectNode}
-          onClose={handleClose}
-          readOnly={readOnly}
-        />
+        <>
+          {isMobile && <div className={styles.inspectorBackdrop} onClick={handleClose} />}
+          <div className={styles.inspectorWrapper}>
+            <WorkflowInspector
+              node={selectedNode}
+              connections={connections}
+              nodes={nodes}
+              allModels={readOnly ? [] : (allModels || [])}
+              nodeResults={nodeResults}
+              nodeStatuses={nodeStatuses}
+              onUpdateNodeConfig={readOnly ? noop : (onUpdateNodeConfig || noop)}
+              onUpdateNodeContent={readOnly ? noop : (onUpdateNodeContent || noop)}
+              onUpdateFileInput={readOnly ? noop : (onUpdateFileInput || noop)}
+              onChangeModel={readOnly ? noop : (onChangeModel || noop)}
+              onSelectNode={handleSelectNode}
+              onClose={handleClose}
+              readOnly={readOnly}
+            />
+          </div>
+        </>
       )}
     </div>
   );

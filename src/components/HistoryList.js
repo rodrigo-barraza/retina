@@ -209,6 +209,11 @@ export default function HistoryList({
                     </span>
                   ))}
                   <span className={styles.time}>{dt}</span>
+                  {item.modelName && (
+                    <span className={styles.modelTag} title={item.modelName}>
+                      {item.modelName.split("/").pop()}
+                    </span>
+                  )}
                   {(item.totalCost || 0) > 0 && (
                     <span className={styles.cost}>
                       ${item.totalCost.toFixed(5)}

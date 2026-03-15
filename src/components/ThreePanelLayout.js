@@ -129,13 +129,15 @@ export default function ThreePanelLayout({
                     <span className={styles.headerTitle}>{headerTitle}</span>
                     {!isMobile && headerMeta}
                     {headerControls}
-                    <button
-                        className={styles.headerToggle}
-                        onClick={toggleRight}
-                        title={showRight ? `Hide ${rightTitle.toLowerCase()}` : `Show ${rightTitle.toLowerCase()}`}
-                    >
-                        {showRight ? <PanelRightClose size={16} /> : <PanelRight size={16} />}
-                    </button>
+                    {rightPanel && (
+                        <button
+                            className={styles.headerToggle}
+                            onClick={toggleRight}
+                            title={showRight ? `Hide ${rightTitle.toLowerCase()}` : `Show ${rightTitle.toLowerCase()}`}
+                        >
+                            {showRight ? <PanelRightClose size={16} /> : <PanelRight size={16} />}
+                        </button>
+                    )}
                 </div>
                 {/* Mobile: meta info row below the header */}
                 {isMobile && headerMeta && (
@@ -147,7 +149,7 @@ export default function ThreePanelLayout({
             </section>
 
             {/* Mobile slit: visible strip behind right sidebar (history) — appears on left edge */}
-            {isMobile && showRight && (
+            {rightPanel && isMobile && showRight && (
                 <div
                     className={styles.mobileSlit}
                     data-side="right"
@@ -156,14 +158,16 @@ export default function ThreePanelLayout({
             )}
 
             {/* Right Sidebar */}
-            <aside
-                className={`${styles.rightSidebar} ${!showRight ? styles.sidebarHidden : ""}`}
-                style={transitionStyle}
-                onClick={handleSidebarClick(toggleRight)}
-            >
-                <div className={styles.sidebarHeader}>{rightTitle}</div>
-                {rightPanel}
-            </aside>
+            {rightPanel && (
+                <aside
+                    className={`${styles.rightSidebar} ${!showRight ? styles.sidebarHidden : ""}`}
+                    style={transitionStyle}
+                    onClick={handleSidebarClick(toggleRight)}
+                >
+                    <div className={styles.sidebarHeader}>{rightTitle}</div>
+                    {rightPanel}
+                </aside>
+            )}
         </div>
     );
 }

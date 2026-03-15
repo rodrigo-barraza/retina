@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { ArrowLeft, Sun, Moon, Play, Square, Loader2, Download, Upload, Undo2, RotateCcw, MessageSquare } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { PrismService } from "../../services/PrismService";
 import WorkflowService from "../../services/WorkflowService";
 import { executeWorkflow } from "../../services/WorkflowExecutor";
@@ -94,11 +93,17 @@ function generateEdgeId() {
 
 export default function WorkflowsPage({ initialWorkflowId }) {
     const { theme, toggleTheme } = useTheme();
-    const router = useRouter();
     const [_config, setConfig] = useState(null);
     const [allModels, setAllModels] = useState([]);
     const [savedWorkflows, setSavedWorkflows] = useState([]);
     const [toast, setToast] = useState(null);
+
+    // Update URL without Next.js navigation (avoids re-mount)
+    const updateUrl = (path) => {
+        if (window.location.pathname !== path) {
+            History.prototype.replaceState.call(window.history, {}, "", path);
+        }
+    };
 
     // Current workflow state
     const [workflowId, setWorkflowId] = useState(null);
@@ -643,14 +648,14 @@ export default function WorkflowsPage({ initialWorkflowId }) {
             const saved = await WorkflowService.saveWorkflow(workflow);
             const newId = saved.id || saved._id;
             setWorkflowId(newId);
-            router.replace(`/workflows/${newId}`, { scroll: false });
+            updateUrl(`/workflows/${newId}`);
             const wfs = await WorkflowService.getWorkflows();
             setSavedWorkflows(wfs.map((w) => ({ ...w, id: w._id || w.id })));
             showToast("Workflow saved");
         } catch (err) {
             showToast(`Failed to save: ${err.message}`, "error");
         }
-    }, [workflowId, workflowName, nodes, edges, nodeResults, nodeStatuses, router]);
+    }, [workflowId, workflowName, nodes, edges, nodeResults, nodeStatuses]);
 
     // Load a saved workflow
     const handleLoadWorkflow = useCallback(async (id) => {
@@ -667,12 +672,12 @@ export default function WorkflowsPage({ initialWorkflowId }) {
             setEdges(wf.edges || wf.connections || []);
             setNodeResults(wf.nodeResults || {});
             setNodeStatuses(wf.nodeStatuses || {});
-            router.replace(`/workflows/${loadedId}`, { scroll: false });
+            updateUrl(`/workflows/${loadedId}`);
             showToast("Workflow loaded");
         } catch (err) {
             showToast(`Failed to load: ${err.message}`, "error");
         }
-    }, [router]);
+    }, []);
 
     // Delete a saved workflow
     const handleDeleteWorkflow = useCallback(
@@ -688,14 +693,14 @@ export default function WorkflowsPage({ initialWorkflowId }) {
                     setEdges([]);
                     setNodeResults({});
                     setNodeStatuses({});
-                    router.replace("/workflows", { scroll: false });
+                    updateUrl("/workflows");
                 }
                 showToast("Workflow deleted");
             } catch (err) {
                 showToast(`Failed to delete: ${err.message}`, "error");
             }
         },
-        [workflowId, router],
+        [workflowId],
     );
 
     // Change the model on an existing node

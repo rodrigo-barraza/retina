@@ -249,3 +249,53 @@
     transform: translateX(-50%) translateY(0);
   }
 }
+
+/* ── Mobile responsive header ── */
+@media (max-width: 767px) {
+  .header {
+    height: auto;
+    min-height: 48px;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .headerLeft {
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .headerTitle {
+    font-size: 13px;
+  }
+
+  .headerBadge {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+
+  .headerModelTag {
+    display: none;
+  }
+
+  .headerRight {
+    gap: 4px;
+  }
+
+  .headerActionBtn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .runBtn {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .themeToggle {
+    width: 28px;
+    height: 28px;
+  }
+}
