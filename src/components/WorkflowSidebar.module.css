@@ -4,8 +4,8 @@
   height: 100%;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border-color);
-  width: 280px;
-  min-width: 280px;
+  width: 320px;
+  min-width: 320px;
   overflow: hidden;
 }
 
