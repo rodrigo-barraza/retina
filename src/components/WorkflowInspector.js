@@ -323,13 +323,13 @@ export default function WorkflowInspector({
                         if (modality === "text") {
                             msg.content = msg.content ? `${msg.content}\n\n${sourceNode.content}` : sourceNode.content;
                         } else if (modality === "image") {
-                            msg.images = [...(msg.images || []), `[image attached]`];
+                            msg.images = [...(msg.images || []), "[image attached]"];
                         } else if (modality === "audio") {
-                            msg.audio = "[audio attached]";
+                            msg.audio = [...(msg.audio || []), "[audio attached]"];
                         } else if (modality === "video") {
-                            msg.video = "[video attached]";
+                            msg.video = [...(msg.video || []), "[video attached]"];
                         } else if (modality === "pdf") {
-                            msg.pdf = "[pdf attached]";
+                            msg.pdf = [...(msg.pdf || []), "[pdf attached]"];
                         }
                     }
                     const messagesJson = JSON.stringify(
@@ -337,9 +337,9 @@ export default function WorkflowInspector({
                             role,
                             content: content || "",
                             ...(images?.length > 0 ? { images: images.map(() => "[image attached]") } : {}),
-                            ...(audio ? { audio: typeof audio === "string" && audio.startsWith("[") ? audio : "[audio attached]" } : {}),
-                            ...(video ? { video: typeof video === "string" && video.startsWith("[") ? video : "[video attached]" } : {}),
-                            ...(pdf ? { pdf: typeof pdf === "string" && pdf.startsWith("[") ? pdf : "[pdf attached]" } : {}),
+                            ...(audio?.length > 0 ? { audio: audio.map(() => "[audio attached]") } : {}),
+                            ...(video?.length > 0 ? { video: video.map(() => "[video attached]") } : {}),
+                            ...(pdf?.length > 0 ? { pdf: pdf.map(() => "[pdf attached]") } : {}),
                         })),
                         null,
                         2,

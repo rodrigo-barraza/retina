@@ -75,14 +75,17 @@ async function executeModelNode(node, inputData) {
         const pipedText = textParts.join("\n\n");
         const hasMedia = imageParts.length > 0 || audioParts.length > 0 || videoParts.length > 0 || pdfParts.length > 0;
 
-        // Helper: merge piped media fields into a message
+        // Helper: merge piped media fields into a message (all are arrays)
         const buildMediaFields = (existing = {}) => {
             const fields = {};
             const imgs = [...(existing.images || []), ...imageParts];
+            const auds = [...(existing.audio || []), ...audioParts];
+            const vids = [...(existing.video || []), ...videoParts];
+            const pdfs = [...(existing.pdf || []), ...pdfParts];
             if (imgs.length > 0) fields.images = imgs;
-            if (existing.audio || audioParts[0]) fields.audio = existing.audio || audioParts[0];
-            if (existing.video || videoParts[0]) fields.video = existing.video || videoParts[0];
-            if (existing.pdf || pdfParts[0]) fields.pdf = existing.pdf || pdfParts[0];
+            if (auds.length > 0) fields.audio = auds;
+            if (vids.length > 0) fields.video = vids;
+            if (pdfs.length > 0) fields.pdf = pdfs;
             return fields;
         };
 
@@ -96,11 +99,11 @@ async function executeModelNode(node, inputData) {
                     role: m.role,
                     content: m.content || "",
                     ...(m.images?.length > 0 ? { images: m.images } : {}),
-                    ...(m.audio ? { audio: m.audio } : {}),
-                    ...(m.video ? { video: m.video } : {}),
-                    ...(m.pdf ? { pdf: m.pdf } : {}),
+                    ...(m.audio?.length > 0 ? { audio: m.audio } : {}),
+                    ...(m.video?.length > 0 ? { video: m.video } : {}),
+                    ...(m.pdf?.length > 0 ? { pdf: m.pdf } : {}),
                 }))
-                .filter((m) => m.content || m.images?.length > 0 || m.audio || m.video || m.pdf);
+                .filter((m) => m.content || m.images?.length > 0 || m.audio?.length > 0 || m.video?.length > 0 || m.pdf?.length > 0);
 
             // Append piped text/media to the last user message (or add a new one)
             const lastUserIdx = finalMessages.map((m, i) => ({ m, i })).filter(({ m }) => m.role === "user").pop()?.i;
@@ -124,9 +127,9 @@ async function executeModelNode(node, inputData) {
                 role: m.role,
                 content: m.content || "",
                 ...(m.images?.length > 0 ? { images: m.images } : {}),
-                ...(m.audio ? { audio: m.audio } : {}),
-                ...(m.video ? { video: m.video } : {}),
-                ...(m.pdf ? { pdf: m.pdf } : {}),
+                ...(m.audio?.length > 0 ? { audio: m.audio } : {}),
+                ...(m.video?.length > 0 ? { video: m.video } : {}),
+                ...(m.pdf?.length > 0 ? { pdf: m.pdf } : {}),
             }));
 
             // Append piped text/media to the last user message (or add a new one)
@@ -403,11 +406,11 @@ export async function executeWorkflow(nodes, connections, { onNodeStart, onNodeC
                         } else if (modality === "image") {
                             msg.images = [...(msg.images || []), data];
                         } else if (modality === "audio") {
-                            msg.audio = data;
+                            msg.audio = [...(msg.audio || []), data];
                         } else if (modality === "video") {
-                            msg.video = data;
+                            msg.video = [...(msg.video || []), data];
                         } else if (modality === "pdf") {
-                            msg.pdf = data;
+                            msg.pdf = [...(msg.pdf || []), data];
                         }
                     }
 
