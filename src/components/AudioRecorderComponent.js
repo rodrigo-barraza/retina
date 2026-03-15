@@ -78,6 +78,7 @@ export default function AudioRecorderComponent({
   onRecordingComplete,
   onRemove,
   compact = false,
+  square = false,
 }) {
   // ─── Recorder state ───
   const [isRecording, setIsRecording] = useState(false);
@@ -314,6 +315,42 @@ export default function AudioRecorderComponent({
   // MODE: Playback
   // ───────────────────────────────────────────
   if (src) {
+    if (square) {
+      return (
+        <div className={styles.audioSquare} onMouseDown={(e) => e.stopPropagation()}>
+          <audio
+            ref={audioRef}
+            src={src}
+            preload="metadata"
+            onLoadedMetadata={(e) => setDuration(e.target.duration)}
+            onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => setIsPlaying(false)}
+            hidden
+          />
+
+          <div className={styles.squareWaveWrap} onClick={handleCanvasSeek}>
+            <canvas ref={playerCanvasRef} className={styles.squareWaveCanvas}
+              width={200} height={100} />
+          </div>
+
+          <div className={styles.squareControls}>
+            <button type="button" className={styles.playBtn} onClick={togglePlayback}
+              title={isPlaying ? "Pause" : "Play"}>
+              {isPlaying ? <Pause size={10} /> : <Play size={10} />}
+            </button>
+            <span className={styles.timer}>
+              {formatTime(currentTime)}/{formatTime(duration)}
+            </span>
+            <button type="button" className={styles.iconBtn} onClick={toggleMute}
+              title={muted ? "Unmute" : "Mute"}>
+              {muted ? <VolumeX size={12} /> : <Volume2 size={12} />}
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className={`${styles.audioThumb} ${compact ? styles.audioCompact : ""}`}>
         <audio

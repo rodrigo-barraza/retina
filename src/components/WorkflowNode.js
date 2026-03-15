@@ -2,6 +2,7 @@
 
 import { X, Upload, Eye, Loader2, Check, AlertTriangle, Paperclip, MessageSquare, Plus, Minus } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
+import AudioRecorderComponent from "./AudioRecorderComponent";
 import { MODALITY_ICONS } from "./WorkflowSidebar";
 import {
   MODALITY_COLORS,
@@ -528,12 +529,7 @@ function AssetNode(props) {
                           className={styles.assetPreviewImg}
                         />
                       ) : node.modality === "audio" ? (
-                        <audio
-                          controls
-                          src={node.content}
-                          className={styles.assetAudioPlayer}
-                          onMouseDown={(e) => e.stopPropagation()}
-                        />
+                        <AudioRecorderComponent src={node.content} square />
                       ) : node.modality === "video" ? (
                         <video
                           controls

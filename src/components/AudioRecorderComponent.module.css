@@ -191,3 +191,38 @@
   border-radius: 2px;
   flex-shrink: 0;
 }
+
+/* ── Square layout (for workflow nodes) ── */
+.audioSquare {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.squareWaveWrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 8px 4px 0;
+}
+
+.squareWaveCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.squareControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  justify-content: center;
+}

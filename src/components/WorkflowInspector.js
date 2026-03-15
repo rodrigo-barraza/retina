@@ -5,6 +5,7 @@ import { Eye, Type, Volume2, X, Maximize2, Search, ChevronDown, Paperclip } from
 import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowSidebar";
 import MarkdownContent from "./MarkdownContent";
+import AudioRecorderComponent from "./AudioRecorderComponent";
 
 import styles from "./WorkflowInspector.module.css";
 
@@ -267,9 +268,20 @@ export default function WorkflowInspector({
                                         className={styles.previewImage}
                                     />
                                 ) : node.modality === "audio" ? (
-                                    <div className={styles.audioIndicator}>
-                                        <Volume2 size={16} />
-                                        <span>Audio file attached</span>
+                                    <AudioRecorderComponent src={node.content} compact />
+                                ) : node.modality === "video" ? (
+                                    <video
+                                        controls
+                                        src={node.content}
+                                        className={styles.previewVideo}
+                                    />
+                                ) : node.modality === "pdf" ? (
+                                    <div className={styles.previewPdfWrap}>
+                                        <iframe
+                                            src={node.content}
+                                            className={styles.previewPdf}
+                                            title="PDF preview"
+                                        />
                                     </div>
                                 ) : (
                                     <div className={styles.audioIndicator}>
