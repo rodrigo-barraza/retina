@@ -111,6 +111,7 @@ export default function WorkflowComponent({
         nodeResults={nodeResults}
         selectedNodeId={selectedNodeId}
         onSelectNode={onSelectNode}
+        activeWorkflowId={activeWorkflowId}
         readOnly={readOnly}
       />
       {selectedNode && (

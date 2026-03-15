@@ -32,6 +32,7 @@ export default function WorkflowCanvas({
   nodeResults = {},
   selectedNodeId,
   onSelectNode,
+  activeWorkflowId,
   readOnly = false,
 }) {
   const svgRef = useRef(null);
@@ -265,6 +266,14 @@ export default function WorkflowCanvas({
   useEffect(() => {
     if (dragging) startCollisionLoop(30);
   }, [dragging, startCollisionLoop]);
+
+  // Resolve overlaps when a different workflow is loaded
+  useEffect(() => {
+    if (nodes.length > 0 && activeWorkflowId) {
+      // Wait one frame for positions to settle, then run collision resolution
+      setTimeout(() => startCollisionLoop(60), 80);
+    }
+  }, [activeWorkflowId, nodes.length, startCollisionLoop]);
 
   const handleMouseUp = useCallback(() => {
     if (dragging) setDragging(null);

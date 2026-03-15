@@ -471,15 +471,16 @@
 /* ── Selected node flash overlay ── */
 .selectedFlash {
   fill: none;
-  stroke: white;
+  stroke: var(--accent-color);
   pointer-events: none;
-  animation: flashSelect 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px var(--accent-color));
+  animation: flashSelect 1.6s ease-in-out infinite;
 }
 
 /* ── Animations ── */
 @keyframes flashSelect {
   0%, 100% {
-    stroke-opacity: 0;
+    stroke-opacity: 0.45;
   }
   50% {
     stroke-opacity: 1;
