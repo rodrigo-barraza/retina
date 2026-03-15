@@ -517,12 +517,14 @@ export default function WorkflowsPage() {
             name: workflowName || "Untitled Workflow",
             nodes,
             connections,
+            nodeResults,
+            nodeStatuses,
         };
         const saved = WorkflowService.saveWorkflow(workflow);
         setWorkflowId(saved.id);
         setSavedWorkflows(WorkflowService.getWorkflows());
         showToast("Workflow saved");
-    }, [workflowId, workflowName, nodes, connections]);
+    }, [workflowId, workflowName, nodes, connections, nodeResults, nodeStatuses]);
 
     // Load a saved workflow
     const handleLoadWorkflow = useCallback((id) => {
@@ -532,6 +534,8 @@ export default function WorkflowsPage() {
         setWorkflowName(wf.name || "Untitled Workflow");
         setNodes(wf.nodes || []);
         setConnections(wf.connections || []);
+        setNodeResults(wf.nodeResults || {});
+        setNodeStatuses(wf.nodeStatuses || {});
         showToast("Workflow loaded");
     }, []);
 
@@ -545,6 +549,8 @@ export default function WorkflowsPage() {
                 setWorkflowName("Untitled Workflow");
                 setNodes([]);
                 setConnections([]);
+                setNodeResults({});
+                setNodeStatuses({});
             }
             showToast("Workflow deleted");
         },
@@ -594,6 +600,8 @@ export default function WorkflowsPage() {
         setWorkflowName("Untitled Workflow");
         setNodes([]);
         setConnections([]);
+        setNodeResults({});
+        setNodeStatuses({});
     }, []);
 
     // Duplicate a node (copy-paste)
