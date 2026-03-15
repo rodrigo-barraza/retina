@@ -54,7 +54,7 @@ function NodePorts({
         const isHovered = hoveredPort?.nodeId === node.id && hoveredPort?.type === "input" && hoveredPort?.modality === portId;
         const Icon = MODALITY_ICONS[baseMod]?.icon;
         const hasRunningSource = connections.some(
-          (c) => c.targetNodeId === node.id && c.targetModality === portId && nodeStatuses[c.sourceNodeId] === "running"
+          (c) => c.targetNodeId === node.id && c.targetModality === portId && (nodeStatuses[c.sourceNodeId] === "running" || nodeStatuses[c.sourceNodeId] === "done")
         );
 
         let label = MODALITY_ICONS[baseMod]?.label || baseMod;
@@ -177,9 +177,9 @@ function ModelNode(props) {
   const errorHeight = results?.error ? 28 : 0;
   const nodeHeight = HEADER_HEIGHT + configHeight + portsHeight + errorHeight;
 
-  const isRunning = status === "running";
-  const statusBorderColor = isRunning ? "url(#prism-gradient)" : isSelected ? "var(--accent-color, #7c6ef6)" : status === "error" ? "#f43f5e" : status === "done" ? "#10b981" : null;
-  const borderWidth = isSelected ? 2 : status ? 2 : 0;
+  const isPrism = status === "running" || status === "done";
+  const statusBorderColor = isPrism ? "url(#prism-gradient)" : isSelected ? "var(--accent-color, #7c6ef6)" : status === "error" ? "#f43f5e" : null;
+  const borderWidth = isSelected ? 2 : isPrism ? 2 : 0;
 
   return (
     <g
@@ -296,7 +296,7 @@ function ModelNode(props) {
           node={node}
           inputTypes={inputTypes}
           outputTypes={outputTypes}
-          isNodeRunning={isRunning}
+          isNodeRunning={isPrism}
           {...portProps}
         />
       </g>
@@ -359,7 +359,7 @@ function AssetNode(props) {
       ? `${MODALITY_ICONS[node.modality]?.label || node.modality} Input`
       : "File Input";
 
-  const isRunning = status === "running";
+  const isPrism = status === "running" || status === "done";
   const contentH = getAssetContentHeight(node);
   const portRows = Math.max(inputTypes.length, outputTypes.length, 1);
   const portsHeight = portRows * PORT_SECTION_HEIGHT + 12;
@@ -379,8 +379,8 @@ function AssetNode(props) {
         height={nodeHeight}
         rx="3"
         ry="3"
-        className={`${styles.assetNodeBody}${isRunning ? ` ${styles.prismBorder}` : ""}`}
-        style={isRunning ? { stroke: "url(#prism-gradient)", strokeWidth: 2, strokeOpacity: 1 } : { stroke: accentColor, strokeOpacity: 0.4 }}
+        className={`${styles.assetNodeBody}${isPrism ? ` ${styles.prismBorder}` : ""}`}
+        style={isPrism ? { stroke: "url(#prism-gradient)", strokeWidth: 2, strokeOpacity: 1 } : { stroke: accentColor, strokeOpacity: 0.4 }}
       />
 
       {/* Header */}
@@ -566,7 +566,7 @@ function AssetNode(props) {
         inputTypes={inputTypes}
         outputTypes={outputTypes}
         configOffset={isExpanded ? contentH : 0}
-        isNodeRunning={isRunning}
+        isNodeRunning={isPrism}
         {...portProps}
       />
 

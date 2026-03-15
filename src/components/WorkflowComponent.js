@@ -55,6 +55,7 @@ export default function WorkflowComponent({
   onUpdateNodeContent,
   onUpdateNodeConfig,
   onUpdateFileInput,
+  onDuplicateNode,
 
   models,
   workflows,
@@ -114,6 +115,7 @@ export default function WorkflowComponent({
         onUpdateNodeContent={readOnly ? noop : (onUpdateNodeContent || noop)}
         onUpdateNodeConfig={readOnly ? noop : (onUpdateNodeConfig || noop)}
         onUpdateFileInput={readOnly ? noop : (onUpdateFileInput || noop)}
+        onDuplicateNode={readOnly ? noop : (onDuplicateNode || noop)}
         nodeStatuses={nodeStatuses}
         nodeResults={nodeResults}
         selectedNodeId={selectedNodeId}

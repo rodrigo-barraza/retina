@@ -23,6 +23,7 @@ export default function WorkflowCanvas({
   onUpdateNodeContent,
   onUpdateNodeConfig,
   onUpdateFileInput,
+  onDuplicateNode,
   nodeStatuses = {},
   nodeResults = {},
   selectedNodeId,
@@ -30,6 +31,7 @@ export default function WorkflowCanvas({
 }) {
   const svgRef = useRef(null);
   const containerRef = useRef(null);
+  const clipboardRef = useRef(null);
   const [dragging, setDragging] = useState(null);
   const [connecting, setConnecting] = useState(null);
   const [connectingMouse, setConnectingMouse] = useState(null);
@@ -163,6 +165,31 @@ export default function WorkflowCanvas({
     };
   }, [handleMouseMove, handleMouseUp, handleWheel]);
 
+  // Keyboard copy-paste
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Skip when typing in inputs or textareas
+      const tag = e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+        if (!selectedNodeId) return;
+        const node = nodes.find((n) => n.id === selectedNodeId);
+        if (!node) return;
+        clipboardRef.current = JSON.parse(JSON.stringify(node));
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+        if (!clipboardRef.current) return;
+        e.preventDefault();
+        onDuplicateNode?.(clipboardRef.current);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedNodeId, nodes, onDuplicateNode]);
+
   // Output port click — start connection
   const handleOutputPortClick = useCallback(
     (e, nodeId, modality, index) => {
@@ -254,7 +281,7 @@ export default function WorkflowCanvas({
     const color = MODALITY_COLORS[conn.sourceModality] || "#888";
 
     const sourceStatus = nodeStatuses[conn.sourceNodeId];
-    const isActive = sourceStatus === "running";
+    const isActive = sourceStatus === "running" || sourceStatus === "done";
 
     return (
       <g key={conn.id} className={styles.connectionGroup} data-workflow-connection>

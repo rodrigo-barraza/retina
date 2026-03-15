@@ -596,6 +596,22 @@ export default function WorkflowsPage() {
         setConnections([]);
     }, []);
 
+    // Duplicate a node (copy-paste)
+    const handleDuplicateNode = useCallback((nodeData) => {
+        const newNode = {
+            ...JSON.parse(JSON.stringify(nodeData)),
+            id: generateNodeId(),
+            position: {
+                x: (nodeData.position?.x || 0) + 40,
+                y: (nodeData.position?.y || 0) + 40,
+            },
+        };
+        // Strip runtime state
+        delete newNode.receivedOutputs;
+        setNodes((prev) => [...prev, newNode]);
+        setSelectedNodeId(newNode.id);
+    }, []);
+
     return (
         <div className={styles.page}>
             {/* Header */}
@@ -708,6 +724,7 @@ export default function WorkflowsPage() {
                     onWorkflowNameChange={setWorkflowName}
                     allModels={modelsWithModalities}
                     onChangeModel={handleChangeModel}
+                    onDuplicateNode={handleDuplicateNode}
                 />
             </div>
 
