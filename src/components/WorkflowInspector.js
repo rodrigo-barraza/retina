@@ -334,7 +334,10 @@ export default function WorkflowInspector({
                     }
                     const resolveRef = (ref) => {
                         if (typeof ref === "string" && ref.startsWith("minio://")) return PrismService.getFileUrl(ref);
-                        if (typeof ref === "string" && ref.startsWith("data:")) return "[attached]";
+                        if (typeof ref === "string" && ref.startsWith("data:")) {
+                            const mime = ref.match(/^data:([^;]+)/)?.[1] || "unknown";
+                            return `[${mime} attached]`;
+                        }
                         return ref;
                     };
                     const messagesJson = JSON.stringify(
