@@ -112,4 +112,16 @@ export class IrisService {
     static async getWorkflow(id) {
         return fetchJSON(`/workflows/${id}`);
     }
+
+    // ── Media ─────────────────────────────────────────────────
+    static async getMedia(params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return fetchJSON(`/media${query ? `?${query}` : ""}`);
+    }
+
+    // ── Text ──────────────────────────────────────────────────
+    static async getText(params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return fetchJSON(`/text${query ? `?${query}` : ""}`);
+    }
 }

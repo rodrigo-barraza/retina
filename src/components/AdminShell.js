@@ -16,6 +16,7 @@ import {
   Moon,
   Image as ImageIcon,
   Layers,
+  Type,
 } from "lucide-react";
 import { IrisService } from "../services/IrisService";
 import { useTheme } from "./ThemeProvider";
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { href: "/admin/workflows", label: "Workflows", icon: GitBranch },
   { href: "/admin/providers", label: "Providers", icon: Layers },
   { href: "/admin/media", label: "Media", icon: ImageIcon },
+  { href: "/admin/text", label: "Text", icon: Type },
   { href: "/admin/pricing", label: "Usage", icon: DollarSign },
   { href: "/admin/models", label: "Models", icon: Server },
 ];

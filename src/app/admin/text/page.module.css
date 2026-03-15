@@ -23,7 +23,7 @@
 .filterBar {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   margin-bottom: 24px;
   flex-wrap: wrap;
 }
@@ -81,6 +81,32 @@
   }
 }
 
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-muted);
+  flex: 1;
+  max-width: 360px;
+}
+
+.searchInput {
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  width: 100%;
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
 /* Loading */
 .loading {
   padding: 60px 20px;
@@ -89,94 +115,64 @@
   font-size: 14px;
 }
 
-/* Media Grid */
-.mediaGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 14px;
+/* Text List */
+.textList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.mediaCard {
+.textCard {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
   overflow: hidden;
-  transition: all var(--transition-fast);
+  transition: border-color var(--transition-fast);
 
   &:hover {
     border-color: var(--accent-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   }
 }
 
-.mediaPreview {
-  width: 100%;
-  aspect-ratio: 1;
-  overflow: hidden;
-  background: var(--bg-tertiary);
+.textHeader {
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
 }
 
-.mediaImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.mediaPlaceholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-/* Origin badge overlay */
-.originBadge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+.roleBadge {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   padding: 3px 8px;
   border-radius: 3px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  flex-shrink: 0;
 }
 
-.originUser {
-  background: rgba(99, 102, 241, 0.75);
-  color: white;
+.roleUser {
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent-color);
 }
 
-.originAi {
-  background: rgba(168, 85, 247, 0.75);
-  color: white;
-}
-
-.mediaInfo {
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.roleAi {
+  background: rgba(168, 85, 247, 0.12);
+  color: #a855f7;
 }
 
 .convLink {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 11px;
   color: var(--text-secondary);
   text-decoration: none;
   overflow: hidden;
+  max-width: 200px;
 
   & > span {
     overflow: hidden;
@@ -189,20 +185,24 @@
   }
 }
 
-.mediaMeta {
-  display: flex;
+.attachmentTag {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 2px;
 }
 
 .modelTag {
   font-size: 10px;
-  padding: 1px 5px;
+  padding: 2px 6px;
   border-radius: 2px;
   background: var(--bg-tertiary);
   color: var(--text-muted);
-  max-width: 100px;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -210,6 +210,29 @@
 
 .time {
   font-size: 10px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.textContent {
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.textFooter {
+  padding: 6px 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.cost {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
   color: var(--text-muted);
 }
 
@@ -280,8 +303,8 @@
     gap: 10px;
   }
 
-  .mediaGrid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
+  .searchBox {
+    max-width: none;
+    width: 100%;
   }
 }
