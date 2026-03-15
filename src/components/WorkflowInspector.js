@@ -86,8 +86,11 @@ export default function WorkflowInspector({
     const getNodeLabel = (id) => {
         const n = (nodes || []).find((nd) => nd.id === id);
         if (!n) return id;
-        if (n.nodeType === "input") return `${n.modality} Input`;
-        if (n.nodeType === "viewer") return "Output Viewer";
+        if (n.nodeType === "input") {
+            const labels = { text: "Text", image: "Image", audio: "Audio", video: "Video", pdf: "PDF", conversation: "Chat History" };
+            return labels[n.modality] || "Media";
+        }
+        if (n.nodeType === "viewer") return "Output";
         return n.displayName || n.modelName || id;
     };
 
@@ -113,7 +116,7 @@ export default function WorkflowInspector({
                     )}
                     <div className={styles.headerInfo}>
                         <span className={styles.headerTitle}>
-                            {isModel ? (node.displayName || node.modelName) : isInput ? (node.modality === "conversation" ? "Conversation" : node.modality ? `${node.modality.charAt(0).toUpperCase() + node.modality.slice(1)} Input` : "File Input") : "Output Viewer"}
+                            {isModel ? (node.displayName || node.modelName) : isInput ? ({ text: "Text", image: "Image", audio: "Audio", video: "Video", pdf: "PDF", conversation: "Chat History" }[node.modality] || "Media") : "Output"}
                         </span>
                         <span className={styles.headerSubtitle}>
                             {isModel ? node.provider : isInput ? "Asset Node" : "Viewer Node"}

@@ -207,7 +207,7 @@ function ModelNode(props) {
   const isDone = status === "done";
   const isPrism = isRunning || isDone;
   const statusGradient = isRunning ? "url(#prism-gradient)" : isDone ? "url(#done-gradient)" : null;
-  const statusBorderColor = statusGradient || (isSelected ? "url(#prism-gradient)" : status === "error" ? "#f43f5e" : null);
+  const statusBorderColor = statusGradient || (isSelected ? "rgba(255,255,255,0.7)" : status === "error" ? "#f43f5e" : null);
   const borderWidth = isSelected ? 2 : isPrism ? 2 : 0;
 
   return (
@@ -389,11 +389,19 @@ function AssetNode(props) {
   const conversationModalities = isConversation ? (node.supportedModalities || ["text"]).filter((t) => t !== "conversation") : [];
   const modalityAreaWidth = conversationModalities.length * MODALITY_ICON_WIDTH;
 
+  const NODE_LABELS = {
+    viewer: "Output",
+    text: "Text",
+    image: "Image",
+    audio: "Audio",
+    video: "Video",
+    pdf: "PDF",
+    conversation: "Chat History",
+  };
+
   const inputLabel = isViewer
-    ? "Output Viewer"
-    : node.modality
-      ? `${MODALITY_ICONS[node.modality]?.label || node.modality} Input`
-      : "File Input";
+    ? NODE_LABELS.viewer
+    : NODE_LABELS[node.modality] || "Media";
 
   const isRunning = status === "running";
   const isDone = status === "done";
@@ -421,7 +429,7 @@ function AssetNode(props) {
         rx="3"
         ry="3"
         className={`${styles.assetNodeBody}${isPrism || isSelected ? ` ${styles.prismBorder}` : ""}`}
-        style={isPrism ? { stroke: statusGradient, strokeWidth: 2, strokeOpacity: 1 } : isSelected ? { stroke: "url(#prism-gradient)", strokeWidth: 2, strokeOpacity: 1 } : { stroke: accentColor, strokeOpacity: 0.4 }}
+        style={isPrism ? { stroke: statusGradient, strokeWidth: 2, strokeOpacity: 1 } : isSelected ? { stroke: "rgba(255,255,255,0.7)", strokeWidth: 2, strokeOpacity: 1 } : { stroke: accentColor, strokeOpacity: 0.4 }}
       />
 
       {/* Header */}

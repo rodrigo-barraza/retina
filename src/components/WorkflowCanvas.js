@@ -475,10 +475,12 @@ export default function WorkflowCanvas({
     const isRunning = sourceStatus === "running";
     const isDone = sourceStatus === "done";
     const isActive = isRunning || isDone;
-    const isSelected = conn.sourceNodeId === selectedNodeId || conn.targetNodeId === selectedNodeId;
+    const workflowIsRunning = Object.values(nodeStatuses).some((s) => s === "running");
+    const isEdgeSelected = conn.sourceNodeId === selectedNodeId || conn.targetNodeId === selectedNodeId;
+    const isEdgeFlowing = workflowIsRunning ? isRunning : isEdgeSelected;
 
     return (
-      <g key={conn.id} className={`${styles.connectionGroup}${isSelected ? ` ${styles.connectionSelected}` : ""}`} data-workflow-connection>
+      <g key={conn.id} className={`${styles.connectionGroup}${isEdgeFlowing ? ` ${styles.connectionSelected}` : ""}`} data-workflow-connection>
         <path
           d={connectionPath(sourcePos.x, sourcePos.y, targetPos.x, targetPos.y)}
           stroke="transparent"

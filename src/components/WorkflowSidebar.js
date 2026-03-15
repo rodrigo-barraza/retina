@@ -119,43 +119,43 @@ export default function WorkflowSidebar({
           <div className={styles.assetButtons}>
             <button
               className={styles.assetBtn}
-              onClick={() => onAddAsset("text", "input")}
-              title="Add Text Input"
+              onClick={() => onAddAsset("model")}
+              title="Add AI Model"
             >
-              <Type size={12} style={{ color: "#6366f1" }} />
-              <span>Text Input</span>
-            </button>
-            <button
-              className={styles.assetBtn}
-              onClick={() => onAddAsset("file", "input")}
-              title="Add File Input"
-            >
-              <Paperclip size={12} style={{ color: "#8b5cf6" }} />
-              <span>File Input</span>
+              <Bot size={12} style={{ color: "#3b82f6" }} />
+              <span>AI Model</span>
             </button>
             <button
               className={styles.assetBtn}
               onClick={() => onAddAsset("conversation", "input")}
-              title="Add Conversation Input"
+              title="Add Chat History"
             >
               <MessageSquare size={12} style={{ color: "#8b5cf6" }} />
-              <span>Conversation</span>
+              <span>Chat History</span>
+            </button>
+            <button
+              className={styles.assetBtn}
+              onClick={() => onAddAsset("text", "input")}
+              title="Add Text"
+            >
+              <Type size={12} style={{ color: "#6366f1" }} />
+              <span>Text</span>
+            </button>
+            <button
+              className={styles.assetBtn}
+              onClick={() => onAddAsset("file", "input")}
+              title="Add Media"
+            >
+              <Paperclip size={12} style={{ color: "#8b5cf6" }} />
+              <span>Media</span>
             </button>
             <button
               className={styles.assetBtn}
               onClick={() => onAddAsset("text", "viewer")}
-              title="Add Output Viewer"
+              title="Add Output"
             >
               <Eye size={12} style={{ color: "#a78bfa" }} />
-              <span>Output Viewer</span>
-            </button>
-            <button
-              className={styles.assetBtn}
-              onClick={() => onAddAsset("model")}
-              title="Add Model Node"
-            >
-              <Bot size={12} style={{ color: "#3b82f6" }} />
-              <span>Model</span>
+              <span>Output</span>
             </button>
           </div>
         </div>
