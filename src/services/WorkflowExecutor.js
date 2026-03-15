@@ -32,9 +32,21 @@ function resolveEndpoint(node, inputData) {
 
 /**
  * Resolve a minio:// or other file ref to a fetchable URL, then convert to base64 data URL.
+ * Also handles object refs like { imageData, mimeType } from chat API responses.
  */
 async function resolveToDataUrl(ref) {
     if (!ref) return ref;
+    // Object with inline base64 data (chat API image format: { data, mimeType, minioRef })
+    if (typeof ref === "object") {
+        const b64 = ref.data || ref.imageData;
+        if (b64) {
+            const mime = ref.mimeType || "image/png";
+            return `data:${mime};base64,${b64}`;
+        }
+        if (ref.minioRef) return resolveToDataUrl(ref.minioRef);
+        return null;
+    }
+    if (typeof ref !== "string") return null;
     // Already a data URL — return as-is
     if (ref.startsWith("data:")) return ref;
     // HTTP URL or minio — resolve to renderable, then fetch and convert
@@ -66,11 +78,40 @@ async function executeModelNode(node, inputData) {
         // Collect piped inputs from connections
         const textParts = inputData.filter((d) => d.type === "text").map((d) => d.data);
         const imageParts = inputData.filter((d) => d.type === "image").map((d) => d.data);
+        const conversationParts = inputData.filter((d) => d.type === "conversation").map((d) => d.data);
         const pipedText = textParts.join("\n\n");
 
         let finalMessages;
 
-        if (node.messages && node.messages.length > 0) {
+        // Priority: conversation input > node.messages > legacy systemPrompt/userPrompt
+        if (conversationParts.length > 0) {
+            // Use the first conversation input as the base messages, filtering out empty ones
+            finalMessages = conversationParts[0]
+                .map((m) => ({
+                    role: m.role,
+                    content: m.content || "",
+                    ...(m.images?.length > 0 ? { images: m.images } : {}),
+                    ...(m.audio ? { audio: m.audio } : {}),
+                }))
+                .filter((m) => m.content || m.images?.length > 0 || m.audio);
+
+            // Append piped text/images to the last user message (or add a new one)
+            const lastUserIdx = finalMessages.map((m, i) => ({ m, i })).filter(({ m }) => m.role === "user").pop()?.i;
+            if (lastUserIdx !== undefined && (pipedText || imageParts.length > 0)) {
+                const lastUser = finalMessages[lastUserIdx];
+                finalMessages[lastUserIdx] = {
+                    ...lastUser,
+                    content: pipedText ? (lastUser.content ? `${lastUser.content}\n\n${pipedText}` : pipedText) : lastUser.content,
+                    ...(imageParts.length > 0 ? { images: [...(lastUser.images || []), ...imageParts] } : {}),
+                };
+            } else if (pipedText || imageParts.length > 0) {
+                finalMessages.push({
+                    role: "user",
+                    content: pipedText || "",
+                    ...(imageParts.length > 0 ? { images: imageParts } : {}),
+                });
+            }
+        } else if (node.messages && node.messages.length > 0) {
             // Use the full conversation messages array, preserving images/audio
             finalMessages = node.messages.map((m) => ({
                 role: m.role,
@@ -127,12 +168,30 @@ async function executeModelNode(node, inputData) {
     } else if (endpoint === "textToImage") {
         const pipedPrompt = inputData.find((d) => d.type === "text")?.data || "";
         const rawImages = inputData.filter((d) => d.type === "image").map((d) => d.data);
+        const conversationParts = inputData.filter((d) => d.type === "conversation").map((d) => d.data);
 
         let prompt;
         let systemPrompt;
         const messageImages = [];
 
-        if (node.messages && node.messages.length > 0) {
+        if (conversationParts.length > 0) {
+            // Extract from conversation input: system message → systemPrompt, user messages → prompt + images
+            const convMessages = conversationParts[0].filter((m) => m.content || m.images?.length > 0 || m.audio);
+            const systemMsg = convMessages.find((m) => m.role === "system");
+            const userMsgs = convMessages.filter((m) => m.role === "user");
+            const lastUser = userMsgs[userMsgs.length - 1];
+
+            systemPrompt = systemMsg?.content || undefined;
+            const userContent = lastUser?.content || "";
+            prompt = pipedPrompt
+                ? (userContent ? `${userContent}\n\n${pipedPrompt}` : pipedPrompt)
+                : userContent;
+
+            // Collect images from all user messages
+            userMsgs.forEach((m) => {
+                if (m.images?.length > 0) messageImages.push(...m.images);
+            });
+        } else if (node.messages && node.messages.length > 0) {
             // Extract from messages array: last user message = prompt, system message = systemPrompt
             const systemMsg = node.messages.find((m) => m.role === "system");
             const userMsgs = node.messages.filter((m) => m.role === "user");
@@ -179,8 +238,10 @@ async function executeModelNode(node, inputData) {
             images: images.length > 0 ? images : undefined,
         });
 
-        // Prism returns { imageData (base64), mimeType, minioRef }
-        if (result.imageData) {
+        // Chat-based image models return { images: [...], text }
+        if (result.images && result.images.length > 0) {
+            outputs.image = await resolveToDataUrl(result.images[0]);
+        } else if (result.imageData) {
             const mime = result.mimeType || "image/png";
             outputs.image = `data:${mime};base64,${result.imageData}`;
         } else if (result.minioRef) {
@@ -303,10 +364,47 @@ export async function executeWorkflow(nodes, connections, { onNodeStart, onNodeC
             onNodeStart?.(nodeId);
 
             if (node.nodeType === "input") {
-                // Input asset nodes just emit their content under the active modality
-                nodeOutputs[nodeId] = node.modality
-                    ? { [node.modality]: node.content || "" }
-                    : {}; // file input with no file loaded
+                // Conversation input nodes emit their messages array, merging piped inputs
+                if (node.modality === "conversation") {
+                    const messages = JSON.parse(JSON.stringify(node.messages || []));
+
+                    // Collect piped data from upstream connections using compound port IDs
+                    // Port format: "{msgIndex}.{modality}" e.g. "0.text", "1.image"
+                    const incomingConns = connections.filter((c) => c.targetNodeId === nodeId);
+
+                    for (const conn of incomingConns) {
+                        const sourceOut = nodeOutputs[conn.sourceNodeId];
+                        if (!sourceOut) continue;
+                        const data = sourceOut[conn.sourceModality];
+                        if (!data) continue;
+
+                        // Parse compound port ID to route data to correct message slot
+                        const dotIdx = conn.targetModality.indexOf(".");
+                        if (dotIdx === -1) continue;
+                        const msgIdx = parseInt(conn.targetModality.substring(0, dotIdx));
+                        const modality = conn.targetModality.substring(dotIdx + 1);
+
+                        if (msgIdx < 0 || msgIdx >= messages.length) continue;
+                        const msg = messages[msgIdx];
+
+                        if (modality === "text") {
+                            msg.content = msg.content
+                                ? `${msg.content}\n\n${data}`
+                                : data;
+                        } else if (modality === "image") {
+                            msg.images = [...(msg.images || []), data];
+                        } else if (modality === "audio") {
+                            msg.audio = data;
+                        }
+                    }
+
+                    nodeOutputs[nodeId] = { conversation: messages };
+                } else {
+                    // Input asset nodes just emit their content under the active modality
+                    nodeOutputs[nodeId] = node.modality
+                        ? { [node.modality]: node.content || "" }
+                        : {}; // file input with no file loaded
+                }
                 onNodeComplete?.(nodeId, nodeOutputs[nodeId]);
 
                 // Push partial updates to any connected viewers

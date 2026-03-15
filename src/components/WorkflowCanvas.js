@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { X, Upload, Type, Volume2, Eye, Loader2, Check, AlertTriangle, Settings, Paperclip, MessageSquare } from "lucide-react";
+import { X, Upload, Type, Volume2, Eye, Loader2, Check, AlertTriangle, Paperclip, MessageSquare } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowSidebar";
 import styles from "./WorkflowCanvas.module.css";
@@ -13,27 +13,63 @@ const MODALITY_COLORS = {
     video: "#f43f5e",
     pdf: "#64748b",
     embedding: "#06b6d4",
+    conversation: "#8b5cf6",
 };
 
 const ASSET_ICONS = {
     text: Type,
     audio: Volume2,
+    conversation: MessageSquare,
 };
 
-const NODE_WIDTH = 220;
-const ASSET_NODE_WIDTH = 200;
+// Compound port ID helpers for conversation input nodes
+// Port format: "{msgIndex}.{modality}" e.g. "0.text", "1.image"
+function parseCompoundPort(portId) {
+    const dotIdx = portId.indexOf(".");
+    if (dotIdx === -1) return null; // not compound
+    return {
+        index: parseInt(portId.substring(0, dotIdx)),
+        modality: portId.substring(dotIdx + 1),
+    };
+}
+
+function getBaseModality(portId) {
+    const parsed = parseCompoundPort(portId);
+    return parsed ? parsed.modality : portId;
+}
+
+const ROLE_LABELS = { system: "Sys", user: "User", assistant: "Asst" };
+
+const NODE_WIDTH_BASE = 220;
+const ASSET_NODE_WIDTH_BASE = 200;
+const MODALITY_ICON_WIDTH = 18;
+const MIN_MODALITY_ICONS_FOR_BASE = 3;
+
+function getNodeWidth(node) {
+    if (node.nodeType) {
+        // Conversation input nodes need wider width for role-prefixed labels + modality icons
+        if (node.modality === "conversation") {
+            const mods = (node.supportedModalities || ["text"]).filter((t) => t !== "conversation");
+            const extraIcons = Math.max(0, mods.length - MIN_MODALITY_ICONS_FOR_BASE);
+            return NODE_WIDTH_BASE + extraIcons * MODALITY_ICON_WIDTH;
+        }
+        return ASSET_NODE_WIDTH_BASE;
+    }
+    // Model nodes: widen based on modality icon count
+    const rawInputs = (node.rawInputTypes || node.inputTypes || []).filter((t) => t !== "conversation");
+    const extraIcons = Math.max(0, rawInputs.length - MIN_MODALITY_ICONS_FOR_BASE);
+    return NODE_WIDTH_BASE + extraIcons * MODALITY_ICON_WIDTH;
+}
 const PORT_RADIUS = 7;
 const HEADER_HEIGHT = 36;
 const PORT_SECTION_HEIGHT = 24;
 const ASSET_CONTENT_HEIGHT = 180;
 const ASSET_CONTENT_HEIGHT_COMPACT = 40;
-const RESULT_AREA_HEIGHT = 60;
-const IMAGE_RESULT_AREA_HEIGHT = 120;
 const CONFIG_AREA_HEIGHT = 160;
 const ASSET_INFO_HEIGHT = 80;
 
 function getPortPosition(node, portType, portIndex, configOffset = 0) {
-    const width = node.nodeType ? ASSET_NODE_WIDTH : NODE_WIDTH;
+    const width = getNodeWidth(node);
     const x = portType === "input" ? 0 : width;
     const startY = HEADER_HEIGHT + configOffset + 8;
     const spacing = PORT_SECTION_HEIGHT;
@@ -101,7 +137,6 @@ export default function WorkflowCanvas({
     const [connecting, setConnecting] = useState(null);
     const [connectingMouse, setConnectingMouse] = useState(null);
     const [expandedInputs, setExpandedInputs] = useState(new Set());
-    const [expandedOutputs, setExpandedOutputs] = useState(new Set());
     const [pan, setPan] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [isPanning, setIsPanning] = useState(false);
@@ -255,7 +290,8 @@ export default function WorkflowCanvas({
         (e, nodeId, modality) => {
             e.stopPropagation();
             if (!connecting) return;
-            if (connecting.sourceModality !== modality) return;
+            // Match on base modality so compound ports (e.g. "0.text") match simple ones ("text")
+            if (getBaseModality(connecting.sourceModality) !== getBaseModality(modality)) return;
             if (connecting.sourceNodeId === nodeId) return;
 
             const existingConn = connections.find(
@@ -278,25 +314,40 @@ export default function WorkflowCanvas({
 
     // Render input/output ports
     const renderPorts = (node, inputTypes, outputTypes, configOffset = 0, isNodeRunning = false) => {
-        const nodeWidth = node.nodeType ? ASSET_NODE_WIDTH : NODE_WIDTH;
+        const nodeWidth = getNodeWidth(node);
         const portStartY = HEADER_HEIGHT + configOffset + 8;
+        const isConversationNode = node.nodeType === "input" && node.modality === "conversation";
+        const nodeMessages = node.messages || [];
 
         return (
             <>
                 {/* Input ports */}
-                {inputTypes.map((modality, i) => {
+                {inputTypes.map((portId, i) => {
+                    const compound = parseCompoundPort(portId);
+                    const baseMod = compound ? compound.modality : portId;
                     const portY = portStartY + i * PORT_SECTION_HEIGHT + PORT_SECTION_HEIGHT / 2;
-                    const color = MODALITY_COLORS[modality] || "#888";
-                    const isCompatible = connecting && connecting.sourceModality === modality && connecting.sourceNodeId !== node.id;
-                    const isHovered = hoveredPort?.nodeId === node.id && hoveredPort?.type === "input" && hoveredPort?.modality === modality;
-                    const Icon = MODALITY_ICONS[modality]?.icon;
+                    const color = MODALITY_COLORS[baseMod] || "#888";
+                    const isCompatible = connecting && getBaseModality(connecting.sourceModality) === baseMod && connecting.sourceNodeId !== node.id;
+                    const isHovered = hoveredPort?.nodeId === node.id && hoveredPort?.type === "input" && hoveredPort?.modality === portId;
+                    const Icon = MODALITY_ICONS[baseMod]?.icon;
                     // Check if any running node is connected to this input port
                     const hasRunningSource = connections.some(
-                        (c) => c.targetNodeId === node.id && c.targetModality === modality && nodeStatuses[c.sourceNodeId] === "running"
+                        (c) => c.targetNodeId === node.id && c.targetModality === portId && nodeStatuses[c.sourceNodeId] === "running"
                     );
 
+                    // Build label: role-prefixed for compound ports
+                    let label = MODALITY_ICONS[baseMod]?.label || baseMod;
+                    if (compound && isConversationNode) {
+                        const msg = nodeMessages[compound.index];
+                        const roleLabel = ROLE_LABELS[msg?.role] || msg?.role || `#${compound.index}`;
+                        // Number user/assistant roles after the first
+                        const roleCount = nodeMessages.slice(0, compound.index).filter((m) => m.role === msg?.role).length;
+                        const numberedRole = roleCount > 0 ? `${roleLabel} ${roleCount + 1}` : roleLabel;
+                        label = `${numberedRole} ${label}`;
+                    }
+
                     return (
-                        <g key={`in-${modality}-${i}`}>
+                        <g key={`in-${portId}-${i}`}>
                             <circle
                                 cx={0}
                                 cy={portY}
@@ -305,8 +356,8 @@ export default function WorkflowCanvas({
                                 stroke={hasRunningSource ? "url(#prism-gradient)" : color}
                                 strokeWidth={2}
                                 className={`${styles.port} ${isCompatible ? styles.portCompatible : ""}`}
-                                onClick={(e) => handleInputPortClick(e, node.id, modality)}
-                                onMouseEnter={() => setHoveredPort({ nodeId: node.id, type: "input", modality })}
+                                onClick={(e) => handleInputPortClick(e, node.id, portId)}
+                                onMouseEnter={() => setHoveredPort({ nodeId: node.id, type: "input", modality: portId })}
                                 onMouseLeave={() => setHoveredPort(null)}
                             />
                             {Icon && (
@@ -317,7 +368,7 @@ export default function WorkflowCanvas({
                                 </foreignObject>
                             )}
                             <text x={24} y={portY + 1} dominantBaseline="middle" className={styles.portLabel}>
-                                {MODALITY_ICONS[modality]?.label || modality}
+                                {label}
                             </text>
                         </g>
                     );
@@ -367,21 +418,22 @@ export default function WorkflowCanvas({
         const outputTypes = node.outputTypes || [];
         const status = nodeStatuses[node.id];
         const results = nodeResults[node.id];
-        const hasResults = results && Object.keys(results).length > 0 && !results.error;
         const isSelected = selectedNodeId === node.id;
+        const width = getNodeWidth(node);
+
+        // Modality icons for this model
+        const modalityIcons = (node.rawInputTypes || node.inputTypes || []).filter((t) => t !== "conversation");
+        const modalityAreaWidth = modalityIcons.length * MODALITY_ICON_WIDTH;
 
         // Toggle states
         const inputsExpanded = expandedInputs.has(node.id);
-        const outputsExpanded = expandedOutputs.has(node.id);
 
-        // Calculate height: header + optional config + ports + optional result area
+        // Calculate height: header + optional config + ports
         const portRows = Math.max(inputTypes.length, outputTypes.length, 1);
         const portsHeight = portRows * PORT_SECTION_HEIGHT + 12;
         const configHeight = inputsExpanded ? CONFIG_AREA_HEIGHT : 0;
-        const actualResultHeight = results?.image ? IMAGE_RESULT_AREA_HEIGHT : RESULT_AREA_HEIGHT;
-        const resultHeight = (hasResults && outputsExpanded) ? actualResultHeight + 8 : 0;
         const errorHeight = results?.error ? 28 : 0;
-        const nodeHeight = HEADER_HEIGHT + configHeight + portsHeight + resultHeight + errorHeight;
+        const nodeHeight = HEADER_HEIGHT + configHeight + portsHeight + errorHeight;
 
         // Border color: selection or status
         const isRunning = status === "running";
@@ -395,19 +447,19 @@ export default function WorkflowCanvas({
                 className={styles.nodeGroup}
             >
                 <rect
-                    width={NODE_WIDTH}
+                    width={width}
                     height={nodeHeight}
                     rx="3"
                     ry="3"
                     className={styles.nodeBody}
                     style={statusBorderColor ? { stroke: statusBorderColor, strokeWidth: borderWidth } : undefined}
                 />
-                <rect width={NODE_WIDTH} height={HEADER_HEIGHT} rx="3" ry="3" className={styles.nodeHeader} />
-                <rect x={0} y={HEADER_HEIGHT - 3} width={NODE_WIDTH} height={3} className={styles.nodeHeader} />
+                <rect width={width} height={HEADER_HEIGHT} rx="3" ry="3" className={styles.nodeHeader} />
+                <rect x={0} y={HEADER_HEIGHT - 3} width={width} height={3} className={styles.nodeHeader} />
 
                 <g className={styles.nodeDragArea} onMouseDown={(e) => handleNodeMouseDown(e, node.id)} style={{ cursor: "grab" }}>
-                    <rect x={0} y={0} width={NODE_WIDTH - 70} height={HEADER_HEIGHT} fill="transparent" />
-                    <foreignObject x={8} y={0} width={NODE_WIDTH - 78} height={HEADER_HEIGHT}>
+                    <rect x={0} y={0} width={width - 26 - modalityAreaWidth - 8} height={HEADER_HEIGHT} fill="transparent" />
+                    <foreignObject x={8} y={0} width={width - 34 - modalityAreaWidth - 8} height={HEADER_HEIGHT}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, height: "100%", paddingTop: 1 }}>
                             <ProviderLogo provider={node.provider} size={16} />
                             <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -419,7 +471,7 @@ export default function WorkflowCanvas({
 
                 {/* Status indicator in header */}
                 {status && (
-                    <foreignObject x={NODE_WIDTH - 70} y={8} width={18} height={18}>
+                    <foreignObject x={width - 26 - modalityAreaWidth - 22} y={8} width={18} height={18}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                             {status === "running" && <Loader2 size={12} style={{ color: "#f59e0b", animation: "spin 1s linear infinite" }} />}
                             {status === "done" && <Check size={12} style={{ color: "#10b981" }} />}
@@ -428,45 +480,19 @@ export default function WorkflowCanvas({
                     </foreignObject>
                 )}
 
-                {/* Inputs toggle (Settings icon) */}
-                <foreignObject x={NODE_WIDTH - 70} y={6} width={20} height={20}>
-                    <button
-                        className={`${styles.deleteNodeBtn} ${inputsExpanded ? styles.configBtnActive : ""}`}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedInputs((prev) => {
-                                const next = new Set(prev);
-                                if (next.has(node.id)) next.delete(node.id);
-                                else next.add(node.id);
-                                return next;
-                            });
-                        }}
-                        title="Toggle inputs"
-                    >
-                        <Settings size={12} />
-                    </button>
+                {/* Modality icons from model's input types (top-right) */}
+                <foreignObject x={width - 26 - modalityAreaWidth} y={6} width={modalityAreaWidth} height={20}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 3, height: "100%", justifyContent: "flex-end" }}>
+                        {modalityIcons.map((modality) => {
+                            const mod = MODALITY_ICONS[modality];
+                            if (!mod) return null;
+                            const Icon = mod.icon;
+                            return <Icon key={modality} size={11} style={{ color: mod.color, opacity: 0.7 }} title={mod.label} />;
+                        })}
+                    </div>
                 </foreignObject>
 
-                {/* Outputs toggle (Eye icon) */}
-                <foreignObject x={NODE_WIDTH - 48} y={6} width={20} height={20}>
-                    <button
-                        className={`${styles.deleteNodeBtn} ${outputsExpanded ? styles.configBtnActive : ""}`}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedOutputs((prev) => {
-                                const next = new Set(prev);
-                                if (next.has(node.id)) next.delete(node.id);
-                                else next.add(node.id);
-                                return next;
-                            });
-                        }}
-                        title="Toggle outputs"
-                    >
-                        <Eye size={12} />
-                    </button>
-                </foreignObject>
-
-                <foreignObject x={NODE_WIDTH - 26} y={6} width={20} height={20}>
+                <foreignObject x={width - 26} y={6} width={20} height={20}>
                     <button className={styles.deleteNodeBtn} onClick={(e) => { e.stopPropagation(); onDeleteNode(node.id); }} title="Remove node">
                         <X size={12} />
                     </button>
@@ -474,7 +500,7 @@ export default function WorkflowCanvas({
 
                 {/* Expandable config section */}
                 {inputsExpanded && (
-                    <foreignObject x={4} y={HEADER_HEIGHT + 2} width={NODE_WIDTH - 8} height={CONFIG_AREA_HEIGHT - 4}>
+                    <foreignObject x={4} y={HEADER_HEIGHT + 2} width={width - 8} height={CONFIG_AREA_HEIGHT - 4}>
                         <div className={styles.nodeConfig}>
                             <div className={styles.nodeConfigMessages}>
                                 <MessageSquare size={11} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
@@ -527,35 +553,10 @@ export default function WorkflowCanvas({
                     {renderPorts(node, inputTypes, outputTypes, 0, isRunning)}
                 </g>
 
-                {/* Result display area — only when outputs toggled on */}
-                {hasResults && outputsExpanded && (
-                    <foreignObject x={4} y={HEADER_HEIGHT + configHeight + portsHeight} width={NODE_WIDTH - 8} height={actualResultHeight}>
-                        <div className={styles.modelResultArea}>
-                            {results.image ? (
-                                <img /* eslint-disable-line @next/next/no-img-element */
-                                    src={results.image}
-                                    alt="Generated output"
-                                    className={styles.modelResultImage}
-                                />
-                            ) : results.audio ? (
-                                <div className={styles.modelResultAudio}>
-                                    <Volume2 size={14} />
-                                    <span>Audio generated</span>
-                                </div>
-                            ) : results.embedding ? (
-                                <div className={styles.modelResultText} style={{ fontFamily: "monospace", fontSize: "10px" }}>
-                                    [{results.embedding.length} dims]
-                                </div>
-                            ) : results.text ? (
-                                <div className={styles.modelResultText}>{results.text}</div>
-                            ) : null}
-                        </div>
-                    </foreignObject>
-                )}
 
                 {/* Error display */}
                 {results?.error && (
-                    <foreignObject x={4} y={HEADER_HEIGHT + configHeight + portsHeight + resultHeight} width={NODE_WIDTH - 8} height={24}>
+                <foreignObject x={4} y={HEADER_HEIGHT + configHeight + portsHeight} width={width - 8} height={24}>
                         <div className={styles.modelResultError}>{results.error}</div>
                     </foreignObject>
                 )}
@@ -580,13 +581,18 @@ export default function WorkflowCanvas({
             ? !expandedInputs.has(node.id) // viewers expanded by default, toggle collapses
             : expandedInputs.has(node.id);
         const nodeHeight = getNodeHeight(node, isExpanded);
-        const width = ASSET_NODE_WIDTH;
+        const width = getNodeWidth(node);
         const inputTypes = node.inputTypes || [];
         const outputTypes = node.outputTypes || [];
         const accentColor = isViewer ? "#a78bfa" : (MODALITY_COLORS[node.modality] || "#8b5cf6");
         const AssetIcon = isViewer ? Eye : node.modality
             ? (ASSET_ICONS[node.modality] || MODALITY_ICONS[node.modality]?.icon || Paperclip)
             : Paperclip;
+
+        // Modality icons for conversation input nodes (show accepted input modalities)
+        const isConversation = node.modality === "conversation";
+        const conversationModalities = isConversation ? (node.supportedModalities || ["text"]).filter((t) => t !== "conversation") : [];
+        const modalityAreaWidth = conversationModalities.length * MODALITY_ICON_WIDTH;
 
         // Label for input nodes
         const inputLabel = isViewer
@@ -620,8 +626,8 @@ export default function WorkflowCanvas({
 
                 {/* Drag area + icon + title */}
                 <g className={styles.nodeDragArea} onMouseDown={(e) => handleNodeMouseDown(e, node.id)} style={{ cursor: "grab" }}>
-                    <rect x={0} y={0} width={width - 48} height={HEADER_HEIGHT} fill="transparent" />
-                    <foreignObject x={8} y={0} width={width - 56} height={HEADER_HEIGHT}>
+                    <rect x={0} y={0} width={width - 48 - (isConversation ? modalityAreaWidth : 0)} height={HEADER_HEIGHT} fill="transparent" />
+                    <foreignObject x={8} y={0} width={width - 56 - (isConversation ? modalityAreaWidth : 0)} height={HEADER_HEIGHT}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, height: "100%", paddingTop: 1 }}>
                             <AssetIcon size={14} style={{ color: accentColor, flexShrink: 0 }} />
                             <span style={{ fontSize: 12, fontWeight: 600, color: accentColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -630,6 +636,20 @@ export default function WorkflowCanvas({
                         </div>
                     </foreignObject>
                 </g>
+
+                {/* Modality icons for conversation input (show accepted modalities) */}
+                {isConversation && conversationModalities.length > 0 && (
+                    <foreignObject x={width - 48 - modalityAreaWidth} y={6} width={modalityAreaWidth} height={20}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 3, height: "100%", justifyContent: "flex-end" }}>
+                            {conversationModalities.map((modality) => {
+                                const mod = MODALITY_ICONS[modality];
+                                if (!mod) return null;
+                                const Icon = mod.icon;
+                                return <Icon key={modality} size={11} style={{ color: mod.color, opacity: 0.7 }} title={mod.label} />;
+                            })}
+                        </div>
+                    </foreignObject>
+                )}
 
                 {/* Gear button */}
                 <foreignObject x={width - 48} y={6} width={20} height={20}>
@@ -646,7 +666,7 @@ export default function WorkflowCanvas({
                         }}
                         title={isViewer ? "View outputs" : "Node info"}
                     >
-                        {isViewer ? <Eye size={12} /> : <Settings size={12} />}
+                        {isViewer ? <Eye size={12} /> : <Eye size={12} />}
                     </button>
                 </foreignObject>
 

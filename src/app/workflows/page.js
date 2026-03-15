@@ -47,6 +47,7 @@ function flattenConfigModels(config) {
                         ...existing,
                         inputTypes: mergedInput,
                         outputTypes: mergedOutput,
+                        modelType: existing.modelType || m.modelType,
                         arena: { ...(existing.arena || {}), ...(m.arena || {}) },
                     });
                 }
@@ -55,6 +56,28 @@ function flattenConfigModels(config) {
     }
 
     return [...modelsMap.values()];
+}
+
+/**
+ * Build compound port IDs for a conversation input node.
+ * Each message slot gets a text port, plus modality ports for non-assistant messages.
+ * Format: "{messageIndex}.{modality}" e.g. "0.text", "0.image", "1.text"
+ */
+function buildConversationPorts(messages, supportedModalities = ["text"]) {
+    const ports = [];
+    for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        ports.push(`${i}.text`);
+        // System and user messages get extra modality ports (not assistant)
+        if (msg.role !== "assistant") {
+            for (const mod of supportedModalities) {
+                if (mod !== "text") {
+                    ports.push(`${i}.${mod}`);
+                }
+            }
+        }
+    }
+    return ports;
 }
 
 function generateNodeId() {
@@ -145,12 +168,17 @@ export default function WorkflowsPage() {
     // Add a new node from the sidebar
     const handleAddNode = useCallback(
         (model) => {
+            const isConversation = model.modelType === "conversation";
             const newNode = {
                 id: generateNodeId(),
                 modelName: model.name,
                 provider: model.provider,
                 displayName: model.display_name || model.label || model.name,
-                inputTypes: model.inputTypes || [],
+                modelType: model.modelType,
+                // Conversational models get a single "conversation" input port
+                inputTypes: isConversation ? ["conversation"] : (model.inputTypes || []),
+                // Store the original modality-based input types for reference
+                rawInputTypes: model.inputTypes || [],
                 outputTypes: model.outputTypes || [],
                 supportsSystemPrompt: model.supportsSystemPrompt !== false,
                 messages: [
@@ -172,19 +200,36 @@ export default function WorkflowsPage() {
         (modality, type) => {
             const isViewer = type === "viewer";
             const isFile = modality === "file";
+            const isConversation = modality === "conversation";
+            const defaultMessages = isConversation ? [
+                { role: "system", content: "" },
+                { role: "user", content: "" },
+            ] : undefined;
+            const defaultModalities = ["text"];
             const newNode = {
                 id: generateNodeId(),
                 nodeType: type, // "input" or "viewer"
                 modality: isFile ? null : modality,
-                content: "",
+                content: isConversation ? undefined : "",
                 contentType: isViewer ? modality : undefined,
+                // Conversation input nodes carry structured messages
+                ...(isConversation ? {
+                    messages: defaultMessages,
+                    supportedModalities: defaultModalities,
+                } : {}),
                 // File input nodes start with no output ports until a file is loaded
-                inputTypes: isViewer ? ["text", "image", "audio"] : [],
+                inputTypes: isViewer
+                    ? ["text", "image", "audio"]
+                    : isConversation
+                        ? buildConversationPorts(defaultMessages, defaultModalities)
+                        : [],
                 outputTypes: isViewer
                     ? ["text", "image", "audio"]
                     : isFile
                         ? []
-                        : [modality],
+                        : isConversation
+                            ? ["conversation"]
+                            : [modality],
                 position: {
                     x: 80 + nodes.length * 60 + Math.random() * 40,
                     y: 80 + nodes.length * 40 + Math.random() * 40,
@@ -244,7 +289,15 @@ export default function WorkflowsPage() {
     // Update config of a model node (systemPrompt, staticInputs, etc.)
     const handleUpdateNodeConfig = useCallback((nodeId, key, value) => {
         setNodes((prev) =>
-            prev.map((n) => (n.id === nodeId ? { ...n, [key]: value } : n)),
+            prev.map((n) => {
+                if (n.id !== nodeId) return n;
+                const updated = { ...n, [key]: value };
+                // Regenerate compound ports when messages change on conversation input nodes
+                if (key === "messages" && n.nodeType === "input" && n.modality === "conversation") {
+                    updated.inputTypes = buildConversationPorts(value, n.supportedModalities || ["text"]);
+                }
+                return updated;
+            }),
         );
     }, []);
 
@@ -364,11 +417,71 @@ export default function WorkflowsPage() {
             ...prev,
             { ...conn, id: generateConnectionId() },
         ]);
-    }, []);
+
+        // If source is a conversation input, sync its modalities with the downstream model
+        setNodes((prev) => {
+            const sourceNode = prev.find((n) => n.id === conn.sourceNodeId);
+            const targetNode = prev.find((n) => n.id === conn.targetNodeId);
+
+            // Auto-populate viewer if source node already has results
+            if (targetNode?.nodeType === "viewer") {
+                const existingResults = nodeResults[conn.sourceNodeId];
+                if (existingResults && existingResults[conn.sourceModality]) {
+                    const data = existingResults[conn.sourceModality];
+                    return prev.map((n) => {
+                        if (n.id !== conn.targetNodeId) return n;
+                        const receivedOutputs = { ...(n.receivedOutputs || {}), [conn.targetModality]: data };
+                        return {
+                            ...n,
+                            content: data,
+                            contentType: conn.targetModality,
+                            receivedOutputs,
+                        };
+                    });
+                }
+            }
+
+            if (sourceNode?.nodeType === "input" && sourceNode?.modality === "conversation" && targetNode && !targetNode.nodeType) {
+                const rawInputs = (targetNode.rawInputTypes || targetNode.inputTypes || []).filter((t) => t !== "conversation");
+                const messages = sourceNode.messages || [{ role: "system", content: "" }, { role: "user", content: "" }];
+                return prev.map((n) =>
+                    n.id === conn.sourceNodeId
+                        ? { ...n, supportedModalities: rawInputs, inputTypes: buildConversationPorts(messages, rawInputs) }
+                        : n
+                );
+            }
+            return prev;
+        });
+    }, [nodeResults]);
 
     // Delete a connection
     const handleDeleteConnection = useCallback((connId) => {
-        setConnections((prev) => prev.filter((c) => c.id !== connId));
+        setConnections((prev) => {
+            const deleted = prev.find((c) => c.id === connId);
+            const remaining = prev.filter((c) => c.id !== connId);
+
+            // If deleted connection was from a conversation input, reset modalities
+            if (deleted) {
+                const stillConnected = remaining.some((c) => c.sourceNodeId === deleted.sourceNodeId);
+                if (!stillConnected) {
+                    setNodes((prevNodes) => {
+                        const sourceNode = prevNodes.find((n) => n.id === deleted.sourceNodeId);
+                        if (sourceNode?.nodeType === "input" && sourceNode?.modality === "conversation") {
+                            const messages = sourceNode.messages || [{ role: "system", content: "" }, { role: "user", content: "" }];
+                            const defaultMods = ["text"];
+                            return prevNodes.map((n) =>
+                                n.id === deleted.sourceNodeId
+                                    ? { ...n, supportedModalities: defaultMods, inputTypes: buildConversationPorts(messages, defaultMods) }
+                                    : n
+                            );
+                        }
+                        return prevNodes;
+                    });
+                }
+            }
+
+            return remaining;
+        });
     }, []);
 
     // Save current workflow
@@ -415,6 +528,7 @@ export default function WorkflowsPage() {
     // Change the model on an existing node
     const handleChangeModel = useCallback(
         (nodeId, newModel) => {
+            const isConversation = newModel.modelType === "conversation";
             setNodes((prev) =>
                 prev.map((n) => {
                     if (n.id !== nodeId || n.nodeType) return n;
@@ -423,7 +537,9 @@ export default function WorkflowsPage() {
                         modelName: newModel.name,
                         provider: newModel.provider,
                         displayName: newModel.display_name || newModel.label || newModel.name,
-                        inputTypes: newModel.inputTypes || [],
+                        modelType: newModel.modelType,
+                        inputTypes: isConversation ? ["conversation"] : (newModel.inputTypes || []),
+                        rawInputTypes: newModel.inputTypes || [],
                         outputTypes: newModel.outputTypes || [],
                         supportsSystemPrompt: newModel.supportsSystemPrompt !== false,
                     };
@@ -431,7 +547,9 @@ export default function WorkflowsPage() {
             );
 
             // Remove connections whose modalities are no longer valid
-            const newInputTypes = new Set(newModel.inputTypes || []);
+            const newInputTypes = isConversation
+                ? new Set(["conversation"])
+                : new Set(newModel.inputTypes || []);
             const newOutputTypes = new Set(newModel.outputTypes || []);
             setConnections((prev) =>
                 prev.filter((c) => {

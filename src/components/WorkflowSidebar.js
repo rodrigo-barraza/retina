@@ -22,6 +22,7 @@ import {
     User,
     Clock,
     Zap,
+    MessageSquare,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import styles from "./WorkflowSidebar.module.css";
@@ -33,6 +34,7 @@ const MODALITY_ICONS = {
     video: { icon: Video, label: "Video", color: "#f43f5e" },
     pdf: { icon: FileText, label: "PDF", color: "#64748b" },
     embedding: { icon: Hash, label: "Embedding", color: "#06b6d4" },
+    conversation: { icon: MessageSquare, label: "Conversation", color: "#8b5cf6" },
 };
 
 /**
@@ -245,6 +247,14 @@ export default function WorkflowSidebar({
                             >
                                 <Paperclip size={12} style={{ color: "#8b5cf6" }} />
                                 <span>File Input</span>
+                            </button>
+                            <button
+                                className={styles.assetBtn}
+                                onClick={() => onAddAsset("conversation", "input")}
+                                title="Add Conversation Input"
+                            >
+                                <MessageSquare size={12} style={{ color: "#8b5cf6" }} />
+                                <span>Conversation</span>
                             </button>
                             <button
                                 className={styles.assetBtn}

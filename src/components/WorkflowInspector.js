@@ -58,6 +58,23 @@ export default function WorkflowInspector({
     const modelAcceptsImage = node ? (node.inputTypes || []).includes("image") : false;
 
     const isModel = node ? !node.nodeType : false;
+    const isConversationInput = node ? (node.nodeType === "input" && node.modality === "conversation") : false;
+
+    // For conversation input nodes, detect what modalities downstreammodels accept
+    const downstreamModalities = useMemo(() => {
+        if (!isConversationInput || !connections || !nodes) return new Set();
+        const outConns = connections.filter((c) => c.sourceNodeId === node?.id);
+        const mods = new Set();
+        for (const conn of outConns) {
+            const targetNode = nodes.find((n) => n.id === conn.targetNodeId);
+            if (targetNode && !targetNode.nodeType) {
+                // Model node — check its raw input types
+                const rawInputs = targetNode.rawInputTypes || targetNode.inputTypes || [];
+                rawInputs.forEach((t) => mods.add(t));
+            }
+        }
+        return mods;
+    }, [isConversationInput, connections, nodes, node?.id]);
 
     // Find incoming / outgoing connections
     const incoming = useMemo(
@@ -132,7 +149,7 @@ export default function WorkflowInspector({
                     )}
                     <div className={styles.headerInfo}>
                         <span className={styles.headerTitle}>
-                            {isModel ? (node.displayName || node.modelName) : isInput ? (node.modality ? `${node.modality.charAt(0).toUpperCase() + node.modality.slice(1)} Input` : "File Input") : "Output Viewer"}
+                            {isModel ? (node.displayName || node.modelName) : isInput ? (node.modality === "conversation" ? "Conversation Input" : node.modality ? `${node.modality.charAt(0).toUpperCase() + node.modality.slice(1)} Input` : "File Input") : "Output Viewer"}
                         </span>
                         <span className={styles.headerSubtitle}>
                             {isModel ? node.provider : isInput ? "Asset Node" : "Viewer Node"}
@@ -398,6 +415,238 @@ export default function WorkflowInspector({
                     </section>
                 )}
 
+                {/* Content — conversation input assets */}
+                {isConversationInput && (() => {
+                    const messages = node.messages || [];
+                    const systemMsg = messages.find((m) => m.role === "system");
+                    const turnMessages = messages.filter((m) => m.role !== "system");
+                    const lastMsg = turnMessages[turnMessages.length - 1];
+                    const endsWithUser = lastMsg?.role === "user";
+                    const hasModality = (mod) => downstreamModalities.has(mod);
+
+                    // Helper: render modality upload buttons for a message
+                    const renderModalityActions = (msgIdx) => {
+                        const hasImage = hasModality("image");
+                        const hasAudio = hasModality("audio");
+                        if (!hasImage && !hasAudio) return null;
+                        return (
+                            <div className={styles.messageActions}>
+                                {hasImage && (
+                                    <>
+                                        <label className={styles.messageUploadBtn} title="Upload image">
+                                            <ImagePlus size={12} />
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className={styles.fileInput}
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (!file) return;
+                                                    const reader = new FileReader();
+                                                    reader.onload = () => {
+                                                        const msgs = [...(node.messages || [])];
+                                                        const existing = msgs[msgIdx].images || [];
+                                                        msgs[msgIdx] = { ...msgs[msgIdx], images: [...existing, reader.result] };
+                                                        onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                    e.target.value = "";
+                                                }}
+                                            />
+                                        </label>
+                                        <button
+                                            className={styles.messageDrawBtn}
+                                            onClick={() => setDrawingState({ msgIdx })}
+                                            title="Create drawing"
+                                        >
+                                            <Pencil size={12} />
+                                        </button>
+                                    </>
+                                )}
+                                {hasAudio && (
+                                    <label className={styles.messageUploadBtn} title="Upload audio">
+                                        <Volume2 size={12} />
+                                        <input
+                                            type="file"
+                                            accept="audio/*"
+                                            className={styles.fileInput}
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                const reader = new FileReader();
+                                                reader.onload = () => {
+                                                    const msgs = [...(node.messages || [])];
+                                                    msgs[msgIdx] = { ...msgs[msgIdx], audio: reader.result };
+                                                    onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                                };
+                                                reader.readAsDataURL(file);
+                                                e.target.value = "";
+                                            }}
+                                        />
+                                    </label>
+                                )}
+                            </div>
+                        );
+                    };
+
+                    // Helper: render image attachments for a message
+                    const renderImageAttachments = (msg, msgIdx) => {
+                        if (!msg.images?.length) return null;
+                        return (
+                            <div className={styles.messageImages}>
+                                {msg.images.map((img, imgIdx) => {
+                                    const imgSrc = typeof img === "string" && img.startsWith("data:") ? img : PrismService.getFileUrl(img);
+                                    return (
+                                        <div key={imgIdx} className={styles.messageImageWrapper}>
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={imgSrc}
+                                                alt={`Attachment ${imgIdx + 1}`}
+                                                className={styles.messageImageThumb}
+                                                onClick={readOnly ? undefined : () => setDrawingState({ msgIdx, imgIdx, src: imgSrc })}
+                                                title={readOnly ? "Attachment" : "Click to edit drawing"}
+                                            />
+                                            {!readOnly && (
+                                                <button
+                                                    className={styles.messageImageRemove}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const msgs = [...(node.messages || [])];
+                                                        const updatedImages = [...(msgs[msgIdx].images || [])];
+                                                        updatedImages.splice(imgIdx, 1);
+                                                        msgs[msgIdx] = { ...msgs[msgIdx], images: updatedImages };
+                                                        onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                                    }}
+                                                    title="Remove image"
+                                                >
+                                                    <X size={8} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    };
+
+                    // Find the actual index in node.messages for a system/turn message
+                    const systemIdx = messages.findIndex((m) => m.role === "system");
+
+                    return (
+                        <>
+                            {/* System Prompt — always present, dedicated section */}
+                            <section className={styles.section}>
+                                <label className={styles.sectionLabel}>
+                                    <span className={styles.roleBadge} style={{ background: `${ROLE_COLORS.system}20`, color: ROLE_COLORS.system, borderColor: `${ROLE_COLORS.system}40`, cursor: "default", marginRight: 4 }}>
+                                        system
+                                    </span>
+                                    System Prompt
+                                </label>
+                                <textarea
+                                    className={styles.messageTextarea}
+                                    value={systemMsg?.content || ""}
+                                    onChange={readOnly ? undefined : (e) => {
+                                        const msgs = [...messages];
+                                        if (systemIdx >= 0) {
+                                            msgs[systemIdx] = { ...msgs[systemIdx], content: e.target.value };
+                                        } else {
+                                            msgs.unshift({ role: "system", content: e.target.value });
+                                        }
+                                        onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                    }}
+                                    readOnly={readOnly}
+                                    placeholder="System instructions..."
+                                    rows={3}
+                                />
+                                {systemIdx >= 0 && renderImageAttachments(messages[systemIdx], systemIdx)}
+                                {!readOnly && systemIdx >= 0 && renderModalityActions(systemIdx)}
+                            </section>
+
+                            {/* User/Assistant Turn Messages */}
+                            <section className={styles.section}>
+                                <label className={styles.sectionLabel}>
+                                    <MessageSquare size={10} style={{ marginRight: 4 }} />
+                                    Conversation ({turnMessages.length} turn{turnMessages.length !== 1 ? "s" : ""})
+                                </label>
+                                <div className={styles.messageList}>
+                                    {turnMessages.map((msg, turnIdx) => {
+                                        // Find the actual index in the full messages array
+                                        const actualIdx = messages.indexOf(msg);
+                                        return (
+                                            <div key={turnIdx} className={styles.messageRow}>
+                                                <div className={styles.messageHeader}>
+                                                    <span
+                                                        className={styles.roleBadge}
+                                                        style={{ background: `${ROLE_COLORS[msg.role]}20`, color: ROLE_COLORS[msg.role], borderColor: `${ROLE_COLORS[msg.role]}40`, cursor: "default" }}
+                                                    >
+                                                        {msg.role}
+                                                    </span>
+                                                    {!readOnly && turnMessages.length > 1 && (
+                                                        <button
+                                                            className={styles.messageDeleteBtn}
+                                                            onClick={() => {
+                                                                const msgs = messages.filter((_, i) => i !== actualIdx);
+                                                                onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                                            }}
+                                                            title="Remove message"
+                                                        >
+                                                            <Trash2 size={10} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <textarea
+                                                    className={styles.messageTextarea}
+                                                    value={msg.content || ""}
+                                                    onChange={readOnly ? undefined : (e) => {
+                                                        const msgs = [...messages];
+                                                        msgs[actualIdx] = { ...msgs[actualIdx], content: e.target.value };
+                                                        onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                                    }}
+                                                    readOnly={readOnly}
+                                                    placeholder={msg.role === "user" ? "User message..." : "Assistant response..."}
+                                                    rows={2}
+                                                />
+                                                {renderImageAttachments(msg, actualIdx)}
+                                                {/* Modality actions for user messages only */}
+                                                {!readOnly && msg.role === "user" && renderModalityActions(actualIdx)}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {!readOnly && (
+                                    <>
+                                        <button
+                                            className={styles.addMessageBtn}
+                                            onClick={() => {
+                                                const msgs = [...messages];
+                                                const lastTurn = turnMessages[turnMessages.length - 1];
+                                                const nextRole = lastTurn?.role === "user" ? "assistant" : "user";
+                                                msgs.push({ role: nextRole, content: "" });
+                                                onUpdateNodeConfig?.(node.id, "messages", msgs);
+                                            }}
+                                        >
+                                            <Plus size={11} />
+                                            Add {turnMessages[turnMessages.length - 1]?.role === "user" ? "Assistant" : "User"} Message
+                                        </button>
+                                        {!endsWithUser && (
+                                            <span className={styles.fieldHint} style={{ color: "#f59e0b" }}>
+                                                ⚠ Conversation must end with a user message to be used
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </section>
+
+                            {/* Downstream modalities info */}
+                            {downstreamModalities.size > 0 && (
+                                <span className={styles.fieldHint}>
+                                    Supported modalities: {[...downstreamModalities].join(", ")}
+                                </span>
+                            )}
+                        </>
+                    );
+                })()}
+
                 {/* Content — text input assets */}
                 {isInput && node.modality === "text" && (
                     <section className={styles.section}>
@@ -414,7 +663,7 @@ export default function WorkflowInspector({
                 )}
 
                 {/* Content — file input assets (image, audio, or empty) */}
-                {isInput && node.modality !== "text" && (
+                {isInput && node.modality !== "text" && node.modality !== "conversation" && (
                     <section className={styles.section}>
                         <label className={styles.sectionLabel}>Content</label>
                         {node.content ? (
