@@ -380,8 +380,8 @@ export default function WorkflowInspector({
                     </section>
                 )}
 
-                {/* Generated Results — model nodes only (hide for text input assets) */}
-                {results && !results.error && !isViewer && !(isInput && node.modality === "text") && !(isInput && node.modality === "conversation") && (
+                {/* Generated Results — model nodes only */}
+                {results && !results.error && !isViewer && !isInput && (
                     <section className={styles.section}>
                         <label className={styles.sectionLabel}>Generated Output</label>
 

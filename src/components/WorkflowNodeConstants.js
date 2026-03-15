@@ -67,7 +67,23 @@ export function getNodeWidth(node) {
   return NODE_WIDTH_BASE + extraIcons * MODALITY_ICON_WIDTH;
 }
 
-export function getAssetContentHeight() {
+const TEXT_LINE_HEIGHT = 16; // ~11px font × 1.4 line-height + padding
+const TEXT_MIN_HEIGHT = 36;
+const CHARS_PER_LINE = 22; // rough estimate for node width
+
+export function getAssetContentHeight(node) {
+  // Text input nodes: auto-size based on content, up to 175px
+  if (node.nodeType === "input" && node.modality === "text") {
+    const text = node.content || "";
+    if (!text) return TEXT_MIN_HEIGHT;
+    const lines = text.split("\n");
+    let totalLines = 0;
+    for (const line of lines) {
+      totalLines += Math.max(1, Math.ceil(line.length / CHARS_PER_LINE));
+    }
+    const estimated = totalLines * TEXT_LINE_HEIGHT + 12; // 12px padding
+    return Math.max(TEXT_MIN_HEIGHT, Math.min(estimated, ASSET_CONTENT_HEIGHT));
+  }
   return ASSET_CONTENT_HEIGHT;
 }
 

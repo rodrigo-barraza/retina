@@ -158,6 +158,26 @@
   border-radius: 2px;
 }
 
+.assetPdfViewer {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 2px;
+  background: #fff;
+}
+
+.assetAudioPlayer {
+  width: 100%;
+  margin: auto 0;
+}
+
+.assetVideoPlayer {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 2px;
+}
+
 .assetFileLabel {
   display: flex;
   align-items: center;

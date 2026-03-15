@@ -522,19 +522,20 @@ export default function WorkflowsPage() {
     // Delete a connection
     const handleDeleteConnection = useCallback((connId) => {
         pushUndo();
+
+        // Find the connection before removing it
         setConnections((prev) => {
             const deleted = prev.find((c) => c.id === connId);
             const remaining = prev.filter((c) => c.id !== connId);
 
             if (deleted) {
-                // Clear viewer content when disconnected
-                const viewerStillConnected = remaining.filter((c) => c.targetNodeId === deleted.targetNodeId);
+                // Handle viewer disconnection
                 setNodes((prevNodes) => {
                     const targetNode = prevNodes.find((n) => n.id === deleted.targetNodeId);
                     if (targetNode?.nodeType === "viewer") {
-                        // Remove the disconnected modality from receivedOutputs
                         const receivedOutputs = { ...(targetNode.receivedOutputs || {}) };
                         delete receivedOutputs[deleted.targetModality];
+                        const viewerStillConnected = remaining.filter((c) => c.targetNodeId === deleted.targetNodeId);
                         const firstEntry = Object.entries(receivedOutputs).find(([, v]) => v);
                         return prevNodes.map((n) =>
                             n.id === deleted.targetNodeId
@@ -547,19 +548,26 @@ export default function WorkflowsPage() {
                                 : n
                         );
                     }
-
-                    // If deleted connection was from a conversation input, reset modalities
-                    const sourceNode = prevNodes.find((n) => n.id === deleted.sourceNodeId);
-                    const stillConnected = remaining.some((c) => c.sourceNodeId === deleted.sourceNodeId);
-                    if (!stillConnected && sourceNode?.nodeType === "input" && sourceNode?.modality === "conversation") {
-                        return prevNodes.map((n) =>
-                            n.id === deleted.sourceNodeId
-                                ? { ...n, supportedModalities: ["text"], inputTypes: [] }
-                                : n
-                        );
-                    }
                     return prevNodes;
                 });
+
+                // Handle conversation input disconnection — reset ports
+                const sourceStillConnected = remaining.some(
+                    (c) => c.sourceNodeId === deleted.sourceNodeId && c.sourceModality === "conversation"
+                );
+                if (!sourceStillConnected) {
+                    setNodes((prevNodes) => {
+                        const sourceNode = prevNodes.find((n) => n.id === deleted.sourceNodeId);
+                        if (sourceNode?.nodeType === "input" && sourceNode?.modality === "conversation") {
+                            return prevNodes.map((n) =>
+                                n.id === deleted.sourceNodeId
+                                    ? { ...n, supportedModalities: ["text"], inputTypes: [] }
+                                    : n
+                            );
+                        }
+                        return prevNodes;
+                    });
+                }
             }
 
             return remaining;

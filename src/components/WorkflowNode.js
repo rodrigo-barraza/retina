@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Upload, Eye, Loader2, Check, AlertTriangle, Paperclip, Volume2, MessageSquare, Plus, Minus } from "lucide-react";
+import { X, Upload, Eye, Loader2, Check, AlertTriangle, Paperclip, MessageSquare, Plus, Minus } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowSidebar";
 import {
@@ -528,10 +528,26 @@ function AssetNode(props) {
                           className={styles.assetPreviewImg}
                         />
                       ) : node.modality === "audio" ? (
-                        <div className={styles.assetFileLabel}>
-                          <Volume2 size={14} />
-                          Audio loaded
-                        </div>
+                        <audio
+                          controls
+                          src={node.content}
+                          className={styles.assetAudioPlayer}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        />
+                      ) : node.modality === "video" ? (
+                        <video
+                          controls
+                          src={node.content}
+                          className={styles.assetVideoPlayer}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        />
+                      ) : node.modality === "pdf" ? (
+                        <iframe
+                          src={node.content}
+                          className={styles.assetPdfViewer}
+                          title="PDF preview"
+                          onMouseDown={(e) => e.stopPropagation()}
+                        />
                       ) : (
                         <div className={styles.assetFileLabel}>
                           <Paperclip size={14} />
