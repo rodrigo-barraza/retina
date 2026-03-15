@@ -105,14 +105,11 @@
 }
 
 .nodeTypeBadge {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
   font-size: 9px;
   font-weight: 500;
-  opacity: 0.6;
-  white-space: nowrap;
-  letter-spacing: 0.3px;
+  font-family: var(--font-sans);
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .assetTextarea {

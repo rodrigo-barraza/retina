@@ -519,13 +519,17 @@ function AssetNode(props) {
         </foreignObject>
       </g>
 
-      {/* Type badge (top-right, before gear/delete) */}
+      {/* Type badge above top-right corner */}
       {node.customName && (
-        <foreignObject x={8} y={6} width={width - 56 - (isConversation ? modalityAreaWidth : 0)} height={20} style={{ pointerEvents: "none", overflow: "visible" }}>
-          <div className={styles.nodeTypeBadge} style={{ color: accentColor, borderColor: accentColor }}>
-            {typeLabel}
-          </div>
-        </foreignObject>
+        <text
+          x={width}
+          y={-4}
+          textAnchor="end"
+          className={styles.nodeTypeBadge}
+          style={{ fill: accentColor }}
+        >
+          {typeLabel}
+        </text>
       )}
 
       {/* Modality icons for conversation input (show accepted modalities) */}
