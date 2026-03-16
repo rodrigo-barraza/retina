@@ -7,80 +7,17 @@
   overflow: hidden;
 }
 
-/* ── Sidebars ──────────────────────────────────────── */
-
-.leftSidebar {
-  width: 320px;
-  min-width: 320px;
-  height: 100%;
-  border-right: 1px solid var(--border-color);
-  background: var(--bg-glass);
-  backdrop-filter: blur(10px);
+/* Column wrapper (header → body), sits beside navSidebar */
+.page {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-  transition:
-    width 0.5s ease,
-    min-width 0.5s ease,
-    opacity 0.5s ease,
-    border-width 0.5s ease;
-  opacity: 1;
-}
-
-.rightSidebar {
-  width: 320px;
-  min-width: 320px;
-  height: 100%;
-  border-left: 1px solid var(--border-color);
-  background: var(--bg-glass);
-  backdrop-filter: blur(10px);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-  transition:
-    width 0.5s ease,
-    min-width 0.5s ease,
-    opacity 0.5s ease,
-    border-width 0.5s ease;
-  opacity: 1;
-}
-
-.sidebarHidden {
-  width: 0 !important;
-  min-width: 0 !important;
-  opacity: 0;
-  border-width: 0 !important;
-  pointer-events: none;
-}
-
-.sidebarHeader {
-  height: 60px;
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--border-color);
-  font-weight: 500;
-  font-size: 14px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
-
-/* ── Main Center ───────────────────────────────────── */
-
-.main {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  min-width: 0;
   height: 100%;
-  min-height: 0;
   overflow: hidden;
-  position: relative;
 }
+
+/* ── Full-width header ─────────────────────────────── */
 
 .glassHeader {
   height: 60px;
@@ -90,6 +27,9 @@
   justify-content: space-between;
   padding: 0 20px;
   border-bottom: 1px solid var(--border-color);
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   font-weight: 500;
   font-size: 14px;
   letter-spacing: 0.5px;
@@ -97,6 +37,7 @@
   color: var(--text-secondary);
   flex-shrink: 0;
   gap: 8px;
+  z-index: 10;
 }
 
 .headerTitle {
@@ -148,6 +89,91 @@
   white-space: nowrap;
 }
 
+/* ── Body (sidebars + main) ────────────────────────── */
+
+.body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Sidebars ──────────────────────────────────────── */
+
+.leftSidebar {
+  width: 320px;
+  min-width: 320px;
+  height: 100%;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-glass);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  transition:
+    width 0.5s ease,
+    min-width 0.5s ease,
+    opacity 0.5s ease,
+    border-width 0.5s ease;
+  opacity: 1;
+}
+
+.rightSidebar {
+  width: 320px;
+  min-width: 320px;
+  height: 100%;
+  border-left: 1px solid var(--border-color);
+  background: var(--bg-glass);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  transition:
+    width 0.5s ease,
+    min-width 0.5s ease,
+    opacity 0.5s ease,
+    border-width 0.5s ease;
+  opacity: 1;
+}
+
+.sidebarHidden {
+  width: 0 !important;
+  min-width: 0 !important;
+  opacity: 0;
+  border-width: 0 !important;
+  pointer-events: none;
+}
+
+.sidebarHeader {
+  height: 48px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+/* ── Main Center ───────────────────────────────────── */
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
 /* ── Mobile Slit (backdrop strip) ──────────────────── */
 
 .mobileSlit {
@@ -158,7 +184,7 @@
   .leftSidebar,
   .rightSidebar {
     position: fixed;
-    top: 0;
+    top: 60px;
     bottom: 0;
     width: calc(100% - 60px);
     min-width: calc(100% - 60px);
@@ -185,7 +211,7 @@
   .mobileSlit {
     display: block;
     position: fixed;
-    top: 0;
+    top: 60px;
     bottom: 0;
     width: 60px;
     z-index: 199;
@@ -206,7 +232,7 @@
     right: auto;
   }
 
-  /* Ensure header + toggle buttons stay above sidebar overlays */
+  /* Ensure header stays above sidebar overlays */
   .glassHeader {
     position: relative;
     z-index: 201;

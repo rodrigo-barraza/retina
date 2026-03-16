@@ -1,12 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
   ScrollText,
   MessageSquare,
-  Eye,
   ArrowLeft,
   Server,
   DollarSign,
@@ -21,6 +21,123 @@ import {
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import styles from "./NavigationSidebarComponent.module.css";
+
+/** 8-bit dithered rainbow — auto-animates, mouse accelerates it */
+const PIXEL_SIZE = 6;
+const BASE_SPEED = 30; // degrees/sec
+const DECAY = 0.92; // velocity decay per frame
+const RAINBOW = [
+  [255, 0, 0],
+  [255, 127, 0],
+  [255, 255, 0],
+  [0, 200, 80],
+  [0, 120, 255],
+  [100, 0, 255],
+  [255, 0, 150],
+];
+
+function lerpColor(a, b, t) {
+  return [
+    a[0] + (b[0] - a[0]) * t,
+    a[1] + (b[1] - a[1]) * t,
+    a[2] + (b[2] - a[2]) * t,
+  ];
+}
+
+function rainbowAt(t) {
+  // t in [0,1] → interpolated rainbow color
+  const scaled = ((t % 1) + 1) % 1 * RAINBOW.length;
+  const i = Math.floor(scaled);
+  const f = scaled - i;
+  return lerpColor(RAINBOW[i % RAINBOW.length], RAINBOW[(i + 1) % RAINBOW.length], f);
+}
+
+function RainbowCanvas() {
+  const canvasRef = useRef(null);
+  const stateRef = useRef({ offset: 0, boost: 0, lastTime: 0, lastMouse: null });
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d", { alpha: false });
+    const { width, height } = canvas;
+    const cols = Math.ceil(width / PIXEL_SIZE);
+    const rows = Math.ceil(height / PIXEL_SIZE);
+    const s = stateRef.current;
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        // Diagonal gradient offset + time offset
+        const t = (x / cols + y / rows) * 0.5 + s.offset / 360;
+        // Dither: slight per-pixel noise for that 8-bit feel
+        const dither = ((x * 7 + y * 13) % 5) / 40;
+        const [r, g, b] = rainbowAt(t + dither);
+        ctx.fillStyle = `rgb(${r | 0},${g | 0},${b | 0})`;
+        ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const parent = canvas.parentElement;
+    let rafId;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = parent.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = rect.width + "px";
+      canvas.style.height = rect.height + "px";
+      const ctx = canvas.getContext("2d", { alpha: false });
+      ctx.scale(dpr, dpr);
+      // Reset canvas dimensions for drawing in CSS pixels
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+
+    const onMouseMove = (e) => {
+      const s = stateRef.current;
+      if (s.lastMouse) {
+        const dx = e.clientX - s.lastMouse.x;
+        const dy = e.clientY - s.lastMouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        s.boost += dist * 4;
+      }
+      s.lastMouse = { x: e.clientX, y: e.clientY };
+    };
+
+    const tick = (now) => {
+      const s = stateRef.current;
+      if (!s.lastTime) s.lastTime = now;
+      const dt = (now - s.lastTime) / 1000;
+      s.lastTime = now;
+
+      const speed = BASE_SPEED + s.boost;
+      s.offset = (s.offset + speed * dt) % 360;
+      s.boost *= DECAY;
+      if (s.boost < 0.5) s.boost = 0;
+
+      draw();
+      rafId = requestAnimationFrame(tick);
+    };
+
+    resize();
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("resize", resize);
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("resize", resize);
+    };
+  }, [draw]);
+
+  return <canvas ref={canvasRef} className={styles.rainbowCanvas} />;
+}
 
 const USER_NAV_ITEMS = [
   { href: "/", label: "Conversations", icon: MessageSquare, exact: true },
@@ -60,17 +177,9 @@ export default function NavigationSidebarComponent({
 
   return (
     <aside className={styles.sidebar}>
-      {/* Logo */}
-      <div className={styles.logo}>
-        <div className={styles.logoIcon}>
-          <Eye size={18} />
-        </div>
-        <div className={styles.logoText}>
-          <span className={styles.logoTitle}>Iris</span>
-          <span className={styles.logoSubtitle}>
-            {isAdmin ? "Admin" : "Retina"}
-          </span>
-        </div>
+      {/* Rainbow logo banner */}
+      <div className={styles.logoBanner}>
+        <RainbowCanvas />
       </div>
 
       {/* Navigation */}

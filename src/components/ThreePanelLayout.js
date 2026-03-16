@@ -5,16 +5,17 @@ import { PanelLeftClose, PanelLeft, PanelRightClose, PanelRight } from "lucide-r
 import styles from "./ThreePanelLayout.module.css";
 
 /**
- * Reusable 3-panel layout with animated sidebars and header toggle buttons.
+ * Reusable 3-panel layout with a full-width header spanning all panels.
+ * The header sits above the sidebars, matching the workflow page pattern.
  *
  * Props:
  *   leftPanel      — React node for the left sidebar content (e.g. SettingsPanel)
- *   leftTitle      — Title for the left sidebar header (default: "Settings")
+ *   leftTitle      — Title for the left sidebar (default: "Settings")
  *   rightPanel     — React node for the right sidebar content (e.g. HistoryPanel)
- *   rightTitle     — Title for the right sidebar header (default: "History")
- *   headerTitle    — Title displayed in the center header
- *   headerMeta     — React node for meta info in the center header (badges, counts)
- *   headerControls — React node for extra controls in the center header (theme toggle, etc.)
+ *   rightTitle     — Title for the right sidebar (default: "History")
+ *   headerTitle    — Title displayed in the header
+ *   headerMeta     — React node for meta info in the header (badges, counts)
+ *   headerControls — React node for extra controls in the header (theme toggle, etc.)
  *   children       — Main content area (chat, viewer, etc.)
  */
 export default function ThreePanelLayout({
@@ -99,28 +100,9 @@ export default function ThreePanelLayout({
     return (
         <div className={styles.container}>
             {navSidebar}
-            {/* Left Sidebar */}
-            <aside
-                className={`${styles.leftSidebar} ${!showLeft ? styles.sidebarHidden : ""}`}
-                style={transitionStyle}
-                onClick={handleSidebarClick(toggleLeft)}
-            >
-                <div className={styles.sidebarHeader}>{leftTitle}</div>
-                {leftPanel}
-            </aside>
-
-            {/* Mobile slit: visible strip behind left sidebar (settings) — appears on right edge */}
-            {isMobile && showLeft && (
-                <div
-                    className={styles.mobileSlit}
-                    data-side="left"
-                    onClick={toggleLeft}
-                />
-            )}
-
-            {/* Main Center */}
-            <section className={styles.main}>
-                <div className={styles.glassHeader}>
+            <div className={styles.page}>
+                {/* Full-width header */}
+                <header className={styles.glassHeader}>
                     <button
                         className={styles.headerToggle}
                         onClick={toggleLeft}
@@ -140,36 +122,62 @@ export default function ThreePanelLayout({
                             {showRight ? <PanelRightClose size={16} /> : <PanelRight size={16} />}
                         </button>
                     )}
-                </div>
+                </header>
                 {/* Mobile: meta info row below the header */}
                 {isMobile && headerMeta && (
                     <div className={styles.mobileMetaBar}>
                         {headerMeta}
                     </div>
                 )}
-                {children}
-            </section>
 
-            {/* Mobile slit: visible strip behind right sidebar (history) — appears on left edge */}
-            {rightPanel && isMobile && showRight && (
-                <div
-                    className={styles.mobileSlit}
-                    data-side="right"
-                    onClick={toggleRight}
-                />
-            )}
+                {/* Body: sidebars + main content */}
+                <div className={styles.body}>
+                    {/* Left Sidebar */}
+                    <aside
+                        className={`${styles.leftSidebar} ${!showLeft ? styles.sidebarHidden : ""}`}
+                        style={transitionStyle}
+                        onClick={handleSidebarClick(toggleLeft)}
+                    >
+                        <div className={styles.sidebarHeader}>{leftTitle}</div>
+                        {leftPanel}
+                    </aside>
 
-            {/* Right Sidebar */}
-            {rightPanel && (
-                <aside
-                    className={`${styles.rightSidebar} ${!showRight ? styles.sidebarHidden : ""}`}
-                    style={transitionStyle}
-                    onClick={handleSidebarClick(toggleRight)}
-                >
-                    <div className={styles.sidebarHeader}>{rightTitle}</div>
-                    {rightPanel}
-                </aside>
-            )}
+                    {/* Mobile slit: visible strip behind left sidebar (settings) — appears on right edge */}
+                    {isMobile && showLeft && (
+                        <div
+                            className={styles.mobileSlit}
+                            data-side="left"
+                            onClick={toggleLeft}
+                        />
+                    )}
+
+                    {/* Main Center */}
+                    <section className={styles.main}>
+                        {children}
+                    </section>
+
+                    {/* Mobile slit: visible strip behind right sidebar (history) — appears on left edge */}
+                    {rightPanel && isMobile && showRight && (
+                        <div
+                            className={styles.mobileSlit}
+                            data-side="right"
+                            onClick={toggleRight}
+                        />
+                    )}
+
+                    {/* Right Sidebar */}
+                    {rightPanel && (
+                        <aside
+                            className={`${styles.rightSidebar} ${!showRight ? styles.sidebarHidden : ""}`}
+                            style={transitionStyle}
+                            onClick={handleSidebarClick(toggleRight)}
+                        >
+                            <div className={styles.sidebarHeader}>{rightTitle}</div>
+                            {rightPanel}
+                        </aside>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
