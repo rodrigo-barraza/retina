@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Image as ImageIcon, Music, Film, FileText, User, Sparkles, ExternalLink, Grid, List } from "lucide-react";
 import Link from "next/link";
-import { IrisService } from "../services/IrisService";
-import { PrismService } from "../services/PrismService";
+import IrisService from "../services/IrisService";
+import PrismService from "../services/PrismService";
 import ComboboxFilter from "./ComboboxFilter";
 import ImagePreviewComponent from "./ImagePreviewComponent";
 import AudioRecorderComponent from "./AudioRecorderComponent";

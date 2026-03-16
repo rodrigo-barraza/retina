@@ -1,4 +1,4 @@
-import { PRISM_URL, ADMIN_SECRET } from "../../secrets.js";
+import { PRISM_URL, ADMIN_SECRET } from "../../config.js";
 
 const API_BASE = PRISM_URL;
 const SECRET = ADMIN_SECRET;
@@ -22,7 +22,7 @@ async function fetchJSON(path, options = {}) {
     return res.json();
 }
 
-export class IrisService {
+export default class IrisService {
     // ── Requests ──────────────────────────────────────────────
     static async getRequests(params = {}) {
         const query = new URLSearchParams(params).toString();

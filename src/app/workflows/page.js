@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Sun, Moon, Play, Square, Loader2, Download, Upload, Undo2, RotateCcw } from "lucide-react";
-import { PrismService } from "../../services/PrismService";
+import PrismService from "../../services/PrismService";
 import WorkflowService from "../../services/WorkflowService";
 import { executeWorkflow } from "../../services/WorkflowExecutor";
 import WorkflowComponent from "../../components/WorkflowComponent";

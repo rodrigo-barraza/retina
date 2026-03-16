@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { Eye, Sun, Moon } from "lucide-react";
-import { IrisService } from "../services/IrisService";
+import IrisService from "../services/IrisService";
 import { useTheme } from "./ThemeProvider";
 import NavigationSidebarComponent from "./NavigationSidebarComponent";
 import styles from "./AdminShell.module.css";

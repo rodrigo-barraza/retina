@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Download, X, MessageSquare, GitBranch } from "lucide-react";
 import Link from "next/link";
-import { IrisService } from "../../../services/IrisService";
+import IrisService from "../../../services/IrisService";
 import { formatNumber, formatCost, formatLatency } from "../../../utils/utilities";
 import SortableTableComponent from "../../../components/SortableTableComponent";
 import PaginationComponent from "../../../components/PaginationComponent";

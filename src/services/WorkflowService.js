@@ -1,6 +1,6 @@
 "use client";
 
-import { PrismService } from "./PrismService";
+import PrismService from "./PrismService";
 
 const WorkflowService = {
   /**

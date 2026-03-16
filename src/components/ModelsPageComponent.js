@@ -10,8 +10,8 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
-import { IrisService } from "../services/IrisService";
-import { PrismService } from "../services/PrismService";
+import IrisService from "../services/IrisService";
+import PrismService from "../services/PrismService";
 import ModelGrid from "./ModelGrid";
 import styles from "./ModelsPageComponent.module.css";
 

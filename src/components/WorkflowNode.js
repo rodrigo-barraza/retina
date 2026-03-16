@@ -5,7 +5,7 @@ import { X, Upload, Eye, Loader2, Check, Paperclip, MessageSquare, Plus, Minus }
 import ProviderLogo from "./ProviderLogos";
 import AudioRecorderComponent from "./AudioRecorderComponent";
 import AssetInputOptions from "./AssetInputOptions";
-import { PrismService } from "../services/PrismService";
+import PrismService from "../services/PrismService";
 import { MODALITY_ICONS } from "./WorkflowNodeConstants";
 import {
   MODALITY_COLORS,

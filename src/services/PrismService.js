@@ -1,6 +1,6 @@
 // API Service for communicating with Prism AI Gateway
 
-import { PRISM_URL, PRISM_SECRET } from "../../secrets.js";
+import { PRISM_URL, PRISM_SECRET } from "../../config.js";
 
 const API_BASE = PRISM_URL;
 const SECRET = PRISM_SECRET;
@@ -27,7 +27,7 @@ function resolveFileRef(ref) {
   return ref;
 }
 
-export class PrismService {
+export default class PrismService {
   /**
    * Shared fetch helper — centralises request / error handling.
    * @param {string} endpoint - URL path (e.g. "/chat?stream=false")

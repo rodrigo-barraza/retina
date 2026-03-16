@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { User, Sparkles, ExternalLink, Image as ImageIcon, Code, Eye } from "lucide-react";
 import Link from "next/link";
-import { IrisService } from "../services/IrisService";
+import IrisService from "../services/IrisService";
 import MarkdownContent from "./MarkdownContent";
 import PaginationComponent from "./PaginationComponent";
 import PageHeaderComponent from "./PageHeaderComponent";

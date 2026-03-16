@@ -8,7 +8,7 @@ import {
     ArrowUpFromLine,
     AlertCircle,
 } from "lucide-react";
-import { IrisService } from "../../../services/IrisService";
+import IrisService from "../../../services/IrisService";
 import StatsCard from "../../../components/StatsCard";
 import SelectDropdown from "../../../components/SelectDropdown";
 import SortableTable from "../../../components/SortableTableComponent";

@@ -2,7 +2,7 @@
  * WorkflowExecutor — executes a workflow graph by topologically sorting nodes
  * and calling PrismService for each model, passing outputs forward via edges.
  */
-import { PrismService } from "./PrismService";
+import PrismService from "./PrismService";
 
 /**
  * Determine which Prism endpoint to use based on the model's modalities

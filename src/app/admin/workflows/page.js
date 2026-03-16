@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { IrisService } from "../../../services/IrisService";
+import IrisService from "../../../services/IrisService";
 import WorkflowComponent from "../../../components/WorkflowComponent";
 import WorkflowHeaderStatsComponent from "../../../components/WorkflowHeaderStatsComponent";
 import styles from "./page.module.css";

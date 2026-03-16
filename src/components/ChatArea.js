@@ -28,7 +28,7 @@ import MessageList from "./MessageList";
 import ModelGrid from "./ModelGrid";
 import styles from "./ChatArea.module.css";
 import { useEffect, useRef, useState } from "react";
-import { PrismService } from "../services/PrismService";
+import PrismService from "../services/PrismService";
 
 // Map model input types to file accept strings
 const TYPE_ACCEPT_MAP = {
@@ -522,7 +522,7 @@ export default function ChatArea({
                                     background: "var(--bg-tertiary)",
                                     fontSize: 13,
                                     fontFamily: "var(--font-mono, monospace)",
-                                }}>secrets.js</code>{" "}
+                                }}>config.js</code>{" "}
                                 file to get started!
                             </p>
                         </div>

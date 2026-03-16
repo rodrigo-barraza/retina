@@ -7,8 +7,8 @@ import {
     Loader,
     MessageSquare,
 } from "lucide-react";
-import { IrisService } from "../../../services/IrisService";
-import { PrismService } from "../../../services/PrismService";
+import IrisService from "../../../services/IrisService";
+import PrismService from "../../../services/PrismService";
 import MessageList from "../../../components/MessageList";
 import SettingsPanel from "../../../components/SettingsPanel";
 import HistoryPanel from "../../../components/HistoryPanel";

@@ -8,7 +8,7 @@ import MarkdownContent from "./MarkdownContent";
 import MessageList from "./MessageList";
 import AudioRecorderComponent from "./AudioRecorderComponent";
 import AssetInputOptions from "./AssetInputOptions";
-import { PrismService } from "../services/PrismService";
+import PrismService from "../services/PrismService";
 
 import styles from "./WorkflowInspector.module.css";
 

@@ -12,7 +12,7 @@ import {
   TrendingUp,
   Workflow,
 } from "lucide-react";
-import { IrisService } from "../../services/IrisService";
+import IrisService from "../../services/IrisService";
 import StatsCard from "../../components/StatsCard";
 import styles from "./page.module.css";
 

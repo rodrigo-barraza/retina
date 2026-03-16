@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { IrisService } from "../../../services/IrisService";
+import IrisService from "../../../services/IrisService";
 import SortableTableComponent from "../../../components/SortableTableComponent";
 import PageHeaderComponent from "../../../components/PageHeaderComponent";
 import { LoadingMessage, ErrorMessage } from "../../../components/StateMessageComponent";

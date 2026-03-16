@@ -20,10 +20,13 @@ npm install
 Copy the example secrets file and fill in your values:
 
 ```bash
-cp secrets.example.js secrets.js
+cp secrets.example.js config.example.js
+cp config.example.js config.js
 ```
 
-Edit `secrets.js` with your real values:
+### 3. Environment Types
+
+Edit `config.js` with your real values:
 
 | Variable       | Required | Description                                       |
 | -------------- | -------- | ------------------------------------------------- |

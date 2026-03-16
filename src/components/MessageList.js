@@ -19,7 +19,7 @@ import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import MarkdownContent from "./MarkdownContent";
 import styles from "./MessageList.module.css";
 import { DateTime } from "luxon";
-import { PrismService } from "../services/PrismService";
+import PrismService from "../services/PrismService";
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../app/page.module.css";
-import { PrismService } from "../services/PrismService";
+import PrismService from "../services/PrismService";
 import StorageService from "../services/StorageService";
 import { useTheme } from "../components/ThemeProvider";
 import { Sun, Moon, Send } from "lucide-react";
