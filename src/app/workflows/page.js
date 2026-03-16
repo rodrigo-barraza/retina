@@ -474,7 +474,6 @@ export default function WorkflowsPage({ initialWorkflowId }) {
                         }),
                     );
                 },
-                workflowId,
             });
 
             // Link generated conversations to this workflow

@@ -64,6 +64,10 @@
 
 /* Menu (the dropdown list) */
 .menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
   background: var(--select-option-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);

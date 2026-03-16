@@ -60,7 +60,7 @@ async function resolveToDataUrl(ref) {
  * @param {Array<{type: string, data: string}>} inputData - Collected inputs from edges
  * @returns {Promise<Object>} - { [modality]: data }
  */
-async function executeModelNode(node, inputData, { onNodeContentUpdate, workflowId } = {}) {
+async function executeModelNode(node, inputData, { onNodeContentUpdate } = {}) {
     const endpoint = resolveEndpoint(node, inputData);
     const outputs = {};
 
@@ -71,7 +71,6 @@ async function executeModelNode(node, inputData, { onNodeContentUpdate, workflow
         title: `🔀 ${nodeLabel} · ${node.provider || "unknown"}/${node.modelName || "unknown"}`,
         systemPrompt: node.systemPrompt || "",
         settings: { provider: node.provider, model: node.modelName },
-        ...(workflowId ? { workflowId } : {}),
     };
 
     if (endpoint === "textToText") {
@@ -407,7 +406,7 @@ function topologicalSort(nodes, edges) {
  * @param {Function} onNodeError - Called when a node errors (nodeId, error)
  * @param {Function} onViewerPartial - Called when a viewer receives partial output (viewerNodeId, partialOutputs)
  */
-export async function executeWorkflow(nodes, edges, { onNodeStart, onNodeComplete, onNodeError, onViewerPartial, onNodeContentUpdate, workflowId }) {
+export async function executeWorkflow(nodes, edges, { onNodeStart, onNodeComplete, onNodeError, onViewerPartial, onNodeContentUpdate }) {
     const sortedIds = topologicalSort(nodes, edges);
     const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
@@ -553,7 +552,7 @@ export async function executeWorkflow(nodes, edges, { onNodeStart, onNodeComplet
             }
 
             // Execute the model
-            const { outputs, conversationId } = await executeModelNode(node, inputData, { onNodeContentUpdate, workflowId });
+            const { outputs, conversationId } = await executeModelNode(node, inputData, { onNodeContentUpdate });
             nodeOutputs[nodeId] = outputs;
             if (conversationId) generatedConversationIds.push(conversationId);
             onNodeComplete?.(nodeId, outputs);

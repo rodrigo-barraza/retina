@@ -261,8 +261,13 @@ export default function SettingsPanel({
                     <div className={styles.formGroup}>
                         <label>Model</label>
                         {readOnly ? (
-                            <div className={styles.readOnlyValue}>
-                                {settings.model || "-"}
+                            <div className={styles.readOnlyValue} style={{ flexDirection: "column", alignItems: "flex-start", justifyContent: "center", height: "auto", padding: "8px 10px", gap: 2 }}>
+                                <span>{selectedModelDef?.label || settings.model || "-"}</span>
+                                {selectedModelDef?.label && selectedModelDef.label !== settings.model && (
+                                    <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>
+                                        {settings.model}
+                                    </span>
+                                )}
                             </div>
                         ) : (
                             <SelectDropdown
