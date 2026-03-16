@@ -18,11 +18,11 @@ import styles from "./page.module.css";
 
 const POLL_INTERVAL = 5000; // 5s
 
-export default function ConversationsPage() {
+export default function ConversationsPage({ initialId = null }) {
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedId, setSelectedId] = useState(null);
+    const [selectedId, setSelectedId] = useState(initialId);
     const [selectedConv, setSelectedConv] = useState(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
     const [config, setConfig] = useState(null);
@@ -33,7 +33,7 @@ export default function ConversationsPage() {
 
     const knownIdsRef = useRef(null); // null = not yet initialized
     const lastFingerprintRef = useRef("");
-    const autoSelectedRef = useRef(false);
+    const autoSelectedRef = useRef(!!initialId);
     const viewerBodyRef = useRef(null);
     const intervalRef = useRef(null);
 
@@ -42,6 +42,17 @@ export default function ConversationsPage() {
             .then(setConfig)
             .catch(() => { });
     }, []);
+
+    // If initialId is set, load that conversation immediately
+    useEffect(() => {
+        if (initialId) {
+            setLoadingDetail(true);
+            IrisService.getConversation(initialId)
+                .then(setSelectedConv)
+                .catch(() => setSelectedConv(null))
+                .finally(() => setLoadingDetail(false));
+        }
+    }, [initialId]);
 
     const loadConversations = useCallback(async () => {
         try {
@@ -86,7 +97,7 @@ export default function ConversationsPage() {
                 }
             }
 
-            // Auto-select on first load
+            // Auto-select on first load (only if no initialId)
             if (list.length > 0 && !autoSelectedRef.current) {
                 autoSelectedRef.current = true;
                 selectConversation(list[0].id);

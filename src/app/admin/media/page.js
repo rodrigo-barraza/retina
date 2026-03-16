@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Image as ImageIcon, Music, Film, User, Sparkles, ExternalLink } from "lucide-react";
+import { Image as ImageIcon, Music, Film, User, Sparkles, ExternalLink, Grid, List, Search } from "lucide-react";
 import Link from "next/link";
 import { IrisService } from "../../../services/IrisService";
 import { PrismService } from "../../../services/PrismService";
@@ -28,12 +28,31 @@ function resolveUrl(url) {
   return url;
 }
 
+function MediaTypeIcon({ type, size = 32 }) {
+  if (type === "audio") return <Music size={size} />;
+  if (type === "video") return <Film size={size} />;
+  return <ImageIcon size={size} />;
+}
+
+function OriginBadge({ origin, className }) {
+  return (
+    <span className={`${className} ${origin === "ai" ? styles.originAi : styles.originUser}`}>
+      {origin === "ai" ? <><Sparkles size={10} /> Generated</> : <><User size={10} /> Uploaded</>}
+    </span>
+  );
+}
+
 export default function MediaPage() {
   const [media, setMedia] = useState([]);
   const [total, setTotal] = useState(0);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [origin, setOrigin] = useState("all");
   const [type, setType] = useState("all");
+  const [project, setProject] = useState("all");
+  const [viewMode, setViewMode] = useState("grid");
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 60;
 
@@ -43,20 +62,29 @@ export default function MediaPage() {
       const params = { page, limit: PAGE_SIZE };
       if (origin !== "all") params.origin = origin;
       if (type !== "all") params.type = type;
+      if (project !== "all") params.project = project;
+      if (search) params.search = search;
 
       const result = await IrisService.getMedia(params);
       setMedia(result.data || []);
       setTotal(result.total || 0);
+      if (result.projects) setProjects(result.projects);
     } catch (err) {
       console.error("Failed to load media:", err);
     } finally {
       setLoading(false);
     }
-  }, [page, origin, type]);
+  }, [page, origin, type, project, search]);
 
   useEffect(() => {
     loadMedia();
   }, [loadMedia]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setSearch(searchInput);
+    setPage(1);
+  };
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -108,14 +136,59 @@ export default function MediaPage() {
             })}
           </div>
         </div>
+
+        {projects.length > 0 && (
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Project</span>
+            <select
+              className={styles.filterSelect}
+              value={project}
+              onChange={(e) => { setProject(e.target.value); setPage(1); }}
+            >
+              <option value="all">All Projects</option>
+              {projects.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <form className={styles.searchBox} onSubmit={handleSearch}>
+          <Search size={14} />
+          <input
+            type="text"
+            placeholder="Search by conversation..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className={styles.searchInput}
+          />
+        </form>
+
+        {/* View mode toggle */}
+        <div className={styles.viewToggle}>
+          <button
+            className={`${styles.viewBtn} ${viewMode === "grid" ? styles.viewBtnActive : ""}`}
+            onClick={() => setViewMode("grid")}
+            title="Grid view"
+          >
+            <Grid size={14} />
+          </button>
+          <button
+            className={`${styles.viewBtn} ${viewMode === "list" ? styles.viewBtnActive : ""}`}
+            onClick={() => setViewMode("list")}
+            title="List view"
+          >
+            <List size={14} />
+          </button>
+        </div>
       </div>
 
       {loading && (
         <div className={styles.loading}>Loading media...</div>
       )}
 
-      {/* Media Grid */}
-      {!loading && (
+      {/* ── Grid View ── */}
+      {!loading && viewMode === "grid" && (
         <div className={styles.mediaGrid}>
           {media.map((m, i) => {
             const resolvedUrl = resolveUrl(m.url);
@@ -129,31 +202,16 @@ export default function MediaPage() {
                       className={styles.mediaImage}
                       loading="lazy"
                     />
-                  ) : m.mediaType === "audio" ? (
-                    <div className={styles.mediaPlaceholder}>
-                      <Music size={32} />
-                      <span>Audio</span>
-                    </div>
-                  ) : m.mediaType === "video" ? (
-                    <div className={styles.mediaPlaceholder}>
-                      <Film size={32} />
-                      <span>Video</span>
-                    </div>
                   ) : (
                     <div className={styles.mediaPlaceholder}>
-                      <ImageIcon size={32} />
+                      <MediaTypeIcon type={m.mediaType} />
+                      <span>{m.mediaType}</span>
                     </div>
                   )}
-                  <span className={`${styles.originBadge} ${m.origin === "ai" ? styles.originAi : styles.originUser}`}>
-                    {m.origin === "ai" ? <><Sparkles size={10} /> Generated</> : <><User size={10} /> Uploaded</>}
-                  </span>
+                  <OriginBadge origin={m.origin} className={styles.originBadge} />
                 </div>
                 <div className={styles.mediaInfo}>
-                  <Link
-                    href={`/admin/conversations`}
-                    className={styles.convLink}
-                    title={m.convTitle}
-                  >
+                  <Link href={`/admin/conversations/${m.convId}`} className={styles.convLink} title={m.convTitle}>
                     <ExternalLink size={10} />
                     <span>{m.convTitle}</span>
                   </Link>
@@ -169,6 +227,81 @@ export default function MediaPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ── List View ── */}
+      {!loading && viewMode === "list" && (
+        <div className={styles.listWrapper}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th style={{ width: 60 }}>Preview</th>
+                <th>Type</th>
+                <th>Source</th>
+                <th>Conversation</th>
+                <th>Project</th>
+                <th>Model</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {media.map((m, i) => {
+                const resolvedUrl = resolveUrl(m.url);
+                return (
+                  <tr key={`${m.convId}-${i}`}>
+                    <td>
+                      <div className={styles.listThumb}>
+                        {m.mediaType === "image" && resolvedUrl ? (
+                          <img
+                            src={resolvedUrl}
+                            alt={`${m.origin === "ai" ? "Generated" : "Uploaded"} image`}
+                            className={styles.listThumbImg}
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className={styles.listThumbPlaceholder}>
+                            <MediaTypeIcon type={m.mediaType} size={16} />
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={styles.typeBadge}>{m.mediaType}</span>
+                    </td>
+                    <td>
+                      <OriginBadge origin={m.origin} className={styles.originPill} />
+                    </td>
+                    <td>
+                      <Link href={`/admin/conversations/${m.convId}`} className={styles.convLink} title={m.convTitle}>
+                        <ExternalLink size={10} />
+                        <span>{m.convTitle}</span>
+                      </Link>
+                    </td>
+                    <td>
+                      {m.project ? (
+                        <span className={styles.projectTag}>{m.project}</span>
+                      ) : (
+                        <span className={styles.time}>—</span>
+                      )}
+                    </td>
+                    <td>
+                      {m.model ? (
+                        <span className={styles.modelTag}>{m.model.split("/").pop()}</span>
+                      ) : (
+                        <span className={styles.time}>—</span>
+                      )}
+                    </td>
+                    <td>
+                      <span className={styles.time}>
+                        {m.timestamp ? new Date(m.timestamp).toLocaleDateString() : "—"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 

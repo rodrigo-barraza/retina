@@ -107,7 +107,7 @@ export default function TextPage() {
                   {t.origin === "ai" ? <><Sparkles size={10} /> Response</> : <><User size={10} /> Prompt</>}
                 </span>
                 <Link
-                  href={`/admin/conversations`}
+                  href={`/admin/conversations/${t.convId}`}
                   className={styles.convLink}
                   title={t.convTitle}
                 >
