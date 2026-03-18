@@ -684,7 +684,7 @@ export default function SettingsPanel({
                             !selectedModelDef?.responsesAPI &&
                             settings.thinkingEnabled && (
                                 <>
-                                    {["openai", "lm-studio", "anthropic", "ollama"].includes(
+                                    {["openai", "lm-studio", "vllm", "anthropic", "ollama"].includes(
                                         settings.provider,
                                     ) && (
                                             <div className={styles.formGroup}>
@@ -785,7 +785,7 @@ export default function SettingsPanel({
                                     </div>
                                 )}
 
-                                {["openai", "lm-studio", "google"].includes(
+                                {["openai", "lm-studio", "vllm", "google"].includes(
                                     settings.provider,
                                 ) && (
                                         <>

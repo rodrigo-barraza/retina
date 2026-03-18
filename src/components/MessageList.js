@@ -571,7 +571,7 @@ export default function MessageList({
                                                     ? ` • ${msg.totalTime.toFixed(1)}s`
                                                     : ""}
                                                 {msg.tokensPerSec ? ` • ${msg.tokensPerSec} tok/s` : ""}
-                                                {msg.provider === "lm-studio"
+                                                {msg.provider === "lm-studio" || msg.provider === "vllm"
                                                     ? " • $0"
                                                     : msg.estimatedCost
                                                         ? ` • $${msg.estimatedCost.toFixed(5)}`

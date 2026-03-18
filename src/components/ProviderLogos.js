@@ -64,6 +64,17 @@ const LOGOS = {
             <path d="M20 2H4c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 6H4V4h16v4zm0 4H4c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zm0 6H4v-4h16v4zM6 6.5c0-.83.67-1.5 1.5-1.5S9 5.67 9 6.5 8.33 8 7.5 8 6 7.33 6 6.5zm0 10c0-.83.67-1.5 1.5-1.5S9 15.67 9 16.5 8.33 18 7.5 18 6 17.33 6 16.5z" />
         </svg>
     ),
+    vllm: (size) => (
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            style={{ flexShrink: 0 }}
+        >
+            <path d="M18 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zM6 5h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm2 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 2H8v2h8v-2zm-6 4a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm4 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+        </svg>
+    ),
     elevenlabs: (size) => (
         <svg
             width={size}
@@ -139,5 +150,27 @@ export const PROVIDER_LABELS = {
     elevenlabs: "ElevenLabs",
     inworld: "Inworld",
     "lm-studio": "LM Studio",
+    vllm: "vLLM",
     ollama: "Ollama",
 };
+
+/**
+ * Get the correct display label for the local LLM provider.
+ * Uses the backend type from config to show "LM Studio" or "vLLM".
+ * @param {object} config - The Prism config object
+ * @returns {string}
+ */
+export function getLocalLlmLabel(config) {
+    if (config?.localLlmBackend === "vllm") return "vLLM";
+    return "LM Studio";
+}
+
+/**
+ * Get the correct logo key for the local LLM provider.
+ * @param {object} config - The Prism config object
+ * @returns {string}
+ */
+export function getLocalLlmLogoKey(config) {
+    if (config?.localLlmBackend === "vllm") return "vllm";
+    return "lm-studio";
+}
