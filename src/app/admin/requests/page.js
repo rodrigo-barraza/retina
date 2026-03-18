@@ -142,7 +142,12 @@ export default function RequestsPage() {
                     "audio-to-text": { inIcon: Volume2, inColor: MODALITY_COLORS.audio, outIcon: Type, outColor: MODALITY_COLORS.text, label: "Audio → Text" },
                     "embed": { inIcon: Type, inColor: MODALITY_COLORS.text, outIcon: Hash, outColor: MODALITY_COLORS.embedding, label: "Text → Embedding" },
                 };
-                const m = map[r.endpoint] || map["chat"];
+                let m = map[r.endpoint];
+                // Detect image-output models that go through the chat endpoint
+                if ((!m || r.endpoint === "chat") && r.model && /image/i.test(r.model)) {
+                    m = map["chat/image-api"];
+                }
+                m = m || map["chat"];
                 const InIcon = m.inIcon;
                 const OutIcon = m.outIcon;
                 return (
