@@ -115,7 +115,13 @@ export default function WorkflowInspector({
         return allModels.filter((m) => {
             const mInputs = m.inputTypes || [];
             const mOutputs = m.outputTypes || [];
-            if (requiredInputs.length > 0 && !requiredInputs.every((mod) => mInputs.includes(mod))) return false;
+            // Check input compatibility: conversation-type models accept "conversation" edges
+            if (requiredInputs.length > 0) {
+                const inputsOk = requiredInputs.every((mod) =>
+                    mInputs.includes(mod) || (mod === "conversation" && m.modelType === "conversation"),
+                );
+                if (!inputsOk) return false;
+            }
             if (requiredOutputs.length > 0 && !requiredOutputs.every((mod) => mOutputs.includes(mod))) return false;
             return true;
         });
@@ -273,7 +279,7 @@ export default function WorkflowInspector({
                                                             {m.display_name || m.label || m.name}
                                                         </span>
                                                         <span className={styles.modelDropdownItemModalities}>
-                                                            {(m.inputTypes || []).map((t) => {
+                                                            {(m.rawInputTypes || m.inputTypes || []).map((t) => {
                                                                 const mod = MODALITY_ICONS[t];
                                                                 if (!mod) return null;
                                                                 const Icon = mod.icon;

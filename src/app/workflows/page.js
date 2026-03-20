@@ -56,7 +56,16 @@ function flattenConfigModels(config) {
         }
     }
 
-    return [...modelsMap.values()];
+    // Normalize: conversation models get inputTypes=["conversation"] with
+    // the raw modalities preserved in rawInputTypes for header icons/filtering.
+    const models = [...modelsMap.values()];
+    for (const m of models) {
+        if (m.modelType === "conversation") {
+            m.rawInputTypes = m.inputTypes || [];
+            m.inputTypes = ["conversation"];
+        }
+    }
+    return models;
 }
 
 /**
@@ -262,7 +271,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
                     displayName: defaultModel?.display_name || defaultModel?.label || defaultModel?.name || "Select a Model",
                     modelType: defaultModel?.modelType || "conversation",
                     inputTypes: isConversation ? ["conversation"] : (defaultModel?.inputTypes || []),
-                    rawInputTypes: defaultModel?.inputTypes || [],
+                    rawInputTypes: defaultModel?.rawInputTypes || defaultModel?.inputTypes || [],
                     outputTypes: defaultModel?.outputTypes || [],
                     supportsSystemPrompt: defaultModel?.supportsSystemPrompt !== false,
                     messages: [
@@ -715,7 +724,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
                         displayName: newModel.display_name || newModel.label || newModel.name,
                         modelType: newModel.modelType,
                         inputTypes: isConversation ? ["conversation"] : (newModel.inputTypes || []),
-                        rawInputTypes: newModel.inputTypes || [],
+                        rawInputTypes: newModel.rawInputTypes || newModel.inputTypes || [],
                         outputTypes: newModel.outputTypes || [],
                         supportsSystemPrompt: newModel.supportsSystemPrompt !== false,
                     };
