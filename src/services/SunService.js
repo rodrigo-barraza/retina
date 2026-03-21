@@ -424,4 +424,39 @@ export default class SunService {
       })),
     );
   }
+
+  /**
+   * Execute a custom user-defined tool by calling its configured endpoint.
+   * @param {object} toolDef - { endpoint, method, parameters, name }
+   * @param {object} args - Arguments from the AI
+   * @returns {Promise<object>} JSON result
+   */
+  static async executeCustomTool(toolDef, args = {}) {
+    try {
+      if (toolDef.method === "POST") {
+        const res = await fetch(toolDef.endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(args),
+        });
+        if (!res.ok) {
+          return { error: `API returned ${res.status}: ${res.statusText}` };
+        }
+        return await res.json();
+      }
+
+      // GET — append args as query params
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(args)) {
+        if (value !== undefined && value !== null && value !== "") {
+          params.set(key, value);
+        }
+      }
+      const qs = params.toString();
+      const url = `${toolDef.endpoint}${qs ? `?${qs}` : ""}`;
+      return await fetchJson(url);
+    } catch (err) {
+      return { error: `Failed to reach API: ${err.message}` };
+    }
+  }
 }

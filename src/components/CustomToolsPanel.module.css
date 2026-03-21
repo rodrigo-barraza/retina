@@ -1,0 +1,552 @@
+/* ============================================================
+   Custom Tools Panel — Form-based tool builder
+   ============================================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.4) transparent;
+}
+
+/* ── New Tool Button ───────────────────────────────────────── */
+
+.newToolBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent-color);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+}
+
+/* ── Empty State ───────────────────────────────────────────── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-secondary);
+
+  & p {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 12px 0 4px;
+    color: var(--text-primary);
+  }
+
+  & span {
+    font-size: 11px;
+    line-height: 1.4;
+    max-width: 220px;
+  }
+}
+
+.emptyIcon {
+  color: var(--text-tertiary);
+  opacity: 0.4;
+}
+
+/* ── Tool Card (list view) ─────────────────────────────────── */
+
+.toolCard {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-secondary);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--accent-color) 40%, var(--border-color));
+  }
+}
+
+.toolDisabled {
+  opacity: 0.5;
+}
+
+.toolCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--accent-color) 5%, transparent);
+  }
+}
+
+.expandBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toolCardInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toolCardName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.methodBadge {
+  display: inline-flex;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.methodBadge[data-method="GET"] {
+  background: color-mix(in srgb, #22c55e 15%, transparent);
+  color: #22c55e;
+}
+
+.methodBadge[data-method="POST"] {
+  background: color-mix(in srgb, #f59e0b 15%, transparent);
+  color: #f59e0b;
+}
+
+.toolCardActions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.toolCardBody {
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: slideDown 0.15s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 400px; }
+}
+
+.toolCardDesc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.toolCardEndpoint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+
+  & code {
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.toolCardParams {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.toolCardParam {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  font-size: 10px;
+
+  & code {
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+}
+
+.paramType {
+  color: var(--accent-color);
+  font-size: 9px;
+}
+
+.paramRequired {
+  color: #ef4444;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.toolCardFooter {
+  display: flex;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.editBtn,
+.deleteBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+
+  &:hover {
+    border-color: var(--accent-color);
+    color: var(--text-primary);
+  }
+}
+
+.deleteBtn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: color-mix(in srgb, #ef4444 8%, var(--bg-card));
+}
+
+/* ── Form View ─────────────────────────────────────────────── */
+
+.formHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+
+  & h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+}
+
+.cancelBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--border-radius-sm);
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  & label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+  }
+}
+
+.formRow {
+  display: flex;
+  gap: 8px;
+}
+
+.input,
+.textarea,
+.select {
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--select-bg, var(--bg-card));
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+
+  &:focus {
+    border-color: var(--accent-color);
+    outline: none;
+  }
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 60px;
+  line-height: 1.5;
+}
+
+.select {
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  padding-left: 2px;
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+/* ── Parameters Section ────────────────────────────────────── */
+
+.paramsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.paramsSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  & label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+  }
+}
+
+.addParamBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent-color);
+  background: color-mix(in srgb, var(--accent-color) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 25%, transparent);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--accent-color) 18%, transparent);
+  }
+}
+
+.paramsEmpty {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+.paramCard {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-secondary);
+  overflow: hidden;
+  animation: slideDown 0.15s ease;
+}
+
+.paramCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--bg-card) 50%, transparent);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.paramIndex {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+.paramRemoveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, #ef4444 12%, transparent);
+    color: #ef4444;
+  }
+}
+
+.paramFields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.paramRow {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.paramField {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+
+  & label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+  }
+}
+
+.paramFieldToggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+
+  & label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+  }
+}
+
+.inputSmall,
+.selectSmall {
+  padding: 5px 8px;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: var(--select-bg, var(--bg-card));
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+  width: 100%;
+
+  &:focus {
+    border-color: var(--accent-color);
+    outline: none;
+  }
+}
+
+.selectSmall {
+  cursor: pointer;
+}
+
+/* ── Save Button ───────────────────────────────────────────── */
+
+.saveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent-color);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}

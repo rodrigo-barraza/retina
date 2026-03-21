@@ -17,6 +17,7 @@ import ThreePanelLayout from "./ThreePanelLayout.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
 import HistoryPanel from "./HistoryPanel.js";
 import SettingsPanel from "./SettingsPanel.js";
+import CustomToolsPanel from "./CustomToolsPanel.js";
 import MessageList from "./MessageList.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./ConsoleComponent.module.css";
@@ -49,6 +50,8 @@ export default function ConsoleComponent() {
   const [activeId, setActiveId] = useState(null);
   const [config, setConfig] = useState(null);
   const [title, setTitle] = useState("Sun Console");
+  const [leftTab, setLeftTab] = useState("settings"); // "settings" | "tools"
+  const [customTools, setCustomTools] = useState([]);
 
   const [settings, setSettings] = useState({
     provider: "google",
@@ -146,6 +149,57 @@ export default function ConsoleComponent() {
     loadConversations();
   }, [loadConversations]);
 
+  // Load custom tools
+  const loadCustomTools = useCallback(async () => {
+    try {
+      const tools = await PrismService.getCustomTools(PROJECT);
+      setCustomTools(tools);
+    } catch (err) {
+      console.error("Failed to load custom tools:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCustomTools();
+  }, [loadCustomTools]);
+
+  // Merge built-in + enabled custom tool schemas
+  const allToolSchemas = useMemo(() => {
+    const builtIn = SunService.getToolSchemas();
+    const custom = customTools
+      .filter((t) => t.enabled)
+      .map((t) => ({
+        name: t.name,
+        description: t.description,
+        parameters: {
+          type: "object",
+          properties: Object.fromEntries(
+            (t.parameters || []).map((p) => [
+              p.name,
+              {
+                type: p.type || "string",
+                description: p.description || "",
+                ...(p.enum?.length ? { enum: p.enum } : {}),
+              },
+            ]),
+          ),
+          required: (t.parameters || [])
+            .filter((p) => p.required)
+            .map((p) => p.name),
+        },
+      }));
+    return [...builtIn, ...custom];
+  }, [customTools]);
+
+  // Build a lookup for custom tools by name for execution
+  const customToolMap = useMemo(() => {
+    const map = new Map();
+    for (const t of customTools) {
+      if (t.enabled) map.set(t.name, t);
+    }
+    return map;
+  }, [customTools]);
+
   // ── Orchestration loop ───────────────────────────────────────
   const runOrchestrationLoop = useCallback(
     async (conversationMessages) => {
@@ -172,7 +226,7 @@ export default function ConsoleComponent() {
               ...currentMessages,
             ],
             options: {
-              tools: SunService.getToolSchemas(),
+              tools: allToolSchemas,
               maxTokens: settings.maxTokens,
             },
           };
@@ -225,7 +279,24 @@ export default function ConsoleComponent() {
         });
 
         if (pendingToolCalls.length > 0) {
-          const results = await SunService.executeToolCalls(pendingToolCalls);
+          // Execute tool calls — route custom tools through SunService.executeCustomTool
+          const results = await Promise.all(
+            pendingToolCalls.map(async (tc) => {
+              const customDef = customToolMap.get(tc.name);
+              if (customDef) {
+                return {
+                  name: tc.name,
+                  id: tc.id,
+                  result: await SunService.executeCustomTool(customDef, tc.args),
+                };
+              }
+              return {
+                name: tc.name,
+                id: tc.id,
+                result: await SunService.executeTool(tc.name, tc.args),
+              };
+            }),
+          );
 
           setToolActivity((prev) =>
             prev.map((activity) => {
@@ -279,7 +350,7 @@ export default function ConsoleComponent() {
 
       return currentMessages;
     },
-    [settings.provider, settings.model, settings.maxTokens, conversationId, title],
+    [settings.provider, settings.model, settings.maxTokens, conversationId, title, allToolSchemas, customToolMap],
   );
 
   // ── Send handler ─────────────────────────────────────────────
@@ -401,35 +472,66 @@ export default function ConsoleComponent() {
       .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
-  // ── Left sidebar: SettingsPanel + collapsible tools ──────────
+  // ── Left sidebar: tab bar + content ──────────────────────────
   const leftPanel = (
     <>
-      <SettingsPanel
-        config={filteredConfig}
-        settings={settings}
-        onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
-        hasAssistantImages={false}
-      />
-      <div className={styles.toolsSection}>
+      <div className={styles.tabBar}>
         <button
-          className={styles.toolsToggle}
-          onClick={() => setShowToolsList((v) => !v)}
+          className={`${styles.tab} ${leftTab === "settings" ? styles.tabActive : ""}`}
+          onClick={() => setLeftTab("settings")}
         >
-          <Zap size={12} className={styles.toolsToggleIcon} />
-          <span>Available Tools ({SunService.getToolSchemas().length})</span>
-          {showToolsList ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          Settings
         </button>
-        {showToolsList && (
-          <div className={styles.toolsList}>
-            {SunService.getToolSchemas().map((tool) => (
-              <div key={tool.name} className={styles.toolItem}>
-                <CheckCircle2 size={10} className={styles.toolItemIcon} />
-                <span className={styles.toolItemName}>{renderToolName(tool.name)}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <button
+          className={`${styles.tab} ${leftTab === "tools" ? styles.tabActive : ""}`}
+          onClick={() => setLeftTab("tools")}
+        >
+          Custom Tools
+          {customTools.filter((t) => t.enabled).length > 0 && (
+            <span className={styles.tabBadge}>
+              {customTools.filter((t) => t.enabled).length}
+            </span>
+          )}
+        </button>
       </div>
+
+      {leftTab === "settings" && (
+        <>
+          <SettingsPanel
+            config={filteredConfig}
+            settings={settings}
+            onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
+            hasAssistantImages={false}
+          />
+          <div className={styles.toolsSection}>
+            <button
+              className={styles.toolsToggle}
+              onClick={() => setShowToolsList((v) => !v)}
+            >
+              <Zap size={12} className={styles.toolsToggleIcon} />
+              <span>Available Tools ({allToolSchemas.length})</span>
+              {showToolsList ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </button>
+            {showToolsList && (
+              <div className={styles.toolsList}>
+                {allToolSchemas.map((tool) => (
+                  <div key={tool.name} className={styles.toolItem}>
+                    <CheckCircle2 size={10} className={styles.toolItemIcon} />
+                    <span className={styles.toolItemName}>{renderToolName(tool.name)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {leftTab === "tools" && (
+        <CustomToolsPanel
+          tools={customTools}
+          onToolsChange={loadCustomTools}
+        />
+      )}
     </>
   );
 

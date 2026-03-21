@@ -150,6 +150,48 @@ export default class PrismService {
   }
 
   // ---------------------------------------------------------------------------
+  // Custom Tools
+  // ---------------------------------------------------------------------------
+
+  /**
+   * List all custom tools for a project.
+   * @param {string} [project]
+   * @returns {Promise<Array>}
+   */
+  static async getCustomTools(project) {
+    const qs = project ? `?project=${encodeURIComponent(project)}` : "";
+    return PrismService._request(`/custom-tools${qs}`, { method: "GET" });
+  }
+
+  /**
+   * Create a new custom tool.
+   * @param {object} tool
+   * @returns {Promise<object>}
+   */
+  static async createCustomTool(tool) {
+    return PrismService._request("/custom-tools", { method: "POST", body: tool });
+  }
+
+  /**
+   * Update an existing custom tool.
+   * @param {string} id
+   * @param {object} updates
+   * @returns {Promise<object>}
+   */
+  static async updateCustomTool(id, updates) {
+    return PrismService._request(`/custom-tools/${id}`, { method: "PUT", body: updates });
+  }
+
+  /**
+   * Delete a custom tool.
+   * @param {string} id
+   * @returns {Promise<object>}
+   */
+  static async deleteCustomTool(id) {
+    return PrismService._request(`/custom-tools/${id}`, { method: "DELETE" });
+  }
+
+  // ---------------------------------------------------------------------------
   // Chat
   // ---------------------------------------------------------------------------
 
