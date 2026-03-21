@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Download, X, MessageSquare, GitBranch, Type, Image as ImageIcon, Volume2, Hash, ArrowRight } from "lucide-react";
+import { Download, MessageSquare, GitBranch, Type, Image as ImageIcon, Volume2, Hash, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import IrisService from "../../../services/IrisService";
 import { formatNumber, formatCost, formatLatency } from "../../../utils/utilities";
@@ -12,6 +12,9 @@ import PageHeaderComponent from "../../../components/PageHeaderComponent";
 import DatePickerComponent from "../../../components/DatePickerComponent";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { FilterBarComponent, FilterGroupComponent, FilterInputComponent, FilterSelectComponent, FilterClearButton } from "../../../components/FilterBarComponent";
+import BadgeComponent from "../../../components/BadgeComponent";
+import ButtonComponent from "../../../components/ButtonComponent";
+import DetailDrawerComponent from "../../../components/DetailDrawerComponent";
 import styles from "./page.module.css";
 
 
@@ -166,12 +169,12 @@ export default function RequestsPage() {
         },
         {
             key: "endpoint", label: "Endpoint", render: (r) => (
-                <span className={`${styles.badge} ${styles.badgeEndpoint}`}>{r.endpoint || "-"}</span>
+                <BadgeComponent variant="endpoint">{r.endpoint || "-"}</BadgeComponent>
             )
         },
         {
             key: "provider", label: "Provider", render: (r) => (
-                <span className={`${styles.badge} ${styles.badgeProvider}`}>{r.provider || "-"}</span>
+                <BadgeComponent variant="provider">{r.provider || "-"}</BadgeComponent>
             )
         },
         { key: "model", label: "Model" },
@@ -182,9 +185,9 @@ export default function RequestsPage() {
         { key: "totalTime", label: "Latency", render: (r) => formatLatency(r.totalTime), align: "right" },
         {
             key: "success", label: "Status", render: (r) => (
-                <span className={`${styles.badge} ${r.success ? styles.badgeSuccess : styles.badgeError}`}>
+                <BadgeComponent variant={r.success ? "success" : "error"}>
                     {r.success ? "OK" : "ERR"}
-                </span>
+                </BadgeComponent>
             )
         },
     ], []);
@@ -194,9 +197,9 @@ export default function RequestsPage() {
     return (
         <div className={styles.page}>
             <PageHeaderComponent title="Requests">
-                <button className={styles.exportBtn} onClick={exportCSV}>
-                    <Download size={14} /> Export CSV
-                </button>
+                <ButtonComponent variant="secondary" icon={Download} onClick={exportCSV}>
+                    Export CSV
+                </ButtonComponent>
             </PageHeaderComponent>
 
             <ErrorMessage message={error} />
@@ -287,270 +290,116 @@ export default function RequestsPage() {
                 />
             </div>
 
-            {/* Detail Drawer */}
-            {selectedRequest && (
-                <>
-                    <div
-                        className={styles.drawerOverlay}
-                        onClick={() => setSelectedRequest(null)}
-                    />
-                    <div className={styles.drawer}>
-                        <div className={styles.drawerHeader}>
-                            <span className={styles.drawerTitle}>Request Detail</span>
-                            <button
-                                className={styles.closeBtn}
-                                onClick={() => setSelectedRequest(null)}
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-                        <div className={styles.drawerBody}>
-                            <div className={styles.detailSection}>
-                                <div className={styles.detailSectionTitle}>General</div>
-                                <div className={styles.detailGrid}>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Request ID</span>
-                                        <span className={`${styles.detailValue} ${styles.mono}`}>
-                                            {selectedRequest.requestId || "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Timestamp</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.timestamp
-                                                ? new Date(selectedRequest.timestamp).toLocaleString()
-                                                : "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Project</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.project || "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Endpoint</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.endpoint || "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Provider</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.provider || "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Model</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.model || "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Status</span>
-                                        <span
-                                            className={`${styles.badge} ${selectedRequest.success ? styles.badgeSuccess : styles.badgeError}`}
-                                        >
-                                            {selectedRequest.success ? "Success" : "Error"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Tools Used</span>
-                                        <span className={`${styles.badge} ${selectedRequest.toolsUsed ? styles.badgeEndpoint : ""}`}>
-                                            {selectedRequest.toolsUsed ? "Yes" : "No"}
-                                        </span>
-                                    </div>
-                                    {selectedRequest.errorMessage && (
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Error</span>
-                                            <span
-                                                className={styles.detailValue}
-                                                style={{ color: "var(--danger)" }}
-                                            >
-                                                {selectedRequest.errorMessage}
-                                            </span>
-                                        </div>
+            <DetailDrawerComponent
+                open={!!selectedRequest}
+                onClose={() => setSelectedRequest(null)}
+                title="Request Detail"
+                sections={selectedRequest ? [
+                    {
+                        title: "General",
+                        items: [
+                            { label: "Request ID", value: selectedRequest.requestId || "-", mono: true },
+                            { label: "Timestamp", value: selectedRequest.timestamp ? new Date(selectedRequest.timestamp).toLocaleString() : "-" },
+                            { label: "Project", value: selectedRequest.project || "-" },
+                            { label: "Endpoint", value: selectedRequest.endpoint || "-" },
+                            { label: "Provider", value: selectedRequest.provider || "-" },
+                            { label: "Model", value: selectedRequest.model || "-" },
+                            { label: "Status", value: <BadgeComponent variant={selectedRequest.success ? "success" : "error"}>{selectedRequest.success ? "Success" : "Error"}</BadgeComponent> },
+                            { label: "Tools Used", value: <BadgeComponent variant={selectedRequest.toolsUsed ? "endpoint" : "info"}>{selectedRequest.toolsUsed ? "Yes" : "No"}</BadgeComponent> },
+                            ...(selectedRequest.errorMessage ? [{ label: "Error", value: <span style={{ color: "var(--danger)" }}>{selectedRequest.errorMessage}</span> }] : []),
+                        ],
+                    },
+                    {
+                        title: "Usage",
+                        items: [
+                            { label: "Input Tokens", value: formatNumber(selectedRequest.inputTokens) },
+                            { label: "Output Tokens", value: formatNumber(selectedRequest.outputTokens) },
+                            { label: "Estimated Cost", value: formatCost(selectedRequest.estimatedCost) },
+                            { label: "Tokens/sec", value: selectedRequest.tokensPerSec?.toFixed(1) || "-" },
+                            { label: "Input Chars", value: formatNumber(selectedRequest.inputCharacters) },
+                            { label: "Output Chars", value: formatNumber(selectedRequest.outputCharacters) },
+                            { label: "Messages", value: selectedRequest.messageCount || 0 },
+                        ],
+                    },
+                    {
+                        title: "Timing",
+                        items: [
+                            { label: "Time to Generation", value: formatLatency(selectedRequest.timeToGeneration) },
+                            { label: "Generation Time", value: formatLatency(selectedRequest.generationTime) },
+                            { label: "Total Time", value: formatLatency(selectedRequest.totalTime) },
+                        ],
+                    },
+                    {
+                        title: "Parameters",
+                        items: [
+                            { label: "Temperature", value: selectedRequest.temperature ?? "-" },
+                            { label: "Max Tokens", value: selectedRequest.maxTokens ?? "-" },
+                            { label: "Top P", value: selectedRequest.topP ?? "-" },
+                            { label: "Top K", value: selectedRequest.topK ?? "-" },
+                            { label: "Frequency Penalty", value: selectedRequest.frequencyPenalty ?? "-" },
+                            { label: "Presence Penalty", value: selectedRequest.presencePenalty ?? "-" },
+                        ],
+                    },
+                ] : []}
+            >
+                {selectedRequest && (
+                    <div className={styles.detailSection}>
+                        <div className={styles.detailSectionTitle}>Associations</div>
+                        {loadingAssociations ? (
+                            <span style={{ color: "var(--text-muted)" }}>Loading…</span>
+                        ) : (
+                            <div className={styles.associationGrid}>
+                                <div className={styles.associationGroup}>
+                                    <span className={styles.associationGroupLabel}>
+                                        <MessageSquare size={12} /> Conversations
+                                    </span>
+                                    {associations?.conversations?.length > 0 ? (
+                                        <ul className={styles.associationList}>
+                                            {associations.conversations.map((c) => (
+                                                <li key={c.id} className={styles.associationItem}>
+                                                    <Link
+                                                        href={`/admin/conversations/${c.id}`}
+                                                        className={styles.associationLink}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <span className={styles.associationTitle}>{c.title || "Untitled"}</span>
+                                                        <span className={styles.associationMeta}>{c.project}</span>
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <span className={styles.associationEmpty}>—</span>
+                                    )}
+                                </div>
+                                <div className={styles.associationGroup}>
+                                    <span className={styles.associationGroupLabel}>
+                                        <GitBranch size={12} /> Workflows
+                                    </span>
+                                    {associations?.workflows?.length > 0 ? (
+                                        <ul className={styles.associationList}>
+                                            {associations.workflows.map((w) => (
+                                                <li key={w.id} className={styles.associationItem}>
+                                                    <Link
+                                                        href={`/admin/workflows/${w.id}`}
+                                                        className={styles.associationLink}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <span className={styles.associationTitle}>{w.name}</span>
+                                                        <span className={styles.associationMeta}>{w.nodeCount} nodes · {w.edgeCount} edges</span>
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <span className={styles.associationEmpty}>—</span>
                                     )}
                                 </div>
                             </div>
-
-                            <div className={styles.detailSection}>
-                                <div className={styles.detailSectionTitle}>Usage</div>
-                                <div className={styles.detailGrid}>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Input Tokens</span>
-                                        <span className={styles.detailValue}>
-                                            {formatNumber(selectedRequest.inputTokens)}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Output Tokens</span>
-                                        <span className={styles.detailValue}>
-                                            {formatNumber(selectedRequest.outputTokens)}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Estimated Cost</span>
-                                        <span className={styles.detailValue}>
-                                            {formatCost(selectedRequest.estimatedCost)}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Tokens/sec</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.tokensPerSec?.toFixed(1) || "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Input Chars</span>
-                                        <span className={styles.detailValue}>
-                                            {formatNumber(selectedRequest.inputCharacters)}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Output Chars</span>
-                                        <span className={styles.detailValue}>
-                                            {formatNumber(selectedRequest.outputCharacters)}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Messages</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.messageCount || 0}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className={styles.detailSection}>
-                                <div className={styles.detailSectionTitle}>Timing</div>
-                                <div className={styles.detailGrid}>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>
-                                            Time to Generation
-                                        </span>
-                                        <span className={styles.detailValue}>
-                                            {formatLatency(selectedRequest.timeToGeneration)}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Generation Time</span>
-                                        <span className={styles.detailValue}>
-                                            {formatLatency(selectedRequest.generationTime)}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Total Time</span>
-                                        <span className={styles.detailValue}>
-                                            {formatLatency(selectedRequest.totalTime)}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className={styles.detailSection}>
-                                <div className={styles.detailSectionTitle}>Parameters</div>
-                                <div className={styles.detailGrid}>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Temperature</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.temperature ?? "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Max Tokens</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.maxTokens ?? "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Top P</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.topP ?? "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Top K</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.topK ?? "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>
-                                            Frequency Penalty
-                                        </span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.frequencyPenalty ?? "-"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.detailItem}>
-                                        <span className={styles.detailLabel}>Presence Penalty</span>
-                                        <span className={styles.detailValue}>
-                                            {selectedRequest.presencePenalty ?? "-"}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className={styles.detailSection}>
-                                <div className={styles.detailSectionTitle}>Associations</div>
-                                {loadingAssociations ? (
-                                    <span className={styles.detailValue} style={{ color: "var(--text-muted)" }}>Loading…</span>
-                                ) : (
-                                    <div className={styles.associationGrid}>
-                                        <div className={styles.associationGroup}>
-                                            <span className={styles.associationGroupLabel}>
-                                                <MessageSquare size={12} /> Conversations
-                                            </span>
-                                            {associations?.conversations?.length > 0 ? (
-                                                <ul className={styles.associationList}>
-                                                    {associations.conversations.map((c) => (
-                                                        <li key={c.id} className={styles.associationItem}>
-                                                            <Link
-                                                                href={`/admin/conversations/${c.id}`}
-                                                                className={styles.associationLink}
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                <span className={styles.associationTitle}>{c.title || "Untitled"}</span>
-                                                                <span className={styles.associationMeta}>{c.project}</span>
-                                                            </Link>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            ) : (
-                                                <span className={styles.associationEmpty}>—</span>
-                                            )}
-                                        </div>
-                                        <div className={styles.associationGroup}>
-                                            <span className={styles.associationGroupLabel}>
-                                                <GitBranch size={12} /> Workflows
-                                            </span>
-                                            {associations?.workflows?.length > 0 ? (
-                                                <ul className={styles.associationList}>
-                                                    {associations.workflows.map((w) => (
-                                                        <li key={w.id} className={styles.associationItem}>
-                                                            <Link
-                                                                href={`/admin/workflows/${w.id}`}
-                                                                className={styles.associationLink}
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                <span className={styles.associationTitle}>{w.name}</span>
-                                                                <span className={styles.associationMeta}>{w.nodeCount} nodes · {w.edgeCount} edges</span>
-                                                            </Link>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            ) : (
-                                                <span className={styles.associationEmpty}>—</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        )}
                     </div>
-                </>
-            )}
+                )}
+            </DetailDrawerComponent>
         </div>
     );
 }

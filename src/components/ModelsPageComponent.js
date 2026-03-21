@@ -7,12 +7,12 @@ import {
   Power,
   PowerOff,
   RefreshCw,
-  AlertCircle,
-  CheckCircle,
 } from "lucide-react";
 import IrisService from "../services/IrisService";
 import PrismService from "../services/PrismService";
 import ModelGrid from "./ModelGrid";
+import { ErrorMessage } from "./StateMessageComponent";
+import { useToast } from "./ToastComponent";
 import styles from "./ModelsPageComponent.module.css";
 
 /**
@@ -60,7 +60,7 @@ export default function ModelsPageComponent({ mode = "user" }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionInProgress, setActionInProgress] = useState(null);
-  const [toast, setToast] = useState(null);
+  const [toastElement, showToast] = useToast(4000);
   const [favoriteKeys, setFavoriteKeys] = useState([]);
 
   const fetchModels = useCallback(async () => {
@@ -122,10 +122,6 @@ export default function ModelsPageComponent({ mode = "user" }) {
     }
   };
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
-  };
 
   const handleLoad = async (modelKey) => {
     setActionInProgress({ id: modelKey, type: "load" });
@@ -242,23 +238,9 @@ export default function ModelsPageComponent({ mode = "user" }) {
         </p>
       </div>
 
-      {error && (
-        <div className={styles.errorBanner}>
-          <AlertCircle size={18} />
-          <span>{error}</span>
-        </div>
-      )}
+      <ErrorMessage message={error} />
 
-      {toast && (
-        <div className={`${styles.toast} ${styles[toast.type]}`}>
-          {toast.type === "success" ? (
-            <CheckCircle size={16} />
-          ) : (
-            <AlertCircle size={16} />
-          )}
-          {toast.message}
-        </div>
-      )}
+      {toastElement}
 
       {loading && allModels.length === 0 ? (
         <div className={styles.loadingState}>

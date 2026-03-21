@@ -9,6 +9,7 @@ import {
   Sector,
 } from "recharts";
 import styles from "./DistributionChartComponent.module.css";
+import ChartTabsComponent from "./ChartTabsComponent";
 
 const COLORS = [
   "#6366f1",
@@ -216,17 +217,11 @@ export default function DistributionChartComponent({
       {title && <h2 className={styles.title}>{title}</h2>}
       {/* ── Tab bar ── */}
       <div className={styles.header}>
-        <div className={styles.tabs}>
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ""}`}
-              onClick={() => handleTabChange(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <ChartTabsComponent
+          tabs={TABS}
+          activeTab={activeTab}
+          onChange={handleTabChange}
+        />
         {total > 0 && (
           <span className={styles.totalBadge}>
             {total.toLocaleString()} total

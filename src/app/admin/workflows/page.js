@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import IrisService from "../../../services/IrisService";
 import WorkflowComponent from "../../../components/WorkflowComponent";
 import WorkflowHeaderStatsComponent from "../../../components/WorkflowHeaderStatsComponent";
 import SelectDropdown from "../../../components/SelectDropdown";
+import { ErrorMessage } from "../../../components/StateMessageComponent";
+import { useToast } from "../../../components/ToastComponent";
 import styles from "./page.module.css";
 
 export default function AdminWorkflowsPage() {
@@ -22,7 +24,7 @@ export default function AdminWorkflowsPage() {
   const [selectedWorkflow, setSelectedWorkflow] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
-  const [toast, setToast] = useState(null);
+  const [toastElement, showToast] = useToast();
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
@@ -45,11 +47,6 @@ export default function AdminWorkflowsPage() {
     }
     router.replace(`/admin/workflows?${params.toString()}`);
   }, [searchParams, router]);
-
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   const loadWorkflows = useCallback(async () => {
     try {
@@ -183,12 +180,7 @@ export default function AdminWorkflowsPage() {
           <WorkflowHeaderStatsComponent nodes={localNodes} edgeCount={edgeCount} />
         </div>
         <div className={styles.headerRight}>
-          {error && (
-            <span style={{ color: "var(--danger)", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
-              <AlertCircle size={14} />
-              {error}
-            </span>
-          )}
+          <ErrorMessage message={error} />
         </div>
       </header>
 
@@ -217,12 +209,7 @@ export default function AdminWorkflowsPage() {
         )}
       </div>
 
-      {/* Toast */}
-      {toast && (
-        <div className={`${styles.toast} ${styles[toast.type] || ""}`}>
-          {toast.message}
-        </div>
-      )}
+      {toastElement}
     </div>
   );
 }

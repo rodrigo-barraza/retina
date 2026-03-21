@@ -6,13 +6,16 @@ import {
     Activity,
     ArrowDownToLine,
     ArrowUpFromLine,
-    AlertCircle,
 } from "lucide-react";
 import IrisService from "../../../services/IrisService";
+import { formatNumber, formatCost } from "../../../utils/utilities";
 import StatsCard from "../../../components/StatsCard";
 import SelectDropdown from "../../../components/SelectDropdown";
 import SortableTable from "../../../components/SortableTableComponent";
 import DatePickerComponent from "../../../components/DatePickerComponent";
+import PageHeaderComponent from "../../../components/PageHeaderComponent";
+import { ErrorMessage } from "../../../components/StateMessageComponent";
+import BadgeComponent from "../../../components/BadgeComponent";
 import styles from "./page.module.css";
 
 const ENDPOINT_LABELS = {
@@ -21,19 +24,6 @@ const ENDPOINT_LABELS = {
     "embed": "Embed",
 };
 
-function formatNumber(n) {
-    if (n === null || n === undefined) return "0";
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-    return n.toLocaleString();
-}
-
-function formatCost(n) {
-    if (n === null || n === undefined || n === 0) return "$0.00";
-    if (n >= 0.01) return `$${n.toFixed(4)}`;
-    if (n >= 0.0001) return `$${n.toFixed(6)}`;
-    return `$${n.toFixed(8)}`;
-}
 
 // Shared column renderers
 const costRender = (row) => (
@@ -113,21 +103,9 @@ export default function UsagePage() {
             label: "Project",
             align: "left",
             renderSub: (row) => (
-                <span
-                    style={{
-                        display: "inline-flex",
-                        padding: "2px 6px",
-                        borderRadius: 2,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                        color: "var(--info)",
-                        background: "var(--info-subtle)",
-                    }}
-                >
+                <BadgeComponent variant="provider">
                     {row.provider}
-                </span>
+                </BadgeComponent>
             ),
         },
         {
@@ -168,21 +146,9 @@ export default function UsagePage() {
             label: "Project",
             align: "left",
             renderSub: (row) => (
-                <span
-                    style={{
-                        display: "inline-flex",
-                        padding: "2px 6px",
-                        borderRadius: 2,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                        color: "var(--accent-color)",
-                        background: "var(--accent-subtle)",
-                    }}
-                >
+                <BadgeComponent variant="modality">
                     {ENDPOINT_LABELS[row.endpoint] || row.endpoint}
-                </span>
+                </BadgeComponent>
             ),
         },
         {
@@ -275,21 +241,9 @@ export default function UsagePage() {
             label: "Modality",
             align: "left",
             render: (row) => (
-                <span
-                    style={{
-                        display: "inline-flex",
-                        padding: "2px 6px",
-                        borderRadius: 2,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                        color: "var(--accent-color)",
-                        background: "var(--accent-subtle)",
-                    }}
-                >
+                <BadgeComponent variant="modality">
                     {ENDPOINT_LABELS[row.endpoint] || row.endpoint}
-                </span>
+                </BadgeComponent>
             ),
         },
         { key: "totalRequests", label: "Requests", render: requestsRender },
@@ -309,21 +263,9 @@ export default function UsagePage() {
             key: "provider",
             label: "Provider",
             render: (row) => (
-                <span
-                    style={{
-                        display: "inline-flex",
-                        padding: "2px 6px",
-                        borderRadius: 2,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                        color: "var(--info)",
-                        background: "var(--info-subtle)",
-                    }}
-                >
+                <BadgeComponent variant="provider">
                     {row.provider}
-                </span>
+                </BadgeComponent>
             ),
         },
         { key: "totalRequests", label: "Requests", render: requestsRender },
@@ -335,19 +277,12 @@ export default function UsagePage() {
 
     return (
         <div className={styles.page}>
-            <div className={styles.pageHeader}>
-                <h1 className={styles.pageTitle}>Usage</h1>
-                <p className={styles.pageSubtitle}>
-                    Cost breakdown across all projects, providers, and modalities
-                </p>
-            </div>
+            <PageHeaderComponent
+                title="Usage"
+                subtitle="Cost breakdown across all projects, providers, and modalities"
+            />
 
-            {error && (
-                <div className={styles.errorBanner}>
-                    <AlertCircle size={18} />
-                    {error}
-                </div>
-            )}
+            <ErrorMessage message={error} />
 
             {/* Date Filter */}
             <div className={styles.dateFilter}>

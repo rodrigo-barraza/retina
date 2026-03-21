@@ -11,6 +11,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import styles from "./TimelineChartComponent.module.css";
+import ChartTabsComponent from "./ChartTabsComponent";
+import { formatNumber } from "../utils/utilities";
 
 const TABS = [
   { key: "requests", label: "Requests", color: "#6366f1", unit: "" },
@@ -19,13 +21,6 @@ const TABS = [
   { key: "avgLatency", label: "Latency", color: "#ec4899", unit: "ms" },
   { key: "successRate", label: "Success", color: "#10b981", unit: "%" },
 ];
-
-function formatNumber(n) {
-  if (n === null || n === undefined) return "0";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString();
-}
 
 function formatValue(value, tab) {
   if (value === null || value === undefined) return "—";
@@ -103,19 +98,11 @@ export default function TimelineChartComponent({ data = [], loading = false, hei
     <div className={styles.container}>
       {title && <h2 className={styles.title}>{title}</h2>}
       <div className={styles.header}>
-        <div className={styles.tabs}>
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              className={`${styles.tab} ${activeTab === t.key ? styles.tabActive : ""}`}
-              onClick={() => setActiveTab(t.key)}
-              style={activeTab === t.key ? { color: t.color, borderColor: t.color } : undefined}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <ChartTabsComponent
+          tabs={TABS}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+        />
       </div>
 
       <div className={styles.chartArea} style={{ height }}>

@@ -3,9 +3,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
-    Activity,
-    AlertCircle,
     ArrowLeft,
+    Clock,
     Loader,
     MessageSquare,
 } from "lucide-react";
@@ -17,6 +16,7 @@ import HistoryPanel from "../../../components/HistoryPanel";
 import StatsCard from "../../../components/StatsCard";
 import ThreePanelLayout from "../../../components/ThreePanelLayout";
 import SelectDropdown from "../../../components/SelectDropdown";
+import { ErrorMessage } from "../../../components/StateMessageComponent";
 import styles from "./page.module.css";
 
 const POLL_INTERVAL = 5000; // 5s
@@ -34,8 +34,8 @@ export default function ConversationsPage({ initialId = null }) {
     const [config, setConfig] = useState(null);
     const [showModelList, setShowModelList] = useState(false);
     const [newIds, setNewIds] = useState(new Set());
-    const [activeCount, setActiveCount] = useState(0);
-    const [fingerprint, setFingerprint] = useState("");
+    const [generatingCount, setGeneratingCount] = useState(0);
+    const [recentCount, setRecentCount] = useState(0);
     const [workflows, setWorkflows] = useState([]);
     const [projects, setProjects] = useState([]);
 
@@ -139,16 +139,18 @@ export default function ConversationsPage({ initialId = null }) {
         }
     }, [projectFilter]);
 
-    // Also poll live activity for stats
-    const loadLiveStats = useCallback(async () => {
-        try {
-            const live = await IrisService.getLiveActivity(5);
-            setActiveCount(live.activeCount || 0);
-        } catch { /* ignore */ }
-    }, []);
+    // SSE subscription for real-time stats
+    useEffect(() => {
+        const es = IrisService.subscribeConversationStats((data) => {
+            setGeneratingCount(data.generatingCount || 0);
+            setRecentCount(data.recentCount || 0);
+        }, projectFilter);
+        return () => es.close();
+    }, [projectFilter]);
 
-    // Re-fetch selected conversation when fingerprint changes
+    // Re-fetch selected conversation periodically via conversation list fingerprint
     const fingerprintRef = useRef("");
+    const [fingerprint, setFingerprint] = useState("");
 
     useEffect(() => {
         if (!selectedId || fingerprint === fingerprintRef.current) return;
@@ -175,18 +177,14 @@ export default function ConversationsPage({ initialId = null }) {
         return () => { cancelled = true; };
     }, [selectedId, fingerprint]);
 
-    // Polling
+    // Polling — conversation list only
     useEffect(() => {
         knownIdsRef.current = null;
         autoSelectedRef.current = false;
         loadConversations();
-        loadLiveStats();
-        intervalRef.current = setInterval(() => {
-            loadConversations();
-            loadLiveStats();
-        }, POLL_INTERVAL);
+        intervalRef.current = setInterval(loadConversations, POLL_INTERVAL);
         return () => clearInterval(intervalRef.current);
-    }, [loadConversations, loadLiveStats]);
+    }, [loadConversations]);
 
     // Fetch workflows for the selected conversation
     useEffect(() => {
@@ -208,17 +206,9 @@ export default function ConversationsPage({ initialId = null }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedId, loadingDetail]);
 
-    const generatingCount = useMemo(
-        () => conversations.filter((c) => c.isGenerating).length,
-        [conversations],
-    );
-
-    const recentActiveCount = useMemo(
-        () => conversations.filter((c) => {
-            const diff = Date.now() - new Date(c.updatedAt || c.lastActivity).getTime();
-            return diff < 120000;
-        }).length,
-        [conversations],
+    const generatingDisplay = useMemo(
+        () => generatingCount,
+        [generatingCount],
     );
 
     async function selectConversation(id) {
@@ -290,36 +280,23 @@ export default function ConversationsPage({ initialId = null }) {
                     </span>
                 </div>
                 <div className={styles.headerRight}>
-                    {error && (
-                        <span style={{ color: "var(--danger)", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
-                            <AlertCircle size={14} />
-                            {error}
-                        </span>
-                    )}
+                    <ErrorMessage message={error} />
                 </div>
             </header>
 
             {/* Stats */}
             <div className={styles.statsRow}>
                 <StatsCard
-                    label="Active Conversations"
-                    value={loading ? "..." : activeCount}
-                    subtitle="Updated in last 5 minutes"
-                    icon={Activity}
-                    variant="success"
-                    loading={loading}
-                />
-                <StatsCard
-                    label="Active Now"
-                    value={loading ? "..." : recentActiveCount}
-                    subtitle="Updated in last 2 minutes"
-                    icon={MessageSquare}
+                    label="Recent Conversations"
+                    value={loading ? "..." : recentCount}
+                    subtitle="Updated in the last hour"
+                    icon={Clock}
                     variant="accent"
                     loading={loading}
                 />
                 <StatsCard
                     label="Generating"
-                    value={loading ? "..." : generatingCount}
+                    value={loading ? "..." : generatingDisplay}
                     subtitle="Currently streaming"
                     icon={Loader}
                     variant="info"

@@ -108,6 +108,24 @@ export default class IrisService {
         return fetchJSON(`/live?minutes=${minutes}`);
     }
 
+    /**
+     * Subscribe to real-time conversation stats via SSE.
+     * @param {Function} onStats - ({ generatingCount, recentCount }) => void
+     * @param {string} [project] - Optional project filter
+     * @returns {EventSource} — call .close() to unsubscribe
+     */
+    static subscribeConversationStats(onStats, project = null) {
+        const params = project ? `?project=${encodeURIComponent(project)}` : "";
+        const es = new EventSource(`${API_BASE}/admin/conversations/stream${params}`);
+        es.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                onStats(data);
+            } catch { /* ignore parse errors */ }
+        };
+        return es;
+    }
+
     // ── Health ────────────────────────────────────────────────
     static async getHealth() {
         return fetchJSON("/health");

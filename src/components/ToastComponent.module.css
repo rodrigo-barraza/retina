@@ -1,0 +1,42 @@
+/* ── ToastComponent ────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--success);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+  animation: toastIn 0.25s ease-out;
+  pointer-events: none;
+}
+
+.error {
+  background: var(--danger);
+}
+
+.warning {
+  background: var(--warning);
+  color: #000;
+}
+
+.info {
+  background: var(--info);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}

@@ -8,6 +8,7 @@ import { executeWorkflow } from "../../services/WorkflowExecutor";
 import WorkflowComponent from "../../components/WorkflowComponent";
 import WorkflowHeaderStatsComponent from "../../components/WorkflowHeaderStatsComponent";
 import NavigationSidebarComponent from "../../components/NavigationSidebarComponent";
+import { useToast } from "../../components/ToastComponent";
 import styles from "./page.module.css";
 
 const MODEL_SECTIONS = [
@@ -103,7 +104,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
     const [_config, setConfig] = useState(null);
     const [allModels, setAllModels] = useState([]);
     const [savedWorkflows, setSavedWorkflows] = useState([]);
-    const [toast, setToast] = useState(null);
+    const [toastElement, showToast] = useToast();
     const [wfFavoriteKeys, setWfFavoriteKeys] = useState([]);
 
     // Update URL without Next.js navigation (avoids re-mount)
@@ -199,10 +200,6 @@ export default function WorkflowsPage({ initialWorkflowId }) {
         }
     }, []);
 
-    const showToast = (message, type = "success") => {
-        setToast({ message, type });
-        setTimeout(() => setToast(null), 3000);
-    };
 
     // Keep a ref with the latest state so pushUndo never goes stale
     const currentStateRef = useRef({ workflowId: null, workflowName: "Untitled Workflow", nodes: [], edges: [] });
@@ -951,12 +948,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
                 />
             </div>
 
-            {/* Toast */}
-            {toast && (
-                <div className={`${styles.toast} ${styles[toast.type] || ""}`}>
-                    {toast.message}
-                </div>
-            )}
+            {toastElement}
         </div>
         </div>
     );

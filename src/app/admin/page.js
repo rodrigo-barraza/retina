@@ -7,18 +7,20 @@ import {
   Zap,
   DollarSign,
   Clock,
-  AlertCircle,
   CheckCircle,
   Workflow,
   MessageSquare,
 } from "lucide-react";
 import IrisService from "../../services/IrisService";
+import { formatNumber, formatCost, formatLatency } from "../../utils/utilities";
 import StatsCard from "../../components/StatsCard";
 import DatePickerComponent from "../../components/DatePickerComponent";
 import TimelineChartComponent from "../../components/TimelineChartComponent";
 import DistributionChartComponent from "../../components/DistributionChartComponent";
 import UsageBarComponent from "../../components/UsageBarComponent";
 import SortableTableComponent from "../../components/SortableTableComponent";
+import PageHeaderComponent from "../../components/PageHeaderComponent";
+import { ErrorMessage } from "../../components/StateMessageComponent";
 import styles from "./page.module.css";
 
 const PROVIDER_COLORS = [
@@ -27,26 +29,6 @@ const PROVIDER_COLORS = [
 ];
 
 
-
-
-
-function formatNumber(n) {
-  if (n === null || n === undefined) return "0";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString();
-}
-
-function formatCost(n) {
-  if (n === null || n === undefined) return "$0.00";
-  return `$${n.toFixed(4)}`;
-}
-
-function formatLatency(ms) {
-  if (ms === null || ms === undefined) return "0ms";
-  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${Math.round(ms)}ms`;
-}
 
 
 
@@ -182,12 +164,10 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Dashboard</h1>
-        <p className={styles.pageSubtitle}>
-          Prism AI Gateway — Overview &amp; Analytics
-        </p>
-      </div>
+      <PageHeaderComponent
+        title="Dashboard"
+        subtitle="Prism AI Gateway — Overview & Analytics"
+      />
 
       {/* ── Date Range Toolbar ── */}
       <div className={styles.timeToolbar}>
@@ -199,12 +179,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {error && (
-        <div className={styles.errorBanner}>
-          <AlertCircle size={18} />
-          {error}
-        </div>
-      )}
+      <ErrorMessage message={error} />
 
       {/* Stats Row */}
       <div className={styles.statsGrid}>
@@ -434,7 +409,12 @@ export default function DashboardPage() {
         columns={[
           {
             key: "timestamp", label: "Time",
-            render: (r) => r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : "-",
+            render: (r) => r.timestamp
+              ? new Date(r.timestamp).toLocaleString("en-US", {
+                  month: "short", day: "numeric", year: "numeric",
+                  hour: "numeric", minute: "2-digit", hour12: true,
+                })
+              : "-",
           },
           { key: "model", label: "Model", render: (r) => r.model || "-" },
           {
