@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Globe,
   Cpu,
+  Shield,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ButtonComponent from "./ButtonComponent.js";
@@ -44,6 +45,7 @@ const EMPTY_TOOL = {
   description: "",
   endpoint: "",
   method: "GET",
+  bearerToken: "",
   parameters: [],
   enabled: true,
 };
@@ -261,6 +263,25 @@ export default function CustomToolsPanel({
             </div>
           </div>
 
+          <div className={styles.formGroup}>
+            <label>
+              <Shield size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
+              Bearer Token
+              <span className={styles.optional}> (optional)</span>
+            </label>
+            <input
+              type="password"
+              className={styles.input}
+              value={editingTool.bearerToken || ""}
+              onChange={(e) =>
+                setEditingTool((t) => ({ ...t, bearerToken: e.target.value }))
+              }
+              placeholder="sk-... or token value"
+              autoComplete="off"
+            />
+            <span className={styles.hint}>Sent as Authorization: Bearer &lt;token&gt;</span>
+          </div>
+
           {/* Parameters */}
           <div className={styles.paramsSection}>
             <div className={styles.paramsSectionHeader}>
@@ -451,6 +472,12 @@ export default function CustomToolsPanel({
                     <Globe size={11} />
                     <code>{tool.endpoint}</code>
                   </div>
+                  {tool.bearerToken && (
+                    <div className={styles.toolCardEndpoint}>
+                      <Shield size={11} />
+                      <span style={{ opacity: 0.6 }}>Bearer token configured</span>
+                    </div>
+                  )}
                   {tool.parameters?.length > 0 && (
                     <div className={styles.toolCardParams}>
                       {tool.parameters.map((p, i) => (

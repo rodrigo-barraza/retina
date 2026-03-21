@@ -494,10 +494,15 @@ export default class SunService {
    */
   static async executeCustomTool(toolDef, args = {}) {
     try {
+      const headers = { "Content-Type": "application/json" };
+      if (toolDef.bearerToken) {
+        headers["Authorization"] = `Bearer ${toolDef.bearerToken}`;
+      }
+
       if (toolDef.method === "POST") {
         const res = await fetch(toolDef.endpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify(args),
         });
         if (!res.ok) {
@@ -515,7 +520,11 @@ export default class SunService {
       }
       const qs = params.toString();
       const url = `${toolDef.endpoint}${qs ? `?${qs}` : ""}`;
-      return await fetchJson(url);
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        return { error: `API returned ${res.status}: ${res.statusText}` };
+      }
+      return await res.json();
     } catch (err) {
       return { error: `Failed to reach API: ${err.message}` };
     }
