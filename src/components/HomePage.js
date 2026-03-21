@@ -1,17 +1,30 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../app/page.module.css";
 import PrismService from "../services/PrismService";
+import SunService from "../services/SunService";
 import StorageService from "../services/StorageService";
 import { useTheme } from "../components/ThemeProvider";
-import { Sun, Moon, Send } from "lucide-react";
+import {
+    Sun,
+    Moon,
+    Send,
+    Zap,
+    ChevronDown,
+    ChevronRight,
+    CheckCircle2,
+    AlertCircle,
+    Loader2,
+} from "lucide-react";
 import NavigationSidebarComponent from "../components/NavigationSidebarComponent";
 import SettingsPanel from "../components/SettingsPanel";
+import CustomToolsPanel from "../components/CustomToolsPanel";
 import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
 import ThreePanelLayout from "../components/ThreePanelLayout";
+import consoleStyles from "../components/ConsoleComponent.module.css";
 
 export default function HomePage({ initialConversationId = null }) {
     const { theme, toggleTheme } = useTheme();
@@ -52,6 +65,22 @@ export default function HomePage({ initialConversationId = null }) {
     const [showSystemPromptModal, setShowSystemPromptModal] = useState(false);
     const skipSystemPromptSave = useRef(false);
     const [workflows, setWorkflows] = useState([]);
+
+    // ── Function Calling state ──────────────────────────────────
+    const [leftTab, setLeftTab] = useState("settings");
+
+    // Reset to Settings tab when FC is toggled off
+    useEffect(() => {
+        if (!settings.functionCallingEnabled && leftTab === "tools") {
+            setLeftTab("settings");
+        }
+    }, [settings.functionCallingEnabled, leftTab]);
+    const [customTools, setCustomTools] = useState([]);
+    const [disabledBuiltIns, setDisabledBuiltIns] = useState(new Set());
+    const [offlineTools, setOfflineTools] = useState(() => new Set());
+    const [toolActivity, setToolActivity] = useState([]);
+    const [showToolPanel, setShowToolPanel] = useState(false);
+    const abortRef = useRef(null);
 
     // Helper to update URL bar without triggering Next.js navigation.
     // Uses History.prototype.replaceState to bypass Next.js's patching of window.history.
@@ -148,6 +177,102 @@ export default function HomePage({ initialConversationId = null }) {
         loadConversations();
     }, []);
 
+    // ── Function Calling infrastructure ────────────────────────
+    const MAX_TOOL_ITERATIONS = 5;
+    const FC_PROJECT = "retina-chat";
+
+    const FC_SYSTEM_PROMPT = `You are a helpful AI assistant with access to real-time data APIs. You have tools for weather, air quality, earthquakes, solar activity, aurora forecasts, sunrise/sunset times, tides, wildfires, ISS tracking, local events, commodity/market prices, trending topics, and product search.
+
+Guidelines:
+- When asked about weather, events, prices, trends, or similar data, ALWAYS use the appropriate tool to fetch real-time data. Never guess or make up data.
+- You may call multiple tools in a single response if the question requires data from multiple sources.
+- Present data clearly with relevant formatting — use tables, bullet points, and emojis where appropriate.
+- When data includes numbers, format them appropriately (currencies, percentages, temperatures).
+- If a tool returns an error, inform the user and suggest alternatives.
+- Be conversational and helpful, not just a data dump.
+- For questions that don't require API data, respond naturally without tool calls.
+- The current local date/time is: ${new Date().toLocaleString()}`;
+
+    const sanitizeName = (name) =>
+        name
+            .replace(/[^a-zA-Z0-9_.:/-]/g, "_")
+            .replace(/^[^a-zA-Z_]/, "_$&")
+            .slice(0, 128);
+
+    const allToolSchemas = useMemo(() => {
+        const builtIn = SunService.getToolSchemas().filter(
+            (t) => !disabledBuiltIns.has(t.name) && !offlineTools.has(t.name),
+        );
+        const custom = customTools
+            .filter((t) => t.enabled)
+            .map((t) => ({
+                name: sanitizeName(t.name),
+                description: t.description,
+                parameters: {
+                    type: "object",
+                    properties: Object.fromEntries(
+                        (t.parameters || []).map((p) => [
+                            p.name,
+                            {
+                                type: p.type || "string",
+                                description: p.description || "",
+                                ...(p.enum?.length ? { enum: p.enum } : {}),
+                            },
+                        ]),
+                    ),
+                    required: (t.parameters || [])
+                        .filter((p) => p.required)
+                        .map((p) => p.name),
+                },
+            }));
+        return [...builtIn, ...custom];
+    }, [customTools, disabledBuiltIns, offlineTools]);
+
+    const customToolMap = useMemo(() => {
+        const map = new Map();
+        for (const t of customTools) {
+            if (t.enabled) map.set(sanitizeName(t.name), t);
+        }
+        return map;
+    }, [customTools]);
+
+    const loadCustomTools = useCallback(async () => {
+        try {
+            const tools = await PrismService.getCustomTools();
+            setCustomTools(tools);
+        } catch (err) {
+            console.error("Failed to load custom tools:", err);
+        }
+    }, []);
+
+    // Load custom tools on mount
+    useEffect(() => {
+        loadCustomTools();
+    }, [loadCustomTools]);
+
+    // Check API health on mount
+    useEffect(() => {
+        SunService.checkApiHealth()
+            .then(({ offline }) => setOfflineTools(offline))
+            .catch(console.error);
+    }, []);
+
+    const handleToggleBuiltIn = useCallback((toolName) => {
+        setDisabledBuiltIns((prev) => {
+            const next = new Set(prev);
+            if (next.has(toolName)) next.delete(toolName);
+            else next.add(toolName);
+            return next;
+        });
+    }, []);
+
+    function renderToolName(name) {
+        return name
+            .replace(/^get_/, "")
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+
     // Load conversation from URL path on mount
     const urlLoadedRef = useRef(false);
     useEffect(() => {
@@ -203,6 +328,8 @@ export default function HomePage({ initialConversationId = null }) {
         updateUrl(null);
         setTitle("New Conversation");
         setMessages([]);
+        setToolActivity([]);
+        setShowToolPanel(false);
         skipSystemPromptSave.current = true;
         setSettings((s) => ({
             ...s,
@@ -840,6 +967,197 @@ export default function HomePage({ initialConversationId = null }) {
         const newMessages = [...messages, userMsg];
         setMessages(newMessages);
         setIsGenerating(true);
+        setToolActivity([]);
+
+        // ── Function Calling branch ──────────────────────────────
+        if (settings.functionCallingEnabled) {
+            try {
+                let currentId = activeId;
+                let currentTitle = title;
+
+                if (!currentId) {
+                    currentTitle =
+                        content.substring(0, 30) + (content.length > 30 ? "..." : "");
+                    setTitle(currentTitle);
+                    currentId = crypto.randomUUID();
+                    setActiveId(currentId);
+                    updateUrl(currentId);
+                }
+
+                const systemPromptText = settings.systemPrompt || FC_SYSTEM_PROMPT;
+                const currentMessages = [...newMessages];
+                let iterations = 0;
+
+                while (iterations < MAX_TOOL_ITERATIONS) {
+                    iterations++;
+                    let streamedText = "";
+                    const pendingToolCalls = [];
+
+                    setMessages((prev) =>
+                        prev.filter((m) => !(m.role === "assistant" && !m.content?.trim())),
+                    );
+
+                    await new Promise((resolve, reject) => {
+                        const payload = {
+                            provider: settings.provider,
+                            model: settings.model,
+                            project: FC_PROJECT,
+                            messages: [
+                                { role: "system", content: systemPromptText },
+                                ...currentMessages
+                                    .filter((m) => m.role !== "assistant" || m.content?.trim() || m.toolCalls?.length)
+                                    .map((m) => ({
+                                        role: m.role,
+                                        ...(m.content?.trim() ? { content: m.content } : { content: " " }),
+                                        ...(m.images?.length > 0 ? { images: m.images } : {}),
+                                        ...(m.toolCalls?.length > 0 ? { toolCalls: m.toolCalls } : {}),
+                                        ...(m.role === "tool" ? { name: m.name, tool_call_id: m.tool_call_id } : {}),
+                                    })),
+                            ],
+                            options: {
+                                tools: allToolSchemas,
+                                maxTokens: settings.maxTokens,
+                                temperature: settings.temperature,
+                            },
+                            conversationId: currentId,
+                        };
+
+                        if (iterations === 1) {
+                            const { systemPrompt: _systemPrompt, ...modelSettings } = settings;
+                            payload.userMessage = userMsg;
+                            payload.conversationMeta = {
+                                title: currentTitle,
+                                systemPrompt: systemPromptText,
+                                settings: modelSettings,
+                            };
+                        }
+
+                        abortRef.current = PrismService.streamText(payload, {
+                            onChunk: (chunk) => {
+                                streamedText += chunk;
+                                setMessages((prev) => {
+                                    const updated = [...prev];
+                                    const lastMsg = updated[updated.length - 1];
+                                    if (lastMsg?.role === "assistant") {
+                                        lastMsg.content = streamedText;
+                                    } else {
+                                        updated.push({ role: "assistant", content: streamedText });
+                                    }
+                                    return updated;
+                                });
+                            },
+                            onToolCall: (toolCall) => {
+                                pendingToolCalls.push(toolCall);
+                                setToolActivity((prev) => [
+                                    ...prev,
+                                    {
+                                        id: toolCall.id || `tc-${Date.now()}-${Math.random()}`,
+                                        name: toolCall.name,
+                                        args: toolCall.args,
+                                        status: "calling",
+                                        timestamp: Date.now(),
+                                    },
+                                ]);
+                                setShowToolPanel(true);
+                            },
+                            onDone: () => resolve(),
+                            onError: (err) => reject(err),
+                            onThinking: () => {},
+                        });
+                    });
+
+                    if (pendingToolCalls.length > 0) {
+                        const results = await Promise.all(
+                            pendingToolCalls.map(async (tc) => {
+                                const customDef = customToolMap.get(tc.name);
+                                if (customDef) {
+                                    return {
+                                        name: tc.name,
+                                        id: tc.id,
+                                        result: await SunService.executeCustomTool(customDef, tc.args),
+                                    };
+                                }
+                                return {
+                                    name: tc.name,
+                                    id: tc.id,
+                                    result: await SunService.executeTool(tc.name, tc.args),
+                                };
+                            }),
+                        );
+
+                        setToolActivity((prev) =>
+                            prev.map((activity) => {
+                                const result = results.find(
+                                    (r) =>
+                                        (r.id && r.id === activity.id) ||
+                                        (!r.id && r.name === activity.name && activity.status === "calling"),
+                                );
+                                if (result) {
+                                    return {
+                                        ...activity,
+                                        status: result.result?.error ? "error" : "done",
+                                        result: result.result,
+                                    };
+                                }
+                                return activity;
+                            }),
+                        );
+
+                        const assistantMsg = {
+                            role: "assistant",
+                            content: streamedText || "",
+                            toolCalls: pendingToolCalls.map((tc) => ({
+                                id: tc.id,
+                                name: tc.name,
+                                args: tc.args,
+                                thoughtSignature: tc.thoughtSignature || undefined,
+                            })),
+                        };
+                        currentMessages.push(assistantMsg);
+
+                        for (const result of results) {
+                            currentMessages.push({
+                                role: "tool",
+                                name: result.name,
+                                tool_call_id: result.id,
+                                content: JSON.stringify(result.result),
+                            });
+                        }
+
+                        streamedText = "";
+                        setMessages((prev) =>
+                            prev.filter((m) => !(m.role === "assistant" && !m.content?.trim())),
+                        );
+                        continue;
+                    }
+
+                    if (streamedText) {
+                        currentMessages.push({ role: "assistant", content: streamedText });
+                        break;
+                    }
+                }
+
+                setMessages(
+                    currentMessages.filter(
+                        (m) =>
+                            m.role !== "tool" &&
+                            m.role !== "system" &&
+                            !(m.role === "assistant" && !m.content?.trim()),
+                    ),
+                );
+                loadConversations();
+            } catch (error) {
+                console.error(error);
+                setMessages((prev) => [
+                    ...prev,
+                    { role: "system", content: "Error: " + error.message },
+                ]);
+            } finally {
+                setIsGenerating(false);
+                abortRef.current = null;
+            }
+            return;
+        }
 
         try {
             let currentId = activeId;
@@ -1065,19 +1383,50 @@ export default function HomePage({ initialConversationId = null }) {
         <main className={styles.appContainer}>
             <ThreePanelLayout
                 leftPanel={
-                    <SettingsPanel
-                        config={config}
-                        settings={settings}
-                        onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
-                        hasAssistantImages={messages.some(
-                            (m) => m.role === "assistant" && m.images?.length > 0,
+                    <>
+                        {settings.functionCallingEnabled && (
+                            <div className={consoleStyles.tabBar}>
+                                <button
+                                    className={`${consoleStyles.tab} ${leftTab === "settings" ? consoleStyles.tabActive : ""}`}
+                                    onClick={() => setLeftTab("settings")}
+                                >
+                                    Settings
+                                </button>
+                                <button
+                                    className={`${consoleStyles.tab} ${leftTab === "tools" ? consoleStyles.tabActive : ""}`}
+                                    onClick={() => setLeftTab("tools")}
+                                >
+                                    Tools
+                                    <span className={consoleStyles.tabBadge}>{allToolSchemas.length}</span>
+                                </button>
+                            </div>
                         )}
-                        inferenceMode={inferenceMode}
-                        onSystemPromptClick={() => setShowSystemPromptModal(true)}
-                        showSystemPromptModal={showSystemPromptModal}
-                        onCloseSystemPromptModal={() => setShowSystemPromptModal(false)}
-                        workflows={workflows}
-                    />
+                        {leftTab === "settings" && (
+                            <SettingsPanel
+                                config={config}
+                                settings={settings}
+                                onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
+                                hasAssistantImages={messages.some(
+                                    (m) => m.role === "assistant" && m.images?.length > 0,
+                                )}
+                                inferenceMode={inferenceMode}
+                                onSystemPromptClick={() => setShowSystemPromptModal(true)}
+                                showSystemPromptModal={showSystemPromptModal}
+                                onCloseSystemPromptModal={() => setShowSystemPromptModal(false)}
+                                workflows={workflows}
+                            />
+                        )}
+                        {leftTab === "tools" && settings.functionCallingEnabled && (
+                            <CustomToolsPanel
+                                tools={customTools}
+                                onToolsChange={loadCustomTools}
+                                builtInTools={SunService.getToolSchemas()}
+                                disabledBuiltIns={disabledBuiltIns}
+                                onToggleBuiltIn={handleToggleBuiltIn}
+                                offlineTools={offlineTools}
+                            />
+                        )}
+                    </>
                 }
                 rightPanel={
                     <HistoryPanel
@@ -1126,6 +1475,12 @@ export default function HomePage({ initialConversationId = null }) {
                 }
                 headerControls={
                     <div className={styles.headerControls}>
+                        {settings.functionCallingEnabled && (
+                            <span className={consoleStyles.headerBadge}>
+                                <Zap size={10} />
+                                Tool Calling
+                            </span>
+                        )}
                         {messages.length > 0 && (
                             <button
                                 className={styles.modeToggle}
@@ -1219,6 +1574,56 @@ export default function HomePage({ initialConversationId = null }) {
                     }
                     systemPrompt={settings.systemPrompt}
                     onSystemPromptClick={() => setShowSystemPromptModal(true)}
+                    toolActivitySlot={
+                        settings.functionCallingEnabled && toolActivity.length > 0 ? (
+                            <div className={consoleStyles.toolPanel}>
+                                <button
+                                    className={consoleStyles.toolPanelHeader}
+                                    onClick={() => setShowToolPanel(!showToolPanel)}
+                                >
+                                    <Zap size={14} className={consoleStyles.toolPanelIcon} />
+                                    <span>
+                                        Tool Activity ({toolActivity.filter((t) => t.status === "done").length}/
+                                        {toolActivity.length})
+                                    </span>
+                                    {showToolPanel ? (
+                                        <ChevronDown size={14} />
+                                    ) : (
+                                        <ChevronRight size={14} />
+                                    )}
+                                </button>
+                                {showToolPanel && (
+                                    <div className={consoleStyles.toolPanelBody}>
+                                        {toolActivity.map((activity) => (
+                                            <div key={activity.id} className={consoleStyles.toolActivityItem}>
+                                                <span className={consoleStyles.toolStatusIcon}>
+                                                    {activity.status === "calling" && (
+                                                        <Loader2 size={12} className={consoleStyles.spinner} />
+                                                    )}
+                                                    {activity.status === "done" && (
+                                                        <CheckCircle2 size={12} className={consoleStyles.toolSuccess} />
+                                                    )}
+                                                    {activity.status === "error" && (
+                                                        <AlertCircle size={12} className={consoleStyles.toolError} />
+                                                    )}
+                                                </span>
+                                                <span className={consoleStyles.toolName}>
+                                                    {renderToolName(activity.name)}
+                                                </span>
+                                                {Object.keys(activity.args || {}).length > 0 && (
+                                                    <span className={consoleStyles.toolArgs}>
+                                                        ({Object.entries(activity.args)
+                                                            .map(([k, v]) => `${k}: ${v}`)
+                                                            .join(", ")})
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ) : null
+                    }
                 />
             </ThreePanelLayout>
         </main>

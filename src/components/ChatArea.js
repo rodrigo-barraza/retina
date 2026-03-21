@@ -290,6 +290,7 @@ export default function ChatArea({
     onSystemPromptClick,
     readOnly = false,
     newChatKey = 0,
+    toolActivitySlot = null,
 }) {
     const [_modelSort, _setModelSort] = useState({ key: null, dir: "desc" });
     const nonTextTypes = supportedInputTypes.filter((t) => t !== "text");
@@ -734,6 +735,8 @@ export default function ChatArea({
                     )}
                 <div ref={endRef} />
             </div>
+
+            {toolActivitySlot}
 
             <div className={styles.inputWrapper}>
                 <form

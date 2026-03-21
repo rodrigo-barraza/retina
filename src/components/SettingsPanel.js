@@ -180,6 +180,7 @@ export default function SettingsPanel({
         "Web Fetch",
         "Code Execution",
         "URL Context",
+        "Function Calling",
     ]);
 
     // Icon map for tools
@@ -231,6 +232,12 @@ export default function SettingsPanel({
                     checked: settings.urlContextEnabled || false,
                     onChange: (val) => onChange({ urlContextEnabled: val }),
                     disabled: settings.codeExecutionEnabled,
+                };
+            case "Function Calling":
+                return {
+                    checked: settings.functionCallingEnabled || false,
+                    onChange: (val) => onChange({ functionCallingEnabled: val }),
+                    disabled: false,
                 };
             default:
                 return null;
