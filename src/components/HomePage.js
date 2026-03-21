@@ -1138,12 +1138,18 @@ Guidelines:
                 }
 
                 setMessages(
-                    currentMessages.filter(
-                        (m) =>
-                            m.role !== "tool" &&
-                            m.role !== "system" &&
-                            !(m.role === "assistant" && !m.content?.trim()),
-                    ),
+                    currentMessages
+                        .filter(
+                            (m) =>
+                                m.role !== "tool" &&
+                                m.role !== "system" &&
+                                !(m.role === "assistant" && !m.content?.trim()),
+                        )
+                        .map((m) =>
+                            m.role === "assistant" && m.toolCalls
+                                ? { ...m, toolCalls: undefined }
+                                : m,
+                        ),
                 );
                 loadConversations();
             } catch (error) {
