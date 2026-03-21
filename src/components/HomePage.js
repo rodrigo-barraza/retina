@@ -65,6 +65,7 @@ export default function HomePage({ initialConversationId = null }) {
     const [showSystemPromptModal, setShowSystemPromptModal] = useState(false);
     const skipSystemPromptSave = useRef(false);
     const [workflows, setWorkflows] = useState([]);
+    const [favoriteKeys, setFavoriteKeys] = useState([]);
 
     // ── Function Calling state ──────────────────────────────────
     const [leftTab, setLeftTab] = useState("settings");
@@ -175,6 +176,11 @@ export default function HomePage({ initialConversationId = null }) {
 
         // Load history
         loadConversations();
+
+        // Load favorite models
+        PrismService.getFavorites("model")
+            .then((favs) => setFavoriteKeys(favs.map((f) => f.key)))
+            .catch(() => {});
     }, []);
 
     // ── Function Calling infrastructure ────────────────────────
@@ -1576,6 +1582,18 @@ Guidelines:
                     config={config}
                     isTranscriptionModel={isTranscriptionModel}
                     isTTSModel={isTTSModel}
+                    conversations={conversations}
+                    favorites={favoriteKeys}
+                    onToggleFavorite={async (key) => {
+                        if (favoriteKeys.includes(key)) {
+                            setFavoriteKeys((prev) => prev.filter((k) => k !== key));
+                            PrismService.removeFavorite("model", key).catch(() => {});
+                        } else {
+                            setFavoriteKeys((prev) => [...prev, key]);
+                            const [provider, ...rest] = key.split(":");
+                            PrismService.addFavorite("model", key, { provider, name: rest.join(":") }).catch(() => {});
+                        }
+                    }}
                     onSelectModel={(provider, modelName) => {
                         const modelDef =
                             (config?.textToText?.models?.[provider] || []).find(

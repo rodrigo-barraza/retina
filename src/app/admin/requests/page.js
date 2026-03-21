@@ -341,6 +341,12 @@ export default function RequestsPage() {
                                             {selectedRequest.success ? "Success" : "Error"}
                                         </span>
                                     </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Tools Used</span>
+                                        <span className={`${styles.badge} ${selectedRequest.toolsUsed ? styles.badgeEndpoint : ""}`}>
+                                            {selectedRequest.toolsUsed ? "Yes" : "No"}
+                                        </span>
+                                    </div>
                                     {selectedRequest.errorMessage && (
                                         <div className={styles.detailItem}>
                                             <span className={styles.detailLabel}>Error</span>

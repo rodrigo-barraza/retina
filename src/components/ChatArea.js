@@ -20,6 +20,7 @@ import {
     Pencil,
     X,
     Zap,
+    Clock,
 } from "lucide-react";
 import AudioRecorderComponent from "./AudioRecorderComponent";
 import ImagePreviewComponent from "./ImagePreviewComponent";
@@ -32,6 +33,7 @@ import consoleStyles from "./ConsoleComponent.module.css";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import { useEffect, useRef, useState } from "react";
 import PrismService from "../services/PrismService";
+import ProviderLogo from "./ProviderLogos";
 import { MODALITY_COLORS } from "./WorkflowNodeConstants";
 
 // Map model input types to file accept strings
@@ -295,6 +297,9 @@ export default function ChatArea({
     newChatKey = 0,
     toolActivitySlot = null,
     functionCallingEnabled = false,
+    conversations = [],
+    favorites = [],
+    onToggleFavorite,
 }) {
     const [_modelSort, _setModelSort] = useState({ key: null, dir: "desc" });
     const nonTextTypes = supportedInputTypes.filter((t) => t !== "text");
@@ -612,6 +617,53 @@ export default function ChatArea({
                                         );
                                     })}
                                 </div>
+
+                                {/* Recent models from conversations */}
+                                {(() => {
+                                    const seen = new Set();
+                                    const recent = [];
+                                    for (const conv of conversations) {
+                                        const m = conv.settings?.model;
+                                        const p = conv.settings?.provider;
+                                        if (!m || !p) continue;
+                                        const key = `${p}:${m}`;
+                                        if (seen.has(key)) continue;
+                                        seen.add(key);
+                                        recent.push({ provider: p, model: m });
+                                        if (recent.length >= 4) break;
+                                    }
+                                    if (recent.length === 0) return null;
+                                    return (
+                                        <>
+                                            <div className={styles.recentDivider} />
+                                            <div className={styles.recentSection}>
+                                                <span className={styles.recentLabel}>
+                                                    <Clock size={12} />
+                                                    Recent
+                                                </span>
+                                                <div className={styles.recentModels}>
+                                                    {recent.map((r) => (
+                                                        <div
+                                                            key={`${r.provider}:${r.model}`}
+                                                            className={styles.recentModelChip}
+                                                            onClick={() => {
+                                                                setSelectedOutput(null);
+                                                                setSelectedInput(null);
+                                                                setWelcomeStep("pickOutput");
+                                                                setWelcomeDone(true);
+                                                                onSelectModel(r.provider, r.model);
+                                                            }}
+                                                        >
+                                                            <ProviderLogo provider={r.provider} size={14} />
+                                                            <span>{r.model}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+
                                 <div
                                     className={styles.viewAllModelsCard}
                                     onClick={() => {
@@ -738,6 +790,8 @@ export default function ChatArea({
                                             models={allModels}
                                             onSelect={handleModelSelect}
                                             showSearch={allModels.length > 6}
+                                            favorites={favorites}
+                                            onToggleFavorite={onToggleFavorite}
                                         />
                                     </div>
                                 );

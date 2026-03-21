@@ -168,6 +168,45 @@ export default class PrismService {
   // ---------------------------------------------------------------------------
 
   /**
+   * Fetch favorites, optionally filtered by type.
+   * @param {string} [type] - e.g. "model"
+   * @returns {Promise<Array>}
+   */
+  static async getFavorites(type) {
+    const qs = type ? `?type=${encodeURIComponent(type)}` : "";
+    return PrismService._request(`/favorites${qs}`, { method: "GET" });
+  }
+
+  /**
+   * Add a favorite.
+   * @param {string} type - e.g. "model"
+   * @param {string} key - unique identifier (e.g. "openai:gpt-4o")
+   * @param {object} [meta] - optional metadata
+   * @returns {Promise<object>}
+   */
+  static async addFavorite(type, key, meta) {
+    return PrismService._request("/favorites", { body: { type, key, meta } });
+  }
+
+  /**
+   * Remove a favorite.
+   * @param {string} type
+   * @param {string} key
+   * @returns {Promise<object>}
+   */
+  static async removeFavorite(type, key) {
+    return PrismService._request(
+      `/favorites?type=${encodeURIComponent(type)}&key=${encodeURIComponent(key)}`,
+      { method: "DELETE" },
+    );
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // Custom Tools
+  // ---------------------------------------------------------------------------
+
+  /**
    * List all custom tools for a project.
    * @param {string} [project]
    * @returns {Promise<Array>}

@@ -7,6 +7,7 @@ import {
     ChevronDown,
     ChevronUp,
     ArrowRight,
+    Star,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import { MODALITY_ICONS, MODALITY_COLORS } from "./WorkflowNodeConstants";
@@ -118,6 +119,8 @@ export default function ModelGrid({
     renderActions,
     showSearch = true,
     showProviderFilter = true,
+    favorites = [],
+    onToggleFavorite,
 }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [sort, setSort] = useState({ key: null, dir: "desc" });
@@ -313,6 +316,7 @@ export default function ModelGrid({
                     <table className={styles.table}>
                         <thead>
                             <tr>
+                                {onToggleFavorite && <th className={`${styles.th} ${styles.thFav}`} />}
                                 <th className={styles.th}>Model</th>
                                 {hasModalities && <th className={styles.th}>Modalities</th>}
                                 {hasContext && sortableTh("Context", "context")}
@@ -337,12 +341,30 @@ export default function ModelGrid({
                                 const model = normalizeModel(rawModel);
                                 const clickable = !!onSelect;
 
+                                const favKey = `${model.provider}:${model.key}`;
+                                const isFav = favorites.includes(favKey);
+
                                 return (
                                     <tr
                                         key={`${model.provider}-${model.key}`}
                                         className={`${styles.tr} ${clickable ? styles.clickable : ""} ${model.isLoaded ? styles.loadedRow : ""}`}
                                         onClick={clickable ? () => onSelect(rawModel) : undefined}
                                     >
+                                        {onToggleFavorite && (
+                                            <td
+                                                className={`${styles.td} ${styles.tdFav}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onToggleFavorite(favKey);
+                                                }}
+                                            >
+                                                <Star
+                                                    size={14}
+                                                    className={`${styles.favStar} ${isFav ? styles.favStarActive : ""}`}
+                                                    fill={isFav ? "currentColor" : "none"}
+                                                />
+                                            </td>
+                                        )}
                                         <td className={styles.tdName}>
                                             <ProviderLogo provider={model.provider} size={18} />
                                             <div className={styles.nameStack}>
