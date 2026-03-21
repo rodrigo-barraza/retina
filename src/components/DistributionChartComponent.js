@@ -27,11 +27,10 @@ const COLORS = [
 
 const ENDPOINT_LABELS = {
   chat: "Text Generation",
-  image: "Image Generation",
-  tts: "Text-to-Speech",
-  stt: "Speech-to-Text",
-  embeddings: "Embeddings",
-  vision: "Vision",
+  "chat/image-api": "Image Generation",
+  "text-to-audio": "Text-to-Speech",
+  "audio-to-text": "Speech-to-Text",
+  embed: "Embeddings",
 };
 
 function formatEndpoint(endpoint) {
@@ -41,7 +40,7 @@ function formatEndpoint(endpoint) {
 /**
  * Builds distribution datasets from model stats, project stats, and overall stats.
  */
-function buildDistributions(modelStats, projectStats, stats) {
+function buildDistributions(modelStats, endpointStats, projectStats, stats) {
   // Provider distribution
   const providerMap = {};
   modelStats.forEach((m) => {
@@ -56,12 +55,12 @@ function buildDistributions(modelStats, projectStats, stats) {
     modelMap[label] = (modelMap[label] || 0) + m.totalRequests;
   });
 
-  // Endpoint / Modality distribution
+  // Endpoint / Modality distribution — from dedicated endpoint stats
   const endpointMap = {};
-  modelStats.forEach((m) => {
-    if (m.endpoint) {
-      const label = formatEndpoint(m.endpoint);
-      endpointMap[label] = (endpointMap[label] || 0) + m.totalRequests;
+  endpointStats.forEach((e) => {
+    if (e.endpoint) {
+      const label = formatEndpoint(e.endpoint);
+      endpointMap[label] = (endpointMap[label] || 0) + e.totalRequests;
     }
   });
 
@@ -135,7 +134,7 @@ function ActiveSectorRenderer(props) {
         fill="#8e95ae"
         fontSize="11"
       >
-        {payload.value.toLocaleString()}
+      {payload.value.toLocaleString()} requests
       </text>
       <text
         x={cx}
@@ -173,17 +172,19 @@ const TAB_TO_KEY = {
 
 export default function DistributionChartComponent({
   modelStats = [],
+  endpointStats = [],
   projectStats = [],
   stats = null,
   loading = false,
   height = 220,
+  title = "Requests",
 }) {
   const [activeTab, setActiveTab] = useState("provider");
   const [activeIndex, setActiveIndex] = useState(null);
 
   const distributions = useMemo(
-    () => buildDistributions(modelStats, projectStats, stats),
-    [modelStats, projectStats, stats],
+    () => buildDistributions(modelStats, endpointStats, projectStats, stats),
+    [modelStats, endpointStats, projectStats, stats],
   );
 
   const entries = useMemo(
@@ -212,6 +213,7 @@ export default function DistributionChartComponent({
 
   return (
     <div className={styles.container}>
+      {title && <h2 className={styles.title}>{title}</h2>}
       {/* ── Tab bar ── */}
       <div className={styles.header}>
         <div className={styles.tabs}>
@@ -251,8 +253,8 @@ export default function DistributionChartComponent({
                     activeShape={ActiveSectorRenderer}
                     onMouseEnter={(_, index) => setActiveIndex(index)}
                     onMouseLeave={() => setActiveIndex(null)}
-                    animationDuration={500}
-                    animationEasing="ease-out"
+                    animationDuration={200}
+                    animationEasing="ease-in-out"
                   >
                     {pieData.map((entry, i) => (
                       <Cell

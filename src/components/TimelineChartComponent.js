@@ -80,7 +80,7 @@ function GlowDotComponent({ cx, cy, color }) {
  *   loading  — boolean
  *   height   — chart height in px (default: 260)
  */
-export default function TimelineChartComponent({ data = [], loading = false, height = 260 }) {
+export default function TimelineChartComponent({ data = [], loading = false, height = 260, title = "Activity Over Time" }) {
   const [activeTab, setActiveTab] = useState("requests");
   const tab = TABS.find((t) => t.key === activeTab) || TABS[0];
 
@@ -101,6 +101,7 @@ export default function TimelineChartComponent({ data = [], loading = false, hei
 
   return (
     <div className={styles.container}>
+      {title && <h2 className={styles.title}>{title}</h2>}
       <div className={styles.header}>
         <div className={styles.tabs}>
           {TABS.map((t) => (

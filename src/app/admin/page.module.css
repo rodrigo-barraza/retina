@@ -1,10 +1,11 @@
 .page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   animation: fadeIn var(--transition-normal) ease-out;
 }
 
-.pageHeader {
-  margin-bottom: 28px;
-}
+
 
 .pageTitle {
   font-size: 26px;
@@ -24,114 +25,26 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
   flex-wrap: wrap;
 }
-
-
-
-
-
 
 /* Stats grid */
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-  margin-bottom: 28px;
 }
 
-/* Section */
-.section {
-  margin-bottom: 28px;
-}
-
-.sectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.sectionTitle {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.sectionAction {
-  font-size: 13px;
-  color: var(--accent-color);
-  cursor: pointer;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color var(--transition-fast);
-}
-
-.sectionAction:hover {
-  color: var(--accent-hover);
-}
-
-/* Table */
-.table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  overflow: hidden;
-}
-
-.table th {
-  text-align: left;
-  padding: 12px 16px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: var(--bg-tertiary);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.table td {
-  padding: 12px 16px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.table tr:last-child td {
-  border-bottom: none;
-}
-
-.table tr:hover td {
-  background: var(--accent-subtle);
-}
-
-/* Badges */
-.badge {
+/* Badges (used in table cell renders) */
+.badgeProvider {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
+  padding: 2px 6px;
   border-radius: 2px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.badgeSuccess {
-  background: var(--success-subtle);
-  color: var(--success);
-}
-
-.badgeError {
-  background: var(--danger-subtle);
-  color: var(--danger);
-}
-
-.badgeProvider {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   background: var(--info-subtle);
   color: var(--info);
 }
@@ -151,12 +64,24 @@
   }
 }
 
+.sectionAction {
+  font-size: 13px;
+  color: var(--accent-color);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+
+  &:hover {
+    color: var(--accent-hover);
+  }
+}
+
 /* Charts row */
 .chartsRow {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 16px;
-  margin-bottom: 28px;
 }
 
 .chartCard {
@@ -166,74 +91,7 @@
   padding: 20px 24px;
 }
 
-/* Pie chart wrapper */
-.pieWrapper {
-  width: 180px;
-  height: 180px;
-  flex-shrink: 0;
-}
 
-.chartEmpty {
-  width: 100%;
-  min-height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-/* Donut / Pie layout */
-.donutContainer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-}
-
-.donutLegend {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.legendItem {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: color 0.15s ease;
-
-  &:hover {
-    color: var(--text-primary);
-  }
-}
-
-.legendDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-/* Provider row with dot */
-.providerRow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-
-
-/* Two-column layout */
-.twoCol {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 28px;
-}
 
 /* Error state */
 .errorBanner {
@@ -243,7 +101,7 @@
   padding: 16px 20px;
   color: var(--danger);
   font-size: 14px;
-  margin-bottom: 20px;
+  margin-bottom: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -252,9 +110,6 @@
 /* Responsive */
 @media (max-width: 900px) {
   .chartsRow {
-    grid-template-columns: 1fr;
-  }
-  .twoCol {
     grid-template-columns: 1fr;
   }
 }

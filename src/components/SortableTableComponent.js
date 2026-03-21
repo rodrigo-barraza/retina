@@ -32,6 +32,7 @@ export default function SortableTableComponent({
     sortKey: externalSortKey,
     sortDir: externalSortDir,
     onSort,
+    maxHeight,
 }) {
     const [internalSort, setInternalSort] = useState({ key: null, dir: "desc" });
     const sort = onSort ? { key: externalSortKey, dir: externalSortDir } : internalSort;
@@ -93,7 +94,7 @@ export default function SortableTableComponent({
             {sorted.length === 0 ? (
                 <div className={styles.empty}>{emptyText}</div>
             ) : (
-                <div className={styles.tableScroll}>
+                <div className={styles.tableScroll} style={maxHeight ? { maxHeight, overflowY: "auto" } : undefined}>
                     <table className={styles.table}>
                         <thead>
                             <tr>

@@ -69,8 +69,9 @@ export default class IrisService {
         return fetchJSON(`/stats/models${query ? `?${query}` : ""}`);
     }
 
-    static async getEndpointStats() {
-        return fetchJSON("/stats/endpoints");
+    static async getEndpointStats(params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return fetchJSON(`/stats/endpoints${query ? `?${query}` : ""}`);
     }
 
     static async getTimeline(hours = 24, params = {}) {

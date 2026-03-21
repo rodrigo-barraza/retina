@@ -10,6 +10,7 @@ import {
   AlertCircle,
   CheckCircle,
   Workflow,
+  MessageSquare,
 } from "lucide-react";
 import IrisService from "../../services/IrisService";
 import StatsCard from "../../components/StatsCard";
@@ -17,6 +18,7 @@ import DatePickerComponent from "../../components/DatePickerComponent";
 import TimelineChartComponent from "../../components/TimelineChartComponent";
 import DistributionChartComponent from "../../components/DistributionChartComponent";
 import UsageBarComponent from "../../components/UsageBarComponent";
+import SortableTableComponent from "../../components/SortableTableComponent";
 import styles from "./page.module.css";
 
 const PROVIDER_COLORS = [
@@ -52,6 +54,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [projectStats, setProjectStats] = useState([]);
   const [modelStats, setModelStats] = useState([]);
+  const [endpointStats, setEndpointStats] = useState([]);
   const [timeline, setTimeline] = useState([]);
   const [recentRequests, setRecentRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,11 +81,12 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
 
-      const [statsData, projects, models, timelineData, requestsData] =
+      const [statsData, projects, models, endpoints, timelineData, requestsData] =
         await Promise.all([
           IrisService.getStats(dateParams),
           IrisService.getProjectStats(dateParams),
           IrisService.getModelStats(dateParams),
+          IrisService.getEndpointStats(dateParams),
           IrisService.getTimeline(timelineHours, dateParams),
           IrisService.getRequests({
             limit: 10,
@@ -95,6 +99,7 @@ export default function DashboardPage() {
       setStats(statsData);
       setProjectStats(projects);
       setModelStats(models);
+      setEndpointStats(endpoints);
       setTimeline(timelineData.data || timelineData);
       setRecentRequests(requestsData.data || []);
     } catch (err) {
@@ -110,23 +115,49 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [loadDashboard]);
 
-  // Build provider distribution for Top Providers table
-  const providerMap = {};
+  // Build provider distribution from model stats
+  const providerAgg = {};
   modelStats.forEach((m) => {
-    providerMap[m.provider] = (providerMap[m.provider] || 0) + m.totalRequests;
+    if (!providerAgg[m.provider]) {
+      providerAgg[m.provider] = {
+        provider: m.provider,
+        totalRequests: 0,
+        totalInputTokens: 0,
+        totalOutputTokens: 0,
+        totalCost: 0,
+        latencySum: 0,
+        tpsSum: 0,
+        tpsCount: 0,
+        modelCount: 0,
+      };
+    }
+    const p = providerAgg[m.provider];
+    p.totalRequests += m.totalRequests;
+    p.totalInputTokens += m.totalInputTokens || 0;
+    p.totalOutputTokens += m.totalOutputTokens || 0;
+    p.totalCost += m.totalCost || 0;
+    p.latencySum += (m.avgLatency || 0) * m.totalRequests;
+    p.modelCount += 1;
+    if (m.avgTokensPerSec) {
+      p.tpsSum += m.avgTokensPerSec * m.totalRequests;
+      p.tpsCount += m.totalRequests;
+    }
   });
-  const providerEntries = Object.entries(providerMap).sort(
-    (a, b) => b[1] - a[1],
-  );
+  const providerData = Object.values(providerAgg)
+    .map((p) => ({
+      ...p,
+      avgLatency: p.totalRequests > 0 ? p.latencySum / p.totalRequests : 0,
+      avgTokensPerSec: p.tpsCount > 0 ? p.tpsSum / p.tpsCount : null,
+    }))
+    .sort((a, b) => b.totalRequests - a.totalRequests);
   const totalProviderRequests =
-    providerEntries.reduce((s, [, v]) => s + v, 0) || 1;
+    providerData.reduce((s, p) => s + p.totalRequests, 0) || 1;
 
 
 
   // Top 10 models
   const topModels = [...modelStats]
-    .sort((a, b) => b.totalRequests - a.totalRequests)
-    .slice(0, 10);
+    .sort((a, b) => b.totalRequests - a.totalRequests);
 
   const totalModelRequests =
     modelStats.reduce((s, m) => s + m.totalRequests, 0) || 1;
@@ -251,6 +282,7 @@ export default function DashboardPage() {
         <div className={styles.chartCard}>
           <DistributionChartComponent
             modelStats={modelStats}
+            endpointStats={endpointStats}
             projectStats={projectStats}
             stats={stats}
             loading={loading}
@@ -258,253 +290,176 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Top Models + Top Providers ── */}
-      <div className={styles.twoCol}>
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Top Models</h2>
-          </div>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Model</th>
-                <th>Provider</th>
-                <th>Requests</th>
-                <th>Usage</th>
-                <th>Cost</th>
-                <th>Avg Latency</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topModels.length > 0 ? (
-                topModels.map((m, i) => (
-                  <tr key={`${m.provider}-${m.model}-${i}`}>
-                    <td
-                      style={{
-                        fontWeight: 500,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      {m.model}
-                    </td>
-                    <td>
-                      <span className={styles.badgeProvider}>
-                        {m.provider}
-                      </span>
-                    </td>
-                    <td>{formatNumber(m.totalRequests)}</td>
-                    <td>
-                      <UsageBarComponent
-                        value={m.totalRequests}
-                        total={totalModelRequests}
-                      />
-                    </td>
-                    <td>{formatCost(m.totalCost)}</td>
-                    <td>{formatLatency(m.avgLatency)}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={6}
-                    style={{
-                      textAlign: "center",
-                      color: "var(--text-muted)",
-                      padding: 24,
-                    }}
-                  >
-                    {loading ? "Loading..." : "No data yet"}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* ── Projects ── */}
+      <SortableTableComponent
+        title="Projects"
+        maxHeight={420}
+        columns={[
+          { key: "project", label: "Project" },
+          { key: "providerCount", label: "Providers" },
+          { key: "modelCount", label: "Models" },
+          { key: "totalRequests", label: "Requests", render: (p) => formatNumber(p.totalRequests) },
+          {
+            key: "usage", label: "Usage",
+            render: (p) => (
+              <UsageBarComponent
+                value={p.totalRequests}
+                total={projectStats.reduce((s, x) => s + x.totalRequests, 0) || 1}
+              />
+            ),
+          },
+          { key: "totalInputTokens", label: "Tokens In", render: (p) => formatNumber(p.totalInputTokens) },
+          { key: "totalOutputTokens", label: "Tokens Out", render: (p) => formatNumber(p.totalOutputTokens) },
+          {
+            key: "avgTokensPerSec", label: "Tok/s",
+            render: (p) => p.avgTokensPerSec ? `${p.avgTokensPerSec.toFixed(1)}` : "—",
+          },
+          { key: "totalCost", label: "Cost", render: (p) => formatCost(p.totalCost) },
+          { key: "avgLatency", label: "Avg Latency", render: (p) => formatLatency(p.avgLatency) },
+          {
+            key: "conversationCount", label: "Conversations",
+            render: (p) => p.conversationCount > 0 ? (
+              <Link href={`/admin/conversations?project=${encodeURIComponent(p.project)}`} className={styles.workflowLink}>
+                <MessageSquare size={12} />
+                {p.conversationCount}
+              </Link>
+            ) : (
+              <span style={{ color: "var(--text-muted)" }}>0</span>
+            ),
+          },
+          {
+            key: "workflowCount", label: "Workflows",
+            render: (p) => p.workflowCount > 0 ? (
+              <Link href={`/admin/workflows?project=${encodeURIComponent(p.project)}`} className={styles.workflowLink}>
+                <Workflow size={12} />
+                {p.workflowCount}
+              </Link>
+            ) : (
+              <span style={{ color: "var(--text-muted)" }}>0</span>
+            ),
+          },
+        ]}
+        data={projectStats}
+        getRowKey={(p, i) => p.project || i}
+        emptyText={loading ? "Loading..." : "No projects yet"}
+      />
 
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Top Providers</h2>
-          </div>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Provider</th>
-                <th>Requests</th>
-                <th>Usage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {providerEntries.length > 0 ? (
-                providerEntries.map(([provider, count], i) => (
-                  <tr key={provider}>
-                    <td
-                      style={{
-                        fontWeight: 500,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      <span className={styles.providerRow}>
-                        <span
-                          className={styles.legendDot}
-                          style={{
-                            background:
-                              PROVIDER_COLORS[i % PROVIDER_COLORS.length],
-                          }}
-                        />
-                        {provider}
-                      </span>
-                    </td>
-                    <td>{formatNumber(count)}</td>
-                    <td>
-                      <UsageBarComponent
-                        value={count}
-                        total={totalProviderRequests}
-                        color={PROVIDER_COLORS[i % PROVIDER_COLORS.length]}
-                      />
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={3}
-                    style={{
-                      textAlign: "center",
-                      color: "var(--text-muted)",
-                      padding: 24,
-                    }}
-                  >
-                    {loading ? "Loading..." : "No data yet"}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* ── Providers ── */}
+      <SortableTableComponent
+        title="Providers"
+        maxHeight={420}
+        columns={[
+          {
+            key: "provider", label: "Provider",
+            render: (p, i) => (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <span style={{
+                  width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
+                  background: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
+                }} />
+                {p.provider}
+              </span>
+            ),
+          },
+          { key: "totalRequests", label: "Requests", render: (p) => formatNumber(p.totalRequests) },
+          { key: "modelCount", label: "Models" },
+          {
+            key: "usage", label: "Usage",
+            render: (p, i) => (
+              <UsageBarComponent
+                value={p.totalRequests}
+                total={totalProviderRequests}
+                color={PROVIDER_COLORS[i % PROVIDER_COLORS.length]}
+              />
+            ),
+          },
+          { key: "totalInputTokens", label: "Tokens In", render: (p) => formatNumber(p.totalInputTokens) },
+          { key: "totalOutputTokens", label: "Tokens Out", render: (p) => formatNumber(p.totalOutputTokens) },
+          {
+            key: "avgTokensPerSec", label: "Tok/s",
+            render: (p) => p.avgTokensPerSec ? `${p.avgTokensPerSec.toFixed(1)}` : "—",
+          },
+          { key: "totalCost", label: "Cost", render: (p) => formatCost(p.totalCost) },
+          { key: "avgLatency", label: "Avg Latency", render: (p) => formatLatency(p.avgLatency) },
+        ]}
+        data={providerData}
+        getRowKey={(p) => p.provider}
+        emptyText={loading ? "Loading..." : "No data yet"}
+      />
 
-      {/* ── Recent Requests + Projects ── */}
-      <div className={styles.twoCol}>
-        {/* Recent Requests */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Recent Requests</h2>
+      {/* ── Models ── */}
+      <SortableTableComponent
+        title="Models"
+        maxHeight={420}
+        columns={[
+          { key: "model", label: "Model" },
+          {
+            key: "provider", label: "Provider",
+            render: (m) => (
+              <span className={styles.badgeProvider}>{m.provider}</span>
+            ),
+          },
+          { key: "totalRequests", label: "Requests", render: (m) => formatNumber(m.totalRequests) },
+          {
+            key: "usage", label: "Usage",
+            render: (m) => (
+              <UsageBarComponent value={m.totalRequests} total={totalModelRequests} />
+            ),
+          },
+          { key: "totalInputTokens", label: "Tokens In", render: (m) => formatNumber(m.totalInputTokens) },
+          { key: "totalOutputTokens", label: "Tokens Out", render: (m) => formatNumber(m.totalOutputTokens) },
+          {
+            key: "avgTokensPerSec", label: "Tok/s",
+            render: (m) => m.avgTokensPerSec ? `${m.avgTokensPerSec.toFixed(1)}` : "—",
+          },
+          { key: "totalCost", label: "Cost", render: (m) => formatCost(m.totalCost) },
+          { key: "avgLatency", label: "Avg Latency", render: (m) => formatLatency(m.avgLatency) },
+        ]}
+        data={topModels}
+        getRowKey={(m, i) => `${m.provider}-${m.model}-${i}`}
+        emptyText={loading ? "Loading..." : "No data yet"}
+      />
+
+      {/* ── Recent Requests ── */}
+      <SortableTableComponent
+        maxHeight={420}
+        title={
+          <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+            Recent Requests
             <Link href="/admin/requests" className={styles.sectionAction}>
               View all →
             </Link>
-          </div>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Model</th>
-                <th>Tokens</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentRequests.length > 0 ? (
-                recentRequests.map((r, i) => (
-                  <tr key={r.requestId || i}>
-                    <td>
-                      {r.timestamp
-                        ? new Date(r.timestamp).toLocaleTimeString()
-                        : "-"}
-                    </td>
-                    <td>{r.model || "-"}</td>
-                    <td>
-                      {formatNumber(
-                        (r.inputTokens || 0) + (r.outputTokens || 0),
-                      )}
-                    </td>
-                    <td>
-                      <span
-                        className={`${styles.badge} ${r.success ? styles.badgeSuccess : styles.badgeError}`}
-                      >
-                        {r.success ? "OK" : "ERR"}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={4}
-                    style={{
-                      textAlign: "center",
-                      color: "var(--text-muted)",
-                      padding: 24,
-                    }}
-                  >
-                    {loading ? "Loading..." : "No requests yet"}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Project Breakdown */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Projects</h2>
-          </div>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Project</th>
-                <th>Requests</th>
-                <th>Cost</th>
-                <th>Workflows</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projectStats.length > 0 ? (
-                projectStats.map((p, i) => (
-                  <tr key={p.project || i}>
-                    <td
-                      style={{
-                        fontWeight: 500,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      {p.project}
-                    </td>
-                    <td>{formatNumber(p.totalRequests)}</td>
-                    <td>{formatCost(p.totalCost)}</td>
-                    <td>
-                      {p.workflowCount > 0 ? (
-                        <Link
-                          href="/admin/workflows"
-                          className={styles.workflowLink}
-                        >
-                          <Workflow size={12} />
-                          {p.workflowCount}
-                        </Link>
-                      ) : (
-                        <span style={{ color: "var(--text-muted)" }}>0</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={4}
-                    style={{
-                      textAlign: "center",
-                      color: "var(--text-muted)",
-                      padding: 24,
-                    }}
-                  >
-                    {loading ? "Loading..." : "No projects yet"}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          </span>
+        }
+        columns={[
+          {
+            key: "timestamp", label: "Time",
+            render: (r) => r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : "-",
+          },
+          { key: "model", label: "Model", render: (r) => r.model || "-" },
+          {
+            key: "tokens", label: "Tokens",
+            render: (r) => formatNumber((r.inputTokens || 0) + (r.outputTokens || 0)),
+          },
+          {
+            key: "success", label: "Status",
+            render: (r) => (
+              <span style={{
+                display: "inline-flex", alignItems: "center",
+                padding: "3px 8px", borderRadius: 2,
+                fontSize: 11, fontWeight: 600, letterSpacing: "0.02em",
+                background: r.success ? "var(--success-subtle)" : "var(--danger-subtle)",
+                color: r.success ? "var(--success)" : "var(--danger)",
+              }}>
+                {r.success ? "OK" : "ERR"}
+              </span>
+            ),
+          },
+        ]}
+        data={recentRequests}
+        getRowKey={(r, i) => r.requestId || i}
+        emptyText={loading ? "Loading..." : "No requests yet"}
+      />
     </div>
   );
 }

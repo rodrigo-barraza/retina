@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
     Activity,
     AlertCircle,
@@ -8,16 +9,20 @@ import {
     MessageSquare,
 } from "lucide-react";
 import IrisService from "../../../services/IrisService";
-import MessageList from "../../../components/MessageList";
+import MessageList, { prepareDisplayMessages } from "../../../components/MessageList";
 import SettingsPanel from "../../../components/SettingsPanel";
 import HistoryPanel from "../../../components/HistoryPanel";
 import StatsCard from "../../../components/StatsCard";
 import ThreePanelLayout from "../../../components/ThreePanelLayout";
+import SelectDropdown from "../../../components/SelectDropdown";
 import styles from "./page.module.css";
 
 const POLL_INTERVAL = 5000; // 5s
 
 export default function ConversationsPage({ initialId = null }) {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const projectFilter = searchParams.get("project") || null;
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -30,6 +35,7 @@ export default function ConversationsPage({ initialId = null }) {
     const [activeCount, setActiveCount] = useState(0);
     const [fingerprint, setFingerprint] = useState("");
     const [workflows, setWorkflows] = useState([]);
+    const [projects, setProjects] = useState([]);
 
     const knownIdsRef = useRef(null); // null = not yet initialized
     const lastFingerprintRef = useRef("");
@@ -41,7 +47,25 @@ export default function ConversationsPage({ initialId = null }) {
         IrisService.getConfig()
             .then(setConfig)
             .catch(() => { });
+        IrisService.getProjectStats()
+            .then((list) => setProjects(list.map((p) => p.project).filter(Boolean)))
+            .catch(() => { });
     }, []);
+
+    const projectOptions = useMemo(() => [
+        { value: "", label: "All Projects" },
+        ...projects.map((p) => ({ value: p, label: p })),
+    ], [projects]);
+
+    const handleProjectChange = useCallback((val) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (val) {
+            params.set("project", val);
+        } else {
+            params.delete("project");
+        }
+        router.replace(`/admin/conversations?${params.toString()}`);
+    }, [searchParams, router]);
 
     // If initialId is set, load that conversation immediately
     useEffect(() => {
@@ -56,12 +80,14 @@ export default function ConversationsPage({ initialId = null }) {
 
     const loadConversations = useCallback(async () => {
         try {
-            const data = await IrisService.getConversations({
+            const params = {
                 page: 1,
                 limit: 200,
                 sort: "updatedAt",
                 order: "desc",
-            });
+            };
+            if (projectFilter) params.project = projectFilter;
+            const data = await IrisService.getConversations(params);
             const list = data.data || [];
 
             // Build fingerprint from meaningful fields
@@ -109,7 +135,7 @@ export default function ConversationsPage({ initialId = null }) {
             setError(err.message);
             setLoading((prev) => (prev ? false : prev));
         }
-    }, []);
+    }, [projectFilter]);
 
     // Also poll live activity for stats
     const loadLiveStats = useCallback(async () => {
@@ -149,6 +175,8 @@ export default function ConversationsPage({ initialId = null }) {
 
     // Polling
     useEffect(() => {
+        knownIdsRef.current = null;
+        autoSelectedRef.current = false;
         loadConversations();
         loadLiveStats();
         intervalRef.current = setInterval(() => {
@@ -156,8 +184,7 @@ export default function ConversationsPage({ initialId = null }) {
             loadLiveStats();
         }, POLL_INTERVAL);
         return () => clearInterval(intervalRef.current);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [loadConversations, loadLiveStats]);
 
     // Fetch workflows for the selected conversation
     useEffect(() => {
@@ -244,13 +271,19 @@ export default function ConversationsPage({ initialId = null }) {
             <div className={styles.pageHeader}>
                 <div className={styles.titleRow}>
                     <h1 className={styles.pageTitle}>Conversations</h1>
+                    <SelectDropdown
+                        value={projectFilter || ""}
+                        options={projectOptions}
+                        onChange={handleProjectChange}
+                        placeholder="All Projects"
+                    />
                     <span className={styles.liveDot}>
                         <span className={styles.liveDotInner} />
                         Live
                     </span>
                 </div>
                 <p className={styles.pageSubtitle}>
-                    Browse conversations across all projects
+                    Browse conversations across {projectFilter ? `project: ${projectFilter}` : "all projects"}
                 </p>
             </div>
 
@@ -379,7 +412,7 @@ export default function ConversationsPage({ initialId = null }) {
                         ) : loadingDetail ? (
                             <div className={styles.emptyViewer}>Loading conversation...</div>
                         ) : (
-                            <MessageList messages={selectedConv.messages || []} readOnly />
+                            <MessageList messages={prepareDisplayMessages(selectedConv.messages || [])} readOnly />
                         )}
                     </div>
                 </ThreePanelLayout>

@@ -4,6 +4,13 @@
   gap: 0;
 }
 
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
 /* ── Tab bar ── */
 
 .header {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import styles from "../app/page.module.css";
 import PrismService from "../services/PrismService";
 import SunService from "../services/SunService";
+import { prepareDisplayMessages } from "./MessageList";
 import StorageService from "../services/StorageService";
 import { useTheme } from "../components/ThemeProvider";
 import {
@@ -301,12 +302,7 @@ Guidelines:
                 .then((full) => {
                     setActiveId(full.id);
                     setTitle(full.title);
-                    const displayMessages = (full.messages || []).filter(
-                        (m) =>
-                            m.role !== "tool" &&
-                            m.role !== "system" &&
-                            !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
-                    );
+                    const displayMessages = prepareDisplayMessages(full.messages);
                     setMessages(displayMessages);
                     skipSystemPromptSave.current = true;
 
@@ -393,12 +389,7 @@ Guidelines:
             setActiveId(full.id);
             updateUrl(full.id);
             setTitle(full.title);
-            const displayMessages = (full.messages || []).filter(
-                (m) =>
-                    m.role !== "tool" &&
-                    m.role !== "system" &&
-                    !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
-            );
+            const displayMessages = prepareDisplayMessages(full.messages);
             setMessages(displayMessages);
             skipSystemPromptSave.current = true;
 

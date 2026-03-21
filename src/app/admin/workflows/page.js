@@ -3,12 +3,17 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import IrisService from "../../../services/IrisService";
 import WorkflowComponent from "../../../components/WorkflowComponent";
 import WorkflowHeaderStatsComponent from "../../../components/WorkflowHeaderStatsComponent";
+import SelectDropdown from "../../../components/SelectDropdown";
 import styles from "./page.module.css";
 
 export default function AdminWorkflowsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const projectFilter = searchParams.get("project") || null;
   const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,6 +22,28 @@ export default function AdminWorkflowsPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    IrisService.getProjectStats()
+      .then((list) => setProjects(list.map((p) => p.project).filter(Boolean)))
+      .catch(() => { });
+  }, []);
+
+  const projectOptions = useMemo(() => [
+    { value: "", label: "All Projects" },
+    ...projects.map((p) => ({ value: p, label: p })),
+  ], [projects]);
+
+  const handleProjectChange = useCallback((val) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) {
+      params.set("project", val);
+    } else {
+      params.delete("project");
+    }
+    router.replace(`/admin/workflows?${params.toString()}`);
+  }, [searchParams, router]);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -27,12 +54,14 @@ export default function AdminWorkflowsPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await IrisService.getWorkflows({
+      const params = {
         page: 1,
         limit: 200,
         sort: "createdAt",
         order: "desc",
-      });
+      };
+      if (projectFilter) params.project = projectFilter;
+      const data = await IrisService.getWorkflows(params);
       const list = data.data || [];
       setWorkflows(list);
       if (list.length > 0 && !selectedId) {
@@ -44,7 +73,7 @@ export default function AdminWorkflowsPage() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [projectFilter]);
 
   useEffect(() => {
     loadWorkflows();
@@ -133,6 +162,12 @@ export default function AdminWorkflowsPage() {
             <ArrowLeft size={16} />
           </Link>
           <h1 className={styles.headerTitle}>Workflows</h1>
+          <SelectDropdown
+            value={projectFilter || ""}
+            options={projectOptions}
+            onChange={handleProjectChange}
+            placeholder="All Projects"
+          />
           <WorkflowHeaderStatsComponent nodes={localNodes} edgeCount={edgeCount} />
         </div>
         <div className={styles.headerRight}>

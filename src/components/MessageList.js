@@ -128,6 +128,43 @@ function ThinkingBlock({ thinking }) {
     );
 }
 
+function ToolCallResultBlock({ result }) {
+    const [showResult, setShowResult] = useState(false);
+
+    if (!result) return null;
+
+    const formatted = typeof result === "string"
+        ? (() => {
+            try {
+                const parsed = JSON.parse(result);
+                return "```json\n" + JSON.stringify(parsed, null, 2) + "\n```";
+            } catch {
+                return "```\n" + result + "\n```";
+            }
+        })()
+        : "```json\n" + JSON.stringify(result, null, 2) + "\n```";
+
+    return (
+        <div className={styles.toolCallResultWrapper}>
+            <button
+                className={styles.toolCallResultToggle}
+                onClick={() => setShowResult((v) => !v)}
+            >
+                <ChevronRight
+                    size={12}
+                    className={showResult ? styles.toolCallChevronOpen : ""}
+                />
+                <span>View Response</span>
+            </button>
+            {showResult && (
+                <div className={styles.toolCallResult}>
+                    <MarkdownContent content={formatted} />
+                </div>
+            )}
+        </div>
+    );
+}
+
 function ToolCallsBlock({ toolCalls }) {
     const [collapsed, setCollapsed] = useState(true);
     if (!toolCalls || toolCalls.length === 0) return null;
@@ -157,20 +194,62 @@ function ToolCallsBlock({ toolCalls }) {
                 <div className={styles.toolCallsContent}>
                     {toolCalls.map((tc, j) => (
                         <div key={j} className={styles.toolCallItem}>
-                            <span className={styles.toolCallName}>{names[j]}</span>
-                            {tc.args && Object.keys(tc.args).length > 0 && (
-                                <span className={styles.toolCallArgs}>
-                                    ({Object.entries(tc.args)
-                                        .map(([k, v]) => `${k}: ${v}`)
-                                        .join(", ")})
-                                </span>
-                            )}
+                            <div className={styles.toolCallHeader}>
+                                <span className={styles.toolCallName}>{names[j]}</span>
+                                {tc.args && Object.keys(tc.args).length > 0 && (
+                                    <span className={styles.toolCallArgs}>
+                                        ({Object.entries(tc.args)
+                                            .map(([k, v]) => `${k}: ${v}`)
+                                            .join(", ")})
+                                    </span>
+                                )}
+                            </div>
+                            <ToolCallResultBlock result={tc.result} />
                         </div>
                     ))}
                 </div>
             )}
         </div>
     );
+}
+
+/**
+ * Prepare messages for display — filters out tool/system messages
+ * and merges tool results into the preceding assistant's toolCalls.
+ * Use this in both /conversations and /admin/conversations for consistency.
+ */
+export function prepareDisplayMessages(rawMessages) {
+    if (!rawMessages || rawMessages.length === 0) return [];
+
+    // First pass: collect tool results keyed by tool_call_id
+    // Support both snake_case (API) and camelCase (normalized) property names
+    const toolResults = {};
+    for (const m of rawMessages) {
+        if (m.role === "tool") {
+            const id = m.tool_call_id || m.toolCallId;
+            if (id) toolResults[id] = m.content;
+        }
+    }
+
+    // Second pass: filter and enrich
+    return rawMessages
+        .filter(
+            (m) =>
+                m.role !== "tool" &&
+                m.role !== "system" &&
+                !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
+        )
+        .map((m) => {
+            // Merge tool results into toolCalls
+            if (m.toolCalls?.length > 0 && Object.keys(toolResults).length > 0) {
+                const enrichedCalls = m.toolCalls.map((tc) => ({
+                    ...tc,
+                    result: tc.result || toolResults[tc.id] || toolResults[tc.tool_call_id] || null,
+                }));
+                return { ...m, toolCalls: enrichedCalls };
+            }
+            return m;
+        });
 }
 
 function MediaPreview({ dataUrl: rawUrl, onClick }) {
