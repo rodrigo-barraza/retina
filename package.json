@@ -1,9 +1,10 @@
 {
   "name": "retina",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
-    "dev": ". ./.env 2>/dev/null; WATCHPACK_POLLING=true next dev -p ${PORT:-3333}",
+    "dev": "WATCHPACK_POLLING=true next dev -p $(node -e \"import('./config.js').then(c=>console.log(c.PORT))\")",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --quiet",

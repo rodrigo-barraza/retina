@@ -6,6 +6,7 @@
 // ============================================================
 
 import {
+  PORT as SECRETS_PORT,
   PRISM_URL as DEFAULT_PRISM_URL,
   PRISM_WS_URL as DEFAULT_PRISM_WS_URL,
   WEATHER_API_URL as DEFAULT_WEATHER_API_URL,
@@ -14,6 +15,8 @@ import {
   TREND_API_URL as DEFAULT_TREND_API_URL,
   MARKET_API_URL as DEFAULT_MARKET_API_URL,
 } from "./secrets.js";
+
+export const PORT = SECRETS_PORT || 3333;
 
 const IS_PRODUCTION =
   typeof window !== "undefined" &&
