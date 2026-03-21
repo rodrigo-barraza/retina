@@ -177,9 +177,12 @@ export default function ConsoleComponent() {
             },
           };
 
-          // Only send conversationId/userMessage on the first iteration
+          // Always send conversationId so Prism persists every response
+          payload.conversationId = conversationId;
+
+          // Only send userMessage/meta on the first iteration
+          // (subsequent iterations are tool-result follow-ups)
           if (iterations === 1) {
-            payload.conversationId = conversationId;
             payload.userMessage = currentMessages[currentMessages.length - 1];
             payload.conversationMeta = {
               title: title,
