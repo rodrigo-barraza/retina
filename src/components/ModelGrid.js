@@ -6,6 +6,7 @@ import {
     X,
     ChevronDown,
     ChevronUp,
+    ChevronsUpDown,
     ArrowRight,
     Star,
 } from "lucide-react";
@@ -98,6 +99,8 @@ function getSortValue(rawModel, model, key, favorites = []) {
         const favKey = `${model.provider}:${model.key}`;
         return favorites.includes(favKey) ? 1 : 0;
     }
+    if (key === "model") return model.name.toLowerCase();
+    if (key === "quant") return (model.quantization || "").toLowerCase();
     if (key === "context")
         return (
             rawModel.max_context_length ||
@@ -127,7 +130,13 @@ export default function ModelGrid({
     onToggleFavorite,
 }) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [sort, setSort] = useState({ key: null, dir: "desc" });
+    const [sort, setSort] = useState(() => {
+        try {
+            const stored = localStorage.getItem("retina:modelGrid:sort");
+            if (stored) return JSON.parse(stored);
+        } catch {}
+        return { key: null, dir: "desc" };
+    });
     const [activeProvider, setActiveProvider] = useState(null);
     const [activeModality, setActiveModality] = useState(null);
 
@@ -196,6 +205,11 @@ export default function ModelGrid({
             const nb = normalizeModel(b);
             const va = getSortValue(a, na, sort.key, favorites);
             const vb = getSortValue(b, nb, sort.key, favorites);
+            if (typeof va === "string" || typeof vb === "string") {
+                return sort.dir === "asc"
+                    ? String(va).localeCompare(String(vb))
+                    : String(vb).localeCompare(String(va));
+            }
             return sort.dir === "asc" ? va - vb : vb - va;
         })
         : filtered;
@@ -221,14 +235,19 @@ export default function ModelGrid({
 
     const handleSort = (key) => {
         setSort((prev) => {
-            if (prev.key === key)
-                return { key, dir: prev.dir === "desc" ? "asc" : "desc" };
-            return { key, dir: "desc" };
+            const next =
+                prev.key === key
+                    ? { key, dir: prev.dir === "desc" ? "asc" : "desc" }
+                    : { key, dir: "desc" };
+            try { localStorage.setItem("retina:modelGrid:sort", JSON.stringify(next)); } catch {}
+            return next;
         });
     };
 
     const renderSortIcon = (colKey) => {
-        if (sort.key !== colKey) return null;
+        if (sort.key !== colKey) {
+            return <ChevronsUpDown size={12} className={styles.sortIconIdle} />;
+        }
         return sort.dir === "desc" ? (
             <ChevronDown size={12} className={styles.sortIcon} />
         ) : (
@@ -241,7 +260,7 @@ export default function ModelGrid({
             className={`${styles.th} ${styles.thSortable} ${extra}`}
             onClick={() => handleSort(key)}
         >
-            {label} {renderSortIcon(key)}
+            {renderSortIcon(key)} {label}
         </th>
     );
 
@@ -329,12 +348,12 @@ export default function ModelGrid({
                                         {renderSortIcon("favorite")}
                                     </th>
                                 )}
-                                <th className={styles.th}>Model</th>
+                                {sortableTh("Model", "model", styles.thModel)}
                                 {hasModalities && <th className={styles.th}>Modalities</th>}
                                 {hasContext && sortableTh("Context", "context")}
                                 {hasSize && sortableTh("Size", "size")}
                                 {hasParams && sortableTh("Params", "params")}
-                                {hasQuant && <th className={styles.th}>Quant</th>}
+                                {hasQuant && sortableTh("Quant", "quant")}
                                 {hasInputPrice && sortableTh("Input", "input")}
                                 {hasOutputPrice && sortableTh("Output", "output")}
                                 {arenaCols.map((col) => (
@@ -343,7 +362,7 @@ export default function ModelGrid({
                                         className={`${styles.th} ${styles.thSortable} ${styles.thArena}`}
                                         onClick={() => handleSort(col.key)}
                                     >
-                                        {col.label} {renderSortIcon(col.key)}
+                                        {renderSortIcon(col.key)} {col.label}
                                     </th>
                                 ))}
                             </tr>

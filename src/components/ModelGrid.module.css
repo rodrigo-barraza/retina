@@ -161,20 +161,39 @@
   }
 }
 
+/* Model column left-align when favorites column shifts it to :nth-child(2) */
+.th.thModel {
+  text-align: left;
+  width: 1%;
+  white-space: nowrap;
+}
+
 .thSortable {
   cursor: pointer;
   transition: color 0.15s;
 
   &:hover {
     color: var(--text-primary);
+
+    .sortIconIdle {
+      opacity: 0.45;
+    }
   }
 }
 
 .sortIcon {
   display: inline-block;
   vertical-align: middle;
-  margin-left: 2px;
+  margin-right: 3px;
   opacity: 0.7;
+}
+
+.sortIconIdle {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 3px;
+  opacity: 0.2;
+  transition: opacity 0.15s;
 }
 
 .tr {
