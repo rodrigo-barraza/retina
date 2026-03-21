@@ -38,6 +38,7 @@ export default function ConsoleComponent() {
   const [showToolPanel, setShowToolPanel] = useState(false);
   const [provider] = useState("google");
   const [model] = useState("gemini-3-flash-preview");
+  const [conversationId, setConversationId] = useState(() => crypto.randomUUID());
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -80,6 +81,7 @@ export default function ConsoleComponent() {
           const payload = {
             provider,
             model,
+            project: "retina-console",
             messages: [
               { role: "system", content: SYSTEM_PROMPT },
               ...currentMessages,
@@ -89,6 +91,17 @@ export default function ConsoleComponent() {
               maxTokens: 8192,
             },
           };
+
+          // Only send conversationId/userMessage on the first iteration
+          // (subsequent iterations are tool-result follow-ups)
+          if (iterations === 1) {
+            payload.conversationId = conversationId;
+            payload.userMessage = currentMessages[currentMessages.length - 1];
+            payload.conversationMeta = {
+              title: "Sun Console",
+              systemPrompt: SYSTEM_PROMPT,
+            };
+          }
 
           abortRef.current = PrismService.streamText(payload, {
             onChunk: (content) => {
@@ -203,7 +216,7 @@ export default function ConsoleComponent() {
 
       return currentMessages;
     },
-    [provider, model],
+    [provider, model, conversationId],
   );
 
   const handleSend = useCallback(async () => {
@@ -259,6 +272,7 @@ export default function ConsoleComponent() {
     setMessages([]);
     setToolActivity([]);
     setShowToolPanel(false);
+    setConversationId(crypto.randomUUID());
   }, [isGenerating]);
 
   // ── Render helpers ──────────────────────────────────────────
