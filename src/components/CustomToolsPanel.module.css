@@ -27,15 +27,22 @@
   color: var(--text-tertiary);
   padding: 4px 2px 2px;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--text-secondary);
+  }
 }
 
 .addBtnSmall {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
+  gap: 3px;
   margin-left: auto;
+  padding: 2px 8px;
+  font-size: 9px;
+  font-weight: 600;
   background: color-mix(in srgb, var(--accent-color) 12%, transparent);
   color: var(--accent-color);
   border: 1px solid color-mix(in srgb, var(--accent-color) 25%, transparent);
@@ -45,7 +52,6 @@
 
   &:hover {
     background: color-mix(in srgb, var(--accent-color) 22%, transparent);
-    transform: scale(1.1);
   }
 }
 
@@ -72,6 +78,23 @@
   text-transform: uppercase;
   background: color-mix(in srgb, var(--accent-color) 12%, transparent);
   color: var(--accent-color);
+}
+
+.offlineCard {
+  border-left-color: #ef4444;
+  opacity: 0.45;
+}
+
+.offlineBadge {
+  display: inline-flex;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, #ef4444 15%, transparent);
+  color: #ef4444;
 }
 
 /* ── New Tool Button ───────────────────────────────────────── */

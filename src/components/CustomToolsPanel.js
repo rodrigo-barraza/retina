@@ -60,11 +60,14 @@ export default function CustomToolsPanel({
   builtInTools = [],
   disabledBuiltIns = new Set(),
   onToggleBuiltIn,
+  offlineTools = new Set(),
 }) {
   const [editingTool, setEditingTool] = useState(null);
   const [isNew, setIsNew] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [builtInOpen, setBuiltInOpen] = useState(true);
+  const [customOpen, setCustomOpen] = useState(true);
 
   // ── CRUD ─────────────────────────────────────────────────────
 
@@ -364,172 +367,195 @@ export default function CustomToolsPanel({
 
   return (
     <div className={styles.container}>
-      {/* ── Built-in tools ── */}
-      <div className={styles.sectionHeader}>
-        <Cpu size={12} />
-        <span>Built-in ({enabledBuiltIn}/{builtInTools.length})</span>
-      </div>
-
-      {builtInTools.map((tool) => {
-        const isDisabled = disabledBuiltIns.has(tool.name);
-        const isExpanded = expandedId === `builtin-${tool.name}`;
-        const paramCount = Object.keys(tool.parameters?.properties || {}).length;
-
-        return (
-          <div
-            key={`builtin-${tool.name}`}
-            className={`${styles.toolCard} ${styles.builtInCard} ${isDisabled ? styles.toolDisabled : ""}`}
-          >
-            <div
-              className={styles.toolCardHeader}
-              onClick={() =>
-                setExpandedId(isExpanded ? null : `builtin-${tool.name}`)
-              }
-            >
-              <button className={styles.expandBtn}>
-                {isExpanded ? (
-                  <ChevronDown size={14} />
-                ) : (
-                  <ChevronRight size={14} />
-                )}
-              </button>
-              <div className={styles.toolCardInfo}>
-                <span className={styles.toolCardName}>
-                  {renderToolName(tool.name)}
-                </span>
-                <span className={styles.toolCardMeta}>
-                  <span className={styles.builtInBadge}>Built-in</span>
-                  {paramCount > 0 && <span>{paramCount} params</span>}
-                </span>
-              </div>
-              <div className={styles.toolCardActions}>
-                <ToggleSwitchComponent
-                  checked={!isDisabled}
-                  onChange={() => onToggleBuiltIn?.(tool.name)}
-                  size="small"
-                />
-              </div>
-            </div>
-
-            {isExpanded && (
-              <div className={styles.toolCardBody}>
-                <p className={styles.toolCardDesc}>{tool.description}</p>
-                {paramCount > 0 && (
-                  <div className={styles.toolCardParams}>
-                    {Object.entries(tool.parameters.properties).map(
-                      ([name, schema]) => (
-                        <div key={name} className={styles.toolCardParam}>
-                          <code>{name}</code>
-                          <span className={styles.paramType}>{schema.type}</span>
-                          {tool.parameters.required?.includes(name) && (
-                            <span className={styles.paramRequired}>required</span>
-                          )}
-                        </div>
-                      ),
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
-
       {/* ── Custom tools ── */}
-      <div className={styles.sectionHeader} style={{ marginTop: 12 }}>
+      <div
+        className={styles.sectionHeader}
+        onClick={() => setCustomOpen((v) => !v)}
+      >
+        {customOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         <Globe size={12} />
         <span>Custom ({tools.length})</span>
-        <button className={styles.addBtnSmall} onClick={handleCreate}>
-          <Plus size={11} />
+        <button
+          className={styles.addBtnSmall}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCreate();
+          }}
+        >
+          <Plus size={10} /> New Tool
         </button>
       </div>
 
-      {tools.length === 0 && (
+      {customOpen && tools.length === 0 && (
         <div className={styles.emptyCustom}>
           Create a tool to connect any API.
         </div>
       )}
 
-      {tools.map((tool) => {
-        const id = tool.id || tool._id;
-        const isExpanded = expandedId === id;
-        return (
-          <div
-            key={id}
-            className={`${styles.toolCard} ${!tool.enabled ? styles.toolDisabled : ""}`}
-          >
+      {customOpen &&
+        tools.map((tool) => {
+          const id = tool.id || tool._id;
+          const isExpanded = expandedId === id;
+          return (
             <div
-              className={styles.toolCardHeader}
-              onClick={() => setExpandedId(isExpanded ? null : id)}
+              key={id}
+              className={`${styles.toolCard} ${!tool.enabled ? styles.toolDisabled : ""}`}
             >
-              <button className={styles.expandBtn}>
-                {isExpanded ? (
-                  <ChevronDown size={14} />
-                ) : (
-                  <ChevronRight size={14} />
-                )}
-              </button>
-              <div className={styles.toolCardInfo}>
-                <span className={styles.toolCardName}>{tool.name}</span>
-                <span className={styles.toolCardMeta}>
-                  <span className={styles.methodBadge} data-method={tool.method}>
-                    {tool.method}
-                  </span>
-                  {tool.parameters?.length > 0 && (
-                    <span>{tool.parameters.length} params</span>
+              <div
+                className={styles.toolCardHeader}
+                onClick={() => setExpandedId(isExpanded ? null : id)}
+              >
+                <button className={styles.expandBtn}>
+                  {isExpanded ? (
+                    <ChevronDown size={14} />
+                  ) : (
+                    <ChevronRight size={14} />
                   )}
-                </span>
+                </button>
+                <div className={styles.toolCardInfo}>
+                  <span className={styles.toolCardName}>{tool.name}</span>
+                  <span className={styles.toolCardMeta}>
+                    <span className={styles.methodBadge} data-method={tool.method}>
+                      {tool.method}
+                    </span>
+                    {tool.parameters?.length > 0 && (
+                      <span>{tool.parameters.length} params</span>
+                    )}
+                  </span>
+                </div>
+                <div className={styles.toolCardActions}>
+                  <ToggleSwitchComponent
+                    checked={tool.enabled}
+                    onChange={() => handleToggle(tool)}
+                    size="small"
+                  />
+                </div>
               </div>
-              <div className={styles.toolCardActions}>
-                <ToggleSwitchComponent
-                  checked={tool.enabled}
-                  onChange={() => handleToggle(tool)}
-                  size="small"
-                />
-              </div>
-            </div>
 
-            {isExpanded && (
-              <div className={styles.toolCardBody}>
-                <p className={styles.toolCardDesc}>
-                  {tool.description || "No description"}
-                </p>
-                <div className={styles.toolCardEndpoint}>
-                  <Globe size={11} />
-                  <code>{tool.endpoint}</code>
-                </div>
-                {tool.parameters?.length > 0 && (
-                  <div className={styles.toolCardParams}>
-                    {tool.parameters.map((p, i) => (
-                      <div key={i} className={styles.toolCardParam}>
-                        <code>{p.name}</code>
-                        <span className={styles.paramType}>{p.type}</span>
-                        {p.required && (
-                          <span className={styles.paramRequired}>required</span>
-                        )}
-                      </div>
-                    ))}
+              {isExpanded && (
+                <div className={styles.toolCardBody}>
+                  <p className={styles.toolCardDesc}>
+                    {tool.description || "No description"}
+                  </p>
+                  <div className={styles.toolCardEndpoint}>
+                    <Globe size={11} />
+                    <code>{tool.endpoint}</code>
                   </div>
-                )}
-                <div className={styles.toolCardFooter}>
-                  <button
-                    className={styles.editBtn}
-                    onClick={() => handleEdit(tool)}
-                  >
-                    <Edit3 size={12} /> Edit
-                  </button>
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={() => handleDelete(id)}
-                  >
-                    <Trash2 size={12} /> Delete
-                  </button>
+                  {tool.parameters?.length > 0 && (
+                    <div className={styles.toolCardParams}>
+                      {tool.parameters.map((p, i) => (
+                        <div key={i} className={styles.toolCardParam}>
+                          <code>{p.name}</code>
+                          <span className={styles.paramType}>{p.type}</span>
+                          {p.required && (
+                            <span className={styles.paramRequired}>required</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className={styles.toolCardFooter}>
+                    <button
+                      className={styles.editBtn}
+                      onClick={() => handleEdit(tool)}
+                    >
+                      <Edit3 size={12} /> Edit
+                    </button>
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={() => handleDelete(id)}
+                    >
+                      <Trash2 size={12} /> Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+      {/* ── Built-in tools ── */}
+      <div
+        className={styles.sectionHeader}
+        style={{ marginTop: 12 }}
+        onClick={() => setBuiltInOpen((v) => !v)}
+      >
+        {builtInOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        <Cpu size={12} />
+        <span>Built-in ({enabledBuiltIn}/{builtInTools.length})</span>
+      </div>
+
+      {builtInOpen &&
+        builtInTools.map((tool) => {
+          const isDisabled = disabledBuiltIns.has(tool.name);
+          const isOffline = offlineTools.has(tool.name);
+          const isExpanded = expandedId === `builtin-${tool.name}`;
+          const paramCount = Object.keys(tool.parameters?.properties || {}).length;
+
+          return (
+            <div
+              key={`builtin-${tool.name}`}
+              className={`${styles.toolCard} ${styles.builtInCard} ${isOffline ? styles.offlineCard : ""} ${isDisabled ? styles.toolDisabled : ""}`}
+            >
+              <div
+                className={styles.toolCardHeader}
+                onClick={() =>
+                  setExpandedId(isExpanded ? null : `builtin-${tool.name}`)
+                }
+              >
+                <button className={styles.expandBtn}>
+                  {isExpanded ? (
+                    <ChevronDown size={14} />
+                  ) : (
+                    <ChevronRight size={14} />
+                  )}
+                </button>
+                <div className={styles.toolCardInfo}>
+                  <span className={styles.toolCardName}>
+                    {renderToolName(tool.name)}
+                  </span>
+                  <span className={styles.toolCardMeta}>
+                    {isOffline ? (
+                      <span className={styles.offlineBadge}>Offline</span>
+                    ) : (
+                      <span className={styles.builtInBadge}>Built-in</span>
+                    )}
+                    {paramCount > 0 && <span>{paramCount} params</span>}
+                  </span>
+                </div>
+                <div className={styles.toolCardActions}>
+                  <ToggleSwitchComponent
+                    checked={!isDisabled}
+                    onChange={() => onToggleBuiltIn?.(tool.name)}
+                    size="small"
+                    disabled={isOffline}
+                  />
                 </div>
               </div>
-            )}
-          </div>
-        );
-      })}
+
+              {isExpanded && (
+                <div className={styles.toolCardBody}>
+                  <p className={styles.toolCardDesc}>{tool.description}</p>
+                  {paramCount > 0 && (
+                    <div className={styles.toolCardParams}>
+                      {Object.entries(tool.parameters.properties).map(
+                        ([name, schema]) => (
+                          <div key={name} className={styles.toolCardParam}>
+                            <code>{name}</code>
+                            <span className={styles.paramType}>{schema.type}</span>
+                            {tool.parameters.required?.includes(name) && (
+                              <span className={styles.paramRequired}>required</span>
+                            )}
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
     </div>
   );
 }

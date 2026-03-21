@@ -384,6 +384,30 @@ async function fetchJson(url) {
 }
 
 // ────────────────────────────────────────────────────────────
+// Tool → API mapping (for health checks)
+// ────────────────────────────────────────────────────────────
+
+const TOOL_API_MAP = {
+  get_current_weather: WEATHER_API_URL,
+  get_weather_forecast: WEATHER_API_URL,
+  get_air_quality: WEATHER_API_URL,
+  get_earthquakes: WEATHER_API_URL,
+  get_solar_activity: WEATHER_API_URL,
+  get_aurora_forecast: WEATHER_API_URL,
+  get_twilight: WEATHER_API_URL,
+  get_tides: WEATHER_API_URL,
+  get_wildfires: WEATHER_API_URL,
+  get_iss_position: WEATHER_API_URL,
+  search_events: EVENT_API_URL,
+  get_upcoming_events: EVENT_API_URL,
+  get_commodities_summary: MARKET_API_URL,
+  get_commodity_by_category: MARKET_API_URL,
+  get_commodity_ticker: MARKET_API_URL,
+  get_trends: TREND_API_URL,
+  search_products: PRODUCT_API_URL,
+};
+
+// ────────────────────────────────────────────────────────────
 // Public API
 // ────────────────────────────────────────────────────────────
 
@@ -394,6 +418,43 @@ export default class SunService {
    */
   static getToolSchemas() {
     return TOOL_DEFINITIONS;
+  }
+
+  /**
+   * Check which APIs are online by hitting their health endpoints.
+   * Returns a Set of tool names whose backing API is offline.
+   * @returns {Promise<{ offline: Set<string>, apiStatus: Record<string, boolean> }>}
+   */
+  static async checkApiHealth() {
+    const uniqueApis = [...new Set(Object.values(TOOL_API_MAP))];
+
+    const statuses = await Promise.all(
+      uniqueApis.map(async (baseUrl) => {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 3000);
+          const res = await fetch(`${baseUrl}/health`, { signal: controller.signal });
+          clearTimeout(timeout);
+          return { url: baseUrl, online: res.ok };
+        } catch {
+          return { url: baseUrl, online: false };
+        }
+      }),
+    );
+
+    const apiStatus = {};
+    for (const s of statuses) {
+      apiStatus[s.url] = s.online;
+    }
+
+    const offline = new Set();
+    for (const [toolName, apiUrl] of Object.entries(TOOL_API_MAP)) {
+      if (!apiStatus[apiUrl]) {
+        offline.add(toolName);
+      }
+    }
+
+    return { offline, apiStatus };
   }
 
   /**

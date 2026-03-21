@@ -52,6 +52,9 @@ export default function ConsoleComponent() {
   const [leftTab, setLeftTab] = useState("settings"); // "settings" | "tools"
   const [customTools, setCustomTools] = useState([]);
   const [disabledBuiltIns, setDisabledBuiltIns] = useState(new Set());
+  const [offlineTools, setOfflineTools] = useState(
+    () => new Set(SunService.getToolSchemas().map((t) => t.name)),
+  );
 
   const [settings, setSettings] = useState({
     provider: "google",
@@ -163,10 +166,17 @@ export default function ConsoleComponent() {
     loadCustomTools();
   }, [loadCustomTools]);
 
+  // Check API health on mount
+  useEffect(() => {
+    SunService.checkApiHealth()
+      .then(({ offline }) => setOfflineTools(offline))
+      .catch(console.error);
+  }, []);
+
   // Merge enabled built-in + enabled custom tool schemas
   const allToolSchemas = useMemo(() => {
     const builtIn = SunService.getToolSchemas().filter(
-      (t) => !disabledBuiltIns.has(t.name),
+      (t) => !disabledBuiltIns.has(t.name) && !offlineTools.has(t.name),
     );
     const custom = customTools
       .filter((t) => t.enabled)
@@ -191,7 +201,7 @@ export default function ConsoleComponent() {
         },
       }));
     return [...builtIn, ...custom];
-  }, [customTools, disabledBuiltIns]);
+  }, [customTools, disabledBuiltIns, offlineTools]);
 
   // Build a lookup for custom tools by name for execution
   const customToolMap = useMemo(() => {
@@ -519,6 +529,7 @@ export default function ConsoleComponent() {
           builtInTools={SunService.getToolSchemas()}
           disabledBuiltIns={disabledBuiltIns}
           onToggleBuiltIn={handleToggleBuiltIn}
+          offlineTools={offlineTools}
         />
       )}
     </>
