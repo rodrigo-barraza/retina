@@ -13,6 +13,7 @@ import {
   Cpu,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
+import ButtonComponent from "./ButtonComponent.js";
 import ToggleSwitchComponent from "./ToggleSwitch.js";
 import styles from "./CustomToolsPanel.module.css";
 
@@ -381,15 +382,18 @@ export default function CustomToolsPanel({
         {customOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         <Globe size={12} />
         <span>Custom ({tools.length})</span>
-        <button
-          className={styles.addBtnSmall}
+        <ButtonComponent
+          variant="primary"
+          size="xs"
+          icon={Plus}
+          style={{ marginLeft: "auto" }}
           onClick={(e) => {
             e.stopPropagation();
             handleCreate();
           }}
         >
-          <Plus size={10} /> New Tool
-        </button>
+          New Tool
+        </ButtonComponent>
       </div>
 
       {customOpen && tools.length === 0 && (
@@ -461,35 +465,41 @@ export default function CustomToolsPanel({
                     </div>
                   )}
                   <div className={styles.toolCardFooter}>
-                    <button
-                      className={styles.editBtn}
+                    <ButtonComponent
+                      variant="secondary"
+                      size="xs"
+                      icon={Edit3}
                       onClick={() => handleEdit(tool)}
                     >
-                      <Edit3 size={12} /> Edit
-                    </button>
+                      Edit
+                    </ButtonComponent>
                     {confirmingDeleteId === id ? (
                       <div className={styles.deleteConfirm}>
                         <span className={styles.deleteConfirmLabel}>Delete?</span>
-                        <button
-                          className={styles.deleteConfirmYes}
+                        <ButtonComponent
+                          variant="danger"
+                          size="xs"
                           onClick={() => confirmDelete(id)}
                         >
                           Yes
-                        </button>
-                        <button
-                          className={styles.deleteConfirmNo}
+                        </ButtonComponent>
+                        <ButtonComponent
+                          variant="secondary"
+                          size="xs"
                           onClick={() => setConfirmingDeleteId(null)}
                         >
                           No
-                        </button>
+                        </ButtonComponent>
                       </div>
                     ) : (
-                      <button
-                        className={styles.deleteBtn}
+                      <ButtonComponent
+                        variant="danger"
+                        size="xs"
+                        icon={Trash2}
                         onClick={() => handleDelete(id)}
                       >
-                        <Trash2 size={12} /> Delete
-                      </button>
+                        Delete
+                      </ButtonComponent>
                     )}
                   </div>
                 </div>

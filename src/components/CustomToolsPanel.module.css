@@ -35,33 +35,17 @@
   }
 }
 
-.addBtnSmall {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 500;
-  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
-  color: var(--accent-color);
-  border: 1px solid color-mix(in srgb, var(--accent-color) 25%, transparent);
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background: color-mix(in srgb, var(--accent-color) 22%, transparent);
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-  }
-}
-
 .emptyCustom {
   font-size: 11px;
   color: var(--text-tertiary);
   font-style: italic;
   padding: 6px 4px;
+}
+
+.toolCardFooter {
+  display: flex;
+  gap: 6px;
+  padding-top: 4px;
 }
 
 /* ── Built-in Card ─────────────────────────────────────────── */
@@ -320,39 +304,6 @@
   font-weight: 600;
 }
 
-.toolCardFooter {
-  display: flex;
-  gap: 6px;
-  padding-top: 4px;
-}
-
-.editBtn,
-.deleteBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 500;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  background: var(--bg-card);
-  color: var(--text-secondary);
-
-  &:hover {
-    border-color: var(--accent-color);
-    color: var(--text-primary);
-  }
-}
-
-.deleteBtn:hover {
-  border-color: #ef4444;
-  color: #ef4444;
-  background: color-mix(in srgb, #ef4444 8%, var(--bg-card));
-}
-
 /* ── Delete Confirmation ──────────────────────────────────── */
 
 .deleteConfirm {
@@ -371,38 +322,6 @@
   font-size: 11px;
   font-weight: 600;
   color: #ef4444;
-}
-
-.deleteConfirmYes,
-.deleteConfirmNo {
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 500;
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border: 1px solid var(--border-color);
-}
-
-.deleteConfirmYes {
-  background: color-mix(in srgb, #ef4444 12%, transparent);
-  color: #ef4444;
-  border-color: color-mix(in srgb, #ef4444 30%, transparent);
-
-  &:hover {
-    background: color-mix(in srgb, #ef4444 25%, transparent);
-    border-color: #ef4444;
-  }
-}
-
-.deleteConfirmNo {
-  background: var(--bg-card);
-  color: var(--text-secondary);
-
-  &:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-  }
 }
 
 /* ── Form View ─────────────────────────────────────────────── */
