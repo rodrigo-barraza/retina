@@ -111,7 +111,7 @@
   justify-content: center;
   width: 80px;
   height: 80px;
-  border-radius: 20px;
+  border-radius: var(--border-radius-sm);
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--accent-color) 12%, transparent),
@@ -156,7 +156,7 @@
   color: var(--text-secondary);
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 999px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;

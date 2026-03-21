@@ -19,7 +19,7 @@ import {
     LayoutGrid,
     Pencil,
     X,
-    Zap,
+    Wrench,
     Clock,
 } from "lucide-react";
 import AudioRecorderComponent from "./AudioRecorderComponent";
@@ -511,7 +511,7 @@ export default function ChatArea({
                 {messages.length === 0 && functionCallingEnabled && (
                     <div className={consoleStyles.emptyState}>
                         <div className={consoleStyles.emptyIcon}>
-                            <Zap size={40} />
+                            <Wrench size={40} />
                         </div>
                         <h2 className={consoleStyles.emptyTitle}>Function Calling</h2>
                         <p className={consoleStyles.emptySubtitle}>
