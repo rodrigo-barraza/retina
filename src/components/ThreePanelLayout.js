@@ -34,6 +34,7 @@ export default function ThreePanelLayout({
     const [showRight, setShowRight] = useState(true);
     const [hydrated, setHydrated] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [isNarrow, setIsNarrow] = useState(false);
 
     useEffect(() => {
         const mobile = window.innerWidth < 768;
@@ -53,17 +54,38 @@ export default function ThreePanelLayout({
     }, []);
 
     useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth < 768);
+        const check = () => {
+            setIsMobile(window.innerWidth < 768);
+            setIsNarrow(window.innerWidth <= 1400);
+        };
         check();
         window.addEventListener("resize", check);
         return () => window.removeEventListener("resize", check);
     }, []);
 
+    /* Narrow ↔ wide transitions: enforce exclusivity or restore both */
+    useEffect(() => {
+        if (isNarrow) {
+            // Entering narrow: if both are open, close the right
+            if (showLeft && showRight) {
+                setShowRight(false);
+                localStorage.setItem("panel_right", "false");
+            }
+        } else {
+            // Leaving narrow (back to wide): restore both panels
+            setShowLeft(true);
+            setShowRight(true);
+            localStorage.setItem("panel_left", "true");
+            localStorage.setItem("panel_right", "true");
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isNarrow]);
+
     const toggleLeft = useCallback(() => {
         setShowLeft((prev) => {
             const next = !prev;
             localStorage.setItem("panel_left", String(next));
-            if (next && window.innerWidth < 768) {
+            if (next && window.innerWidth <= 1400) {
                 setShowRight(false);
                 localStorage.setItem("panel_right", "false");
             }
@@ -75,7 +97,7 @@ export default function ThreePanelLayout({
         setShowRight((prev) => {
             const next = !prev;
             localStorage.setItem("panel_right", String(next));
-            if (next && window.innerWidth < 768) {
+            if (next && window.innerWidth <= 1400) {
                 setShowLeft(false);
                 localStorage.setItem("panel_left", "false");
             }

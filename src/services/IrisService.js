@@ -108,6 +108,11 @@ export default class IrisService {
         return fetchJSON(`/live?minutes=${minutes}`);
     }
 
+    static async getConversationStats(project = null) {
+        const params = project ? `?project=${encodeURIComponent(project)}` : "";
+        return fetchJSON(`/conversations/stats${params}`);
+    }
+
     /**
      * Subscribe to real-time conversation stats via SSE.
      * @param {Function} onStats - ({ generatingCount, recentCount }) => void

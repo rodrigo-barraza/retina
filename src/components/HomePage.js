@@ -64,6 +64,8 @@ export default function HomePage({ initialConversationId = null }) {
     const [workflows, setWorkflows] = useState([]);
     const [favoriteKeys, setFavoriteKeys] = useState([]);
     const [convFavoriteKeys, setConvFavoriteKeys] = useState([]);
+    const [originalMessageCount, setOriginalMessageCount] = useState(0);
+    const [originalTotalCost, setOriginalTotalCost] = useState(0);
 
     // ── Function Calling state ──────────────────────────────────
     const [leftTab, setLeftTab] = useState("settings");
@@ -300,6 +302,8 @@ Guidelines:
                     setTitle(full.title);
                     const displayMessages = prepareDisplayMessages(full.messages);
                     setMessages(displayMessages);
+                    setOriginalMessageCount(displayMessages.length);
+                    setOriginalTotalCost(full.totalCost || displayMessages.reduce((s, m) => s + (m.estimatedCost || 0), 0));
                     skipSystemPromptSave.current = true;
 
                     // Detect if conversation used function calling
@@ -351,6 +355,8 @@ Guidelines:
         updateUrl(null);
         setTitle("New Conversation");
         setMessages([]);
+        setOriginalMessageCount(0);
+        setOriginalTotalCost(0);
         setToolActivity([]);
         setShowToolPanel(false);
         skipSystemPromptSave.current = true;
@@ -387,6 +393,8 @@ Guidelines:
             setTitle(full.title);
             const displayMessages = prepareDisplayMessages(full.messages);
             setMessages(displayMessages);
+            setOriginalMessageCount(displayMessages.length);
+            setOriginalTotalCost(full.totalCost || displayMessages.reduce((s, m) => s + (m.estimatedCost || 0), 0));
             skipSystemPromptSave.current = true;
 
             // Detect if conversation used function calling
@@ -1499,7 +1507,19 @@ Guidelines:
                 headerMeta={
                     messages.length > 0 ? (
                         <div className={styles.headerMeta}>
-                            <span>{messages.length} messages</span>
+                            {(() => {
+                                const deletedCount = originalMessageCount - messages.length;
+                                return (
+                                    <span className={deletedCount > 0 ? styles.metaTooltipWrapper : undefined}>
+                                        {messages.length} messages
+                                        {deletedCount > 0 && (
+                                            <span className={styles.metaTooltip}>
+                                                {deletedCount} deleted
+                                            </span>
+                                        )}
+                                    </span>
+                                );
+                            })()}
                             {uniqueModels.length === 1 && <span>{uniqueModels[0]}</span>}
                             {uniqueModels.length > 1 && (
                                 <span className={styles.modelDropdownWrapper}>
@@ -1526,7 +1546,19 @@ Guidelines:
                                     )}
                                 </span>
                             )}
-                            {totalCost > 0 && <span>${totalCost.toFixed(5)}</span>}
+                            {totalCost > 0 && (() => {
+                                const costDiff = originalTotalCost - totalCost;
+                                return (
+                                    <span className={costDiff > 0.000001 ? styles.metaTooltipWrapper : undefined}>
+                                        ${totalCost.toFixed(5)}
+                                        {costDiff > 0.000001 && (
+                                            <span className={styles.metaTooltip}>
+                                                ${originalTotalCost.toFixed(5)} total
+                                            </span>
+                                        )}
+                                    </span>
+                                );
+                            })()}
                         </div>
                     ) : null
                 }

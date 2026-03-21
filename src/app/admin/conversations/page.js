@@ -139,8 +139,17 @@ export default function ConversationsPage({ initialId = null }) {
         }
     }, [projectFilter]);
 
-    // SSE subscription for real-time stats
+    // Initial stats fetch + SSE subscription for real-time updates
     useEffect(() => {
+        // Immediate HTTP fetch for initial values
+        IrisService.getConversationStats(projectFilter)
+            .then((data) => {
+                setGeneratingCount(data.generatingCount || 0);
+                setRecentCount(data.recentCount || 0);
+            })
+            .catch(() => { /* SSE will handle it */ });
+
+        // SSE for continuous real-time updates
         const es = IrisService.subscribeConversationStats((data) => {
             setGeneratingCount(data.generatingCount || 0);
             setRecentCount(data.recentCount || 0);
@@ -344,7 +353,22 @@ export default function ConversationsPage({ initialId = null }) {
                                             {selectedConv.username}
                                         </span>
                                     )}
-                                <span>{selectedConv.messages?.length || 0} messages</span>
+                                {(() => {
+                                    const currentMsgCount = selectedConv.messages?.length || 0;
+                                    const deletedCount = (selectedConv.messageCount || currentMsgCount) - currentMsgCount;
+                                    return (
+                                        <>
+                                            <span className={deletedCount > 0 ? styles.metaTooltipWrapper : undefined}>
+                                                {currentMsgCount} messages
+                                                {deletedCount > 0 && (
+                                                    <span className={styles.metaTooltip}>
+                                                        {deletedCount} deleted
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </>
+                                    );
+                                })()}
                                 {uniqueModels.length === 1 && <span>{uniqueModels[0]}</span>}
                                 {uniqueModels.length > 1 && (
                                     <span className={styles.modelDropdownWrapper}>
@@ -371,7 +395,20 @@ export default function ConversationsPage({ initialId = null }) {
                                         )}
                                     </span>
                                 )}
-                                {totalCost > 0 && <span>${totalCost.toFixed(5)}</span>}
+                                {(() => {
+                                    const originalCost = selectedConv.totalCost || 0;
+                                    const costDiff = originalCost - totalCost;
+                                    return totalCost > 0 ? (
+                                        <span className={costDiff > 0.000001 ? styles.metaTooltipWrapper : undefined}>
+                                            ${totalCost.toFixed(5)}
+                                            {costDiff > 0.000001 && (
+                                                <span className={styles.metaTooltip}>
+                                                    ${originalCost.toFixed(5)} total
+                                                </span>
+                                            )}
+                                        </span>
+                                    ) : null;
+                                })()}
                                 {selectedConv.isGenerating && (
                                     <span className={styles.generatingBadge}>
                                         <Loader size={12} className={styles.spinning} />

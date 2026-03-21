@@ -234,7 +234,7 @@
 
 /* On mobile, the desktop wrapper is hidden — the component renders
    a floating hamburger + overlay drawer instead (see JS) */
-@media (max-width: 767px) {
+@media (max-width: 1200px) {
   .wrapper {
     display: none;
   }
@@ -264,7 +264,7 @@
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1200px) {
   .mobileHamburger {
     display: flex;
   }
