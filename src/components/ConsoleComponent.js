@@ -44,14 +44,14 @@ export default function ConsoleComponent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [toolActivity, setToolActivity] = useState([]);
   const [showToolPanel, setShowToolPanel] = useState(false);
-  const [showToolsList, setShowToolsList] = useState(false);
   const [conversationId, setConversationId] = useState(() => crypto.randomUUID());
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [config, setConfig] = useState(null);
-  const [title, setTitle] = useState("Sun Console");
+  const [title, setTitle] = useState("Console");
   const [leftTab, setLeftTab] = useState("settings"); // "settings" | "tools"
   const [customTools, setCustomTools] = useState([]);
+  const [disabledBuiltIns, setDisabledBuiltIns] = useState(new Set());
 
   const [settings, setSettings] = useState({
     provider: "google",
@@ -163,9 +163,11 @@ export default function ConsoleComponent() {
     loadCustomTools();
   }, [loadCustomTools]);
 
-  // Merge built-in + enabled custom tool schemas
+  // Merge enabled built-in + enabled custom tool schemas
   const allToolSchemas = useMemo(() => {
-    const builtIn = SunService.getToolSchemas();
+    const builtIn = SunService.getToolSchemas().filter(
+      (t) => !disabledBuiltIns.has(t.name),
+    );
     const custom = customTools
       .filter((t) => t.enabled)
       .map((t) => ({
@@ -189,7 +191,7 @@ export default function ConsoleComponent() {
         },
       }));
     return [...builtIn, ...custom];
-  }, [customTools]);
+  }, [customTools, disabledBuiltIns]);
 
   // Build a lookup for custom tools by name for execution
   const customToolMap = useMemo(() => {
@@ -202,7 +204,7 @@ export default function ConsoleComponent() {
 
   // ── Orchestration loop ───────────────────────────────────────
   const runOrchestrationLoop = useCallback(
-    async (conversationMessages) => {
+    async (conversationMessages, resolvedTitle) => {
       const currentMessages = [...conversationMessages];
       let iterations = 0;
 
@@ -239,7 +241,7 @@ export default function ConsoleComponent() {
           if (iterations === 1) {
             payload.userMessage = currentMessages[currentMessages.length - 1];
             payload.conversationMeta = {
-              title: title,
+              title: resolvedTitle,
               systemPrompt: SYSTEM_PROMPT,
             };
           }
@@ -350,7 +352,7 @@ export default function ConsoleComponent() {
 
       return currentMessages;
     },
-    [settings.provider, settings.model, settings.maxTokens, conversationId, title, allToolSchemas, customToolMap],
+    [settings.provider, settings.model, settings.maxTokens, conversationId, allToolSchemas, customToolMap],
   );
 
   // ── Send handler ─────────────────────────────────────────────
@@ -365,9 +367,10 @@ export default function ConsoleComponent() {
       setToolActivity([]);
 
       // Auto-generate title from first message
+      let resolvedTitle = title;
       if (messages.length === 0) {
-        const autoTitle = text.length > 60 ? text.slice(0, 57) + "..." : text;
-        setTitle(autoTitle);
+        resolvedTitle = text.length > 60 ? text.slice(0, 57) + "..." : text;
+        setTitle(resolvedTitle);
       }
 
       const userMessage = { role: "user", content: text };
@@ -375,7 +378,7 @@ export default function ConsoleComponent() {
       setMessages(updatedMessages);
 
       try {
-        const finalMessages = await runOrchestrationLoop(updatedMessages);
+        const finalMessages = await runOrchestrationLoop(updatedMessages, resolvedTitle);
         setMessages(
           finalMessages.filter(
             (m) =>
@@ -399,7 +402,7 @@ export default function ConsoleComponent() {
         abortRef.current = null;
       }
     },
-    [inputValue, isGenerating, messages, runOrchestrationLoop, loadConversations],
+    [inputValue, isGenerating, messages, title, runOrchestrationLoop, loadConversations],
   );
 
   const handleKeyDown = useCallback(
@@ -420,7 +423,7 @@ export default function ConsoleComponent() {
     setShowToolPanel(false);
     setConversationId(crypto.randomUUID());
     setActiveId(null);
-    setTitle("Sun Console");
+    setTitle("Console");
     textareaRef.current?.focus();
   }, [isGenerating]);
 
@@ -438,7 +441,7 @@ export default function ConsoleComponent() {
         setMessages(displayMessages);
         setConversationId(conv.id);
         setActiveId(conv.id);
-        setTitle(full.title || "Sun Console");
+        setTitle(full.title || "Console");
         setToolActivity([]);
         setShowToolPanel(false);
       } catch (err) {
@@ -473,6 +476,15 @@ export default function ConsoleComponent() {
   }
 
   // ── Left sidebar: tab bar + content ──────────────────────────
+  const handleToggleBuiltIn = useCallback((toolName) => {
+    setDisabledBuiltIns((prev) => {
+      const next = new Set(prev);
+      if (next.has(toolName)) next.delete(toolName);
+      else next.add(toolName);
+      return next;
+    });
+  }, []);
+
   const leftPanel = (
     <>
       <div className={styles.tabBar}>
@@ -486,50 +498,27 @@ export default function ConsoleComponent() {
           className={`${styles.tab} ${leftTab === "tools" ? styles.tabActive : ""}`}
           onClick={() => setLeftTab("tools")}
         >
-          Custom Tools
-          {customTools.filter((t) => t.enabled).length > 0 && (
-            <span className={styles.tabBadge}>
-              {customTools.filter((t) => t.enabled).length}
-            </span>
-          )}
+          Tools
+          <span className={styles.tabBadge}>{allToolSchemas.length}</span>
         </button>
       </div>
 
       {leftTab === "settings" && (
-        <>
-          <SettingsPanel
-            config={filteredConfig}
-            settings={settings}
-            onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
-            hasAssistantImages={false}
-          />
-          <div className={styles.toolsSection}>
-            <button
-              className={styles.toolsToggle}
-              onClick={() => setShowToolsList((v) => !v)}
-            >
-              <Zap size={12} className={styles.toolsToggleIcon} />
-              <span>Available Tools ({allToolSchemas.length})</span>
-              {showToolsList ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            </button>
-            {showToolsList && (
-              <div className={styles.toolsList}>
-                {allToolSchemas.map((tool) => (
-                  <div key={tool.name} className={styles.toolItem}>
-                    <CheckCircle2 size={10} className={styles.toolItemIcon} />
-                    <span className={styles.toolItemName}>{renderToolName(tool.name)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
+        <SettingsPanel
+          config={filteredConfig}
+          settings={settings}
+          onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
+          hasAssistantImages={false}
+        />
       )}
 
       {leftTab === "tools" && (
         <CustomToolsPanel
           tools={customTools}
           onToolsChange={loadCustomTools}
+          builtInTools={SunService.getToolSchemas()}
+          disabledBuiltIns={disabledBuiltIns}
+          onToggleBuiltIn={handleToggleBuiltIn}
         />
       )}
     </>
@@ -545,7 +534,7 @@ export default function ConsoleComponent() {
             <div className={styles.emptyIcon}>
               <Terminal size={40} />
             </div>
-            <h2 className={styles.emptyTitle}>Sun Console</h2>
+            <h2 className={styles.emptyTitle}>Console</h2>
             <p className={styles.emptySubtitle}>
               Ask about weather, events, commodities, trends, or anything
               powered by the Sun ecosystem.

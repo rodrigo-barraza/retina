@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   Globe,
+  Cpu,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ToggleSwitchComponent from "./ToggleSwitch.js";
@@ -46,8 +47,21 @@ const EMPTY_TOOL = {
   enabled: true,
 };
 
-export default function CustomToolsPanel({ tools, onToolsChange }) {
-  const [editingTool, setEditingTool] = useState(null); // null=list, object=editing
+function renderToolName(name) {
+  return name
+    .replace(/^get_/, "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export default function CustomToolsPanel({
+  tools,
+  onToolsChange,
+  builtInTools = [],
+  disabledBuiltIns = new Set(),
+  onToggleBuiltIn,
+}) {
+  const [editingTool, setEditingTool] = useState(null);
   const [isNew, setIsNew] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -82,15 +96,17 @@ export default function CustomToolsPanel({ tools, onToolsChange }) {
       const payload = {
         ...editingTool,
         project: PROJECT,
-        parameters: editingTool.parameters.map((p) => ({
-          name: p.name,
-          type: p.type,
-          description: p.description,
-          required: p.required,
-          ...(p.enum?.trim()
-            ? { enum: p.enum.split(",").map((v) => v.trim()).filter(Boolean) }
-            : {}),
-        })).filter((p) => p.name.trim()),
+        parameters: editingTool.parameters
+          .map((p) => ({
+            name: p.name,
+            type: p.type,
+            description: p.description,
+            required: p.required,
+            ...(p.enum?.trim()
+              ? { enum: p.enum.split(",").map((v) => v.trim()).filter(Boolean) }
+              : {}),
+          }))
+          .filter((p) => p.name.trim()),
       };
 
       if (isNew) {
@@ -310,7 +326,12 @@ export default function CustomToolsPanel({ tools, onToolsChange }) {
                   </div>
 
                   <div className={styles.paramField}>
-                    <label>Enum values <span className={styles.optional}>(comma-separated, optional)</span></label>
+                    <label>
+                      Enum values{" "}
+                      <span className={styles.optional}>
+                        (comma-separated, optional)
+                      </span>
+                    </label>
                     <input
                       type="text"
                       className={styles.inputSmall}
@@ -339,17 +360,93 @@ export default function CustomToolsPanel({ tools, onToolsChange }) {
 
   // ── Tool list ────────────────────────────────────────────────
 
+  const enabledBuiltIn = builtInTools.length - disabledBuiltIns.size;
+
   return (
     <div className={styles.container}>
-      <button className={styles.newToolBtn} onClick={handleCreate}>
-        <Plus size={14} /> New Tool
-      </button>
+      {/* ── Built-in tools ── */}
+      <div className={styles.sectionHeader}>
+        <Cpu size={12} />
+        <span>Built-in ({enabledBuiltIn}/{builtInTools.length})</span>
+      </div>
+
+      {builtInTools.map((tool) => {
+        const isDisabled = disabledBuiltIns.has(tool.name);
+        const isExpanded = expandedId === `builtin-${tool.name}`;
+        const paramCount = Object.keys(tool.parameters?.properties || {}).length;
+
+        return (
+          <div
+            key={`builtin-${tool.name}`}
+            className={`${styles.toolCard} ${styles.builtInCard} ${isDisabled ? styles.toolDisabled : ""}`}
+          >
+            <div
+              className={styles.toolCardHeader}
+              onClick={() =>
+                setExpandedId(isExpanded ? null : `builtin-${tool.name}`)
+              }
+            >
+              <button className={styles.expandBtn}>
+                {isExpanded ? (
+                  <ChevronDown size={14} />
+                ) : (
+                  <ChevronRight size={14} />
+                )}
+              </button>
+              <div className={styles.toolCardInfo}>
+                <span className={styles.toolCardName}>
+                  {renderToolName(tool.name)}
+                </span>
+                <span className={styles.toolCardMeta}>
+                  <span className={styles.builtInBadge}>Built-in</span>
+                  {paramCount > 0 && <span>{paramCount} params</span>}
+                </span>
+              </div>
+              <div className={styles.toolCardActions}>
+                <ToggleSwitchComponent
+                  checked={!isDisabled}
+                  onChange={() => onToggleBuiltIn?.(tool.name)}
+                  size="small"
+                />
+              </div>
+            </div>
+
+            {isExpanded && (
+              <div className={styles.toolCardBody}>
+                <p className={styles.toolCardDesc}>{tool.description}</p>
+                {paramCount > 0 && (
+                  <div className={styles.toolCardParams}>
+                    {Object.entries(tool.parameters.properties).map(
+                      ([name, schema]) => (
+                        <div key={name} className={styles.toolCardParam}>
+                          <code>{name}</code>
+                          <span className={styles.paramType}>{schema.type}</span>
+                          {tool.parameters.required?.includes(name) && (
+                            <span className={styles.paramRequired}>required</span>
+                          )}
+                        </div>
+                      ),
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* ── Custom tools ── */}
+      <div className={styles.sectionHeader} style={{ marginTop: 12 }}>
+        <Globe size={12} />
+        <span>Custom ({tools.length})</span>
+        <button className={styles.addBtnSmall} onClick={handleCreate}>
+          <Plus size={11} />
+        </button>
+      </div>
 
       {tools.length === 0 && (
-        <div className={styles.empty}>
-          <Globe size={28} className={styles.emptyIcon} />
-          <p>No custom tools yet.</p>
-          <span>Create a tool to connect any API to your Console chats.</span>
+        <div className={styles.emptyCustom}>
+          Create a tool to connect any API.
         </div>
       )}
 
@@ -366,7 +463,11 @@ export default function CustomToolsPanel({ tools, onToolsChange }) {
               onClick={() => setExpandedId(isExpanded ? null : id)}
             >
               <button className={styles.expandBtn}>
-                {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                {isExpanded ? (
+                  <ChevronDown size={14} />
+                ) : (
+                  <ChevronRight size={14} />
+                )}
               </button>
               <div className={styles.toolCardInfo}>
                 <span className={styles.toolCardName}>{tool.name}</span>
@@ -390,7 +491,9 @@ export default function CustomToolsPanel({ tools, onToolsChange }) {
 
             {isExpanded && (
               <div className={styles.toolCardBody}>
-                <p className={styles.toolCardDesc}>{tool.description || "No description"}</p>
+                <p className={styles.toolCardDesc}>
+                  {tool.description || "No description"}
+                </p>
                 <div className={styles.toolCardEndpoint}>
                   <Globe size={11} />
                   <code>{tool.endpoint}</code>
@@ -401,13 +504,18 @@ export default function CustomToolsPanel({ tools, onToolsChange }) {
                       <div key={i} className={styles.toolCardParam}>
                         <code>{p.name}</code>
                         <span className={styles.paramType}>{p.type}</span>
-                        {p.required && <span className={styles.paramRequired}>required</span>}
+                        {p.required && (
+                          <span className={styles.paramRequired}>required</span>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
                 <div className={styles.toolCardFooter}>
-                  <button className={styles.editBtn} onClick={() => handleEdit(tool)}>
+                  <button
+                    className={styles.editBtn}
+                    onClick={() => handleEdit(tool)}
+                  >
                     <Edit3 size={12} /> Edit
                   </button>
                   <button

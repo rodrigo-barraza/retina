@@ -14,6 +14,66 @@
   scrollbar-color: rgba(128, 128, 128, 0.4) transparent;
 }
 
+/* ── Section Headers ───────────────────────────────────────── */
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  padding: 4px 2px 2px;
+  flex-shrink: 0;
+}
+
+.addBtnSmall {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+  color: var(--accent-color);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 25%, transparent);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--accent-color) 22%, transparent);
+    transform: scale(1.1);
+  }
+}
+
+.emptyCustom {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  padding: 6px 4px;
+}
+
+/* ── Built-in Card ─────────────────────────────────────────── */
+
+.builtInCard {
+  border-left: 2px solid color-mix(in srgb, var(--accent-color) 50%, var(--border-color));
+}
+
+.builtInBadge {
+  display: inline-flex;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+  color: var(--accent-color);
+}
+
 /* ── New Tool Button ───────────────────────────────────────── */
 
 .newToolBtn {
@@ -76,6 +136,7 @@
   background: var(--bg-secondary);
   overflow: hidden;
   transition: border-color 0.2s ease;
+  flex-shrink: 0;
 
   &:hover {
     border-color: color-mix(in srgb, var(--accent-color) 40%, var(--border-color));
