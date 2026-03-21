@@ -294,16 +294,16 @@ const TOOL_EXECUTORS = {
   },
 
   get_air_quality: async () =>
-    fetchJson(`${WEATHER_API_URL}/air-quality`),
+    fetchJson(`${WEATHER_API_URL}/weather/air`),
 
   get_earthquakes: async () =>
     fetchJson(`${WEATHER_API_URL}/earthquakes`),
 
   get_solar_activity: async () =>
-    fetchJson(`${WEATHER_API_URL}/solar`),
+    fetchJson(`${WEATHER_API_URL}/space-weather/summary`),
 
   get_aurora_forecast: async () =>
-    fetchJson(`${WEATHER_API_URL}/aurora`),
+    fetchJson(`${WEATHER_API_URL}/kp/current`),
 
   get_twilight: async () =>
     fetchJson(`${WEATHER_API_URL}/twilight`),
@@ -351,7 +351,7 @@ const TOOL_EXECUTORS = {
   // ── Trends ──
   get_trends: async (args) => {
     if (args.source) {
-      return fetchJson(`${TREND_API_URL}/trends/${args.source}`);
+      return fetchJson(`${TREND_API_URL}/trends/source/${args.source}`);
     }
     return fetchJson(`${TREND_API_URL}/trends`);
   },

@@ -223,7 +223,10 @@ export default function ConsoleComponent() {
       // Store final conversation state (exclude system prompt)
       setMessages(
         finalMessages.filter(
-          (m) => m.role !== "tool" && m.role !== "system",
+          (m) =>
+            m.role !== "tool" &&
+            m.role !== "system" &&
+            !(m.role === "assistant" && !m.content?.trim()),
         ),
       );
     } catch (err) {
