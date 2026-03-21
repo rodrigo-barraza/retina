@@ -188,6 +188,61 @@
   border-top: 1px solid var(--border-color);
 }
 
+/* ── Tool Calls block ── */
+.toolCallsBlock {
+  margin-bottom: 8px;
+  border: 1px solid color-mix(in srgb, #f59e0b 25%, var(--border-color));
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+}
+
+.toolCallsToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f59e0b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: background 0.15s;
+}
+
+.toolCallsToggle:hover {
+  background: var(--bg-tertiary);
+}
+
+.toolCallsContent {
+  padding: 4px 12px 8px;
+  border-top: 1px solid color-mix(in srgb, #f59e0b 15%, var(--border-color));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toolCallItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+.toolCallName {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.toolCallArgs {
+  color: var(--text-secondary);
+  font-size: 11px;
+  opacity: 0.7;
+}
+
 /* ── Images / media ── */
 .imagePreviewRow {
   display: flex;

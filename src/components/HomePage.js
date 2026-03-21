@@ -179,7 +179,7 @@ export default function HomePage({ initialConversationId = null }) {
 
     // ── Function Calling infrastructure ────────────────────────
     const MAX_TOOL_ITERATIONS = 5;
-    const FC_PROJECT = "retina-chat";
+    const FC_PROJECT = "retina";
 
     const FC_SYSTEM_PROMPT = `You are a helpful AI assistant with access to real-time data APIs. You have tools for weather, air quality, earthquakes, solar activity, aurora forecasts, sunrise/sunset times, tides, wildfires, ISS tracking, local events, commodity/market prices, trending topics, and product search.
 
@@ -286,7 +286,7 @@ Guidelines:
                         (m) =>
                             m.role !== "tool" &&
                             m.role !== "system" &&
-                            !(m.role === "assistant" && !m.content?.trim()),
+                            !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
                     );
                     setMessages(displayMessages);
                     skipSystemPromptSave.current = true;
@@ -378,7 +378,7 @@ Guidelines:
                 (m) =>
                     m.role !== "tool" &&
                     m.role !== "system" &&
-                    !(m.role === "assistant" && !m.content?.trim()),
+                    !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
             );
             setMessages(displayMessages);
             skipSystemPromptSave.current = true;
@@ -1179,12 +1179,7 @@ Guidelines:
                             (m) =>
                                 m.role !== "tool" &&
                                 m.role !== "system" &&
-                                !(m.role === "assistant" && !m.content?.trim()),
-                        )
-                        .map((m) =>
-                            m.role === "assistant" && m.toolCalls
-                                ? { ...m, toolCalls: undefined }
-                                : m,
+                                !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
                         ),
                 );
                 loadConversations();

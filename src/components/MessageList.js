@@ -14,6 +14,7 @@ import {
     RotateCcw,
     X as XIcon,
     RefreshCw,
+    Zap,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import MarkdownContent from "./MarkdownContent";
@@ -121,6 +122,51 @@ function ThinkingBlock({ thinking }) {
             {!collapsed && (
                 <div className={styles.thinkingContent}>
                     <MarkdownContent content={thinking} />
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ToolCallsBlock({ toolCalls }) {
+    const [collapsed, setCollapsed] = useState(true);
+    if (!toolCalls || toolCalls.length === 0) return null;
+
+    const names = toolCalls.map((tc) =>
+        (tc.name || "unknown")
+            .replace(/^get_/, "")
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase()),
+    );
+
+    return (
+        <div className={styles.toolCallsBlock}>
+            <button
+                className={styles.toolCallsToggle}
+                onClick={() => setCollapsed((c) => !c)}
+            >
+                <Zap size={13} />
+                <span>
+                    {toolCalls.length === 1
+                        ? `Used tool: ${names[0]}`
+                        : `Used ${toolCalls.length} tools`}
+                </span>
+                {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {!collapsed && (
+                <div className={styles.toolCallsContent}>
+                    {toolCalls.map((tc, j) => (
+                        <div key={j} className={styles.toolCallItem}>
+                            <span className={styles.toolCallName}>{names[j]}</span>
+                            {tc.args && Object.keys(tc.args).length > 0 && (
+                                <span className={styles.toolCallArgs}>
+                                    ({Object.entries(tc.args)
+                                        .map(([k, v]) => `${k}: ${v}`)
+                                        .join(", ")})
+                                </span>
+                            )}
+                        </div>
+                    ))}
                 </div>
             )}
         </div>
@@ -459,6 +505,11 @@ export default function MessageList({
 
                                 {/* Thinking block */}
                                 {msg.thinking && <ThinkingBlock thinking={msg.thinking} />}
+
+                                {/* Tool calls indicator */}
+                                {msg.toolCalls && msg.toolCalls.length > 0 && (
+                                    <ToolCallsBlock toolCalls={msg.toolCalls} />
+                                )}
 
                                 {/* Images / media */}
                                 {msg.images && msg.images.length > 0 && (

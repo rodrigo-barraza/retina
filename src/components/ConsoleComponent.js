@@ -536,7 +536,7 @@ export default function ConsoleComponent() {
             (m) =>
               m.role !== "tool" &&
               m.role !== "system" &&
-              !(m.role === "assistant" && !m.content?.trim()),
+              !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
           ),
         );
         loadConversations();
