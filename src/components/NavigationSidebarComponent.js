@@ -20,6 +20,7 @@ import {
   Settings,
   ChevronsLeft,
   ChevronsRight,
+  Terminal,
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import styles from "./NavigationSidebarComponent.module.css";
@@ -143,6 +144,7 @@ function RainbowCanvas() {
 
 const USER_NAV_ITEMS = [
   { href: "/", label: "Conversations", icon: MessageSquare, exact: true },
+  { href: "/console", label: "Console", icon: Terminal },
   { href: "/workflows", label: "Workflows", icon: Workflow },
   { href: "/models", label: "Models", icon: Server },
   { href: "/media", label: "Media", icon: ImageIcon },

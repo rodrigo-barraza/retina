@@ -147,6 +147,7 @@ export default class PrismService {
       onExecutableCode,
       onCodeExecutionResult,
       onWebSearchResult,
+      onToolCall,
       onStatus,
       onDone,
       onError,
@@ -202,6 +203,13 @@ export default class PrismService {
                 onCodeExecutionResult(data.output, data.outcome);
               } else if (data.type === "webSearchResult" && onWebSearchResult) {
                 onWebSearchResult(data.results);
+              } else if (data.type === "toolCall" && onToolCall) {
+                onToolCall({
+                  id: data.id,
+                  name: data.name,
+                  args: data.args,
+                  thoughtSignature: data.thoughtSignature,
+                });
               } else if (data.type === "status" && onStatus) {
                 onStatus(data.message);
               } else if (data.type === "done" && onDone) {
