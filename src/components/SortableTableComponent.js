@@ -49,13 +49,13 @@ export default function SortableTableComponent({
         if (!el) return;
         dragRef.current = {
             active: true,
+            pointerId: e.pointerId,
             startX: e.clientX,
             startY: e.clientY,
             scrollLeft: el.scrollLeft,
             scrollTop: el.scrollTop,
             moved: false,
         };
-        el.setPointerCapture(e.pointerId);
     }, []);
 
     const onPointerMove = useCallback((e) => {
@@ -66,6 +66,11 @@ export default function SortableTableComponent({
         // 5px threshold to distinguish drag from click
         if (!d.moved && Math.abs(dx) + Math.abs(dy) > 5) {
             d.moved = true;
+            // Capture pointer only once we know it's a drag
+            const el = scrollRef.current;
+            if (el) {
+                try { el.setPointerCapture(d.pointerId); } catch { /* ignore */ }
+            }
             scrollRef.current?.classList.add(styles.grabbing);
         }
         if (d.moved) {
@@ -82,7 +87,7 @@ export default function SortableTableComponent({
         d.moved = false;
         const el = scrollRef.current;
         if (el) {
-            el.releasePointerCapture(e.pointerId);
+            try { el.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
             el.classList.remove(styles.grabbing);
         }
         // If it was a drag, suppress the next click on the row

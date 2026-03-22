@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Download, MessageSquare, GitBranch, Type, Image as ImageIcon, Volume2, Hash, ArrowRight } from "lucide-react";
+import { Download, MessageSquare, GitBranch, Type, Image as ImageIcon, Volume2, Hash, ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import IrisService from "../../../services/IrisService";
 import { formatNumber, formatCost, formatLatency } from "../../../utils/utilities";
 import { MODALITY_COLORS } from "../../../components/WorkflowNodeConstants";
 import SortableTableComponent from "../../../components/SortableTableComponent";
 import PaginationComponent from "../../../components/PaginationComponent";
-import PageHeaderComponent from "../../../components/PageHeaderComponent";
 import DatePickerComponent from "../../../components/DatePickerComponent";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { FilterBarComponent, FilterGroupComponent, FilterInputComponent, FilterSelectComponent, FilterClearButton } from "../../../components/FilterBarComponent";
@@ -196,13 +195,27 @@ export default function RequestsPage() {
 
     return (
         <div className={styles.page}>
-            <PageHeaderComponent title="Requests">
-                <ButtonComponent variant="secondary" icon={Download} onClick={exportCSV}>
-                    Export CSV
-                </ButtonComponent>
-            </PageHeaderComponent>
+            <header className={styles.header}>
+                <div className={styles.headerLeft}>
+                    <Link href="/admin" className={styles.backBtn}>
+                        <ArrowLeft size={16} />
+                    </Link>
+                    <h1 className={styles.headerTitle}>Requests</h1>
+                    {total > 0 && (
+                        <span className={styles.headerBadge}>
+                            {formatNumber(total)} total
+                        </span>
+                    )}
+                </div>
+                <div className={styles.headerRight}>
+                    <ErrorMessage message={error} />
+                    <ButtonComponent variant="secondary" icon={Download} onClick={exportCSV} size="small">
+                        Export CSV
+                    </ButtonComponent>
+                </div>
+            </header>
 
-            <ErrorMessage message={error} />
+
 
             {/* Filters */}
             <FilterBarComponent>
