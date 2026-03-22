@@ -11,6 +11,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "gifuct-js": "^2.1.2",
     "lucide-react": "^0.577.0",
     "luxon": "^3.7.2",
     "next": "16.1.6",

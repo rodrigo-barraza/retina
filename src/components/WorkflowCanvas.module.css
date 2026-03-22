@@ -11,12 +11,9 @@
   cursor: grabbing;
 }
 
-.gridBackground {
+.starfield {
   position: absolute;
   inset: 0;
-  background-image:
-    radial-gradient(circle, var(--border-color) 1px, transparent 1px);
-  background-size: 24px 24px;
   pointer-events: none;
   z-index: 0;
 }

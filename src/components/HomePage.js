@@ -57,6 +57,7 @@ export default function HomePage({ initialConversationId = null }) {
     });
 
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [newChatKey, setNewChatKey] = useState(0);
     const [showModelList, setShowModelList] = useState(false);
     const [showSystemPromptModal, setShowSystemPromptModal] = useState(false);
@@ -700,6 +701,7 @@ Guidelines:
                         });
                     },
                     onImage: (data, mimeType) => {
+                        setIsGeneratingImage(true);
                         const dataUrl = `data:${mimeType};base64,${data}`;
                         streamedImages = [...streamedImages, dataUrl];
                         setMessages((prev) => {
@@ -789,6 +791,7 @@ Guidelines:
             ]);
         } finally {
             setIsGenerating(false);
+            setIsGeneratingImage(false);
         }
     };
 
@@ -1342,6 +1345,7 @@ Guidelines:
                         });
                     },
                     onImage: (data, mimeType) => {
+                        setIsGeneratingImage(true);
                         const dataUrl = `data:${mimeType};base64,${data}`;
                         streamedImages = [...streamedImages, dataUrl];
                         setMessages((prev) => {
@@ -1427,6 +1431,7 @@ Guidelines:
             ]);
         } finally {
             setIsGenerating(false);
+            setIsGeneratingImage(false);
         }
     };
 
@@ -1503,7 +1508,7 @@ Guidelines:
                     />
                 }
                 headerTitle={title}
-                navSidebar={<NavigationSidebarComponent mode="user" isGenerating={isGenerating} />}
+                navSidebar={<NavigationSidebarComponent mode="user" isGenerating={isGenerating} isGeneratingImage={isGeneratingImage} />}
                 headerMeta={
                     messages.length > 0 ? (
                         <div className={styles.headerMeta}>

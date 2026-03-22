@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import IrisService from "../../../services/IrisService";
 import SortableTableComponent from "../../../components/SortableTableComponent";
 import PageHeaderComponent from "../../../components/PageHeaderComponent";
 import DatePickerComponent from "../../../components/DatePickerComponent";
+import SelectDropdown from "../../../components/SelectDropdown";
 import { FilterBarComponent, FilterGroupComponent } from "../../../components/FilterBarComponent";
 import { LoadingMessage, ErrorMessage } from "../../../components/StateMessageComponent";
 import { formatNumber, formatCost, formatLatency } from "../../../utils/utilities";
+import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import styles from "./page.module.css";
 
 
@@ -17,17 +20,43 @@ const PROVIDER_COLORS = [
 ];
 
 export default function ProvidersPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const projectFilter = searchParams.get("project") || null;
   const [modelStats, setModelStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedProvider, setExpandedProvider] = useState(null);
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    IrisService.getConversationFilters()
+      .then((data) => setProjects(data.projects || []))
+      .catch(() => { });
+  }, []);
+
+  const projectOptions = useMemo(() => [
+    { value: "", label: "All Projects" },
+    ...projects.map((p) => ({ value: p, label: p })),
+  ], [projects]);
+
+  const handleProjectChange = useCallback((val) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) {
+      params.set("project", val);
+    } else {
+      params.delete("project");
+    }
+    router.replace(`/admin/providers?${params.toString()}`);
+  }, [searchParams, router]);
 
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
         const params = {};
+        if (projectFilter) params.project = projectFilter;
         if (dateRange.from) params.from = new Date(dateRange.from).toISOString();
         if (dateRange.to) params.to = new Date(dateRange.to + "T23:59:59").toISOString();
         const models = await IrisService.getModelStats(params);
@@ -39,7 +68,7 @@ export default function ProvidersPage() {
       }
     }
     load();
-  }, [dateRange]);
+  }, [dateRange, projectFilter]);
 
   // Aggregate by provider
   const providers = useMemo(() => {
@@ -85,14 +114,33 @@ export default function ProvidersPage() {
     { key: "avgLatency", label: "Avg Latency", render: (m) => formatLatency(m.avgLatency), align: "right" },
   ], []);
 
+  // Inject controls into AdminShell header
+  const { setControls } = useAdminHeader();
+
+  useEffect(() => {
+    setControls(
+      <>
+        <SelectDropdown
+          value={projectFilter || ""}
+          options={projectOptions}
+          onChange={handleProjectChange}
+          placeholder="All Projects"
+        />
+        <ErrorMessage message={error} />
+      </>
+    );
+  }, [setControls, projectFilter, projectOptions, handleProjectChange, error]);
+
+  useEffect(() => {
+    return () => setControls(null);
+  }, [setControls]);
+
   return (
     <div className={styles.page}>
       <PageHeaderComponent
         title="Providers"
         subtitle={`${providers.length} providers \u00B7 ${modelStats.length} models`}
       />
-
-      <ErrorMessage message={error} />
 
       <FilterBarComponent>
         <FilterGroupComponent label="Date">

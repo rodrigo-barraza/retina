@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { X, Eye, EyeOff, PanelLeftClose, PanelLeft } from "lucide-react";
 import WorkflowNode from "./WorkflowNode";
+import StarfieldComponent from "./StarfieldComponent";
 import {
   MODALITY_COLORS,
   CONFIG_AREA_HEIGHT,
@@ -168,7 +169,7 @@ export default function WorkflowCanvas({
       if (e.button !== 0) return;
       const el = e.target;
       const isContainerOrSvg = el === containerRef.current || el === svgRef.current;
-      const isGridBg = el.classList?.contains?.(styles.gridBackground);
+      const isGridBg = el.classList?.contains?.(styles.starfield) || el.tagName === "CANVAS";
       const isInsideInteractive = el.closest?.("[data-workflow-node], [data-workflow-connection]");
       if (isContainerOrSvg || isGridBg || (!isInsideInteractive && containerRef.current?.contains(el))) {
         setIsPanning(true);
@@ -737,13 +738,7 @@ export default function WorkflowCanvas({
       className={`${styles.canvas}${isPanning ? ` ${styles.panning}` : ""}`}
       onMouseDown={handleCanvasMouseDown}
     >
-      <div
-        className={styles.gridBackground}
-        style={{
-          backgroundPosition: `${pan.x}px ${pan.y}px`,
-          backgroundSize: `${24 * zoom}px ${24 * zoom}px`,
-        }}
-      />
+      <StarfieldComponent className={styles.starfield} panX={pan.x} panY={pan.y} />
 
       {nodes.length === 0 && !isLoadingWorkflow && (
         <div className={styles.emptyState}>

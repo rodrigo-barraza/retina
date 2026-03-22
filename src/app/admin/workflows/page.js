@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import IrisService from "../../../services/IrisService";
 import WorkflowComponent from "../../../components/WorkflowComponent";
@@ -10,6 +8,7 @@ import WorkflowHeaderStatsComponent from "../../../components/WorkflowHeaderStat
 import SelectDropdown from "../../../components/SelectDropdown";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { useToast } from "../../../components/ToastComponent";
+import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import styles from "./page.module.css";
 
 export default function AdminWorkflowsPage() {
@@ -162,27 +161,31 @@ export default function AdminWorkflowsPage() {
     }
   }, []);
 
+  const { setControls } = useAdminHeader();
+
+  // Inject controls into AdminShell header
+  useEffect(() => {
+    setControls(
+      <>
+        <SelectDropdown
+          value={projectFilter || ""}
+          options={projectOptions}
+          onChange={handleProjectChange}
+          placeholder="All Projects"
+        />
+        <WorkflowHeaderStatsComponent nodes={localNodes} edgeCount={edgeCount} />
+        <ErrorMessage message={error} />
+      </>
+    );
+  }, [setControls, projectFilter, projectOptions, handleProjectChange, localNodes, edgeCount, error]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => setControls(null);
+  }, [setControls]);
+
   return (
     <div className={styles.page}>
-      {/* Header — matches /workflows layout */}
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <Link href="/admin" className={styles.backBtn}>
-            <ArrowLeft size={16} />
-          </Link>
-          <h1 className={styles.headerTitle}>Workflows</h1>
-          <SelectDropdown
-            value={projectFilter || ""}
-            options={projectOptions}
-            onChange={handleProjectChange}
-            placeholder="All Projects"
-          />
-          <WorkflowHeaderStatsComponent nodes={localNodes} edgeCount={edgeCount} />
-        </div>
-        <div className={styles.headerRight}>
-          <ErrorMessage message={error} />
-        </div>
-      </header>
 
       {/* Body */}
       <div className={styles.body}>

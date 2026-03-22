@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
     DollarSign,
     Activity,
     ArrowDownToLine,
     ArrowUpFromLine,
 } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
 import IrisService from "../../../services/IrisService";
 import { formatNumber, formatCost } from "../../../utils/utilities";
 import StatsCard from "../../../components/StatsCard";
@@ -16,6 +17,7 @@ import DatePickerComponent from "../../../components/DatePickerComponent";
 import PageHeaderComponent from "../../../components/PageHeaderComponent";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import BadgeComponent from "../../../components/BadgeComponent";
+import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import styles from "./page.module.css";
 
 const ENDPOINT_LABELS = {
@@ -67,17 +69,43 @@ function mergeByModality(rows) {
 }
 
 export default function UsagePage() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const projectFilter = searchParams.get("project") || null;
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [projectBreakdown, setProjectBreakdown] = useState("provider");
     const [dateRange, setDateRange] = useState({ from: "", to: "" });
+    const [projects, setProjects] = useState([]);
+
+    useEffect(() => {
+        IrisService.getConversationFilters()
+            .then((d) => setProjects(d.projects || []))
+            .catch(() => { });
+    }, []);
+
+    const projectOptions = useMemo(() => [
+        { value: "", label: "All Projects" },
+        ...projects.map((p) => ({ value: p, label: p })),
+    ], [projects]);
+
+    const handleProjectChange = useCallback((val) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (val) {
+            params.set("project", val);
+        } else {
+            params.delete("project");
+        }
+        router.replace(`/admin/usage?${params.toString()}`);
+    }, [searchParams, router]);
 
     const loadCosts = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
             const params = {};
+            if (projectFilter) params.project = projectFilter;
             if (dateRange.from) params.from = new Date(dateRange.from).toISOString();
             if (dateRange.to) params.to = new Date(dateRange.to + "T23:59:59").toISOString();
             const result = await IrisService.getCostStats(params);
@@ -87,11 +115,32 @@ export default function UsagePage() {
         } finally {
             setLoading(false);
         }
-    }, [dateRange]);
+    }, [dateRange, projectFilter]);
 
     useEffect(() => {
         loadCosts();
     }, [loadCosts]);
+
+    // Inject controls into AdminShell header
+    const { setControls } = useAdminHeader();
+
+    useEffect(() => {
+        setControls(
+            <>
+                <SelectDropdown
+                    value={projectFilter || ""}
+                    options={projectOptions}
+                    onChange={handleProjectChange}
+                    placeholder="All Projects"
+                />
+                <ErrorMessage message={error} />
+            </>
+        );
+    }, [setControls, projectFilter, projectOptions, handleProjectChange, error]);
+
+    useEffect(() => {
+        return () => setControls(null);
+    }, [setControls]);
 
     const totals = data?.totals || {};
 
@@ -282,7 +331,6 @@ export default function UsagePage() {
                 subtitle="Cost breakdown across all projects, providers, and modalities"
             />
 
-            <ErrorMessage message={error} />
 
             {/* Date Filter */}
             <div className={styles.dateFilter}>

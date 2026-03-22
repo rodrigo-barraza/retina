@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
+import SpinningCatComponent from "./SpinningCatComponent";
 import styles from "./NavigationSidebarComponent.module.css";
 
 /** 8-bit dithered rainbow — auto-animates, turbo during LLM generation */
@@ -241,6 +242,7 @@ export default function NavigationSidebarComponent({
               {/* Rainbow strip */}
               <div className={styles.rainbowStrip}>
                 <RainbowCanvas turbo={isGenerating} />
+                <SpinningCatComponent animate={isGenerating} />
               </div>
 
               {/* Navigation links */}
@@ -332,6 +334,7 @@ export default function NavigationSidebarComponent({
         {/* Rainbow logo banner */}
         <div className={styles.logoBanner}>
           <RainbowCanvas turbo={isGenerating} />
+          <SpinningCatComponent animate={isGenerating} />
           <button
             className={styles.collapseBtn}
             onClick={toggleNav}

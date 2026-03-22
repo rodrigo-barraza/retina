@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Download, MessageSquare, GitBranch, Type, Image as ImageIcon, Volume2, Hash, ArrowRight, ArrowLeft } from "lucide-react";
+import { Download, MessageSquare, GitBranch, Type, Image as ImageIcon, Volume2, Hash, ArrowRight, Wrench } from "lucide-react";
 import Link from "next/link";
 import IrisService from "../../../services/IrisService";
 import { formatNumber, formatCost, formatLatency } from "../../../utils/utilities";
@@ -14,6 +14,7 @@ import { FilterBarComponent, FilterGroupComponent, FilterInputComponent, FilterS
 import BadgeComponent from "../../../components/BadgeComponent";
 import ButtonComponent from "../../../components/ButtonComponent";
 import DetailDrawerComponent from "../../../components/DetailDrawerComponent";
+import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import styles from "./page.module.css";
 
 
@@ -93,10 +94,10 @@ export default function RequestsPage() {
         setPage(1);
     }
 
-    function handleFilterChange(key, value) {
+    const handleFilterChange = useCallback((key, value) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
         setPage(1);
-    }
+    }, []);
 
     function clearFilters() {
         setFilters({
@@ -108,33 +109,6 @@ export default function RequestsPage() {
         });
         setDateRange({ from: "", to: "" });
         setPage(1);
-    }
-
-    function exportCSV() {
-        const headers = COLUMNS.map((c) => c.label).join(",");
-        const rows = requests.map((r) =>
-            [
-                r.timestamp || "",
-                r.project || "",
-                r.endpoint || "",
-                r.provider || "",
-                r.model || "",
-                r.inputTokens || 0,
-                r.outputTokens || 0,
-                r.estimatedCost || 0,
-                r.tokensPerSec ? Number(r.tokensPerSec).toFixed(1) : "",
-                r.totalTime || 0,
-                r.success ? "OK" : "ERR",
-            ].join(","),
-        );
-        const csv = [headers, ...rows].join("\n");
-        const blob = new Blob([csv], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `iris-requests-${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
     }
 
     const columns = useMemo(() => [
@@ -177,6 +151,13 @@ export default function RequestsPage() {
             )
         },
         { key: "model", label: "Model" },
+        {
+            key: "toolsUsed", label: "Tools", sortable: true, render: (r) => (
+                r.toolsUsed
+                    ? <Wrench size={13} style={{ color: "var(--accent)" }} />
+                    : <span style={{ color: "var(--text-muted)" }}>—</span>
+            )
+        },
         { key: "inputTokens", label: "In Tokens", render: (r) => formatNumber(r.inputTokens), align: "right" },
         { key: "outputTokens", label: "Out Tokens", render: (r) => formatNumber(r.outputTokens), align: "right" },
         { key: "estimatedCost", label: "Cost", render: (r) => formatCost(r.estimatedCost), align: "right" },
@@ -191,41 +172,68 @@ export default function RequestsPage() {
         },
     ], []);
 
+    const exportCSV = useCallback(() => {
+        const headers = columns.map((c) => c.label).join(",");
+        const rows = requests.map((r) =>
+            [
+                r.timestamp || "",
+                r.project || "",
+                r.endpoint || "",
+                r.provider || "",
+                r.model || "",
+                r.inputTokens || 0,
+                r.outputTokens || 0,
+                r.estimatedCost || 0,
+                r.tokensPerSec ? Number(r.tokensPerSec).toFixed(1) : "",
+                r.totalTime || 0,
+                r.success ? "OK" : "ERR",
+            ].join(","),
+        );
+        const csv = [headers, ...rows].join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `iris-requests-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }, [columns, requests]);
+
     const totalPages = Math.ceil(total / LIMIT);
+
+    const { setControls } = useAdminHeader();
+
+    // Inject controls into AdminShell header
+    useEffect(() => {
+        setControls(
+            <>
+                {total > 0 && (
+                    <span className={styles.headerBadge}>
+                        {formatNumber(total)} total
+                    </span>
+                )}
+                <ErrorMessage message={error} />
+                <FilterInputComponent
+                    placeholder="Filter by project..."
+                    value={filters.project}
+                    onChange={(val) => handleFilterChange("project", val)}
+                />
+            </>
+        );
+    }, [setControls, total, error, filters.project, handleFilterChange]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => setControls(null);
+    }, [setControls]);
 
     return (
         <div className={styles.page}>
-            <header className={styles.header}>
-                <div className={styles.headerLeft}>
-                    <Link href="/admin" className={styles.backBtn}>
-                        <ArrowLeft size={16} />
-                    </Link>
-                    <h1 className={styles.headerTitle}>Requests</h1>
-                    {total > 0 && (
-                        <span className={styles.headerBadge}>
-                            {formatNumber(total)} total
-                        </span>
-                    )}
-                </div>
-                <div className={styles.headerRight}>
-                    <ErrorMessage message={error} />
-                    <ButtonComponent variant="secondary" icon={Download} onClick={exportCSV} size="small">
-                        Export CSV
-                    </ButtonComponent>
-                </div>
-            </header>
 
 
 
             {/* Filters */}
             <FilterBarComponent>
-                <FilterGroupComponent label="Project">
-                    <FilterInputComponent
-                        placeholder="Filter by project..."
-                        value={filters.project}
-                        onChange={(val) => handleFilterChange("project", val)}
-                    />
-                </FilterGroupComponent>
                 <FilterGroupComponent label="Provider">
                     <FilterSelectComponent
                         value={filters.provider}
@@ -278,6 +286,9 @@ export default function RequestsPage() {
                     />
                 </FilterGroupComponent>
                 <FilterClearButton onClick={clearFilters} />
+                <ButtonComponent variant="secondary" icon={Download} onClick={exportCSV} size="small">
+                    Export CSV
+                </ButtonComponent>
             </FilterBarComponent>
 
             {/* Table */}
