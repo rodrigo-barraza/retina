@@ -791,6 +791,7 @@
 }
 
 .inputWrapper {
+  position: relative;
   padding: 20px 30px;
   border-top: 1px solid var(--border-color);
   background: var(--bg-glass);
@@ -946,27 +947,6 @@
   border-radius: 2px;
   font-family: inherit;
   font-size: 10px;
-}
-
-/* Image upload & preview */
-.imageUploadBtn {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--border-radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.imageUploadBtn:hover {
-  color: var(--accent-color);
-  background: var(--bg-tertiary);
 }
 
 /* Rotating modality icon */
@@ -1305,3 +1285,116 @@
   max-height: 300px;
   overflow-y: auto;
 }
+
+/* ── Tools Bubble ── */
+
+.toolsBubble {
+  position: absolute;
+  bottom: calc(100% - 10px);
+  left: 30px;
+  width: 280px;
+  max-height: 400px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 100;
+  animation: slideUp 0.15s ease-out;
+}
+
+.toolsBubble::before {
+  content: "";
+  display: block;
+  height: 4px;
+  width: 100%;
+  background: var(--rainbow-gradient, linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff));
+}
+
+.toolsBubbleHeader {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.toolsBubbleList {
+  overflow-y: auto;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.toolsBubbleItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  transition: background 0.15s;
+}
+
+.toolsBubbleItem:hover {
+  background: var(--bg-secondary);
+}
+
+.toolsBubbleItemOffline {
+  opacity: 0.6;
+}
+
+.toolsBubbleItemInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0; 
+}
+
+.toolsBubbleItemName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+}
+
+.toolsBubbleBadgeOffline,
+.toolsBubbleBadgeCustom {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.toolsBubbleBadgeOffline {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.toolsBubbleBadgeCustom {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent-color);
+}
+
+.toolsBtnActive {
+  color: var(--accent-color) !important;
+  background: var(--accent-glow) !important;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

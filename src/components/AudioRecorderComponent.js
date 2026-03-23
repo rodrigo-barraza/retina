@@ -11,6 +11,7 @@ import {
   Download,
   X,
 } from "lucide-react";
+import TooltipComponent from "./TooltipComponent";
 import styles from "./AudioRecorderComponent.module.css";
 
 function formatTime(totalSeconds) {
@@ -433,9 +434,11 @@ export default function AudioRecorderComponent({
   // MODE: Idle (mic button)
   // ───────────────────────────────────────────
   return (
-    <button type="button" className={styles.micBtn} onClick={startRecording}
-      title="Record Audio">
-      <Mic2 size={18} />
-    </button>
+    <TooltipComponent label="Record audio" position="top" trigger="hover">
+      <button type="button" className={styles.micBtn} onClick={startRecording}
+        aria-label="Record Audio">
+        <Mic2 size={18} />
+      </button>
+    </TooltipComponent>
   );
 }

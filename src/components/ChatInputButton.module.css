@@ -1,0 +1,29 @@
+.chatInputBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.chatInputBtn:hover {
+  color: var(--accent-color);
+  background: var(--bg-tertiary);
+}
+
+.chatInputBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chatInputBtn.active {
+  color: var(--accent-color);
+  background: var(--bg-tertiary);
+}

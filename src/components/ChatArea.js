@@ -21,6 +21,11 @@ import {
     X,
     Wrench,
     Clock,
+    Globe,
+    Code,
+    Monitor,
+    Search,
+    Brain,
 } from "lucide-react";
 import AudioRecorderComponent from "./AudioRecorderComponent";
 import ImagePreviewComponent from "./ImagePreviewComponent";
@@ -32,8 +37,9 @@ import styles from "./ChatArea.module.css";
 import consoleStyles from "./ConsoleComponent.module.css";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import { useEffect, useRef, useState } from "react";
-import PrismService from "../services/PrismService";
 import ProviderLogo from "./ProviderLogos";
+import ToggleSwitchComponent from "./ToggleSwitch";
+import ChatInputButton from "./ChatInputButton";
 import { MODALITY_COLORS } from "./WorkflowNodeConstants";
 
 // Map model input types to file accept strings
@@ -300,7 +306,116 @@ export default function ChatArea({
     conversations = [],
     favorites = [],
     onToggleFavorite,
+    settings = {},
+    onUpdateSettings,
 }) {
+    const [showToolsBubble, setShowToolsBubble] = useState(false);
+    const toolsBubbleRef = useRef(null);
+
+    // Compute selected model to know which tools it supports
+    const currentProviderModels = Array.from(new Set([
+        ...(config?.textToText?.models?.[settings?.provider] || []),
+        ...(config?.textToImage?.models?.[settings?.provider] || []),
+        ...(config?.audioToText?.models?.[settings?.provider] || []),
+        ...(config?.textToSpeech?.models?.[settings?.provider] || []),
+    ]));
+    const selectedModelDef = currentProviderModels.find(
+        (m) => m.name === settings?.model,
+    );
+
+    const TOGGLEABLE_TOOLS = new Set([
+        "Thinking",
+        "Web Search",
+        "Google Search",
+        "Web Fetch",
+        "Code Execution",
+        "URL Context",
+        "Function Calling",
+    ]);
+
+    const TOOL_ICONS = {
+        Thinking: <Brain size={14} />,
+        "Web Search": <Globe size={14} />,
+        "Google Search": <Globe size={14} />,
+        "Web Fetch": <Globe size={14} />,
+        "Function Calling": <Wrench size={14} />,
+        "Code Execution": <Code size={14} />,
+        "Computer Use": <Monitor size={14} />,
+        "File Search": <Search size={14} />,
+        "URL Context": <Globe size={14} />,
+    };
+
+    const getToolToggle = (tool) => {
+        switch (tool) {
+            case "Thinking":
+                return {
+                    checked: settings?.thinkingEnabled || false,
+                    onChange: (val) => onUpdateSettings?.({ thinkingEnabled: val }),
+                    disabled: false,
+                };
+            case "Web Search":
+            case "Google Search":
+            case "Web Fetch":
+                return {
+                    checked: settings?.webSearchEnabled || false,
+                    onChange: (val) => onUpdateSettings?.({ webSearchEnabled: val }),
+                    disabled: settings?.codeExecutionEnabled,
+                };
+            case "Code Execution":
+                return {
+                    checked: settings?.codeExecutionEnabled || false,
+                    onChange: (val) => {
+                        const updates = { codeExecutionEnabled: val };
+                        if (val) {
+                            updates.webSearchEnabled = false;
+                            updates.urlContextEnabled = false;
+                        }
+                        onUpdateSettings?.(updates);
+                    },
+                    disabled: false,
+                };
+            case "URL Context":
+                return {
+                    checked: settings?.urlContextEnabled || false,
+                    onChange: (val) => onUpdateSettings?.({ urlContextEnabled: val }),
+                    disabled: settings?.codeExecutionEnabled,
+                };
+            case "Function Calling":
+                return {
+                    checked: settings?.functionCallingEnabled || false,
+                    onChange: (val) => onUpdateSettings?.({ functionCallingEnabled: val }),
+                    disabled: false,
+                };
+            default:
+                return null;
+        }
+    };
+
+    const activeTools = [];
+    if (selectedModelDef) {
+        const isReasoning = selectedModelDef.thinking || (settings?.model || "").includes("o1") || (settings?.model || "").includes("o3");
+        if (isReasoning && !selectedModelDef.responsesAPI) {
+            activeTools.push("Thinking");
+        }
+        if (selectedModelDef.tools) {
+            for (const t of selectedModelDef.tools) {
+                if (TOGGLEABLE_TOOLS.has(t) && !activeTools.includes(t)) {
+                    activeTools.push(t);
+                }
+            }
+        }
+    }
+
+    useEffect(() => {
+        if (!showToolsBubble) return;
+        const handleClickOutside = (e) => {
+            if (toolsBubbleRef.current && !toolsBubbleRef.current.contains(e.target) && !e.target.closest('[data-tools-btn]')) {
+                setShowToolsBubble(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [showToolsBubble]);
     const [_modelSort, _setModelSort] = useState({ key: null, dir: "desc" });
     const nonTextTypes = supportedInputTypes.filter((t) => t !== "text");
     const hasFileInput = !isTTSModel && nonTextTypes.length > 0;
@@ -837,6 +952,35 @@ export default function ChatArea({
             {toolActivitySlot}
 
             <div className={styles.inputWrapper}>
+                {showToolsBubble && activeTools.length > 0 && (
+                    <div className={styles.toolsBubble} ref={toolsBubbleRef}>
+                        <div className={styles.toolsBubbleHeader}>
+                            <span>Tools</span>
+                        </div>
+                        <div className={styles.toolsBubbleList}>
+                            {activeTools.map((tool) => {
+                                const toggle = getToolToggle(tool);
+                                if (!toggle) return null;
+                                return (
+                                    <div key={tool} className={styles.toolsBubbleItem}>
+                                        <div className={styles.toolsBubbleItemInfo}>
+                                            <span style={{ display: 'flex', alignItems: 'center', opacity: 0.7 }}>
+                                                {TOOL_ICONS[tool] || <Wrench size={14} />}
+                                            </span>
+                                            <span className={styles.toolsBubbleItemName}>{tool}</span>
+                                        </div>
+                                        <ToggleSwitchComponent
+                                            checked={toggle.checked}
+                                            onChange={toggle.onChange}
+                                            size="small"
+                                            disabled={toggle.disabled}
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
                 <form
                     onSubmit={handleSubmit}
                     className={`${styles.inputBox} ${isDragging ? styles.inputBoxDragActive : ""}`}
@@ -893,6 +1037,15 @@ export default function ChatArea({
                         </div>
                     )}
                     <div className={styles.inputRow}>
+                        {activeTools.length > 0 && (
+                            <ChatInputButton
+                                onClick={() => setShowToolsBubble((v) => !v)}
+                                label="Tools"
+                                isActive={showToolsBubble}
+                                icon={<Wrench size={18} />}
+                                data-tools-btn
+                            />
+                        )}
                         {hasFileInput && (
                             <>
                                 <input
@@ -903,25 +1056,19 @@ export default function ChatArea({
                                     hidden
                                     onChange={handleImageSelect}
                                 />
-                                <button
-                                    type="button"
-                                    className={styles.imageUploadBtn}
+                                <ChatInputButton
                                     onClick={() => fileInputRef.current?.click()}
-                                    title={imageOnly ? "Attach image" : "Attach file"}
-                                >
-                                    <RotatingUploadIcon types={nonTextTypes} size={18} />
-                                </button>
+                                    label={imageOnly ? "Attach image" : "Attach file"}
+                                    icon={<RotatingUploadIcon types={nonTextTypes} size={18} />}
+                                />
                             </>
                         )}
                         {supportedInputTypes.includes("image") && !isTTSModel && (
-                            <button
-                                type="button"
-                                className={styles.imageUploadBtn}
+                            <ChatInputButton
                                 onClick={() => setShowDrawing(true)}
-                                title="Create drawing"
-                            >
-                                <Pencil size={18} />
-                            </button>
+                                label="Create drawing"
+                                icon={<Pencil size={18} />}
+                            />
                         )}
                         {hasAudioInput && (
                             <AudioRecorderComponent

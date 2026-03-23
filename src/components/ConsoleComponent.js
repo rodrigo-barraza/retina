@@ -25,6 +25,7 @@ import ImagePreviewComponent from "./ImagePreviewComponent.js";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./ConsoleComponent.module.css";
+import ChatInputButton from "./ChatInputButton.js";
 
 const MAX_TOOL_ITERATIONS = 25;
 
@@ -409,7 +410,7 @@ export default function ConsoleComponent() {
                       role: "tool",
                       name: tc.name,
                       tool_call_id: tc.id,
-                      content: typeof tc.result === "string" ? tc.result : JSON.stringify(tc.result),
+                      content: typeof tc.result === "string" ? tc.result : JSON.stringify(truncateToolResult(tc.result)),
                     }));
                   return [assistantMsg, ...toolMsgs];
                 }
@@ -884,14 +885,11 @@ export default function ConsoleComponent() {
                   hidden
                   onChange={handleImageSelect}
                 />
-                <button
-                  type="button"
-                  className={chatStyles.imageUploadBtn}
+                <ChatInputButton
                   onClick={() => fileInputRef.current?.click()}
-                  title="Attach image"
-                >
-                  <Paperclip size={18} />
-                </button>
+                  label="Attach image"
+                  icon={<Paperclip size={18} />}
+                />
               </>
             )}
             <textarea

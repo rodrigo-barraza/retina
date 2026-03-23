@@ -159,7 +159,7 @@ export default function HistoryPanel({
   return (
     <div className={styles.container}>
       {!readOnly && (
-        <button className={styles.newBtn} onClick={onNew} data-panel-close>
+        <button className={styles.newBtn} onClick={onNew} data-panel-close disabled={!activeId}>
           <Plus size={16} /> New Conversation
         </button>
       )}

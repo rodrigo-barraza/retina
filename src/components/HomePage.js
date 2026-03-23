@@ -319,6 +319,26 @@ Guidelines:
         });
     }, []);
 
+    const handleToggleCustomTool = useCallback(async (tool) => {
+        try {
+            // Optimistic update for better UX
+            setCustomTools((prev) =>
+                prev.map((t) =>
+                    (t.id || t._id) === (tool.id || tool._id)
+                        ? { ...t, enabled: !t.enabled }
+                        : t
+                )
+            );
+            await PrismService.updateCustomTool(tool.id || tool._id, {
+                enabled: !tool.enabled,
+            });
+            loadCustomTools();
+        } catch (err) {
+            console.error("Failed to toggle custom tool:", err);
+            loadCustomTools(); // Revert on failure
+        }
+    }, [loadCustomTools]);
+
     function renderToolName(name) {
         return name
             .replace(/^get_/, "")
@@ -666,7 +686,7 @@ Guidelines:
                                                     role: "tool",
                                                     name: tc.name,
                                                     tool_call_id: tc.id,
-                                                    content: typeof tc.result === "string" ? tc.result : JSON.stringify(tc.result),
+                                                    content: typeof tc.result === "string" ? tc.result : JSON.stringify(truncateToolResult(tc.result)),
                                                 }));
                                             return [assistantMsg, ...toolMsgs];
                                         }
@@ -1333,7 +1353,7 @@ Guidelines:
                                                     role: "tool",
                                                     name: tc.name,
                                                     tool_call_id: tc.id,
-                                                    content: typeof tc.result === "string" ? tc.result : JSON.stringify(tc.result),
+                                                    content: typeof tc.result === "string" ? tc.result : JSON.stringify(truncateToolResult(tc.result)),
                                                 }));
                                             return [assistantMsg, ...toolMsgs];
                                         }
@@ -1456,7 +1476,7 @@ Guidelines:
                                     name: tc.name,
                                     args: tc.args,
                                     thoughtSignature: tc.thoughtSignature || undefined,
-                                    result: match ? match.result : null,
+                                    result: match ? truncateToolResult(match.result) : null,
                                 };
                             }),
                         };
@@ -1934,6 +1954,13 @@ Guidelines:
                     isTTSModel={isTTSModel}
                     conversations={conversations}
                     favorites={favoriteKeys}
+                    customTools={customTools}
+                    offlineTools={offlineTools}
+                    disabledBuiltIns={disabledBuiltIns}
+                    onToggleBuiltIn={handleToggleBuiltIn}
+                    onToggleCustomTool={handleToggleCustomTool}
+                    settings={settings}
+                    onUpdateSettings={(updates) => setSettings(s => ({ ...s, ...updates }))}
                     onToggleFavorite={async (key) => {
                         if (favoriteKeys.includes(key)) {
                             setFavoriteKeys((prev) => prev.filter((k) => k !== key));
