@@ -634,7 +634,7 @@ Guidelines:
                                 setMessages((prev) => {
                                     const updated = [...prev];
                                     const lastMsg = updated[updated.length - 1];
-                                    if (lastMsg?.role === "assistant") {
+                                    if (lastMsg?.role === "assistant" && !lastMsg.toolCalls?.length) {
                                         lastMsg.content = streamedText;
                                     } else {
                                         updated.push({ role: "assistant", content: streamedText });
@@ -739,9 +739,12 @@ Guidelines:
                         hasCalledTools = true;
 
                         streamedText = "";
-                        setMessages((prev) =>
-                            prev.filter((m) => !(m.role === "assistant" && !m.content?.trim())),
-                        );
+                        setMessages((prev) => {
+                            const filtered = prev.filter(
+                                (m) => !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
+                            );
+                            return [...filtered, assistantMsg];
+                        });
                         continue;
                     }
 
