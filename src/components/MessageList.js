@@ -656,9 +656,11 @@ export default function MessageList({
                                         onCancelEdit={() => setEditingIndex(null)}
                                     />
                                 ) : (
-                                    msg.content && (
+                                    msg.content ? (
                                             <MarkdownContent content={msg.content} className={isStreaming ? styles.streamingText : ""} />
-                                    )
+                                    ) : isStreaming ? (
+                                        <span className={styles.streamingCursor} />
+                                    ) : null
                                 )}
 
                                 {/* User metadata */}

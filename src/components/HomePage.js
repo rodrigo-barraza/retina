@@ -598,9 +598,11 @@ Guidelines:
                     let streamedText = "";
                     const pendingToolCalls = [];
 
-                    setMessages((prev) =>
-                        prev.filter((m) => !(m.role === "assistant" && !m.content?.trim())),
-                    );
+                    // Insert placeholder so the blinking cursor shows immediately
+                    setMessages((prev) => {
+                        const cleaned = prev.filter((m) => !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length));
+                        return [...cleaned, { role: "assistant", content: "", provider: settings.provider, model: settings.model }];
+                    });
 
                     await new Promise((resolve, reject) => {
                         const payload = {
@@ -1242,9 +1244,11 @@ Guidelines:
                     let streamedText = "";
                     const pendingToolCalls = [];
 
-                    setMessages((prev) =>
-                        prev.filter((m) => !(m.role === "assistant" && !m.content?.trim())),
-                    );
+                    // Insert placeholder so the blinking cursor shows immediately
+                    setMessages((prev) => {
+                        const cleaned = prev.filter((m) => !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length));
+                        return [...cleaned, { role: "assistant", content: "", provider: settings.provider, model: settings.model }];
+                    });
 
                     await new Promise((resolve, reject) => {
                         const payload = {
