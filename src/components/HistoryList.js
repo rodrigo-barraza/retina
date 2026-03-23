@@ -13,6 +13,7 @@ import {
   Download,
   Copy,
   Star,
+  Wrench,
 } from "lucide-react";
 import { PROVIDER_LABELS } from "./ProviderLogos";
 import SidebarFilterComponent, { MODALITY_FILTERS } from "./SidebarFilterComponent";
@@ -70,7 +71,7 @@ export default function HistoryList({
     for (const item of items) {
       const mod = item.modalities || {};
       for (const { key } of MODALITY_FILTERS) {
-        if (mod[`${key}In`] || mod[`${key}Out`]) set.add(key);
+        if (mod[`${key}In`] || mod[`${key}Out`] || mod[`${key}Use`]) set.add(key);
       }
     }
     return MODALITY_FILTERS.filter(({ key }) => set.has(key));
@@ -105,7 +106,7 @@ export default function HistoryList({
       }
       if (activeModality) {
         const mod = item.modalities || {};
-        if (!mod[`${activeModality}In`] && !mod[`${activeModality}Out`]) return false;
+        if (!mod[`${activeModality}In`] && !mod[`${activeModality}Out`] && !mod[`${activeModality}Use`]) return false;
       }
       if (activeProvider) {
         if (!(item.providers || []).includes(activeProvider)) return false;
@@ -235,6 +236,7 @@ export default function HistoryList({
                     {mod.textOut && <span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.text }} title="Text output"><Type size={11} /></span>}
                     {mod.imageOut && <span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.image }} title="Image output"><Image size={11} /></span>}
                     {mod.audioOut && <span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.audio }} title="Audio output"><Volume2 size={11} /></span>}
+                    {mod.toolUse && <span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.tools }} title="Tool use"><Wrench size={11} /></span>}
                   </div>
                 )}
               </div>

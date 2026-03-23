@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, Type, Image, Volume2, Video, FileText as DocIcon } from "lucide-react";
+import { Star, Type, Image, Volume2, Video, FileText as DocIcon, Wrench } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import TooltipComponent from "./TooltipComponent";
 import styles from "./SidebarFilterComponent.module.css";
@@ -11,6 +11,7 @@ const MODALITY_FILTERS = [
   { key: "audio", icon: Volume2, title: "Audio" },
   { key: "video", icon: Video, title: "Video" },
   { key: "doc", icon: DocIcon, title: "Document" },
+  { key: "tool", icon: Wrench, title: "Tools" },
 ];
 
 /**

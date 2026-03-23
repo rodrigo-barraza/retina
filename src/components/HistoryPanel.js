@@ -15,6 +15,7 @@ function getModalities(messages) {
     audioOut: false,
     videoIn: false,
     docIn: false,
+    toolUse: false,
   };
   for (const m of messages || []) {
     const isUser = m.role === "user";
@@ -56,6 +57,9 @@ function getModalities(messages) {
     }
     if (m.documents?.length > 0) {
       modalities.docIn = true;
+    }
+    if (m.role === "tool" || m.toolCalls?.length > 0) {
+      modalities.toolUse = true;
     }
   }
   return modalities;
