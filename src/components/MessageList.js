@@ -237,7 +237,7 @@ export function prepareDisplayMessages(rawMessages) {
             (m) =>
                 m.role !== "tool" &&
                 m.role !== "system" &&
-                !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
+                !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length && !m.images?.length && !m.audio),
         )
         .map((m) => {
             // Merge tool results into toolCalls

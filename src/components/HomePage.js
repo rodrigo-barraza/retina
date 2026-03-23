@@ -1028,8 +1028,8 @@ Guidelines:
                 const systemPromptText = settings.systemPrompt || FC_SYSTEM_PROMPT;
                 const currentMessages = [...newMessages];
                 let iterations = 0;
-                // Track previously executed tool calls to detect duplicates
-                const executedToolKeys = new Set();
+                // For local providers: after the first tool round, omit tools to force text
+                let hasCalledTools = false;
 
                 while (iterations < MAX_TOOL_ITERATIONS) {
                     iterations++;
@@ -1058,7 +1058,12 @@ Guidelines:
                                     })),
                             ],
                             options: {
-                                tools: allToolSchemas,
+                                // Local models (LM Studio, Ollama) should stop receiving tools
+                                // after their first tool round to force a text response (per LM Studio docs).
+                                // Cloud providers handle multi-step tool calling natively.
+                                ...((settings.provider === "lm-studio" || settings.provider === "ollama")
+                                    ? (!hasCalledTools ? { tools: allToolSchemas } : {})
+                                    : { tools: allToolSchemas }),
                                 maxTokens: settings.maxTokens,
                                 temperature: settings.temperature,
                             },
@@ -1110,26 +1115,8 @@ Guidelines:
                     });
 
                     if (pendingToolCalls.length > 0) {
-                        // Check for duplicate tool calls — if ALL calls this iteration
-                        // were already executed with identical args, break the loop
-                        const newCalls = pendingToolCalls.filter((tc) => {
-                            const key = `${tc.name}:${JSON.stringify(tc.args || {})}`;
-                            return !executedToolKeys.has(key);
-                        });
-
-                        if (newCalls.length === 0) {
-                            // All tool calls are duplicates — model is looping.
-                            break;
-                        }
-
-                        // Register all calls as executed
-                        for (const tc of pendingToolCalls) {
-                            executedToolKeys.add(`${tc.name}:${JSON.stringify(tc.args || {})}`);
-                        }
-
-                        // Execute only new (non-duplicate) tool calls
                         const results = await Promise.all(
-                            newCalls.map(async (tc) => {
+                            pendingToolCalls.map(async (tc) => {
                                 const customDef = customToolMap.get(tc.name);
                                 if (customDef) {
                                     return {
@@ -1160,13 +1147,6 @@ Guidelines:
                                         result: result.result,
                                     };
                                 }
-                                // Mark duplicate calls as done (skipped)
-                                if (activity.status === "calling") {
-                                    const isDup = !newCalls.some((nc) => nc.name === activity.name);
-                                    if (isDup) {
-                                        return { ...activity, status: "done", result: { skipped: true } };
-                                    }
-                                }
                                 return activity;
                             }),
                         );
@@ -1186,12 +1166,16 @@ Guidelines:
                         const assistantMsg = {
                             role: "assistant",
                             content: streamedText || "",
-                            toolCalls: pendingToolCalls.map((tc) => ({
-                                id: tc.id,
-                                name: tc.name,
-                                args: tc.args,
-                                thoughtSignature: tc.thoughtSignature || undefined,
-                            })),
+                            toolCalls: pendingToolCalls.map((tc) => {
+                                const match = results.find((r) => r.id === tc.id);
+                                return {
+                                    id: tc.id,
+                                    name: tc.name,
+                                    args: tc.args,
+                                    thoughtSignature: tc.thoughtSignature || undefined,
+                                    result: match ? match.result : null,
+                                };
+                            }),
                         };
                         currentMessages.push(assistantMsg);
 
@@ -1203,6 +1187,8 @@ Guidelines:
                                 content: JSON.stringify(result.result),
                             });
                         }
+
+                        hasCalledTools = true;
 
                         streamedText = "";
                         setMessages((prev) =>
