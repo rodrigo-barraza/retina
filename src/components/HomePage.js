@@ -232,7 +232,7 @@ export default function HomePage({ initialConversationId = null }) {
         if (str.length <= maxChars) return trimmed;
         return str.slice(0, maxChars) + '…}';
     }
-    const FC_PROJECT = "retina";
+
 
     const FC_SYSTEM_PROMPT = `You are a helpful AI assistant with access to real-time data APIs. You have tools for weather, air quality, earthquakes, solar activity, aurora forecasts, sunrise/sunset times, tides, wildfires, ISS tracking, local events, commodity/market prices, trending topics, and product search.
 
@@ -641,7 +641,6 @@ Guidelines:
                         const payload = {
                             provider: settings.provider,
                             model: settings.model,
-                            project: FC_PROJECT,
                             messages: [
                                 { role: "system", content: systemPromptText },
                                 ...currentMessages
@@ -654,13 +653,14 @@ Guidelines:
                                         ...(m.role === "tool" ? { name: m.name, tool_call_id: m.tool_call_id } : {}),
                                     })),
                             ],
-                            options: {
-                                ...((settings.provider === "lm-studio" || settings.provider === "ollama")
-                                    ? (!hasCalledTools ? { tools: allToolSchemas } : {})
-                                    : { tools: allToolSchemas }),
-                                maxTokens: settings.maxTokens,
-                                temperature: settings.temperature,
-                            },
+                            // Local models (LM Studio, Ollama) should stop receiving tools
+                            // after their first tool round to force a text response.
+                            // Cloud providers handle multi-step tool calling natively.
+                            ...((settings.provider === "lm-studio" || settings.provider === "ollama")
+                                ? (!hasCalledTools ? { tools: allToolSchemas } : {})
+                                : { tools: allToolSchemas }),
+                            maxTokens: settings.maxTokens,
+                            temperature: settings.temperature,
                             conversationId: currentId,
                         };
 
@@ -850,38 +850,36 @@ Guidelines:
                 provider: settings.provider,
                 model: settings.model,
                 messages: payloadMessages,
-                options: {
-                    temperature: settings.temperature,
-                    maxTokens: settings.maxTokens,
-                    topP: settings.topP,
-                    topK: settings.topK,
-                    frequencyPenalty: settings.frequencyPenalty,
-                    presencePenalty: settings.presencePenalty,
-                    stopSequences: stopArray?.length ? stopArray : undefined,
-                    ...(selectedModelDef?.responsesAPI
-                        ? {
-                            reasoningEffort: settings.reasoningEffort || "high",
-                            ...(settings.reasoningSummary
-                                ? { reasoningSummary: settings.reasoningSummary }
-                                : {}),
-                        }
-                        : {}),
-                    ...(!selectedModelDef?.responsesAPI && settings.thinkingEnabled
-                        ? {
-                            thinkingEnabled: true,
-                            reasoningEffort: settings.reasoningEffort,
-                            thinkingLevel: settings.thinkingLevel,
-                            thinkingBudget: settings.thinkingBudget || undefined,
-                        }
-                        : {}),
-                    ...(settings.webSearchEnabled ? { webSearch: true } : {}),
-                    ...(settings.webSearchEnabled && selectedModelDef?.webFetch
-                        ? { webFetch: true }
-                        : {}),
-                    ...(settings.codeExecutionEnabled ? { codeExecution: true } : {}),
-                    ...(settings.urlContextEnabled ? { urlContext: true } : {}),
-                    ...(settings.verbosity ? { verbosity: settings.verbosity } : {}),
-                },
+                temperature: settings.temperature,
+                maxTokens: settings.maxTokens,
+                topP: settings.topP,
+                topK: settings.topK,
+                frequencyPenalty: settings.frequencyPenalty,
+                presencePenalty: settings.presencePenalty,
+                stopSequences: stopArray?.length ? stopArray : undefined,
+                ...(selectedModelDef?.responsesAPI
+                    ? {
+                        reasoningEffort: settings.reasoningEffort || "high",
+                        ...(settings.reasoningSummary
+                            ? { reasoningSummary: settings.reasoningSummary }
+                            : {}),
+                    }
+                    : {}),
+                ...(!selectedModelDef?.responsesAPI && settings.thinkingEnabled
+                    ? {
+                        thinkingEnabled: true,
+                        reasoningEffort: settings.reasoningEffort,
+                        thinkingLevel: settings.thinkingLevel,
+                        thinkingBudget: settings.thinkingBudget || undefined,
+                    }
+                    : {}),
+                ...(settings.webSearchEnabled ? { webSearch: true } : {}),
+                ...(settings.webSearchEnabled && selectedModelDef?.webFetch
+                    ? { webFetch: true }
+                    : {}),
+                ...(settings.codeExecutionEnabled ? { codeExecution: true } : {}),
+                ...(settings.urlContextEnabled ? { urlContext: true } : {}),
+                ...(settings.verbosity ? { verbosity: settings.verbosity } : {}),
             };
 
             await new Promise((resolve, reject) => {
@@ -1094,7 +1092,7 @@ Guidelines:
                 };
                 setMessages((prev) => [...prev, userMsg]);
 
-                const { systemPrompt, ...modelSettings } = settings;
+                const { systemPrompt } = settings;
 
                 const defaultVoice =
                     config?.textToSpeech?.defaultVoices?.[settings.provider] || undefined;
@@ -1107,8 +1105,7 @@ Guidelines:
                     model: settings.model,
                     // Server-side conversation accumulation
                     conversationId: currentId,
-                    userMessage: userMsg,
-                    conversationMeta: { title: currentTitle, systemPrompt, settings: modelSettings },
+                    conversationMeta: { title: currentTitle, systemPrompt },
                 });
 
                 const totalTime = (performance.now() - requestStart) / 1000;
@@ -1188,8 +1185,8 @@ Guidelines:
                     updateUrl(currentId);
                 }
 
-                const { systemPrompt, ...modelSettings } = settings;
-                const conversationMeta = { title: currentTitle, systemPrompt, settings: modelSettings };
+                const { systemPrompt } = settings;
+                const conversationMeta = { title: currentTitle, systemPrompt };
 
                 for (const audioDataUrl of audioFiles) {
                     const userMsg = {
@@ -1208,7 +1205,6 @@ Guidelines:
                         ...(content ? { prompt: content } : {}),
                         // Server-side conversation accumulation
                         conversationId: currentId,
-                        userMessage: userMsg,
                         conversationMeta,
                     });
 
@@ -1287,7 +1283,6 @@ Guidelines:
                         const payload = {
                             provider: settings.provider,
                             model: settings.model,
-                            project: FC_PROJECT,
                             messages: [
                                 { role: "system", content: systemPromptText },
                                 ...currentMessages
@@ -1300,26 +1295,21 @@ Guidelines:
                                         ...(m.role === "tool" ? { name: m.name, tool_call_id: m.tool_call_id } : {}),
                                     })),
                             ],
-                            options: {
-                                // Local models (LM Studio, Ollama) should stop receiving tools
-                                // after their first tool round to force a text response (per LM Studio docs).
-                                // Cloud providers handle multi-step tool calling natively.
-                                ...((settings.provider === "lm-studio" || settings.provider === "ollama")
-                                    ? (!hasCalledTools ? { tools: allToolSchemas } : {})
-                                    : { tools: allToolSchemas }),
-                                maxTokens: settings.maxTokens,
-                                temperature: settings.temperature,
-                            },
+                            // Local models (LM Studio, Ollama) should stop receiving tools
+                            // after their first tool round to force a text response.
+                            // Cloud providers handle multi-step tool calling natively.
+                            ...((settings.provider === "lm-studio" || settings.provider === "ollama")
+                                ? (!hasCalledTools ? { tools: allToolSchemas } : {})
+                                : { tools: allToolSchemas }),
+                            maxTokens: settings.maxTokens,
+                            temperature: settings.temperature,
                             conversationId: currentId,
                         };
 
                         if (iterations === 1) {
-                            const { systemPrompt: _systemPrompt, ...modelSettings } = settings;
-                            payload.userMessage = userMsg;
                             payload.conversationMeta = {
                                 title: currentTitle,
                                 systemPrompt: systemPromptText,
-                                settings: modelSettings,
                             };
                         }
 
@@ -1492,7 +1482,7 @@ Guidelines:
                 updateUrl(currentId);
             }
 
-            const { systemPrompt, ...modelSettings } = settings;
+            const { systemPrompt } = settings;
 
             const systemMsg = settings.systemPrompt
                 ? [{ role: "system", content: settings.systemPrompt }]
@@ -1519,42 +1509,39 @@ Guidelines:
                 provider: settings.provider,
                 model: settings.model,
                 messages: payloadMessages,
-                options: {
-                    temperature: settings.temperature,
-                    maxTokens: settings.maxTokens,
-                    topP: settings.topP,
-                    topK: settings.topK,
-                    frequencyPenalty: settings.frequencyPenalty,
-                    presencePenalty: settings.presencePenalty,
-                    stopSequences: stopArray?.length ? stopArray : undefined,
-                    ...(selectedModelDef?.responsesAPI
-                        ? {
-                            reasoningEffort: settings.reasoningEffort || "high",
-                            ...(settings.reasoningSummary
-                                ? { reasoningSummary: settings.reasoningSummary }
-                                : {}),
-                        }
-                        : {}),
-                    ...(!selectedModelDef?.responsesAPI && settings.thinkingEnabled
-                        ? {
-                            thinkingEnabled: true,
-                            reasoningEffort: settings.reasoningEffort,
-                            thinkingLevel: settings.thinkingLevel,
-                            thinkingBudget: settings.thinkingBudget || undefined,
-                        }
-                        : {}),
-                    ...(settings.webSearchEnabled ? { webSearch: true } : {}),
-                    ...(settings.webSearchEnabled && selectedModelDef?.webFetch
-                        ? { webFetch: true }
-                        : {}),
-                    ...(settings.codeExecutionEnabled ? { codeExecution: true } : {}),
-                    ...(settings.urlContextEnabled ? { urlContext: true } : {}),
-                    ...(settings.verbosity ? { verbosity: settings.verbosity } : {}),
-                },
+                temperature: settings.temperature,
+                maxTokens: settings.maxTokens,
+                topP: settings.topP,
+                topK: settings.topK,
+                frequencyPenalty: settings.frequencyPenalty,
+                presencePenalty: settings.presencePenalty,
+                stopSequences: stopArray?.length ? stopArray : undefined,
+                ...(selectedModelDef?.responsesAPI
+                    ? {
+                        reasoningEffort: settings.reasoningEffort || "high",
+                        ...(settings.reasoningSummary
+                            ? { reasoningSummary: settings.reasoningSummary }
+                            : {}),
+                    }
+                    : {}),
+                ...(!selectedModelDef?.responsesAPI && settings.thinkingEnabled
+                    ? {
+                        thinkingEnabled: true,
+                        reasoningEffort: settings.reasoningEffort,
+                        thinkingLevel: settings.thinkingLevel,
+                        thinkingBudget: settings.thinkingBudget || undefined,
+                    }
+                    : {}),
+                ...(settings.webSearchEnabled ? { webSearch: true } : {}),
+                ...(settings.webSearchEnabled && selectedModelDef?.webFetch
+                    ? { webFetch: true }
+                    : {}),
+                ...(settings.codeExecutionEnabled ? { codeExecution: true } : {}),
+                ...(settings.urlContextEnabled ? { urlContext: true } : {}),
+                ...(settings.verbosity ? { verbosity: settings.verbosity } : {}),
                 // Server-side conversation accumulation
                 conversationId: currentId,
-                userMessage: userMsg,
-                conversationMeta: { title: currentTitle, systemPrompt, settings: modelSettings },
+                conversationMeta: { title: currentTitle, systemPrompt },
             };
 
             // Use WebSocket streaming for real-time text generation

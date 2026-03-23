@@ -71,7 +71,6 @@ async function executeModelNode(node, inputData, { onNodeContentUpdate, toolSche
     const conversationMeta = {
         title: `🔀 ${nodeLabel} · ${node.provider || "unknown"}/${node.modelName || "unknown"}`,
         systemPrompt: node.systemPrompt || "",
-        settings: { provider: node.provider, model: node.modelName },
     };
 
     if (endpoint === "textToText") {
@@ -176,21 +175,14 @@ async function executeModelNode(node, inputData, { onNodeContentUpdate, toolSche
             finalMessages = [...systemMsg, userMsg];
         }
 
-        // Build user message for conversation auto-append
-        const lastUserMsg = finalMessages.findLast((m) => m.role === "user");
-        const userMessage = lastUserMsg ? {
-            ...lastUserMsg,
-            timestamp: new Date().toISOString(),
-        } : null;
 
         const result = await PrismService.generateText({
             provider: node.provider,
             model: node.modelName,
             messages: finalMessages,
             conversationId,
-            userMessage,
             conversationMeta,
-            ...(toolSchemas && toolSchemas.length > 0 ? { options: { tools: toolSchemas } } : {}),
+            ...(toolSchemas && toolSchemas.length > 0 ? { tools: toolSchemas } : {}),
         });
 
         // ── Tool-call orchestration loop ──
@@ -241,7 +233,7 @@ async function executeModelNode(node, inputData, { onNodeContentUpdate, toolSche
                 messages: loopMessages,
                 conversationId,
                 conversationMeta,
-                ...(toolSchemas && toolSchemas.length > 0 ? { options: { tools: toolSchemas } } : {}),
+                ...(toolSchemas && toolSchemas.length > 0 ? { tools: toolSchemas } : {}),
             });
         }
 
@@ -351,7 +343,6 @@ async function executeModelNode(node, inputData, { onNodeContentUpdate, toolSche
             systemPrompt,
             images: images.length > 0 ? images : undefined,
             conversationId,
-            userMessage: { role: "user", content: prompt || "", timestamp: new Date().toISOString() },
             conversationMeta,
         });
 
@@ -375,7 +366,6 @@ async function executeModelNode(node, inputData, { onNodeContentUpdate, toolSche
             audio,
             ...(node.userPrompt ? { prompt: node.userPrompt } : node.systemPrompt ? { prompt: node.systemPrompt } : {}),
             conversationId,
-            userMessage: { role: "user", content: node.userPrompt || "Transcribe audio", timestamp: new Date().toISOString() },
             conversationMeta,
         });
 
@@ -387,7 +377,6 @@ async function executeModelNode(node, inputData, { onNodeContentUpdate, toolSche
             model: node.modelName,
             text,
             conversationId,
-            userMessage: { role: "user", content: text, timestamp: new Date().toISOString() },
             conversationMeta,
         });
 

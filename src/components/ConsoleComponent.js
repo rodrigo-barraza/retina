@@ -386,7 +386,6 @@ export default function ConsoleComponent() {
           const payload = {
             provider: settings.provider,
             model: settings.model,
-            project: PROJECT,
             messages: [
               { role: "system", content: SYSTEM_PROMPT },
               ...currentMessages.map((m) => ({
@@ -397,24 +396,19 @@ export default function ConsoleComponent() {
                 ...(m.role === "tool" ? { tool_call_id: m.tool_call_id, name: m.name } : {}),
               })),
             ],
-            options: {
-              // Local models (LM Studio, Ollama) should stop receiving tools
-              // after their first tool round to force a text response (per LM Studio docs).
-              // Cloud providers handle multi-step tool calling natively.
-              ...((settings.provider === "lm-studio" || settings.provider === "ollama")
-                ? (!hasCalledTools ? { tools: allToolSchemas } : {})
-                : { tools: allToolSchemas }),
-              maxTokens: settings.maxTokens,
-            },
+            // Local models (LM Studio, Ollama) should stop receiving tools
+            // after their first tool round to force a text response.
+            // Cloud providers handle multi-step tool calling natively.
+            ...((settings.provider === "lm-studio" || settings.provider === "ollama")
+              ? (!hasCalledTools ? { tools: allToolSchemas } : {})
+              : { tools: allToolSchemas }),
+            maxTokens: settings.maxTokens,
+            conversationId,
           };
 
-          // Always send conversationId so Prism persists every response
-          payload.conversationId = conversationId;
-
-          // Only send userMessage/meta on the first iteration
+          // Only send meta on the first iteration
           // (subsequent iterations are tool-result follow-ups)
           if (iterations === 1) {
-            payload.userMessage = currentMessages[currentMessages.length - 1];
             payload.conversationMeta = {
               title: resolvedTitle,
               systemPrompt: SYSTEM_PROMPT,

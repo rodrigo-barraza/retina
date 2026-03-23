@@ -250,7 +250,7 @@ export default class PrismService {
 
   /**
    * Generate text (non-streaming).
-   * @param {object} payload - { provider, model, messages, options, conversationId?, userMessage? }
+   * @param {object} payload - { provider, model, messages, temperature?, maxTokens?, tools?, conversationId?, conversationMeta? }
    * @returns {Promise<object>}
    */
   static async generateText(payload) {
@@ -259,7 +259,7 @@ export default class PrismService {
 
   /**
    * Stream text generation via SSE (Server-Sent Events).
-   * @param {object} payload - { provider, model, messages, options, conversationId?, userMessage? }
+   * @param {object} payload - { provider, model, messages, temperature?, maxTokens?, tools?, conversationId?, conversationMeta? }
    * @param {object} callbacks - { onChunk, onThinking, onImage, onExecutableCode, onCodeExecutionResult, onWebSearchResult, onStatus, onDone, onError }
    * @returns {Function} abort - Call to cancel the stream early
    */
@@ -359,17 +359,17 @@ export default class PrismService {
 
   /**
    * Generate an image from text.
-   * @param {object} payload - { provider, model, prompt, images?, options? }
+   * @param {object} payload - { provider, model, prompt, images?, systemPrompt?, conversationId?, conversationMeta? }
    * @returns {Promise<{ images: string[], text?: string }>}
    */
   static async generateImage(payload) {
-    const { prompt, images, systemPrompt, conversationId, conversationMeta, userMessage: callerUserMessage, ...rest } = payload;
-    const userMessage = callerUserMessage || {
+    const { prompt, images, systemPrompt, conversationId, conversationMeta, ...rest } = payload;
+    const userMessage = {
       role: "user",
       content: prompt || "",
     };
 
-    if (images?.length > 0 && !userMessage.images) {
+    if (images?.length > 0) {
       userMessage.images = images.map((img) => {
         if (typeof img === "string") return img;
         return `data:${img.mimeType || "image/png"};base64,${img.imageData}`;
@@ -383,7 +383,6 @@ export default class PrismService {
     if (systemPrompt) body.systemPrompt = systemPrompt;
     if (conversationId) body.conversationId = conversationId;
     if (conversationMeta) body.conversationMeta = conversationMeta;
-    if (callerUserMessage) body.userMessage = callerUserMessage;
 
     return PrismService._request("/chat?stream=false", { body });
   }
@@ -399,7 +398,7 @@ export default class PrismService {
 
   /**
    * Transcribe an audio file to text.
-   * @param {object} payload - { provider, audio, mimeType?, model?, language?, prompt?, conversationId?, userMessage? }
+   * @param {object} payload - { provider, audio, mimeType?, model?, language?, prompt?, conversationId?, conversationMeta? }
    * @returns {Promise<{ text, usage?, estimatedCost?, totalTime? }>}
    */
   static async transcribeAudio(payload) {
@@ -412,7 +411,7 @@ export default class PrismService {
 
   /**
    * Generate speech from text (TTS).
-   * @param {object} payload - { provider, text, voice?, model?, options?, conversationId?, userMessage? }
+   * @param {object} payload - { provider, text, voice?, model?, conversationId?, conversationMeta? }
    * @returns {Promise<{ audioDataUrl: string }>}
    */
   static async generateSpeech(payload) {
