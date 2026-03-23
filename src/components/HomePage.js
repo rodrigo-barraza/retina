@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import NavigationSidebarComponent from "../components/NavigationSidebarComponent";
 import SettingsPanel from "../components/SettingsPanel";
+import ParametersPanelComponent from "../components/ParametersPanelComponent";
 import CustomToolsPanel from "../components/CustomToolsPanel";
 import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
@@ -1470,6 +1471,12 @@ Guidelines:
                                     <span className={consoleStyles.tabBadge}>{allToolSchemas.length}</span>
                                 )}
                             </button>
+                            <button
+                                className={`${consoleStyles.tab} ${leftTab === "params" ? consoleStyles.tabActive : ""}`}
+                                onClick={() => setLeftTab("params")}
+                            >
+                                Params
+                            </button>
                         </div>
                         {leftTab === "settings" && (
                             <SettingsPanel
@@ -1494,6 +1501,13 @@ Guidelines:
                                 disabledBuiltIns={disabledBuiltIns}
                                 onToggleBuiltIn={handleToggleBuiltIn}
                                 offlineTools={offlineTools}
+                            />
+                        )}
+                        {leftTab === "params" && (
+                            <ParametersPanelComponent
+                                settings={settings}
+                                onChange={(updates) => setSettings((s) => ({ ...s, ...updates }))}
+                                config={config}
                             />
                         )}
                     </>

@@ -1,7 +1,6 @@
 "use client";
 // No React hooks needed — state is managed by parent
 import {
-    Settings2,
     Cpu,
     Edit3,
     Type,
@@ -23,7 +22,7 @@ import {
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import SelectDropdown from "./SelectDropdown";
 import ToggleSwitch from "./ToggleSwitch";
-import SliderComponent from "./SliderComponent";
+
 import SystemPromptModal from "./SystemPromptModal";
 import styles from "./SettingsPanel.module.css";
 import { MODALITY_COLORS } from "./WorkflowNodeConstants";
@@ -100,38 +99,14 @@ export default function SettingsPanel({
     };
     const _handleSystemPromptChange = (e) =>
         onChange({ systemPrompt: e.target.value });
-    const handleTempChange = (val) =>
-        onChange({ temperature: val });
-    const handleMaxTokensChange = (val) =>
-        onChange({ maxTokens: val });
-    const handleTopPChange = (val) =>
-        onChange({ topP: val });
-    const handleTopKChange = (val) => onChange({ topK: val });
-    const handleFreqPenaltyChange = (val) =>
-        onChange({ frequencyPenalty: val });
-    const handlePresPenaltyChange = (val) =>
-        onChange({ presencePenalty: val });
-    const handleStopSeqChange = (e) =>
-        onChange({ stopSequences: e.target.value });
     const handleThinkingEnabledChange = (val) =>
         onChange({ thinkingEnabled: val });
-    const handleReasoningEffortChange = (val) =>
-        onChange({ reasoningEffort: val });
-    const handleThinkingLevelChange = (val) => onChange({ thinkingLevel: val });
-    const handleThinkingBudgetChange = (e) =>
-        onChange({ thinkingBudget: e.target.value });
-    const handleVerbosityChange = (val) => onChange({ verbosity: val });
-    const handleReasoningSummaryChange = (val) =>
-        onChange({ reasoningSummary: val });
 
     const currentProviderModels = modelsMap[settings.provider] || [];
     const selectedModelDef = currentProviderModels.find(
         (m) => m.name === settings.model,
     );
-    const isReasoning =
-        selectedModelDef?.thinking ||
-        (settings.model || "").includes("o1") ||
-        (settings.model || "").includes("o3");
+
     const isTranscription = selectedModelDef?._isTranscription === true;
     const isTTS = selectedModelDef?._isTTS === true;
     const isSpecialModel = isTranscription || isTTS;
@@ -603,239 +578,7 @@ export default function SettingsPanel({
                         </div>
                     )}
 
-                {!isSpecialModel && settings.provider !== "ollama" && (
-                    <>
-                        <div className={styles.sectionTitle}>
-                            <Settings2 size={16} /> Parameters
-                        </div>
 
-                        {(() => {
-                            const thinkingLocked =
-                                isReasoning &&
-                                settings.thinkingEnabled &&
-                                settings.provider === "anthropic";
-                            return (
-                                <div className={styles.formGroup}>
-                                    <label>
-                                        Temperature (
-                                        {thinkingLocked ? "1 — Locked" : settings.temperature})
-                                    </label>
-                                    {!readOnly && (
-                                        <SliderComponent
-                                            min={0}
-                                            max={2}
-                                            step={0.1}
-                                            value={thinkingLocked ? 1 : settings.temperature}
-                                            onChange={handleTempChange}
-                                            disabled={thinkingLocked}
-                                        />
-                                    )}
-                                </div>
-                            );
-                        })()}
-
-                        <div className={styles.formGroup}>
-                            <label>Max Tokens ({settings.maxTokens})</label>
-                            {!readOnly && (
-                                <SliderComponent
-                                    min={256}
-                                    max={32000}
-                                    step={256}
-                                    value={settings.maxTokens}
-                                    onChange={handleMaxTokensChange}
-                                />
-                            )}
-                        </div>
-
-                        {(isReasoning && selectedModelDef?.responsesAPI) ||
-                            (readOnly && settings.reasoningEffort) ? (
-                            <>
-                                <div className={styles.formGroup}>
-                                    <label>Reasoning Effort</label>
-                                    {readOnly ? (
-                                        <div className={styles.readOnlyValue}>
-                                            {settings.reasoningEffort || "high"}
-                                        </div>
-                                    ) : (
-                                        <SelectDropdown
-                                            value={settings.reasoningEffort || "high"}
-                                            options={[
-                                                { value: "none", label: "None" },
-                                                { value: "low", label: "Low" },
-                                                { value: "medium", label: "Medium" },
-                                                { value: "high", label: "High" },
-                                                { value: "xhigh", label: "Extra High" },
-                                            ]}
-                                            onChange={handleReasoningEffortChange}
-                                        />
-                                    )}
-                                </div>
-
-                                {(selectedModelDef?.reasoningSummary ||
-                                    (readOnly && settings.reasoningSummary)) && (
-                                        <div className={styles.formGroup}>
-                                            <label>Reasoning Summary</label>
-                                            {readOnly ? (
-                                                <div className={styles.readOnlyValue}>
-                                                    {settings.reasoningSummary || "auto"}
-                                                </div>
-                                            ) : (
-                                                <SelectDropdown
-                                                    value={settings.reasoningSummary || "auto"}
-                                                    options={[
-                                                        { value: "auto", label: "Auto" },
-                                                        { value: "concise", label: "Concise" },
-                                                        { value: "detailed", label: "Detailed" },
-                                                    ]}
-                                                    onChange={handleReasoningSummaryChange}
-                                                />
-                                            )}
-                                        </div>
-                                    )}
-                            </>
-                        ) : null}
-
-                        {/* Thinking sub-settings — shown when Thinking is toggled on */}
-                        {isReasoning &&
-                            !selectedModelDef?.responsesAPI &&
-                            settings.thinkingEnabled && (
-                                <>
-                                    {["openai", "lm-studio", "vllm", "anthropic", "ollama"].includes(
-                                        settings.provider,
-                                    ) && (
-                                            <div className={styles.formGroup}>
-                                                <label>Reasoning Effort</label>
-                                                <SelectDropdown
-                                                    value={settings.reasoningEffort || "high"}
-                                                    options={[
-                                                        { value: "low", label: "Low" },
-                                                        { value: "medium", label: "Medium" },
-                                                        { value: "high", label: "High" },
-                                                    ]}
-                                                    onChange={handleReasoningEffortChange}
-                                                />
-                                            </div>
-                                        )}
-
-                                    {settings.provider === "google" && (
-                                        <div className={styles.formGroup}>
-                                            <label>Thinking Level</label>
-                                            <SelectDropdown
-                                                value={settings.thinkingLevel || "high"}
-                                                options={[
-                                                    { value: "minimal", label: "Minimal" },
-                                                    { value: "low", label: "Low" },
-                                                    { value: "medium", label: "Medium" },
-                                                    { value: "high", label: "High" },
-                                                ]}
-                                                onChange={handleThinkingLevelChange}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {["anthropic", "google"].includes(settings.provider) && (
-                                        <div className={styles.formGroup}>
-                                            <label>Thinking Budget (Tokens)</label>
-                                            <input
-                                                type="number"
-                                                placeholder="e.g. 1024"
-                                                value={settings.thinkingBudget || ""}
-                                                onChange={handleThinkingBudgetChange}
-                                                className={styles.inputField}
-                                            />
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                        {selectedModelDef?.verbosity && (
-                            <div className={styles.formGroup}>
-                                <label>Verbosity</label>
-                                <SelectDropdown
-                                    value={settings.verbosity || ""}
-                                    options={[
-                                        { value: "", label: "Default" },
-                                        { value: "low", label: "Low" },
-                                        { value: "medium", label: "Medium" },
-                                        { value: "high", label: "High" },
-                                    ]}
-                                    onChange={handleVerbosityChange}
-                                />
-                            </div>
-                        )}
-
-                        {!isReasoning && !readOnly && (
-                            <>
-                                <div className={styles.formGroup}>
-                                    <label>Top P ({settings.topP})</label>
-                                    <SliderComponent
-                                        min={0}
-                                        max={1}
-                                        step={0.05}
-                                        value={settings.topP}
-                                        onChange={handleTopPChange}
-                                    />
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                    <label>Stop Sequences (comma separated)</label>
-                                    <input
-                                        type="text"
-                                        placeholder="\n, Human:"
-                                        value={settings.stopSequences || ""}
-                                        onChange={handleStopSeqChange}
-                                        className={styles.inputField}
-                                    />
-                                </div>
-
-                                {["anthropic", "google"].includes(settings.provider) && (
-                                    <div className={styles.formGroup}>
-                                        <label>Top K ({settings.topK})</label>
-                                        <SliderComponent
-                                            min={0}
-                                            max={100}
-                                            step={1}
-                                            value={settings.topK}
-                                            onChange={handleTopKChange}
-                                        />
-                                    </div>
-                                )}
-
-                                {["openai", "lm-studio", "vllm", "google"].includes(
-                                    settings.provider,
-                                ) && (
-                                        <>
-                                            <div className={styles.formGroup}>
-                                                <label>
-                                                    Frequency Penalty ({settings.frequencyPenalty})
-                                                </label>
-                                                <SliderComponent
-                                                    min={-2}
-                                                    max={2}
-                                                    step={0.1}
-                                                    value={settings.frequencyPenalty}
-                                                    onChange={handleFreqPenaltyChange}
-                                                />
-                                            </div>
-
-                                            <div className={styles.formGroup}>
-                                                <label>
-                                                    Presence Penalty ({settings.presencePenalty})
-                                                </label>
-                                                <SliderComponent
-                                                    min={-2}
-                                                    max={2}
-                                                    step={0.1}
-                                                    value={settings.presencePenalty}
-                                                    onChange={handlePresPenaltyChange}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                            </>
-                        )}
-                    </>
-                )}
             </div>
 
             {!readOnly && showSystemPromptModal && (

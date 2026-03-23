@@ -359,7 +359,7 @@ const TOOL_EXECUTORS = {
   // ── Products ──
   search_products: async (args) => {
     const params = new URLSearchParams();
-    if (args.query) params.set("query", args.query);
+    if (args.query) params.set("q", args.query);
     if (args.category) params.set("category", args.category);
     if (args.limit) params.set("limit", args.limit);
     const qs = params.toString();
