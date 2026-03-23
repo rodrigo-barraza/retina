@@ -580,10 +580,204 @@ Guidelines:
         // goes at position userMsgIndex + 1. For the API call, send history up to user msg.
         setMessages(newMessages);
         setIsGenerating(true);
+        setToolActivity([]);
 
+        // ── Function Calling rerun branch ────────────────────────────
+        if (settings.functionCallingEnabled) {
+            try {
+                const currentId = activeId;
+                const _currentTitle = title;
+                const systemPromptText = settings.systemPrompt || FC_SYSTEM_PROMPT;
+                const currentMessages = [...historyUpToUser];
+                let iterations = 0;
+                let hasCalledTools = false;
+
+                while (iterations < MAX_TOOL_ITERATIONS) {
+                    iterations++;
+                    let streamedText = "";
+                    const pendingToolCalls = [];
+
+                    setMessages((prev) =>
+                        prev.filter((m) => !(m.role === "assistant" && !m.content?.trim())),
+                    );
+
+                    await new Promise((resolve, reject) => {
+                        const payload = {
+                            provider: settings.provider,
+                            model: settings.model,
+                            project: FC_PROJECT,
+                            messages: [
+                                { role: "system", content: systemPromptText },
+                                ...currentMessages
+                                    .filter((m) => m.role !== "assistant" || m.content?.trim() || m.toolCalls?.length)
+                                    .map((m) => ({
+                                        role: m.role,
+                                        ...(m.content?.trim() ? { content: m.content } : { content: " " }),
+                                        ...(m.images?.length > 0 ? { images: m.images } : {}),
+                                        ...(m.toolCalls?.length > 0 ? { toolCalls: m.toolCalls } : {}),
+                                        ...(m.role === "tool" ? { name: m.name, tool_call_id: m.tool_call_id } : {}),
+                                    })),
+                            ],
+                            options: {
+                                ...((settings.provider === "lm-studio" || settings.provider === "ollama")
+                                    ? (!hasCalledTools ? { tools: allToolSchemas } : {})
+                                    : { tools: allToolSchemas }),
+                                maxTokens: settings.maxTokens,
+                                temperature: settings.temperature,
+                            },
+                            conversationId: currentId,
+                        };
+
+                        abortRef.current = PrismService.streamText(payload, {
+                            onChunk: (chunk) => {
+                                streamedText += chunk;
+                                setMessages((prev) => {
+                                    const updated = [...prev];
+                                    const lastMsg = updated[updated.length - 1];
+                                    if (lastMsg?.role === "assistant") {
+                                        lastMsg.content = streamedText;
+                                    } else {
+                                        updated.push({ role: "assistant", content: streamedText });
+                                    }
+                                    return updated;
+                                });
+                            },
+                            onToolCall: (toolCall) => {
+                                pendingToolCalls.push(toolCall);
+                                setToolActivity((prev) => [
+                                    ...prev,
+                                    {
+                                        id: toolCall.id || `tc-${Date.now()}-${Math.random()}`,
+                                        name: toolCall.name,
+                                        args: toolCall.args,
+                                        status: "calling",
+                                        timestamp: Date.now(),
+                                    },
+                                ]);
+                                setShowToolPanel(true);
+                            },
+                            onDone: () => resolve(),
+                            onError: (err) => reject(err),
+                            onThinking: () => {},
+                        });
+                    });
+
+                    if (pendingToolCalls.length > 0) {
+                        const results = await Promise.all(
+                            pendingToolCalls.map(async (tc) => {
+                                const customDef = customToolMap.get(tc.name);
+                                if (customDef) {
+                                    return {
+                                        name: tc.name,
+                                        id: tc.id,
+                                        result: await SunService.executeCustomTool(customDef, tc.args),
+                                    };
+                                }
+                                return {
+                                    name: tc.name,
+                                    id: tc.id,
+                                    result: await SunService.executeTool(tc.name, tc.args),
+                                };
+                            }),
+                        );
+
+                        setToolActivity((prev) =>
+                            prev.map((activity) => {
+                                const result = results.find(
+                                    (r) =>
+                                        (r.id && r.id === activity.id) ||
+                                        (!r.id && r.name === activity.name && activity.status === "calling"),
+                                );
+                                if (result) {
+                                    return {
+                                        ...activity,
+                                        status: result.result?.error ? "error" : "done",
+                                        result: result.result,
+                                    };
+                                }
+                                return activity;
+                            }),
+                        );
+
+                        // Persist tool result messages to the conversation
+                        const toolResultMessages = results.map((result) => ({
+                            role: "tool",
+                            name: result.name,
+                            tool_call_id: result.id,
+                            content: JSON.stringify(result.result),
+                            timestamp: new Date().toISOString(),
+                        }));
+                        PrismService.appendMessages(currentId, toolResultMessages).catch((err) =>
+                            console.error("Failed to append tool results:", err),
+                        );
+
+                        const assistantMsg = {
+                            role: "assistant",
+                            content: streamedText || "",
+                            toolCalls: pendingToolCalls.map((tc) => {
+                                const match = results.find((r) => r.id === tc.id);
+                                return {
+                                    id: tc.id,
+                                    name: tc.name,
+                                    args: tc.args,
+                                    thoughtSignature: tc.thoughtSignature || undefined,
+                                    result: match ? match.result : null,
+                                };
+                            }),
+                        };
+                        currentMessages.push(assistantMsg);
+
+                        for (const result of results) {
+                            currentMessages.push({
+                                role: "tool",
+                                name: result.name,
+                                tool_call_id: result.id,
+                                content: JSON.stringify(result.result),
+                            });
+                        }
+
+                        hasCalledTools = true;
+
+                        streamedText = "";
+                        setMessages((prev) =>
+                            prev.filter((m) => !(m.role === "assistant" && !m.content?.trim())),
+                        );
+                        continue;
+                    }
+
+                    if (streamedText) {
+                        currentMessages.push({ role: "assistant", content: streamedText });
+                        break;
+                    }
+                }
+
+                setMessages(
+                    currentMessages
+                        .filter(
+                            (m) =>
+                                m.role !== "tool" &&
+                                m.role !== "system" &&
+                                !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
+                        ),
+                );
+                loadConversations();
+            } catch (error) {
+                console.error(error);
+                setMessages((prev) => [
+                    ...prev,
+                    { role: "system", content: "Error: " + error.message },
+                ]);
+            } finally {
+                setIsGenerating(false);
+                abortRef.current = null;
+            }
+            return;
+        }
+
+        // ── Normal text rerun branch ─────────────────────────────────
         try {
-            const currentId = activeId;
-            const currentTitle = title;
+            const _currentId = activeId;
+            const _currentTitle = title;
 
             const systemMsg = settings.systemPrompt
                 ? [{ role: "system", content: settings.systemPrompt }]
