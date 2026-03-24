@@ -104,22 +104,46 @@ function ModalityCell({ inputTypes, outputTypes }) {
 }
 
 function normalizeModel(model) {
+    const rawName = model.display_name || model.label || model.key || model.name;
+    const explicitQuant =
+        (typeof model.quantization === "object"
+            ? model.quantization?.name
+            : model.quantization) || null;
+    const quantization = explicitQuant || extractQuantization(rawName) || null;
+    const name = quantization ? stripQuantSuffix(rawName) : rawName;
     return {
         key: model.key || model.name,
-        name: model.display_name || model.label || model.key || model.name,
+        name,
         provider: model.provider || "lm-studio",
         size: model.size || formatBytes(model.size_bytes) || null,
         params: model.params || model.params_string || null,
         contextLength: model.contextLength || model.max_context_length || null,
-        quantization:
-            (typeof model.quantization === "object"
-                ? model.quantization?.name
-                : model.quantization) || null,
+        quantization,
         isLoaded: model.loaded || model.loaded_instances?.length > 0 || false,
         pricing: model.pricing || null,
         arena: model.arena || null,
         year: model.year || null,
     };
+}
+
+/**
+ * Extract a quantization tag from the end of a label, e.g. "(Q8_0)", "(Q4_K_M)", "(IQ3_XXS)".
+ */
+function extractQuantization(str) {
+    if (!str) return null;
+    const match = str.match(/\(([A-Za-z][\dA-Za-z_]+)\)\s*$/);
+    if (!match) return null;
+    // Must start with a known quant prefix
+    if (/^[QqIiFf][\d_A-Za-z]+$/.test(match[1])) return match[1];
+    return null;
+}
+
+/**
+ * Strip a trailing quantization suffix from a label string.
+ */
+function stripQuantSuffix(str) {
+    if (!str) return str;
+    return str.replace(/\s*\([A-Za-z][\dA-Za-z_]+\)\s*$/, "").trim();
 }
 
 /**

@@ -16,7 +16,7 @@ import {
     AlertCircle,
     Loader2,
     Settings,
-    Wrench,
+    Parentheses,
     SlidersHorizontal,
 } from "lucide-react";
 import NavigationSidebarComponent from "../components/NavigationSidebarComponent";
@@ -27,8 +27,8 @@ import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
 import ThreePanelLayout from "../components/ThreePanelLayout";
 import consoleStyles from "../components/ConsoleComponent.module.css";
-import SelectDropdown from "../components/SelectDropdown";
-import ProviderLogo, { PROVIDER_LABELS } from "../components/ProviderLogos";
+import ModelPickerPopoverComponent from "../components/ModelPickerPopoverComponent";
+import TooltipComponent from "../components/TooltipComponent";
 
 export default function HomePage({ initialConversationId = null }) {
     const router = useRouter();
@@ -1770,30 +1770,33 @@ Guidelines:
                 leftPanel={
                     <>
                         <div className={consoleStyles.tabBar}>
-                            <button
-                                className={`${consoleStyles.tab} ${leftTab === "settings" ? consoleStyles.tabActive : ""}`}
-                                onClick={() => setLeftTab("settings")}
-                                title="Settings"
-                            >
-                                <Settings size={14} />
-                            </button>
-                            <button
-                                className={`${consoleStyles.tab} ${leftTab === "tools" ? consoleStyles.tabActive : ""}${!selectedModelSupportsFc ? ` ${consoleStyles.tabDisabled}` : ""}`}
-                                onClick={() => setLeftTab("tools")}
-                                title="Function Calling"
-                            >
-                                <Wrench size={14} />
-                                {settings.functionCallingEnabled && (
-                                    <span className={consoleStyles.tabBadge}>{allToolSchemas.length}</span>
-                                )}
-                            </button>
-                            <button
-                                className={`${consoleStyles.tab} ${leftTab === "params" ? consoleStyles.tabActive : ""}`}
-                                onClick={() => setLeftTab("params")}
-                                title="Params"
-                            >
-                                <SlidersHorizontal size={14} />
-                            </button>
+                            <TooltipComponent label="Settings" position="right">
+                                <button
+                                    className={`${consoleStyles.tab} ${leftTab === "settings" ? consoleStyles.tabActive : ""}`}
+                                    onClick={() => setLeftTab("settings")}
+                                >
+                                    <Settings size={14} />
+                                </button>
+                            </TooltipComponent>
+                            <TooltipComponent label="Function Calling" position="right">
+                                <button
+                                    className={`${consoleStyles.tab} ${leftTab === "tools" ? consoleStyles.tabActive : ""}${!selectedModelSupportsFc ? ` ${consoleStyles.tabDisabled}` : ""}`}
+                                    onClick={() => setLeftTab("tools")}
+                                >
+                                    <Parentheses size={14} />
+                                    {settings.functionCallingEnabled && (
+                                        <span className={consoleStyles.tabBadge}>{allToolSchemas.length}</span>
+                                    )}
+                                </button>
+                            </TooltipComponent>
+                            <TooltipComponent label="Params" position="right">
+                                <button
+                                    className={`${consoleStyles.tab} ${leftTab === "params" ? consoleStyles.tabActive : ""}`}
+                                    onClick={() => setLeftTab("params")}
+                                >
+                                    <SlidersHorizontal size={14} />
+                                </button>
+                            </TooltipComponent>
                         </div>
                         {leftTab === "settings" && (
                             <SettingsPanel
@@ -1853,83 +1856,39 @@ Guidelines:
                 }
                 headerTitle={title}
                 navSidebar={<NavigationSidebarComponent mode="user" isGenerating={isGenerating} isGeneratingImage={isGeneratingImage} />}
-                headerCenter={(() => {
-                    // Build provider options
-                    const textToText = config?.textToText || {};
-                    const textModelsMap = textToText.models || {};
-                    const imageModelsMap = config?.textToImage?.models || {};
-                    const audioToTextModelsMap = config?.audioToText?.models || {};
-                    const ttsModelsMap = config?.textToSpeech?.models || {};
-                    const allProviderKeys = new Set([
-                        ...Object.keys(textModelsMap),
-                        ...Object.keys(imageModelsMap),
-                        ...Object.keys(audioToTextModelsMap),
-                        ...Object.keys(ttsModelsMap),
-                    ]);
-                    const modelsMap = {};
-                    for (const p of allProviderKeys) {
-                        const seen = new Set();
-                        const merged = [];
-                        for (const m of [
-                            ...(textModelsMap[p] || []),
-                            ...(imageModelsMap[p] || []),
-                            ...(audioToTextModelsMap[p] || []),
-                            ...(ttsModelsMap[p] || []),
-                        ]) {
-                            if (!seen.has(m.name)) {
-                                seen.add(m.name);
-                                merged.push(m);
+                headerCenter={
+                    <ModelPickerPopoverComponent
+                        config={config}
+                        settings={settings}
+                        onSelectModel={(provider, modelName) => {
+                            const modelDef =
+                                (config?.textToText?.models?.[provider] || []).find(
+                                    (m) => m.name === modelName,
+                                ) ||
+                                (config?.textToImage?.models?.[provider] || []).find(
+                                    (m) => m.name === modelName,
+                                );
+                            const temp = modelDef?.defaultTemperature ?? 1.0;
+                            setSettings((s) => ({
+                                ...s,
+                                provider,
+                                model: modelName,
+                                temperature: temp,
+                            }));
+                        }}
+                        favorites={favoriteKeys}
+                        onToggleFavorite={async (key) => {
+                            if (favoriteKeys.includes(key)) {
+                                setFavoriteKeys((prev) => prev.filter((k) => k !== key));
+                                PrismService.removeFavorite("model", key).catch(() => {});
+                            } else {
+                                setFavoriteKeys((prev) => [...prev, key]);
+                                const [provider, ...rest] = key.split(":");
+                                PrismService.addFavorite("model", key, { provider, name: rest.join(":") }).catch(() => {});
                             }
-                        }
-                        modelsMap[p] = merged;
-                    }
-                    const providerList = config?.providerList || [];
-                    const providerOptions = providerList
-                        .filter((p) => modelsMap[p])
-                        .map((p) => ({
-                            value: p,
-                            label: PROVIDER_LABELS[p] || p.toUpperCase(),
-                            icon: <ProviderLogo provider={p} size={16} />,
-                        }));
-                    const currentProviderModels = modelsMap[settings.provider] || [];
-                    const modelOptions = currentProviderModels.map((m) => ({
-                        value: m.name,
-                        label: m.label,
-                        icon: <ProviderLogo provider={settings.provider} size={16} />,
-                    }));
-                    const handleProviderChange = (pv) => {
-                        const defaultMod = textToText.defaults?.[pv] || modelsMap[pv]?.[0]?.name || "";
-                        const modelDef = (modelsMap[pv] || []).find((m) => m.name === defaultMod);
-                        const temp = modelDef?.defaultTemperature ?? 1.0;
-                        setSettings((s) => ({ ...s, provider: pv, model: defaultMod, temperature: temp }));
-                    };
-                    const handleModelChange = (modelName) => {
-                        const modelDef = currentProviderModels.find((m) => m.name === modelName);
-                        const temp = modelDef?.defaultTemperature ?? 1.0;
-                        setSettings((s) => ({ ...s, model: modelName, temperature: temp }));
-                    };
-                    if (providerOptions.length === 0) return null;
-                    return (
-                        <>
-                            <SelectDropdown
-                                value={settings.provider || ""}
-                                options={providerOptions}
-                                onChange={handleProviderChange}
-                                placeholder="Provider"
-                                icon={<ProviderLogo provider={settings.provider} size={16} />}
-                            />
-                            {settings.provider && modelOptions.length > 0 && (
-                                <SelectDropdown
-                                    value={settings.model || ""}
-                                    options={modelOptions}
-                                    onChange={handleModelChange}
-                                    placeholder="Model"
-                                    icon={<ProviderLogo provider={settings.provider} size={16} />}
-                                />
-                            )}
-                        </>
-                    );
-                })()}
+                        }}
+                    />
+                }
                 headerMeta={
                     messages.length > 0 ? (
                         <div className={styles.headerMeta}>

@@ -138,20 +138,20 @@
 }
 
 .modelName {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .modelKey {
-  font-size: 11px;
+  font-size: 10px;
   font-family: var(--font-mono, "SF Mono", "Fira Code", "Fira Mono", Menlo, monospace);
   color: var(--text-secondary);
   opacity: 0.5;
 }
 
 .modelProvider {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-secondary);
   opacity: 0.6;
 }
@@ -255,7 +255,7 @@
 
 .toolPills {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 4px;
 }
 
