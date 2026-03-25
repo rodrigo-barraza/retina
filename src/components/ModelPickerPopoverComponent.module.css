@@ -180,6 +180,18 @@
   font-size: 12px;
 }
 
+/*
+ * SortableTableComponent wraps its table in a div[data-table-scroll].
+ * Setting overflow-y:visible hands vertical scroll ownership back to
+ * .popoverBody, so position:sticky on <thead> works correctly.
+ */
+.popoverBody [data-table-scroll] {
+  overflow-y: visible;
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+}
+
 /* Tighten ModelGrid internals inside the popover */
 .popoverBody > div {
   border-radius: 0;

@@ -157,6 +157,7 @@ export default function SortableTableComponent({
                     ref={scrollRef}
                     className={styles.tableScroll}
                     style={maxHeight ? { maxHeight, overflowY: "auto" } : undefined}
+                    data-table-scroll
                     onPointerDown={onPointerDown}
                     onPointerMove={onPointerMove}
                     onPointerUp={onPointerUp}

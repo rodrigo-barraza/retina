@@ -7,7 +7,7 @@ import {
     Star,
     ArrowRight,
     Brain,
-    Wrench,
+    Parentheses,
     Globe,
     Terminal,
     Monitor,
@@ -62,7 +62,7 @@ const ARENA_COLUMNS = [
 
 const TOOL_ICONS = {
     "Thinking": Brain,
-    "Function Calling": Wrench,
+    "Function Calling": Parentheses,
     "Web Search": Globe,
     "Google Search": Globe,
     "Code Execution": Terminal,
