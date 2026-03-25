@@ -110,7 +110,12 @@ export default function CustomToolsPanel({
             description: p.description,
             required: p.required,
             ...(p.enum?.trim()
-              ? { enum: p.enum.split(",").map((v) => v.trim()).filter(Boolean) }
+              ? {
+                  enum: p.enum
+                    .split(",")
+                    .map((v) => v.trim())
+                    .filter(Boolean),
+                }
               : {}),
           }))
           .filter((p) => p.name.trim()),
@@ -119,7 +124,10 @@ export default function CustomToolsPanel({
       if (isNew) {
         await PrismService.createCustomTool(payload);
       } else {
-        await PrismService.updateCustomTool(editingTool.id || editingTool._id, payload);
+        await PrismService.updateCustomTool(
+          editingTool.id || editingTool._id,
+          payload,
+        );
       }
 
       setEditingTool(null);
@@ -210,12 +218,16 @@ export default function CustomToolsPanel({
               onChange={(e) =>
                 setEditingTool((t) => ({
                   ...t,
-                  name: e.target.value.replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase(),
+                  name: e.target.value
+                    .replace(/[^a-zA-Z0-9_]/g, "_")
+                    .toLowerCase(),
                 }))
               }
               placeholder="get_stock_price"
             />
-            <span className={styles.hint}>snake_case — this is what the AI calls</span>
+            <span className={styles.hint}>
+              snake_case — this is what the AI calls
+            </span>
           </div>
 
           <div className={styles.formGroup}>
@@ -229,7 +241,9 @@ export default function CustomToolsPanel({
               placeholder="Get current stock price for a given ticker symbol..."
               rows={3}
             />
-            <span className={styles.hint}>Tell the AI when to use this tool</span>
+            <span className={styles.hint}>
+              Tell the AI when to use this tool
+            </span>
           </div>
 
           <div className={styles.formRow}>
@@ -279,7 +293,9 @@ export default function CustomToolsPanel({
               placeholder="sk-... or token value"
               autoComplete="off"
             />
-            <span className={styles.hint}>Sent as Authorization: Bearer &lt;token&gt;</span>
+            <span className={styles.hint}>
+              Sent as Authorization: Bearer &lt;token&gt;
+            </span>
           </div>
 
           {/* Parameters */}
@@ -317,7 +333,9 @@ export default function CustomToolsPanel({
                         type="text"
                         className={styles.inputSmall}
                         value={param.name}
-                        onChange={(e) => updateParameter(i, "name", e.target.value)}
+                        onChange={(e) =>
+                          updateParameter(i, "name", e.target.value)
+                        }
                         placeholder="symbol"
                       />
                     </div>
@@ -326,7 +344,9 @@ export default function CustomToolsPanel({
                       <select
                         className={styles.selectSmall}
                         value={param.type}
-                        onChange={(e) => updateParameter(i, "type", e.target.value)}
+                        onChange={(e) =>
+                          updateParameter(i, "type", e.target.value)
+                        }
                       >
                         {PARAM_TYPES.map((t) => (
                           <option key={t.value} value={t.value}>
@@ -351,7 +371,9 @@ export default function CustomToolsPanel({
                       type="text"
                       className={styles.inputSmall}
                       value={param.description}
-                      onChange={(e) => updateParameter(i, "description", e.target.value)}
+                      onChange={(e) =>
+                        updateParameter(i, "description", e.target.value)
+                      }
                       placeholder="Stock ticker symbol (e.g. AAPL)"
                     />
                   </div>
@@ -367,7 +389,9 @@ export default function CustomToolsPanel({
                       type="text"
                       className={styles.inputSmall}
                       value={param.enum}
-                      onChange={(e) => updateParameter(i, "enum", e.target.value)}
+                      onChange={(e) =>
+                        updateParameter(i, "enum", e.target.value)
+                      }
                       placeholder="1d, 5d, 1m, 3m, 1y"
                     />
                   </div>
@@ -446,7 +470,10 @@ export default function CustomToolsPanel({
                 <div className={styles.toolCardInfo}>
                   <span className={styles.toolCardName}>{tool.name}</span>
                   <span className={styles.toolCardMeta}>
-                    <span className={styles.methodBadge} data-method={tool.method}>
+                    <span
+                      className={styles.methodBadge}
+                      data-method={tool.method}
+                    >
                       {tool.method}
                     </span>
                     {tool.parameters?.length > 0 && (
@@ -475,7 +502,9 @@ export default function CustomToolsPanel({
                   {tool.bearerToken && (
                     <div className={styles.toolCardEndpoint}>
                       <Shield size={11} />
-                      <span style={{ opacity: 0.6 }}>Bearer token configured</span>
+                      <span style={{ opacity: 0.6 }}>
+                        Bearer token configured
+                      </span>
                     </div>
                   )}
                   {tool.parameters?.length > 0 && (
@@ -485,7 +514,9 @@ export default function CustomToolsPanel({
                           <code>{p.name}</code>
                           <span className={styles.paramType}>{p.type}</span>
                           {p.required && (
-                            <span className={styles.paramRequired}>required</span>
+                            <span className={styles.paramRequired}>
+                              required
+                            </span>
                           )}
                         </div>
                       ))}
@@ -502,7 +533,9 @@ export default function CustomToolsPanel({
                     </ButtonComponent>
                     {confirmingDeleteId === id ? (
                       <div className={styles.deleteConfirm}>
-                        <span className={styles.deleteConfirmLabel}>Delete?</span>
+                        <span className={styles.deleteConfirmLabel}>
+                          Delete?
+                        </span>
                         <ButtonComponent
                           variant="danger"
                           size="xs"
@@ -543,7 +576,9 @@ export default function CustomToolsPanel({
       >
         {builtInOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         <Cpu size={12} />
-        <span>Built-in ({enabledBuiltIn}/{builtInTools.length})</span>
+        <span>
+          Built-in ({enabledBuiltIn}/{builtInTools.length})
+        </span>
       </div>
 
       {builtInOpen &&
@@ -551,7 +586,9 @@ export default function CustomToolsPanel({
           const isDisabled = disabledBuiltIns.has(tool.name);
           const isOffline = offlineTools.has(tool.name);
           const isExpanded = expandedId === `builtin-${tool.name}`;
-          const paramCount = Object.keys(tool.parameters?.properties || {}).length;
+          const paramCount = Object.keys(
+            tool.parameters?.properties || {},
+          ).length;
 
           return (
             <div
@@ -603,9 +640,13 @@ export default function CustomToolsPanel({
                         ([name, schema]) => (
                           <div key={name} className={styles.toolCardParam}>
                             <code>{name}</code>
-                            <span className={styles.paramType}>{schema.type}</span>
+                            <span className={styles.paramType}>
+                              {schema.type}
+                            </span>
                             {tool.parameters.required?.includes(name) && (
-                              <span className={styles.paramRequired}>required</span>
+                              <span className={styles.paramRequired}>
+                                required
+                              </span>
                             )}
                           </div>
                         ),

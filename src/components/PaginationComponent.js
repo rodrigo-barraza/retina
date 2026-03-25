@@ -1,7 +1,13 @@
 import React from "react";
 import styles from "./PaginationComponent.module.css";
 
-export default function PaginationComponent({ page, totalPages, totalItems, onPageChange, limit }) {
+export default function PaginationComponent({
+  page,
+  totalPages,
+  totalItems,
+  onPageChange,
+  limit,
+}) {
   if (totalPages <= 1) return null;
 
   const renderInfo = () => {

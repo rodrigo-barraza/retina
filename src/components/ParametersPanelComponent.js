@@ -294,9 +294,7 @@ export default function ParametersPanelComponent({
           ) && (
             <>
               <div className={styles.formGroup}>
-                <label>
-                  Frequency Penalty ({settings.frequencyPenalty})
-                </label>
+                <label>Frequency Penalty ({settings.frequencyPenalty})</label>
                 <SliderComponent
                   min={-2}
                   max={2}
@@ -307,9 +305,7 @@ export default function ParametersPanelComponent({
               </div>
 
               <div className={styles.formGroup}>
-                <label>
-                  Presence Penalty ({settings.presencePenalty})
-                </label>
+                <label>Presence Penalty ({settings.presencePenalty})</label>
                 <SliderComponent
                   min={-2}
                   max={2}

@@ -270,7 +270,6 @@
   width: 100%;
 }
 
-
 .localModelsSection {
   margin-bottom: 20px;
 }
@@ -831,7 +830,8 @@
 
 .inputBoxGenerating {
   border-color: transparent;
-  background-image: linear-gradient(var(--bg-secondary), var(--bg-secondary)),
+  background-image:
+    linear-gradient(var(--bg-secondary), var(--bg-secondary)),
     linear-gradient(var(--prism-angle, 0deg), var(--prism-colors));
   background-origin: border-box;
   background-clip: padding-box, border-box;
@@ -917,7 +917,14 @@
     position: absolute;
     inset: -50%;
     background: conic-gradient(
-      #ff0000, #ff8800, #ffff00, #00ff88, #0088ff, #8800ff, #ff0088, #ff0000
+      #ff0000,
+      #ff8800,
+      #ffff00,
+      #00ff88,
+      #0088ff,
+      #8800ff,
+      #ff0088,
+      #ff0000
     );
     animation: prismSpin 2s linear infinite;
     z-index: -1;
@@ -929,7 +936,9 @@
 }
 
 @keyframes prismSpin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .hint {
@@ -1310,7 +1319,19 @@
   display: block;
   height: 4px;
   width: 100%;
-  background: var(--rainbow-gradient, linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff));
+  background: var(
+    --rainbow-gradient,
+    linear-gradient(
+      90deg,
+      #ff0000,
+      #ff7f00,
+      #ffff00,
+      #00ff00,
+      #0000ff,
+      #4b0082,
+      #8b00ff
+    )
+  );
 }
 
 .toolsBubbleHeader {
@@ -1349,7 +1370,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 0; 
+  min-width: 0;
 }
 
 .toolsBubbleItemName {
@@ -1397,4 +1418,3 @@
     transform: translateY(0);
   }
 }
-

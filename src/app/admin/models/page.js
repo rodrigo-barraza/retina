@@ -7,7 +7,8 @@ import useProjectFilter from "../../../hooks/useProjectFilter";
 import ModelsPageComponent from "../../../components/ModelsPageComponent";
 
 export default function AdminModelsPage() {
-  const { projectFilter, projectOptions, handleProjectChange } = useProjectFilter();
+  const { projectFilter, projectOptions, handleProjectChange } =
+    useProjectFilter();
   const { setControls } = useAdminHeader();
 
   useEffect(() => {
@@ -17,7 +18,7 @@ export default function AdminModelsPage() {
         options={projectOptions}
         onChange={handleProjectChange}
         placeholder="All Projects"
-      />
+      />,
     );
   }, [setControls, projectFilter, projectOptions, handleProjectChange]);
 

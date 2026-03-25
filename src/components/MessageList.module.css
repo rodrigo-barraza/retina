@@ -65,7 +65,14 @@
     position: absolute;
     inset: -50%;
     background: conic-gradient(
-      #ff0000, #ff8800, #ffff00, #00ff88, #0088ff, #8800ff, #ff0088, #ff0000
+      #ff0000,
+      #ff8800,
+      #ffff00,
+      #00ff88,
+      #0088ff,
+      #8800ff,
+      #ff0088,
+      #ff0000
     );
     animation: prismSpin 2s linear infinite;
     z-index: -1;
@@ -73,7 +80,9 @@
 }
 
 @keyframes prismSpin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .systemNode .avatar {
@@ -651,7 +660,14 @@
   vertical-align: text-bottom;
   border-radius: 1px;
   background: conic-gradient(
-    #ff0000, #ff8800, #ffff00, #00ff88, #0088ff, #8800ff, #ff0088, #ff0000
+    #ff0000,
+    #ff8800,
+    #ffff00,
+    #00ff88,
+    #0088ff,
+    #8800ff,
+    #ff0088,
+    #ff0000
   );
   background-size: 100% 100%;
   animation: caretBlink 0.8s step-end infinite;
@@ -676,7 +692,14 @@
     color: transparent;
     animation: caretBlink 0.8s step-end infinite;
     background: conic-gradient(
-      #ff0000, #ff8800, #ffff00, #00ff88, #0088ff, #8800ff, #ff0088, #ff0000
+      #ff0000,
+      #ff8800,
+      #ffff00,
+      #00ff88,
+      #0088ff,
+      #8800ff,
+      #ff0088,
+      #ff0000
     );
     -webkit-background-clip: text;
     background-clip: text;
@@ -684,6 +707,11 @@
 }
 
 @keyframes caretBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }

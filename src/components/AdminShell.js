@@ -14,7 +14,6 @@ function AdminShellInner({ children }) {
   const [systemStatus, setSystemStatus] = useState("connected");
   const pathname = usePathname();
 
-
   // Track conversations by ID → messageCount to detect both new convos and updates
   const knownConvsRef = useRef(null); // null = not initialized
   const isOnConversationsRef = useRef(pathname === "/admin/conversations");

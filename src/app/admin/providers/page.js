@@ -6,21 +6,37 @@ import SortableTableComponent from "../../../components/SortableTableComponent";
 import PageHeaderComponent from "../../../components/PageHeaderComponent";
 import DatePickerComponent from "../../../components/DatePickerComponent";
 import SelectDropdown from "../../../components/SelectDropdown";
-import { FilterBarComponent, FilterGroupComponent } from "../../../components/FilterBarComponent";
-import { LoadingMessage, ErrorMessage } from "../../../components/StateMessageComponent";
-import { formatNumber, formatCost, formatLatency } from "../../../utils/utilities";
+import {
+  FilterBarComponent,
+  FilterGroupComponent,
+} from "../../../components/FilterBarComponent";
+import {
+  LoadingMessage,
+  ErrorMessage,
+} from "../../../components/StateMessageComponent";
+import {
+  formatNumber,
+  formatCost,
+  formatLatency,
+} from "../../../utils/utilities";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
 
-
 const PROVIDER_COLORS = [
-  "#6366f1", "#a855f7", "#ec4899", "#f59e0b",
-  "#10b981", "#3b82f6", "#ef4444", "#06b6d4",
+  "#6366f1",
+  "#a855f7",
+  "#ec4899",
+  "#f59e0b",
+  "#10b981",
+  "#3b82f6",
+  "#ef4444",
+  "#06b6d4",
 ];
 
 export default function ProvidersPage() {
-  const { projectFilter, projectOptions, handleProjectChange } = useProjectFilter();
+  const { projectFilter, projectOptions, handleProjectChange } =
+    useProjectFilter();
   const [modelStats, setModelStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,8 +49,10 @@ export default function ProvidersPage() {
         setLoading(true);
         const params = {};
         if (projectFilter) params.project = projectFilter;
-        if (dateRange.from) params.from = new Date(dateRange.from).toISOString();
-        if (dateRange.to) params.to = new Date(dateRange.to + "T23:59:59").toISOString();
+        if (dateRange.from)
+          params.from = new Date(dateRange.from).toISOString();
+        if (dateRange.to)
+          params.to = new Date(dateRange.to + "T23:59:59").toISOString();
         const models = await IrisService.getModelStats(params);
         setModelStats(models);
       } catch (err) {
@@ -82,14 +100,51 @@ export default function ProvidersPage() {
 
   const totalRequests = providers.reduce((s, p) => s + p.totalRequests, 0) || 1;
 
-  const modelColumns = useMemo(() => [
-    { key: "model", label: "Model", render: (m) => <span style={{ fontWeight: 500, color: "var(--text-primary)" }}>{m.model}</span> },
-    { key: "totalRequests", label: "Requests", render: (m) => formatNumber(m.totalRequests), align: "right" },
-    { key: "totalTokens", label: "Tokens", render: (m) => formatNumber(m.totalTokens), align: "right" },
-    { key: "avgTokensPerSec", label: "Tok/s", render: (m) => m.avgTokensPerSec ? `${Number(m.avgTokensPerSec).toFixed(1)}` : "—", align: "right" },
-    { key: "totalCost", label: "Cost", render: (m) => formatCost(m.totalCost), align: "right" },
-    { key: "avgLatency", label: "Avg Latency", render: (m) => formatLatency(m.avgLatency), align: "right" },
-  ], []);
+  const modelColumns = useMemo(
+    () => [
+      {
+        key: "model",
+        label: "Model",
+        render: (m) => (
+          <span style={{ fontWeight: 500, color: "var(--text-primary)" }}>
+            {m.model}
+          </span>
+        ),
+      },
+      {
+        key: "totalRequests",
+        label: "Requests",
+        render: (m) => formatNumber(m.totalRequests),
+        align: "right",
+      },
+      {
+        key: "totalTokens",
+        label: "Tokens",
+        render: (m) => formatNumber(m.totalTokens),
+        align: "right",
+      },
+      {
+        key: "avgTokensPerSec",
+        label: "Tok/s",
+        render: (m) =>
+          m.avgTokensPerSec ? `${Number(m.avgTokensPerSec).toFixed(1)}` : "—",
+        align: "right",
+      },
+      {
+        key: "totalCost",
+        label: "Cost",
+        render: (m) => formatCost(m.totalCost),
+        align: "right",
+      },
+      {
+        key: "avgLatency",
+        label: "Avg Latency",
+        render: (m) => formatLatency(m.avgLatency),
+        align: "right",
+      },
+    ],
+    [],
+  );
 
   // Inject controls into AdminShell header
   const { setControls } = useAdminHeader();
@@ -104,7 +159,7 @@ export default function ProvidersPage() {
           placeholder="All Projects"
         />
         <ErrorMessage message={error} />
-      </>
+      </>,
     );
   }, [setControls, projectFilter, projectOptions, handleProjectChange, error]);
 

@@ -36,8 +36,6 @@ export function useToast(duration = 3000) {
 export default function ToastComponent({ message, type = "success" }) {
   if (!message) return null;
   return (
-    <div className={`${styles.toast} ${styles[type] || ""}`}>
-      {message}
-    </div>
+    <div className={`${styles.toast} ${styles[type] || ""}`}>{message}</div>
   );
 }

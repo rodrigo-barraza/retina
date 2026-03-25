@@ -219,13 +219,20 @@ select option {
 /* ── Prism Rainbow Gradient ── */
 :root {
   --prism-colors: #ff0000, #ff8800, #ffff00, #00ff88, #0088ff, #8800ff, #ff0088;
-  --prism-gradient: linear-gradient(var(--prism-angle, 0deg), var(--prism-colors));
+  --prism-gradient: linear-gradient(
+    var(--prism-angle, 0deg),
+    var(--prism-colors)
+  );
   --prism-speed: 2s;
 }
 
 @keyframes prismRotate {
-  from { --prism-angle: 0deg; }
-  to { --prism-angle: 360deg; }
+  from {
+    --prism-angle: 0deg;
+  }
+  to {
+    --prism-angle: 360deg;
+  }
 }
 
 @property --prism-angle {
@@ -236,7 +243,8 @@ select option {
 
 .prism-glow {
   border: 2px solid transparent;
-  background-image: linear-gradient(var(--bg-primary), var(--bg-primary)),
+  background-image:
+    linear-gradient(var(--bg-primary), var(--bg-primary)),
     linear-gradient(var(--prism-angle, 0deg), var(--prism-colors));
   background-origin: border-box;
   background-clip: padding-box, border-box;

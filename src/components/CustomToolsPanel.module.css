@@ -51,7 +51,8 @@
 /* ── Built-in Card ─────────────────────────────────────────── */
 
 .builtInCard {
-  border-left: 2px solid color-mix(in srgb, var(--accent-color) 50%, var(--border-color));
+  border-left: 2px solid
+    color-mix(in srgb, var(--accent-color) 50%, var(--border-color));
 }
 
 .builtInBadge {
@@ -148,7 +149,11 @@
   flex-shrink: 0;
 
   &:hover {
-    border-color: color-mix(in srgb, var(--accent-color) 40%, var(--border-color));
+    border-color: color-mix(
+      in srgb,
+      var(--accent-color) 40%,
+      var(--border-color)
+    );
   }
 }
 
@@ -242,8 +247,14 @@
 }
 
 @keyframes slideDown {
-  from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 400px; }
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 400px;
+  }
 }
 
 .toolCardDesc {
@@ -314,8 +325,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-4px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .deleteConfirmLabel {

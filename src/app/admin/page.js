@@ -27,16 +27,19 @@ import useProjectFilter from "../../hooks/useProjectFilter";
 import styles from "./page.module.css";
 
 const PROVIDER_COLORS = [
-  "#6366f1", "#a855f7", "#ec4899", "#f59e0b",
-  "#10b981", "#3b82f6", "#ef4444", "#06b6d4",
+  "#6366f1",
+  "#a855f7",
+  "#ec4899",
+  "#f59e0b",
+  "#10b981",
+  "#3b82f6",
+  "#ef4444",
+  "#06b6d4",
 ];
 
-
-
-
-
 export default function DashboardPage() {
-  const { projectFilter, projectOptions, handleProjectChange } = useProjectFilter();
+  const { projectFilter, projectOptions, handleProjectChange } =
+    useProjectFilter();
   const { setControls } = useAdminHeader();
   const [stats, setStats] = useState(null);
   const [projectStats, setProjectStats] = useState([]);
@@ -53,8 +56,7 @@ export default function DashboardPage() {
   const dateParams = useMemo(() => {
     const p = {};
     if (dateRange.from) p.from = new Date(dateRange.from).toISOString();
-    if (dateRange.to)
-      p.to = new Date(dateRange.to + "T23:59:59").toISOString();
+    if (dateRange.to) p.to = new Date(dateRange.to + "T23:59:59").toISOString();
     return p;
   }, [dateRange]);
 
@@ -112,7 +114,7 @@ export default function DashboardPage() {
         options={projectOptions}
         onChange={handleProjectChange}
         placeholder="All Projects"
-      />
+      />,
     );
   }, [setControls, projectFilter, projectOptions, handleProjectChange]);
 
@@ -163,11 +165,10 @@ export default function DashboardPage() {
   const totalProviderRequests =
     providerData.reduce((s, p) => s + p.totalRequests, 0) || 1;
 
-
-
   // Top 10 models
-  const topModels = [...modelStats]
-    .sort((a, b) => b.totalRequests - a.totalRequests);
+  const topModels = [...modelStats].sort(
+    (a, b) => b.totalRequests - a.totalRequests,
+  );
 
   const totalModelRequests =
     modelStats.reduce((s, m) => s + m.totalRequests, 0) || 1;
@@ -180,7 +181,10 @@ export default function DashboardPage() {
         if (t.hour.length <= 10) {
           const [y, m, d] = t.hour.split("-").map(Number);
           const date = new Date(y, m - 1, d);
-          label = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          label = date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
         } else {
           label = t.hour.slice(11) + "h";
         }
@@ -189,10 +193,8 @@ export default function DashboardPage() {
     });
   }, [timeline]);
 
-
   return (
     <div className={styles.page}>
-
       {/* ── Date Range Toolbar ── */}
       <div className={styles.timeToolbar}>
         <DatePickerComponent
@@ -210,7 +212,9 @@ export default function DashboardPage() {
         <StatsCard
           label="Total Requests"
           value={loading ? "..." : formatNumber(stats?.totalRequests)}
-          subtitle={dateRange.from || dateRange.to ? "Custom range" : "All time"}
+          subtitle={
+            dateRange.from || dateRange.to ? "Custom range" : "All time"
+          }
           icon={Activity}
           variant="accent"
           loading={loading}
@@ -295,47 +299,82 @@ export default function DashboardPage() {
         maxHeight={420}
         columns={[
           { key: "project", label: "Project" },
-          { key: "totalRequests", label: "Requests", render: (p) => formatNumber(p.totalRequests) },
           {
-            key: "usage", label: "Usage",
+            key: "totalRequests",
+            label: "Requests",
+            render: (p) => formatNumber(p.totalRequests),
+          },
+          {
+            key: "usage",
+            label: "Usage",
             render: (p) => (
               <UsageBarComponent
                 value={p.totalRequests}
-                total={projectStats.reduce((s, x) => s + x.totalRequests, 0) || 1}
+                total={
+                  projectStats.reduce((s, x) => s + x.totalRequests, 0) || 1
+                }
               />
             ),
           },
           { key: "providerCount", label: "Providers" },
           { key: "modelCount", label: "Models" },
-          { key: "totalInputTokens", label: "Tokens In", render: (p) => formatNumber(p.totalInputTokens) },
-          { key: "totalOutputTokens", label: "Tokens Out", render: (p) => formatNumber(p.totalOutputTokens) },
           {
-            key: "avgTokensPerSec", label: "Tok/s",
-            render: (p) => p.avgTokensPerSec ? `${p.avgTokensPerSec.toFixed(1)}` : "—",
-          },
-          { key: "totalCost", label: "Cost", render: (p) => formatCost(p.totalCost) },
-          { key: "avgLatency", label: "Avg Latency", render: (p) => formatLatency(p.avgLatency) },
-          {
-            key: "conversationCount", label: "Conversations",
-            render: (p) => p.conversationCount > 0 ? (
-              <Link href={`/admin/conversations?project=${encodeURIComponent(p.project)}`} className={styles.workflowLink}>
-                <MessageSquare size={12} />
-                {p.conversationCount}
-              </Link>
-            ) : (
-              <span style={{ color: "var(--text-muted)" }}>0</span>
-            ),
+            key: "totalInputTokens",
+            label: "Tokens In",
+            render: (p) => formatNumber(p.totalInputTokens),
           },
           {
-            key: "workflowCount", label: "Workflows",
-            render: (p) => p.workflowCount > 0 ? (
-              <Link href={`/admin/workflows?project=${encodeURIComponent(p.project)}`} className={styles.workflowLink}>
-                <Workflow size={12} />
-                {p.workflowCount}
-              </Link>
-            ) : (
-              <span style={{ color: "var(--text-muted)" }}>0</span>
-            ),
+            key: "totalOutputTokens",
+            label: "Tokens Out",
+            render: (p) => formatNumber(p.totalOutputTokens),
+          },
+          {
+            key: "avgTokensPerSec",
+            label: "Tok/s",
+            render: (p) =>
+              p.avgTokensPerSec ? `${p.avgTokensPerSec.toFixed(1)}` : "—",
+          },
+          {
+            key: "totalCost",
+            label: "Cost",
+            render: (p) => formatCost(p.totalCost),
+          },
+          {
+            key: "avgLatency",
+            label: "Avg Latency",
+            render: (p) => formatLatency(p.avgLatency),
+          },
+          {
+            key: "conversationCount",
+            label: "Conversations",
+            render: (p) =>
+              p.conversationCount > 0 ? (
+                <Link
+                  href={`/admin/conversations?project=${encodeURIComponent(p.project)}`}
+                  className={styles.workflowLink}
+                >
+                  <MessageSquare size={12} />
+                  {p.conversationCount}
+                </Link>
+              ) : (
+                <span style={{ color: "var(--text-muted)" }}>0</span>
+              ),
+          },
+          {
+            key: "workflowCount",
+            label: "Workflows",
+            render: (p) =>
+              p.workflowCount > 0 ? (
+                <Link
+                  href={`/admin/workflows?project=${encodeURIComponent(p.project)}`}
+                  className={styles.workflowLink}
+                >
+                  <Workflow size={12} />
+                  {p.workflowCount}
+                </Link>
+              ) : (
+                <span style={{ color: "var(--text-muted)" }}>0</span>
+              ),
           },
         ]}
         data={projectStats}
@@ -349,20 +388,33 @@ export default function DashboardPage() {
         maxHeight={420}
         columns={[
           {
-            key: "provider", label: "Provider",
+            key: "provider",
+            label: "Provider",
             render: (p, i) => (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <span style={{
-                  width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
-                  background: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
-                }} />
+              <span
+                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+              >
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    background: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
+                  }}
+                />
                 {p.provider}
               </span>
             ),
           },
-          { key: "totalRequests", label: "Requests", render: (p) => formatNumber(p.totalRequests) },
           {
-            key: "usage", label: "Usage",
+            key: "totalRequests",
+            label: "Requests",
+            render: (p) => formatNumber(p.totalRequests),
+          },
+          {
+            key: "usage",
+            label: "Usage",
             render: (p, i) => (
               <UsageBarComponent
                 value={p.totalRequests}
@@ -372,35 +424,69 @@ export default function DashboardPage() {
             ),
           },
           { key: "modelCount", label: "Models" },
-          { key: "totalInputTokens", label: "Tokens In", render: (p) => formatNumber(p.totalInputTokens) },
-          { key: "totalOutputTokens", label: "Tokens Out", render: (p) => formatNumber(p.totalOutputTokens) },
           {
-            key: "avgTokensPerSec", label: "Tok/s",
-            render: (p) => p.avgTokensPerSec ? `${p.avgTokensPerSec.toFixed(1)}` : "—",
-          },
-          { key: "totalCost", label: "Cost", render: (p) => formatCost(p.totalCost) },
-          { key: "avgLatency", label: "Avg Latency", render: (p) => formatLatency(p.avgLatency) },
-          {
-            key: "conversationCount", label: "Conversations",
-            render: (p) => p.conversationCount > 0 ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <MessageSquare size={12} />
-                {p.conversationCount}
-              </span>
-            ) : (
-              <span style={{ color: "var(--text-muted)" }}>0</span>
-            ),
+            key: "totalInputTokens",
+            label: "Tokens In",
+            render: (p) => formatNumber(p.totalInputTokens),
           },
           {
-            key: "workflowCount", label: "Workflows",
-            render: (p) => p.workflowCount > 0 ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <Workflow size={12} />
-                {p.workflowCount}
-              </span>
-            ) : (
-              <span style={{ color: "var(--text-muted)" }}>0</span>
-            ),
+            key: "totalOutputTokens",
+            label: "Tokens Out",
+            render: (p) => formatNumber(p.totalOutputTokens),
+          },
+          {
+            key: "avgTokensPerSec",
+            label: "Tok/s",
+            render: (p) =>
+              p.avgTokensPerSec ? `${p.avgTokensPerSec.toFixed(1)}` : "—",
+          },
+          {
+            key: "totalCost",
+            label: "Cost",
+            render: (p) => formatCost(p.totalCost),
+          },
+          {
+            key: "avgLatency",
+            label: "Avg Latency",
+            render: (p) => formatLatency(p.avgLatency),
+          },
+          {
+            key: "conversationCount",
+            label: "Conversations",
+            render: (p) =>
+              p.conversationCount > 0 ? (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <MessageSquare size={12} />
+                  {p.conversationCount}
+                </span>
+              ) : (
+                <span style={{ color: "var(--text-muted)" }}>0</span>
+              ),
+          },
+          {
+            key: "workflowCount",
+            label: "Workflows",
+            render: (p) =>
+              p.workflowCount > 0 ? (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Workflow size={12} />
+                  {p.workflowCount}
+                </span>
+              ) : (
+                <span style={{ color: "var(--text-muted)" }}>0</span>
+              ),
           },
         ]}
         data={providerData}
@@ -414,56 +500,103 @@ export default function DashboardPage() {
         maxHeight={420}
         columns={[
           { key: "model", label: "Model" },
-          { key: "totalRequests", label: "Requests", render: (m) => formatNumber(m.totalRequests) },
           {
-            key: "usage", label: "Usage",
+            key: "totalRequests",
+            label: "Requests",
+            render: (m) => formatNumber(m.totalRequests),
+          },
+          {
+            key: "usage",
+            label: "Usage",
             render: (m) => (
-              <UsageBarComponent value={m.totalRequests} total={totalModelRequests} />
+              <UsageBarComponent
+                value={m.totalRequests}
+                total={totalModelRequests}
+              />
             ),
           },
           {
-            key: "provider", label: "Provider",
+            key: "provider",
+            label: "Provider",
             render: (m) => (
               <span className={styles.badgeProvider}>{m.provider}</span>
             ),
           },
           {
-            key: "toolsUsed", label: "Tools",
-            render: (m) => m.toolsUsed ? (
-              <span style={{ color: "var(--success)", fontWeight: 600 }}>✓</span>
-            ) : (
-              <span style={{ color: "var(--text-muted)" }}>—</span>
-            ),
-          },
-          { key: "totalInputTokens", label: "Tokens In", render: (m) => formatNumber(m.totalInputTokens) },
-          { key: "totalOutputTokens", label: "Tokens Out", render: (m) => formatNumber(m.totalOutputTokens) },
-          {
-            key: "avgTokensPerSec", label: "Tok/s",
-            render: (m) => m.avgTokensPerSec ? `${m.avgTokensPerSec.toFixed(1)}` : "—",
-          },
-          { key: "totalCost", label: "Cost", render: (m) => formatCost(m.totalCost) },
-          { key: "avgLatency", label: "Avg Latency", render: (m) => formatLatency(m.avgLatency) },
-          {
-            key: "conversationCount", label: "Conversations",
-            render: (m) => m.conversationCount > 0 ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <MessageSquare size={12} />
-                {m.conversationCount}
-              </span>
-            ) : (
-              <span style={{ color: "var(--text-muted)" }}>0</span>
-            ),
+            key: "toolsUsed",
+            label: "Tools",
+            render: (m) =>
+              m.toolsUsed ? (
+                <span style={{ color: "var(--success)", fontWeight: 600 }}>
+                  ✓
+                </span>
+              ) : (
+                <span style={{ color: "var(--text-muted)" }}>—</span>
+              ),
           },
           {
-            key: "workflowCount", label: "Workflows",
-            render: (m) => m.workflowCount > 0 ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <Workflow size={12} />
-                {m.workflowCount}
-              </span>
-            ) : (
-              <span style={{ color: "var(--text-muted)" }}>0</span>
-            ),
+            key: "totalInputTokens",
+            label: "Tokens In",
+            render: (m) => formatNumber(m.totalInputTokens),
+          },
+          {
+            key: "totalOutputTokens",
+            label: "Tokens Out",
+            render: (m) => formatNumber(m.totalOutputTokens),
+          },
+          {
+            key: "avgTokensPerSec",
+            label: "Tok/s",
+            render: (m) =>
+              m.avgTokensPerSec ? `${m.avgTokensPerSec.toFixed(1)}` : "—",
+          },
+          {
+            key: "totalCost",
+            label: "Cost",
+            render: (m) => formatCost(m.totalCost),
+          },
+          {
+            key: "avgLatency",
+            label: "Avg Latency",
+            render: (m) => formatLatency(m.avgLatency),
+          },
+          {
+            key: "conversationCount",
+            label: "Conversations",
+            render: (m) =>
+              m.conversationCount > 0 ? (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <MessageSquare size={12} />
+                  {m.conversationCount}
+                </span>
+              ) : (
+                <span style={{ color: "var(--text-muted)" }}>0</span>
+              ),
+          },
+          {
+            key: "workflowCount",
+            label: "Workflows",
+            render: (m) =>
+              m.workflowCount > 0 ? (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Workflow size={12} />
+                  {m.workflowCount}
+                </span>
+              ) : (
+                <span style={{ color: "var(--text-muted)" }}>0</span>
+              ),
           },
         ]}
         data={topModels}
@@ -475,7 +608,14 @@ export default function DashboardPage() {
       <SortableTableComponent
         maxHeight={420}
         title={
-          <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+            }}
+          >
             Recent Requests
             <Link href="/admin/requests" className={styles.sectionAction}>
               View all →
@@ -484,29 +624,46 @@ export default function DashboardPage() {
         }
         columns={[
           {
-            key: "timestamp", label: "Time",
-            render: (r) => r.timestamp
-              ? new Date(r.timestamp).toLocaleString("en-US", {
-                  month: "short", day: "numeric", year: "numeric",
-                  hour: "numeric", minute: "2-digit", hour12: true,
-                })
-              : "-",
+            key: "timestamp",
+            label: "Time",
+            render: (r) =>
+              r.timestamp
+                ? new Date(r.timestamp).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                  })
+                : "-",
           },
           { key: "model", label: "Model", render: (r) => r.model || "-" },
           {
-            key: "tokens", label: "Tokens",
-            render: (r) => formatNumber((r.inputTokens || 0) + (r.outputTokens || 0)),
+            key: "tokens",
+            label: "Tokens",
+            render: (r) =>
+              formatNumber((r.inputTokens || 0) + (r.outputTokens || 0)),
           },
           {
-            key: "success", label: "Status",
+            key: "success",
+            label: "Status",
             render: (r) => (
-              <span style={{
-                display: "inline-flex", alignItems: "center",
-                padding: "3px 8px", borderRadius: 2,
-                fontSize: 11, fontWeight: 600, letterSpacing: "0.02em",
-                background: r.success ? "var(--success-subtle)" : "var(--danger-subtle)",
-                color: r.success ? "var(--success)" : "var(--danger)",
-              }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "3px 8px",
+                  borderRadius: 2,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: "0.02em",
+                  background: r.success
+                    ? "var(--success-subtle)"
+                    : "var(--danger-subtle)",
+                  color: r.success ? "var(--success)" : "var(--danger)",
+                }}
+              >
                 {r.success ? "OK" : "ERR"}
               </span>
             ),

@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Sector,
-} from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell, Sector } from "recharts";
 import SelectDropdown from "./SelectDropdown";
 import ChartTabsComponent from "./ChartTabsComponent";
 import { formatNumber, formatCost, formatLatency } from "../utils/utilities";
@@ -146,7 +140,10 @@ function buildEntries(tab, metric, projectStats, providerStats, modelStats) {
   }
 
   const entries = source.map((record) => {
-    const name = typeof nameKey === "function" ? nameKey(record) : (record[nameKey] || "unknown");
+    const name =
+      typeof nameKey === "function"
+        ? nameKey(record)
+        : record[nameKey] || "unknown";
     const value = extractValue(record, metric);
     return { name, value };
   });
@@ -167,8 +164,10 @@ function buildEntries(tab, metric, projectStats, providerStats, modelStats) {
  */
 function buildStatusEntries(stats) {
   const entries = [];
-  if (stats?.successCount) entries.push({ name: "Success", value: stats.successCount });
-  if (stats?.errorCount) entries.push({ name: "Error", value: stats.errorCount });
+  if (stats?.successCount)
+    entries.push({ name: "Success", value: stats.successCount });
+  if (stats?.errorCount)
+    entries.push({ name: "Error", value: stats.errorCount });
   return entries;
 }
 
@@ -176,15 +175,23 @@ function buildStatusEntries(stats) {
 
 function ActiveSectorRenderer(props) {
   const {
-    cx, cy, innerRadius, outerRadius,
-    startAngle, endAngle, fill, payload, percent,
+    cx,
+    cy,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    fill,
+    payload,
+    percent,
     metric,
   } = props;
 
   const unit = metricUnit(metric);
-  const formattedValue = metric === "status"
-    ? payload.value.toLocaleString()
-    : formatValue(payload.value, metric);
+  const formattedValue =
+    metric === "status"
+      ? payload.value.toLocaleString()
+      : formatValue(payload.value, metric);
 
   return (
     <g>
@@ -211,22 +218,11 @@ function ActiveSectorRenderer(props) {
           ? payload.name.slice(0, 14) + "…"
           : payload.name}
       </text>
-      <text
-        x={cx}
-        y={cy + 8}
-        textAnchor="middle"
-        fill="#8e95ae"
-        fontSize="11"
-      >
-        {formattedValue}{unit ? ` ${unit}` : ""}
+      <text x={cx} y={cy + 8} textAnchor="middle" fill="#8e95ae" fontSize="11">
+        {formattedValue}
+        {unit ? ` ${unit}` : ""}
       </text>
-      <text
-        x={cx}
-        y={cy + 22}
-        textAnchor="middle"
-        fill="#5a6078"
-        fontSize="10"
-      >
+      <text x={cx} y={cy + 22} textAnchor="middle" fill="#5a6078" fontSize="10">
         {(percent * 100).toFixed(1)}%
       </text>
     </g>
@@ -250,23 +246,40 @@ export default function DistributionChartComponent({
 
   const entries = useMemo(() => {
     if (isStatus) return buildStatusEntries(stats);
-    return buildEntries(activeTab, activeMetric, projectStats, providerStats, modelStats);
-  }, [activeTab, activeMetric, projectStats, providerStats, modelStats, stats, isStatus]);
+    return buildEntries(
+      activeTab,
+      activeMetric,
+      projectStats,
+      providerStats,
+      modelStats,
+    );
+  }, [
+    activeTab,
+    activeMetric,
+    projectStats,
+    providerStats,
+    modelStats,
+    stats,
+    isStatus,
+  ]);
 
   const pieData = useMemo(() => {
     return entries.map(({ name, value }, i) => ({
       name,
       value,
       fill: isStatus
-        ? (STATUS_COLORS[name] || COLORS[0])
+        ? STATUS_COLORS[name] || COLORS[0]
         : COLORS[i % COLORS.length],
     }));
   }, [entries, isStatus]);
 
-  const isAvgMetric = activeMetric === "avgTps" || activeMetric === "avgLatency";
+  const isAvgMetric =
+    activeMetric === "avgTps" || activeMetric === "avgLatency";
   const total = entries.reduce((sum, e) => sum + e.value, 0);
   const displayTotal = isAvgMetric
-    ? (entries.length > 0 ? total / entries.length : 0)
+    ? entries.length > 0
+      ? total / entries.length
+      : 0
     : total;
   const totalLabel = isAvgMetric ? "avg" : "total";
 
@@ -301,7 +314,9 @@ export default function DistributionChartComponent({
             onChange={handleTabChange}
           />
         )}
-        {isStatus && <span className={styles.statusLabel}>Success / Error</span>}
+        {isStatus && (
+          <span className={styles.statusLabel}>Success / Error</span>
+        )}
         {total > 0 && (
           <span className={styles.totalBadge}>
             {formatValue(displayTotal, activeMetric)} {totalLabel}
@@ -353,7 +368,7 @@ export default function DistributionChartComponent({
               {entries.map(({ name, value }, i) => {
                 const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                 const color = isStatus
-                  ? (STATUS_COLORS[name] || COLORS[0])
+                  ? STATUS_COLORS[name] || COLORS[0]
                   : COLORS[i % COLORS.length];
 
                 return (

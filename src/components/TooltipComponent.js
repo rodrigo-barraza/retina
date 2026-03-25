@@ -117,7 +117,8 @@ export default function TooltipComponent({
       }
     }
     document.addEventListener("pointerdown", handleClickOutside);
-    return () => document.removeEventListener("pointerdown", handleClickOutside);
+    return () =>
+      document.removeEventListener("pointerdown", handleClickOutside);
   }, [visible, trigger, hideTooltip]);
 
   useEffect(() => {

@@ -8,12 +8,47 @@ const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 const PRESETS = [
   { label: "All Time", getValue: () => ({ from: "", to: "" }) },
-  { label: "Today", getValue: () => { const d = fmt(new Date()); return { from: d, to: d }; } },
-  { label: "Last 7 days", getValue: () => ({ from: fmt(daysAgo(6)), to: fmt(new Date()) }) },
-  { label: "Last 30 days", getValue: () => ({ from: fmt(daysAgo(29)), to: fmt(new Date()) }) },
-  { label: "This month", getValue: () => { const now = new Date(); return { from: fmt(new Date(now.getFullYear(), now.getMonth(), 1)), to: fmt(now) }; } },
-  { label: "Last month", getValue: () => { const now = new Date(); const start = new Date(now.getFullYear(), now.getMonth() - 1, 1); const end = new Date(now.getFullYear(), now.getMonth(), 0); return { from: fmt(start), to: fmt(end) }; } },
-  { label: "This year", getValue: () => { const now = new Date(); return { from: fmt(new Date(now.getFullYear(), 0, 1)), to: fmt(now) }; } },
+  {
+    label: "Today",
+    getValue: () => {
+      const d = fmt(new Date());
+      return { from: d, to: d };
+    },
+  },
+  {
+    label: "Last 7 days",
+    getValue: () => ({ from: fmt(daysAgo(6)), to: fmt(new Date()) }),
+  },
+  {
+    label: "Last 30 days",
+    getValue: () => ({ from: fmt(daysAgo(29)), to: fmt(new Date()) }),
+  },
+  {
+    label: "This month",
+    getValue: () => {
+      const now = new Date();
+      return {
+        from: fmt(new Date(now.getFullYear(), now.getMonth(), 1)),
+        to: fmt(now),
+      };
+    },
+  },
+  {
+    label: "Last month",
+    getValue: () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { from: fmt(start), to: fmt(end) };
+    },
+  },
+  {
+    label: "This year",
+    getValue: () => {
+      const now = new Date();
+      return { from: fmt(new Date(now.getFullYear(), 0, 1)), to: fmt(now) };
+    },
+  },
 ];
 
 function fmt(date) {
@@ -37,7 +72,11 @@ function parseDate(str) {
 
 function isSameDay(a, b) {
   if (!a || !b) return false;
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function isInRange(date, from, to) {
@@ -51,9 +90,14 @@ function formatDisplay(from, to) {
   const fromDate = parseDate(from);
   const toDate = parseDate(to);
   if (fromDate && toDate) {
-    if (isSameDay(fromDate, toDate)) return fromDate.toLocaleDateString("en-US", opts);
+    if (isSameDay(fromDate, toDate))
+      return fromDate.toLocaleDateString("en-US", opts);
     const fromStr = fromDate.toLocaleDateString("en-US", opts);
-    const toStr = toDate.toLocaleDateString("en-US", { ...opts, year: fromDate.getFullYear() !== toDate.getFullYear() ? "numeric" : undefined });
+    const toStr = toDate.toLocaleDateString("en-US", {
+      ...opts,
+      year:
+        fromDate.getFullYear() !== toDate.getFullYear() ? "numeric" : undefined,
+    });
     return `${fromStr} – ${toStr}`;
   }
   if (fromDate) return `From ${fromDate.toLocaleDateString("en-US", opts)}`;
@@ -61,7 +105,15 @@ function formatDisplay(from, to) {
   return null;
 }
 
-function MonthGrid({ year, month, from, to, hoverDate, onDayClick, onDayHover }) {
+function MonthGrid({
+  year,
+  month,
+  from,
+  to,
+  hoverDate,
+  onDayClick,
+  onDayHover,
+}) {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
@@ -71,12 +123,18 @@ function MonthGrid({ year, month, from, to, hoverDate, onDayClick, onDayHover })
   const toDate = parseDate(to);
 
   // Determine visual range for hover preview
-  const rangeStart = fromDate && !toDate && hoverDate
-    ? (hoverDate < fromDate ? hoverDate : fromDate)
-    : fromDate;
-  const rangeEnd = fromDate && !toDate && hoverDate
-    ? (hoverDate < fromDate ? fromDate : hoverDate)
-    : toDate;
+  const rangeStart =
+    fromDate && !toDate && hoverDate
+      ? hoverDate < fromDate
+        ? hoverDate
+        : fromDate
+      : fromDate;
+  const rangeEnd =
+    fromDate && !toDate && hoverDate
+      ? hoverDate < fromDate
+        ? fromDate
+        : hoverDate
+      : toDate;
 
   const cells = [];
   for (let i = 0; i < firstDay; i++) {
@@ -97,7 +155,9 @@ function MonthGrid({ year, month, from, to, hoverDate, onDayClick, onDayHover })
       isEnd && styles.dayEnd,
       inRange && !isStart && !isEnd && styles.dayInRange,
       isFuture && styles.dayFuture,
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     cells.push(
       <button
@@ -109,23 +169,31 @@ function MonthGrid({ year, month, from, to, hoverDate, onDayClick, onDayHover })
         disabled={isFuture}
       >
         {d}
-      </button>
+      </button>,
     );
   }
 
   return (
     <div className={styles.monthGrid}>
       <div className={styles.dayHeaders}>
-        {DAYS.map((d) => <span key={d} className={styles.dayHeader}>{d}</span>)}
+        {DAYS.map((d) => (
+          <span key={d} className={styles.dayHeader}>
+            {d}
+          </span>
+        ))}
       </div>
-      <div className={styles.dayCells}>
-        {cells}
-      </div>
+      <div className={styles.dayCells}>{cells}</div>
     </div>
   );
 }
 
-export default function DatePickerComponent({ from = "", to = "", onChange, placeholder = "All time", storageKey = "" }) {
+export default function DatePickerComponent({
+  from = "",
+  to = "",
+  onChange,
+  placeholder = "All time",
+  storageKey = "",
+}) {
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() => {
     const d = from ? parseDate(from) : new Date();
@@ -222,51 +290,66 @@ export default function DatePickerComponent({ from = "", to = "", onChange, plac
   const prevMonth = useCallback(() => {
     setViewDate((v) => {
       const m = v.month - 1;
-      return m < 0 ? { year: v.year - 1, month: 11 } : { year: v.year, month: m };
+      return m < 0
+        ? { year: v.year - 1, month: 11 }
+        : { year: v.year, month: m };
     });
   }, []);
 
   const nextMonth = useCallback(() => {
     setViewDate((v) => {
       const m = v.month + 1;
-      return m > 11 ? { year: v.year + 1, month: 0 } : { year: v.year, month: m };
+      return m > 11
+        ? { year: v.year + 1, month: 0 }
+        : { year: v.year, month: m };
     });
   }, []);
 
   const secondMonth = useMemo(() => {
     const m = viewDate.month + 1;
-    return m > 11 ? { year: viewDate.year + 1, month: 0 } : { year: viewDate.year, month: m };
+    return m > 11
+      ? { year: viewDate.year + 1, month: 0 }
+      : { year: viewDate.year, month: m };
   }, [viewDate]);
 
   const monthLabel = (y, m) => {
-    return new Date(y, m).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    return new Date(y, m).toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
   };
 
-  const handleDayClick = useCallback((date) => {
-    const dateStr = fmt(date);
-    if (!selecting) {
-      // First click: set "from", wait for "to"
-      setSelecting(dateStr);
-      setHoverDate(null);
-    } else {
-      // Second click: determine range order
-      const a = selecting;
-      const b = dateStr;
-      const [rangeFrom, rangeTo] = a <= b ? [a, b] : [b, a];
-      onChange({ from: rangeFrom, to: rangeTo });
+  const handleDayClick = useCallback(
+    (date) => {
+      const dateStr = fmt(date);
+      if (!selecting) {
+        // First click: set "from", wait for "to"
+        setSelecting(dateStr);
+        setHoverDate(null);
+      } else {
+        // Second click: determine range order
+        const a = selecting;
+        const b = dateStr;
+        const [rangeFrom, rangeTo] = a <= b ? [a, b] : [b, a];
+        onChange({ from: rangeFrom, to: rangeTo });
+        setSelecting(null);
+        setHoverDate(null);
+        setOpen(false);
+      }
+    },
+    [selecting, onChange],
+  );
+
+  const handlePreset = useCallback(
+    (preset) => {
+      const val = preset.getValue();
+      onChange(val);
       setSelecting(null);
       setHoverDate(null);
       setOpen(false);
-    }
-  }, [selecting, onChange]);
-
-  const handlePreset = useCallback((preset) => {
-    const val = preset.getValue();
-    onChange(val);
-    setSelecting(null);
-    setHoverDate(null);
-    setOpen(false);
-  }, [onChange]);
+    },
+    [onChange],
+  );
 
   const handleClear = useCallback(() => {
     onChange({ from: "", to: "" });
@@ -291,13 +374,14 @@ export default function DatePickerComponent({ from = "", to = "", onChange, plac
         onClick={() => setOpen((v) => !v)}
       >
         <Calendar size={13} />
-        <span className={styles.triggerText}>
-          {displayText || placeholder}
-        </span>
+        <span className={styles.triggerText}>{displayText || placeholder}</span>
         {hasValue && (
           <span
             className={styles.triggerClear}
-            onClick={(e) => { e.stopPropagation(); handleClear(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClear();
+            }}
             title="Clear dates"
           >
             <X size={12} />
@@ -306,13 +390,17 @@ export default function DatePickerComponent({ from = "", to = "", onChange, plac
       </button>
 
       {open && (
-        <div className={styles.dropdown} style={{ top: dropdownPos.top, left: dropdownPos.left }}>
+        <div
+          className={styles.dropdown}
+          style={{ top: dropdownPos.top, left: dropdownPos.left }}
+        >
           {/* Presets */}
           <div className={styles.presets}>
             {PRESETS.map((p) => {
-              const isActive = p.label === "All Time"
-                ? !hasValue
-                : p.getValue().from === from && p.getValue().to === to;
+              const isActive =
+                p.label === "All Time"
+                  ? !hasValue
+                  : p.getValue().from === from && p.getValue().to === to;
               return (
                 <button
                   key={p.label}
@@ -330,7 +418,11 @@ export default function DatePickerComponent({ from = "", to = "", onChange, plac
           <div className={styles.calendars}>
             {/* Month navigation */}
             <div className={styles.monthNav}>
-              <button type="button" className={styles.monthNavBtn} onClick={prevMonth}>
+              <button
+                type="button"
+                className={styles.monthNavBtn}
+                onClick={prevMonth}
+              >
                 <ChevronLeft size={14} />
               </button>
               <span className={styles.monthLabel}>
@@ -339,7 +431,11 @@ export default function DatePickerComponent({ from = "", to = "", onChange, plac
               <span className={styles.monthLabel}>
                 {monthLabel(secondMonth.year, secondMonth.month)}
               </span>
-              <button type="button" className={styles.monthNavBtn} onClick={nextMonth}>
+              <button
+                type="button"
+                className={styles.monthNavBtn}
+                onClick={nextMonth}
+              >
                 <ChevronRight size={14} />
               </button>
             </div>

@@ -1,6 +1,18 @@
 "use client";
 
-import { Type, Image, Volume2, Video, FileText, Hash, MessageSquare, Wrench, Globe, Code, Brain } from "lucide-react";
+import {
+  Type,
+  Image,
+  Volume2,
+  Video,
+  FileText,
+  Hash,
+  MessageSquare,
+  Wrench,
+  Globe,
+  Code,
+  Brain,
+} from "lucide-react";
 
 // ── Modality Icons (icon, label, color) ──
 export const MODALITY_ICONS = {
@@ -10,10 +22,18 @@ export const MODALITY_ICONS = {
   video: { icon: Video, label: "Video", color: "#f43f5e" },
   pdf: { icon: FileText, label: "PDF", color: "#64748b" },
   embedding: { icon: Hash, label: "Embedding", color: "#06b6d4" },
-  conversation: { icon: MessageSquare, label: "Conversation", color: "#8b5cf6" },
+  conversation: {
+    icon: MessageSquare,
+    label: "Conversation",
+    color: "#8b5cf6",
+  },
   webSearch: { icon: Globe, label: "Web Search", color: "#3b82f6" },
   codeExecution: { icon: Code, label: "Code Execution", color: "#8b5cf6" },
-  functionCalling: { icon: Wrench, label: "Function Calling", color: "#f97316" },
+  functionCalling: {
+    icon: Wrench,
+    label: "Function Calling",
+    color: "#f97316",
+  },
   thinking: { icon: Brain, label: "Thinking", color: "#eab308" },
 };
 
@@ -32,6 +52,19 @@ export const MODALITY_COLORS = {
   thinking: "#eab308",
 };
 
+// ── Tool Colors ──
+export const TOOL_COLORS = {
+  Thinking: "#eab308",
+  "Function Calling": "#f97316",
+  "Web Search": "#3b82f6",
+  "Google Search": "#3b82f6",
+  "Code Execution": "#8b5cf6",
+  "Computer Use": "#10b981",
+  "File Search": "#64748b",
+  "URL Context": "#06b6d4",
+  "Image Generation": "#f43f5e",
+};
+
 // ── Asset-type Icons ──
 export const ASSET_ICONS = {
   text: Type,
@@ -44,7 +77,11 @@ export const ASSET_ICONS = {
 };
 
 // ── Role labels for conversation compound ports ──
-export const ROLE_LABELS = { system: "System Prompt", user: "User", assistant: "Assistant" };
+export const ROLE_LABELS = {
+  system: "System Prompt",
+  user: "User",
+  assistant: "Assistant",
+};
 
 // ── Dimension Constants ──
 export const NODE_WIDTH_BASE = 220;
@@ -79,14 +116,21 @@ export function getBaseModality(portId) {
 export function getNodeWidth(node) {
   if (node.nodeType) {
     if (node.modality === "conversation") {
-      const mods = (node.supportedModalities || ["text"]).filter((t) => t !== "conversation");
+      const mods = (node.supportedModalities || ["text"]).filter(
+        (t) => t !== "conversation",
+      );
       const extraIcons = Math.max(0, mods.length - MIN_MODALITY_ICONS_FOR_BASE);
       return NODE_WIDTH_BASE + extraIcons * MODALITY_ICON_WIDTH;
     }
     return ASSET_NODE_WIDTH_BASE;
   }
-  const rawInputs = (node.rawInputTypes || node.inputTypes || []).filter((t) => t !== "conversation");
-  const extraIcons = Math.max(0, rawInputs.length - MIN_MODALITY_ICONS_FOR_BASE);
+  const rawInputs = (node.rawInputTypes || node.inputTypes || []).filter(
+    (t) => t !== "conversation",
+  );
+  const extraIcons = Math.max(
+    0,
+    rawInputs.length - MIN_MODALITY_ICONS_FOR_BASE,
+  );
   return NODE_WIDTH_BASE + extraIcons * MODALITY_ICON_WIDTH;
 }
 
@@ -121,7 +165,9 @@ export function getNodeHeight(node, isExpanded = false) {
     const outputCount = (node.outputTypes || []).length;
     const portRows = Math.max(inputCount, outputCount, 1);
     const infoHeight = getAssetInfoHeight(node);
-    const contentHeight = isExpanded ? getAssetContentHeight(node) + infoHeight : 0;
+    const contentHeight = isExpanded
+      ? getAssetContentHeight(node) + infoHeight
+      : 0;
     return HEADER_HEIGHT + contentHeight + portRows * PORT_SECTION_HEIGHT + 12;
   }
   const inputCount = (node.inputTypes || []).length;

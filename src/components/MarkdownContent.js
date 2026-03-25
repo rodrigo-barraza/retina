@@ -69,7 +69,10 @@ export default function MarkdownContent({ content, className }) {
   if (!content) return null;
   return (
     <div className={`${styles.text} ${className || ""}`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: CodeBlock }}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{ code: CodeBlock }}
+      >
         {content}
       </ReactMarkdown>
     </div>

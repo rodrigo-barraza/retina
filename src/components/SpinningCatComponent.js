@@ -16,15 +16,15 @@ import styles from "./SpinningCatComponent.module.css";
  *   className – optional extra class
  */
 
-const BASE_SPEED = 0.2;        // Start at 20% of original GIF speed
+const BASE_SPEED = 0.2; // Start at 20% of original GIF speed
 const ACCEL_COEFFICIENT = 0.08; // Quadratic ramp: speedMultiplier = BASE_SPEED + ACCEL × t²
-const DECEL_SMOOTHING = 0.03;  // Exponential decay back to base when stopping
+const DECEL_SMOOTHING = 0.03; // Exponential decay back to base when stopping
 const SETTLED_THRESHOLD = 0.01; // Speed delta below which we consider fully stopped
-const MAX_SPEED_FOR_FX = 5;    // Speed at which scale/glow effects reach full intensity
-const MAX_SCALE = 1.5;         // Maximum scale multiplier
-const MAX_BRIGHTNESS = 3.0;    // Maximum CSS brightness value
-const MAX_GLOW_RADIUS = 12;    // Maximum glow drop-shadow blur radius (px)
-const MAX_GLOW_OPACITY = 0.9;  // Maximum glow drop-shadow opacity
+const MAX_SPEED_FOR_FX = 5; // Speed at which scale/glow effects reach full intensity
+const MAX_SCALE = 1.5; // Maximum scale multiplier
+const MAX_BRIGHTNESS = 3.0; // Maximum CSS brightness value
+const MAX_GLOW_RADIUS = 12; // Maximum glow drop-shadow blur radius (px)
+const MAX_GLOW_OPACITY = 0.9; // Maximum glow drop-shadow opacity
 
 function renderFrame(canvas, patchCanvas, frames, index) {
   if (!canvas || !patchCanvas || !frames?.length) return;
@@ -46,8 +46,14 @@ function renderFrame(canvas, patchCanvas, frames, index) {
 
   ctx.drawImage(
     patchCanvas,
-    0, 0, dims.width, dims.height,
-    dims.left, dims.top, dims.width, dims.height,
+    0,
+    0,
+    dims.width,
+    dims.height,
+    dims.left,
+    dims.top,
+    dims.width,
+    dims.height,
   );
 }
 
@@ -76,7 +82,10 @@ export default function SpinningCatComponent({
     if (animate) {
       setVisuallyActive(true);
       stateRef.current.windingDown = false;
-    } else if (stateRef.current.speedMultiplier > BASE_SPEED + SETTLED_THRESHOLD) {
+    } else if (
+      stateRef.current.speedMultiplier >
+      BASE_SPEED + SETTLED_THRESHOLD
+    ) {
       // Start wind-down — keep canvas visible
       stateRef.current.windingDown = true;
     }
@@ -112,7 +121,9 @@ export default function SpinningCatComponent({
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ── Main animation loop (always running, speed-controlled) ───
@@ -133,7 +144,8 @@ export default function SpinningCatComponent({
 
       if (animateRef.current) {
         s.accelTime += dt / 1000;
-        s.speedMultiplier = BASE_SPEED + ACCEL_COEFFICIENT * s.accelTime * s.accelTime;
+        s.speedMultiplier =
+          BASE_SPEED + ACCEL_COEFFICIENT * s.accelTime * s.accelTime;
       } else if (s.speedMultiplier > BASE_SPEED + SETTLED_THRESHOLD) {
         s.accelTime = 0;
         const smoothing = 1 - Math.pow(1 - DECEL_SMOOTHING, dt / 16.67);
@@ -173,7 +185,11 @@ export default function SpinningCatComponent({
       }
 
       // ── Compute visual FX intensity (0 → 1) ──
-      if (animateRef.current || s.windingDown || s.speedMultiplier > BASE_SPEED + SETTLED_THRESHOLD) {
+      if (
+        animateRef.current ||
+        s.windingDown ||
+        s.speedMultiplier > BASE_SPEED + SETTLED_THRESHOLD
+      ) {
         const intensity = Math.min(
           (s.speedMultiplier - BASE_SPEED) / (MAX_SPEED_FOR_FX - BASE_SPEED),
           1,
@@ -186,8 +202,7 @@ export default function SpinningCatComponent({
         const wrapper = canvasRef.current?.parentElement;
         if (wrapper) {
           wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
-          wrapper.style.filter =
-            `brightness(${brightness}) drop-shadow(0 0 ${glowRadius}px rgba(255,255,255,${glowOpacity}))`;
+          wrapper.style.filter = `brightness(${brightness}) drop-shadow(0 0 ${glowRadius}px rgba(255,255,255,${glowOpacity}))`;
         }
       }
 

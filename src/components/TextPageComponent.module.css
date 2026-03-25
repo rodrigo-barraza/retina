@@ -2,10 +2,6 @@
   animation: fadeIn var(--transition-normal) ease-out;
 }
 
-
-
-
-
 /* Loading */
 .loading {
   padding: 60px 20px;
@@ -176,8 +172,6 @@
   color: var(--text-muted);
   font-size: 14px;
 }
-
-
 
 @keyframes fadeIn {
   from {

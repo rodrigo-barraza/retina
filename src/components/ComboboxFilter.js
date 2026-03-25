@@ -78,7 +78,9 @@ export default function ComboboxFilter({
 
   return (
     <div className={styles.combobox} ref={containerRef}>
-      <div className={`${styles.inputWrapper} ${open ? styles.inputWrapperOpen : ""}`}>
+      <div
+        className={`${styles.inputWrapper} ${open ? styles.inputWrapperOpen : ""}`}
+      >
         <input
           ref={inputRef}
           type="text"
@@ -90,7 +92,11 @@ export default function ComboboxFilter({
           onKeyDown={handleKeyDown}
         />
         {value ? (
-          <button className={styles.clearBtn} onClick={handleClear} title="Clear">
+          <button
+            className={styles.clearBtn}
+            onClick={handleClear}
+            title="Clear"
+          >
             <X size={12} />
           </button>
         ) : (

@@ -28,14 +28,17 @@ export default function TextContentComponent({
 
   const isEditable = !!onChange && !readOnly;
 
-  const autoResize = useCallback((el) => {
-    if (!el) return;
-    textareaRef.current = el;
-    if (isEditable) {
-      el.style.height = "auto";
-      el.style.height = el.scrollHeight + "px";
-    }
-  }, [isEditable]);
+  const autoResize = useCallback(
+    (el) => {
+      if (!el) return;
+      textareaRef.current = el;
+      if (isEditable) {
+        el.style.height = "auto";
+        el.style.height = el.scrollHeight + "px";
+      }
+    },
+    [isEditable],
+  );
 
   return (
     <div className={`${styles.wrapper} ${className || ""}`}>
@@ -72,10 +75,14 @@ export default function TextContentComponent({
           ref={autoResize}
           className={`${styles.textarea} ${!isEditable ? styles.textareaReadOnly : ""}`}
           value={value}
-          onChange={isEditable ? (e) => {
-            onChange(e.target.value);
-            autoResize(e.target);
-          } : undefined}
+          onChange={
+            isEditable
+              ? (e) => {
+                  onChange(e.target.value);
+                  autoResize(e.target);
+                }
+              : undefined
+          }
           readOnly={!isEditable}
           placeholder={isEditable ? placeholder : undefined}
         />

@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Upload, Eye, Loader2, Check, Paperclip, MessageSquare, Plus, Minus, Wrench } from "lucide-react";
+import {
+  X,
+  Upload,
+  Eye,
+  Loader2,
+  Check,
+  Paperclip,
+  MessageSquare,
+  Plus,
+  Minus,
+  Wrench,
+} from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import AudioRecorderComponent from "./AudioRecorderComponent";
 import AssetInputOptions from "./AssetInputOptions";
@@ -44,7 +55,8 @@ function NodePorts({
 }) {
   const nodeWidth = getNodeWidth(node);
   const portStartY = HEADER_HEIGHT + configOffset + 8;
-  const isConversationNode = node.nodeType === "input" && node.modality === "conversation";
+  const isConversationNode =
+    node.nodeType === "input" && node.modality === "conversation";
   const nodeMessages = node.messages || [];
 
   return (
@@ -53,26 +65,50 @@ function NodePorts({
       {inputTypes.map((portId, i) => {
         const compound = parseCompoundPort(portId);
         const baseMod = compound ? compound.modality : portId;
-        const portY = portStartY + i * PORT_SECTION_HEIGHT + PORT_SECTION_HEIGHT / 2;
+        const portY =
+          portStartY + i * PORT_SECTION_HEIGHT + PORT_SECTION_HEIGHT / 2;
         const color = MODALITY_COLORS[baseMod] || "#888";
-        const isCompatible = connecting && getBaseModality(connecting.sourceModality) === baseMod && connecting.sourceNodeId !== node.id;
-        const isHovered = hoveredPort?.nodeId === node.id && hoveredPort?.type === "input" && hoveredPort?.modality === portId;
+        const isCompatible =
+          connecting &&
+          getBaseModality(connecting.sourceModality) === baseMod &&
+          connecting.sourceNodeId !== node.id;
+        const isHovered =
+          hoveredPort?.nodeId === node.id &&
+          hoveredPort?.type === "input" &&
+          hoveredPort?.modality === portId;
         const Icon = MODALITY_ICONS[baseMod]?.icon;
         const hasPrismSource = connections.some(
-          (c) => c.targetNodeId === node.id && c.targetModality === portId && (nodeStatuses[c.sourceNodeId] === "running" || nodeStatuses[c.sourceNodeId] === "done")
+          (c) =>
+            c.targetNodeId === node.id &&
+            c.targetModality === portId &&
+            (nodeStatuses[c.sourceNodeId] === "running" ||
+              nodeStatuses[c.sourceNodeId] === "done"),
         );
-        const hasDoneSource = hasPrismSource && connections.some(
-          (c) => c.targetNodeId === node.id && c.targetModality === portId && nodeStatuses[c.sourceNodeId] === "done"
-        ) && !connections.some(
-          (c) => c.targetNodeId === node.id && c.targetModality === portId && nodeStatuses[c.sourceNodeId] === "running"
-        );
+        const hasDoneSource =
+          hasPrismSource &&
+          connections.some(
+            (c) =>
+              c.targetNodeId === node.id &&
+              c.targetModality === portId &&
+              nodeStatuses[c.sourceNodeId] === "done",
+          ) &&
+          !connections.some(
+            (c) =>
+              c.targetNodeId === node.id &&
+              c.targetModality === portId &&
+              nodeStatuses[c.sourceNodeId] === "running",
+          );
 
         let label = MODALITY_ICONS[baseMod]?.label || baseMod;
         if (compound && isConversationNode) {
           const msg = nodeMessages[compound.index];
-          const roleLabel = ROLE_LABELS[msg?.role] || msg?.role || `#${compound.index}`;
-          const roleCount = nodeMessages.slice(0, compound.index).filter((m) => m.role === msg?.role).length;
-          const numberedRole = roleCount > 0 ? `${roleLabel} ${roleCount + 1}` : roleLabel;
+          const roleLabel =
+            ROLE_LABELS[msg?.role] || msg?.role || `#${compound.index}`;
+          const roleCount = nodeMessages
+            .slice(0, compound.index)
+            .filter((m) => m.role === msg?.role).length;
+          const numberedRole =
+            roleCount > 0 ? `${roleLabel} ${roleCount + 1}` : roleLabel;
           if (msg?.role === "system") {
             label = numberedRole;
           } else {
@@ -86,28 +122,65 @@ function NodePorts({
             <circle
               cx={0}
               cy={portY}
-              r={isHovered && isCompatible ? PORT_RADIUS + 2 : hasPrismSource ? PORT_RADIUS + 2 : PORT_RADIUS}
-              fill={hasPrismSource ? (hasDoneSource ? "url(#done-gradient)" : "url(#prism-gradient)") : isCompatible ? color : "var(--bg-tertiary)"}
-              stroke={hasPrismSource ? (hasDoneSource ? "url(#done-gradient)" : "url(#prism-gradient)") : color}
+              r={
+                isHovered && isCompatible
+                  ? PORT_RADIUS + 2
+                  : hasPrismSource
+                    ? PORT_RADIUS + 2
+                    : PORT_RADIUS
+              }
+              fill={
+                hasPrismSource
+                  ? hasDoneSource
+                    ? "url(#done-gradient)"
+                    : "url(#prism-gradient)"
+                  : isCompatible
+                    ? color
+                    : "var(--bg-tertiary)"
+              }
+              stroke={
+                hasPrismSource
+                  ? hasDoneSource
+                    ? "url(#done-gradient)"
+                    : "url(#prism-gradient)"
+                  : color
+              }
               strokeWidth={2}
               className={`${styles.port} ${isCompatible ? styles.portCompatible : ""}`}
               data-node-id={node.id}
               data-port-type="input"
               data-port-modality={portId}
               onClick={(e) => onInputPortClick(e, node.id, portId)}
-              onMouseEnter={() => onPortHover({ nodeId: node.id, type: "input", modality: portId })}
+              onMouseEnter={() =>
+                onPortHover({
+                  nodeId: node.id,
+                  type: "input",
+                  modality: portId,
+                })
+              }
               onMouseLeave={onPortLeave}
             >
               <title>{`IN · ${label} · ${node.id}`}</title>
             </circle>
             {Icon && (
-              <foreignObject x={8} y={portY - 7} width={14} height={14} style={{ pointerEvents: "none" }}>
+              <foreignObject
+                x={8}
+                y={portY - 7}
+                width={14}
+                height={14}
+                style={{ pointerEvents: "none" }}
+              >
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <Icon size={11} style={{ color }} />
                 </div>
               </foreignObject>
             )}
-            <text x={24} y={portY + 1} dominantBaseline="middle" className={styles.portLabel}>
+            <text
+              x={24}
+              y={portY + 1}
+              dominantBaseline="middle"
+              className={styles.portLabel}
+            >
               {label}
             </text>
           </g>
@@ -116,10 +189,13 @@ function NodePorts({
 
       {/* Output ports */}
       {outputTypes.map((modality, i) => {
-        const portY = portStartY + i * PORT_SECTION_HEIGHT + PORT_SECTION_HEIGHT / 2;
+        const portY =
+          portStartY + i * PORT_SECTION_HEIGHT + PORT_SECTION_HEIGHT / 2;
         const color = MODALITY_COLORS[modality] || "#888";
         const Icon = MODALITY_ICONS[modality]?.icon;
-        const isActive = connecting?.sourceNodeId === node.id && connecting?.sourceModality === modality;
+        const isActive =
+          connecting?.sourceNodeId === node.id &&
+          connecting?.sourceModality === modality;
 
         return (
           <g key={`out-${modality}-${i}`}>
@@ -127,7 +203,13 @@ function NodePorts({
               cx={nodeWidth}
               cy={portY}
               r={isActive || isNodeRunning ? PORT_RADIUS + 2 : PORT_RADIUS}
-              fill={isNodeRunning ? nodeStatusGradient : isActive ? color : "var(--bg-tertiary)"}
+              fill={
+                isNodeRunning
+                  ? nodeStatusGradient
+                  : isActive
+                    ? color
+                    : "var(--bg-tertiary)"
+              }
               stroke={isNodeRunning ? nodeStatusGradient : color}
               strokeWidth={2}
               className={`${styles.port} ${styles.portOutput}`}
@@ -135,19 +217,39 @@ function NodePorts({
               data-port-type="output"
               data-port-modality={modality}
               onClick={(e) => onOutputPortClick(e, node.id, modality, i)}
-              onMouseEnter={() => onPortHover({ nodeId: node.id, type: "output", modality })}
+              onMouseEnter={() =>
+                onPortHover({ nodeId: node.id, type: "output", modality })
+              }
               onMouseLeave={onPortLeave}
             >
               <title>{`OUT · ${MODALITY_ICONS[modality]?.label || modality} · ${node.id}`}</title>
             </circle>
             {Icon && (
-              <foreignObject x={nodeWidth - 22} y={portY - 7} width={14} height={14} style={{ pointerEvents: "none" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+              <foreignObject
+                x={nodeWidth - 22}
+                y={portY - 7}
+                width={14}
+                height={14}
+                style={{ pointerEvents: "none" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                  }}
+                >
                   <Icon size={11} style={{ color }} />
                 </div>
               </foreignObject>
             )}
-            <text x={nodeWidth - 24} y={portY + 1} dominantBaseline="middle" textAnchor="end" className={styles.portLabel}>
+            <text
+              x={nodeWidth - 24}
+              y={portY + 1}
+              dominantBaseline="middle"
+              textAnchor="end"
+              className={styles.portLabel}
+            >
               {MODALITY_ICONS[modality]?.label || modality}
             </text>
           </g>
@@ -244,35 +346,98 @@ function NodeShell({
       />
 
       {/* Header background */}
-      <rect width={width} height={HEADER_HEIGHT} rx="3" ry="3" className={styles.nodeHeader} style={headerStyle} />
-      <rect x={0} y={HEADER_HEIGHT - 3} width={width} height={3} className={styles.nodeHeader} style={headerStyle} />
+      <rect
+        width={width}
+        height={HEADER_HEIGHT}
+        rx="3"
+        ry="3"
+        className={styles.nodeHeader}
+        style={headerStyle}
+      />
+      <rect
+        x={0}
+        y={HEADER_HEIGHT - 3}
+        width={width}
+        height={3}
+        className={styles.nodeHeader}
+        style={headerStyle}
+      />
 
       {/* Drag area with header content */}
-      <g className={styles.nodeDragArea} onMouseDown={(e) => onMouseDown(e, node.id)} onTouchStart={(e) => onTouchStart?.(e, node.id)} style={{ cursor: "grab" }}>
-        <rect x={0} y={0} width={width - headerActionsWidth - 8} height={HEADER_HEIGHT} fill="transparent" />
-        <foreignObject x={8} y={0} width={width - headerActionsWidth - 16} height={HEADER_HEIGHT}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, height: "100%", paddingTop: 1 }}>
+      <g
+        className={styles.nodeDragArea}
+        onMouseDown={(e) => onMouseDown(e, node.id)}
+        onTouchStart={(e) => onTouchStart?.(e, node.id)}
+        style={{ cursor: "grab" }}
+      >
+        <rect
+          x={0}
+          y={0}
+          width={width - headerActionsWidth - 8}
+          height={HEADER_HEIGHT}
+          fill="transparent"
+        />
+        <foreignObject
+          x={8}
+          y={0}
+          width={width - headerActionsWidth - 16}
+          height={HEADER_HEIGHT}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              height: "100%",
+              paddingTop: 1,
+            }}
+          >
             {headerContent}
-            {status === "done" && <Check size={12} style={{ color: "#10b981", flexShrink: 0 }} />}
-            {status === "error" && <X size={12} style={{ color: "#f43f5e", flexShrink: 0 }} />}
+            {status === "done" && (
+              <Check size={12} style={{ color: "#10b981", flexShrink: 0 }} />
+            )}
+            {status === "error" && (
+              <X size={12} style={{ color: "#f43f5e", flexShrink: 0 }} />
+            )}
           </div>
         </foreignObject>
       </g>
 
       {/* Header right-side actions (modality icons, type badge, info, delete) */}
-      <foreignObject x={width - headerActionsWidth} y={0} width={headerActionsWidth} height={HEADER_HEIGHT}>
+      <foreignObject
+        x={width - headerActionsWidth}
+        y={0}
+        width={headerActionsWidth}
+        height={HEADER_HEIGHT}
+      >
         <div className={styles.headerActions}>
           {headerActions}
           {typeBadge && (
             <>
               <span className={styles.headerSeparator} />
-              <span className={styles.headerTypeBadge} style={{ color: accentColor }}>{typeBadge}</span>
+              <span
+                className={styles.headerTypeBadge}
+                style={{ color: accentColor }}
+              >
+                {typeBadge}
+              </span>
             </>
           )}
-          {headerActions && onDelete && <span className={styles.headerSeparator} />}
-          {!headerActions && typeBadge && onDelete && <span className={styles.headerSeparator} />}
+          {headerActions && onDelete && (
+            <span className={styles.headerSeparator} />
+          )}
+          {!headerActions && typeBadge && onDelete && (
+            <span className={styles.headerSeparator} />
+          )}
           {onDelete && (
-            <button className={styles.deleteNodeBtn} onClick={(e) => { e.stopPropagation(); onDelete(node.id); }} title="Remove node">
+            <button
+              className={styles.deleteNodeBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(node.id);
+              }}
+              title="Remove node"
+            >
               <X size={12} />
             </button>
           )}
@@ -330,7 +495,9 @@ function ModelNode(props) {
   const outputTypes = node.outputTypes || [];
   const width = getNodeWidth(node);
 
-  const modalityIcons = (node.rawInputTypes || node.inputTypes || []).filter((t) => t !== "conversation");
+  const modalityIcons = (node.rawInputTypes || node.inputTypes || []).filter(
+    (t) => t !== "conversation",
+  );
   const modalityAreaWidth = modalityIcons.length * MODALITY_ICON_WIDTH;
 
   const portRows = Math.max(inputTypes.length, outputTypes.length, 1);
@@ -342,12 +509,25 @@ function ModelNode(props) {
   const isRunning = status === "running";
   const isDone = status === "done";
   const isPrism = isRunning || isDone;
-  const statusGradient = isRunning ? "url(#prism-gradient)" : isDone ? "url(#done-gradient)" : null;
+  const statusGradient = isRunning
+    ? "url(#prism-gradient)"
+    : isDone
+      ? "url(#done-gradient)"
+      : null;
 
   const headerContent = (
     <>
       <ProviderLogo provider={node.provider} size={16} />
-      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
         {node.displayName || node.modelName}
       </span>
     </>
@@ -357,14 +537,28 @@ function ModelNode(props) {
     <>
       {/* Running spinner */}
       {status === "running" && (
-        <Loader2 size={12} style={{ color: "#f59e0b", animation: "spin 1s linear infinite", flexShrink: 0 }} />
+        <Loader2
+          size={12}
+          style={{
+            color: "#f59e0b",
+            animation: "spin 1s linear infinite",
+            flexShrink: 0,
+          }}
+        />
       )}
       {/* Modality icons from model's input types */}
       {modalityIcons.map((modality) => {
         const mod = MODALITY_ICONS[modality];
         if (!mod) return null;
         const Icon = mod.icon;
-        return <Icon key={modality} size={11} style={{ color: mod.color, opacity: 0.7, flexShrink: 0 }} title={mod.label} />;
+        return (
+          <Icon
+            key={modality}
+            size={11}
+            style={{ color: mod.color, opacity: 0.7, flexShrink: 0 }}
+            title={mod.label}
+          />
+        );
       })}
     </>
   );
@@ -396,24 +590,44 @@ function ModelNode(props) {
     >
       {/* Expandable config section */}
       {isExpanded && (
-        <foreignObject x={4} y={HEADER_HEIGHT + 2} width={width - 8} height={CONFIG_AREA_HEIGHT - 4}>
+        <foreignObject
+          x={4}
+          y={HEADER_HEIGHT + 2}
+          width={width - 8}
+          height={CONFIG_AREA_HEIGHT - 4}
+        >
           <div className={styles.nodeConfig}>
             <div className={styles.nodeConfigMessages}>
-              <MessageSquare size={11} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+              <MessageSquare
+                size={11}
+                style={{ color: "var(--text-muted)", flexShrink: 0 }}
+              />
               <span className={styles.nodeConfigMessageCount}>
-                {(node.messages?.length || (node.systemPrompt ? 2 : 1))} messages
+                {node.messages?.length || (node.systemPrompt ? 2 : 1)} messages
               </span>
-              <span className={styles.nodeConfigMessageHint}>Edit in inspector →</span>
+              <span className={styles.nodeConfigMessageHint}>
+                Edit in inspector →
+              </span>
             </div>
             <label className={styles.nodeConfigLabel}>Static Input</label>
             <div className={styles.nodeConfigUpload}>
               {node.staticInputs?.image ? (
-                <span className={styles.nodeConfigFile} title="Static image attached">
+                <span
+                  className={styles.nodeConfigFile}
+                  title="Static image attached"
+                >
                   📎 Image attached
                   <button
                     className={styles.nodeConfigClearBtn}
-                    onClick={() => onUpdateConfig?.(node.id, "staticInputs", { ...node.staticInputs, image: null })}
-                  >×</button>
+                    onClick={() =>
+                      onUpdateConfig?.(node.id, "staticInputs", {
+                        ...node.staticInputs,
+                        image: null,
+                      })
+                    }
+                  >
+                    ×
+                  </button>
                 </span>
               ) : (
                 <label className={styles.nodeConfigUploadLabel}>
@@ -428,7 +642,9 @@ function ModelNode(props) {
                       if (!file) return;
                       const reader = new FileReader();
                       reader.onload = () => {
-                        const modality = file.type.startsWith("image") ? "image" : "audio";
+                        const modality = file.type.startsWith("image")
+                          ? "image"
+                          : "audio";
                         onUpdateConfig?.(node.id, "staticInputs", {
                           ...node.staticInputs,
                           [modality]: reader.result,
@@ -446,7 +662,12 @@ function ModelNode(props) {
 
       {/* Error display */}
       {results?.error && (
-        <foreignObject x={4} y={HEADER_HEIGHT + configHeight + portsHeight} width={width - 8} height={24}>
+        <foreignObject
+          x={4}
+          y={HEADER_HEIGHT + configHeight + portsHeight}
+          width={width - 8}
+          height={24}
+        >
           <div className={styles.modelResultError}>{results.error}</div>
         </foreignObject>
       )}
@@ -502,13 +723,21 @@ function AssetNode(props) {
   const width = getNodeWidth(node);
   const inputTypes = node.inputTypes || [];
   const outputTypes = node.outputTypes || [];
-  const accentColor = isViewer ? "#a78bfa" : (MODALITY_COLORS[node.modality] || "#8b5cf6");
-  const AssetIcon = isViewer ? Eye : node.modality
-    ? (ASSET_ICONS[node.modality] || MODALITY_ICONS[node.modality]?.icon || Paperclip)
-    : Paperclip;
+  const accentColor = isViewer
+    ? "#a78bfa"
+    : MODALITY_COLORS[node.modality] || "#8b5cf6";
+  const AssetIcon = isViewer
+    ? Eye
+    : node.modality
+      ? ASSET_ICONS[node.modality] ||
+        MODALITY_ICONS[node.modality]?.icon ||
+        Paperclip
+      : Paperclip;
 
   const isConversation = node.modality === "conversation";
-  const conversationModalities = isConversation ? (node.supportedModalities || ["text"]).filter((t) => t !== "conversation") : [];
+  const conversationModalities = isConversation
+    ? (node.supportedModalities || ["text"]).filter((t) => t !== "conversation")
+    : [];
   const modalityAreaWidth = conversationModalities.length * MODALITY_ICON_WIDTH;
 
   const NODE_LABELS = {
@@ -546,12 +775,21 @@ function AssetNode(props) {
   const isRunning = status === "running";
   const isDone = status === "done";
   const isPrism = isRunning || isDone;
-  const statusGradient = isRunning ? "url(#prism-gradient)" : isDone ? "url(#done-gradient)" : null;
+  const statusGradient = isRunning
+    ? "url(#prism-gradient)"
+    : isDone
+      ? "url(#done-gradient)"
+      : null;
   const contentH = getAssetContentHeight(node);
   const portRows = Math.max(inputTypes.length, outputTypes.length, 1);
   const portsHeight = portRows * PORT_SECTION_HEIGHT + 12;
-  const conversationBtnHeight = isConversation && inputTypes.length > 0 && !readOnly ? 24 : 0;
-  const nodeHeight = HEADER_HEIGHT + (isExpanded ? contentH : 0) + portsHeight + conversationBtnHeight;
+  const conversationBtnHeight =
+    isConversation && inputTypes.length > 0 && !readOnly ? 24 : 0;
+  const nodeHeight =
+    HEADER_HEIGHT +
+    (isExpanded ? contentH : 0) +
+    portsHeight +
+    conversationBtnHeight;
 
   const headerContent = (
     <>
@@ -571,7 +809,15 @@ function AssetNode(props) {
         />
       ) : (
         <span
-          style={{ fontSize: 12, fontWeight: 600, color: accentColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: readOnly ? "grab" : "text" }}
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: accentColor,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            cursor: readOnly ? "grab" : "text",
+          }}
           onDoubleClick={handleStartRename}
         >
           {displayTitle}
@@ -583,14 +829,21 @@ function AssetNode(props) {
   const headerActions = (
     <>
       {/* Modality icons for conversation input */}
-      {isConversation && conversationModalities.length > 0 && (
+      {isConversation &&
+        conversationModalities.length > 0 &&
         conversationModalities.map((modality) => {
           const mod = MODALITY_ICONS[modality];
           if (!mod) return null;
           const Icon = mod.icon;
-          return <Icon key={modality} size={11} style={{ color: mod.color, opacity: 0.7, flexShrink: 0 }} title={mod.label} />;
-        })
-      )}
+          return (
+            <Icon
+              key={modality}
+              size={11}
+              style={{ color: mod.color, opacity: 0.7, flexShrink: 0 }}
+              title={mod.label}
+            />
+          );
+        })}
       {/* Gear / eye button */}
       <button
         className={`${styles.deleteNodeBtn} ${isExpanded ? styles.configBtnActive : ""}`}
@@ -632,133 +885,166 @@ function AssetNode(props) {
       portProps={portProps}
     >
       {/* Content area — only when expanded */}
-      {isExpanded && (() => {
-        return (
-          <>
-            <foreignObject x={4} y={HEADER_HEIGHT + 4} width={width - 8} height={contentH - 8}>
-              {isViewer ? (
-                <div className={styles.viewerContent}>
-                  {node.receivedOutputs && Object.keys(node.receivedOutputs).length > 0 ? (
-                    <>
-                      {node.receivedOutputs.image && (
-                        <img
-                          src={PrismService.getFileUrl(node.receivedOutputs.image)}
-                          alt="Received image"
-                          className={styles.viewerImage}
-                        />
-                      )}
-                      {node.receivedOutputs.text && (
-                        <div className={styles.viewerText}>{node.receivedOutputs.text}</div>
-                      )}
-                      {node.receivedOutputs.audio && (
-                        <audio
-                          controls
-                          src={PrismService.getFileUrl(node.receivedOutputs.audio)}
-                          style={{ width: "100%", height: 28 }}
-                          onMouseDown={(e) => e.stopPropagation()}
-                        />
-                      )}
-                      {node.receivedOutputs.embedding && (
-                        <div className={styles.viewerText} style={{ fontFamily: "monospace", fontSize: "10px" }}>
-                          [{node.receivedOutputs.embedding.length} dims] [{node.receivedOutputs.embedding.slice(0, 4).map((v) => v.toFixed(4)).join(", ")}…]
-                        </div>
-                      )}
-                      {node.receivedOutputs.video && (
-                        <video
-                          controls
-                          src={PrismService.getFileUrl(node.receivedOutputs.video)}
-                          className={styles.viewerImage}
-                          onMouseDown={(e) => e.stopPropagation()}
-                        />
-                      )}
-                    </>
-                  ) : (
-                    <div className={styles.viewerEmpty}>
-                      <Eye size={16} style={{ opacity: 0.3 }} />
-                      <span>Waiting for input…</span>
-                    </div>
-                  )}
-                </div>
-              ) : node.modality === "text" && node.content !== undefined && node.modality !== null ? (
-                <textarea
-                  className={styles.assetTextarea}
-                  value={node.content || ""}
-                  onChange={(e) => onUpdateContent(node.id, e.target.value)}
-                  placeholder="Enter text…"
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    onSelectNode?.(node.id);
-                  }}
-                />
-              ) : node.modality === "conversation" ? (
-                null
-              ) : (
-                /* File input: upload / drag-drop zone or preview */
-                <div
-                  className={styles.assetUploadArea}
-                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const file = e.dataTransfer?.files?.[0];
-                    if (file) handleFileInputChange(node.id, file, onUpdateFileInput);
-                  }}
-                >
-                  {node.content ? (
-                    <div className={styles.fileInputPreview}>
-                      {node.modality === "image" ? (
-                        <img
-                          src={PrismService.getFileUrl(node.content)}
-                          alt="Uploaded asset"
-                          className={styles.assetPreviewImg}
-                        />
-                      ) : node.modality === "audio" ? (
-                        <AudioRecorderComponent src={PrismService.getFileUrl(node.content)} square />
-                      ) : node.modality === "video" ? (
-                        <video
-                          controls
-                          src={PrismService.getFileUrl(node.content)}
-                          className={styles.assetVideoPlayer}
-                          onMouseDown={(e) => e.stopPropagation()}
-                        />
-                      ) : node.modality === "pdf" ? (
-                        <iframe
-                          src={PrismService.getFileUrl(node.content)}
-                          className={styles.assetPdfViewer}
-                          title="PDF preview"
-                          onMouseDown={(e) => e.stopPropagation()}
-                        />
-                      ) : (
-                        <div className={styles.assetFileLabel}>
-                          <Paperclip size={14} />
-                          File loaded
-                        </div>
-                      )}
-                      <button
-                        className={styles.fileInputClearBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onUpdateFileInput?.(node.id, null, null);
-                        }}
-                        title="Remove file"
-                      >
-                        <X size={10} />
-                      </button>
-                    </div>
-                  ) : (
-                    <AssetInputOptions
-                      compact
-                      onFile={(dataUrl, mimeType) => onUpdateFileInput?.(node.id, dataUrl, mimeType)}
-                    />
-                  )}
-                </div>
-              )}
-            </foreignObject>
-
-
-          </>
-        );
-      })()}
+      {isExpanded &&
+        (() => {
+          return (
+            <>
+              <foreignObject
+                x={4}
+                y={HEADER_HEIGHT + 4}
+                width={width - 8}
+                height={contentH - 8}
+              >
+                {isViewer ? (
+                  <div className={styles.viewerContent}>
+                    {node.receivedOutputs &&
+                    Object.keys(node.receivedOutputs).length > 0 ? (
+                      <>
+                        {node.receivedOutputs.image && (
+                          <img
+                            src={PrismService.getFileUrl(
+                              node.receivedOutputs.image,
+                            )}
+                            alt="Received image"
+                            className={styles.viewerImage}
+                          />
+                        )}
+                        {node.receivedOutputs.text && (
+                          <div className={styles.viewerText}>
+                            {node.receivedOutputs.text}
+                          </div>
+                        )}
+                        {node.receivedOutputs.audio && (
+                          <audio
+                            controls
+                            src={PrismService.getFileUrl(
+                              node.receivedOutputs.audio,
+                            )}
+                            style={{ width: "100%", height: 28 }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                          />
+                        )}
+                        {node.receivedOutputs.embedding && (
+                          <div
+                            className={styles.viewerText}
+                            style={{
+                              fontFamily: "monospace",
+                              fontSize: "10px",
+                            }}
+                          >
+                            [{node.receivedOutputs.embedding.length} dims] [
+                            {node.receivedOutputs.embedding
+                              .slice(0, 4)
+                              .map((v) => v.toFixed(4))
+                              .join(", ")}
+                            …]
+                          </div>
+                        )}
+                        {node.receivedOutputs.video && (
+                          <video
+                            controls
+                            src={PrismService.getFileUrl(
+                              node.receivedOutputs.video,
+                            )}
+                            className={styles.viewerImage}
+                            onMouseDown={(e) => e.stopPropagation()}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <div className={styles.viewerEmpty}>
+                        <Eye size={16} style={{ opacity: 0.3 }} />
+                        <span>Waiting for input…</span>
+                      </div>
+                    )}
+                  </div>
+                ) : node.modality === "text" &&
+                  node.content !== undefined &&
+                  node.modality !== null ? (
+                  <textarea
+                    className={styles.assetTextarea}
+                    value={node.content || ""}
+                    onChange={(e) => onUpdateContent(node.id, e.target.value)}
+                    placeholder="Enter text…"
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      onSelectNode?.(node.id);
+                    }}
+                  />
+                ) : node.modality === "conversation" ? null : (
+                  /* File input: upload / drag-drop zone or preview */
+                  <div
+                    className={styles.assetUploadArea}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const file = e.dataTransfer?.files?.[0];
+                      if (file)
+                        handleFileInputChange(node.id, file, onUpdateFileInput);
+                    }}
+                  >
+                    {node.content ? (
+                      <div className={styles.fileInputPreview}>
+                        {node.modality === "image" ? (
+                          <img
+                            src={PrismService.getFileUrl(node.content)}
+                            alt="Uploaded asset"
+                            className={styles.assetPreviewImg}
+                          />
+                        ) : node.modality === "audio" ? (
+                          <AudioRecorderComponent
+                            src={PrismService.getFileUrl(node.content)}
+                            square
+                          />
+                        ) : node.modality === "video" ? (
+                          <video
+                            controls
+                            src={PrismService.getFileUrl(node.content)}
+                            className={styles.assetVideoPlayer}
+                            onMouseDown={(e) => e.stopPropagation()}
+                          />
+                        ) : node.modality === "pdf" ? (
+                          <iframe
+                            src={PrismService.getFileUrl(node.content)}
+                            className={styles.assetPdfViewer}
+                            title="PDF preview"
+                            onMouseDown={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <div className={styles.assetFileLabel}>
+                            <Paperclip size={14} />
+                            File loaded
+                          </div>
+                        )}
+                        <button
+                          className={styles.fileInputClearBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUpdateFileInput?.(node.id, null, null);
+                          }}
+                          title="Remove file"
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    ) : (
+                      <AssetInputOptions
+                        compact
+                        onFile={(dataUrl, mimeType) =>
+                          onUpdateFileInput?.(node.id, dataUrl, mimeType)
+                        }
+                      />
+                    )}
+                  </div>
+                )}
+              </foreignObject>
+            </>
+          );
+        })()}
 
       {/* Add/Remove message pair buttons for conversation nodes (only when connected and editable) */}
       {isConversation && inputTypes.length > 0 && !readOnly && (
@@ -768,7 +1054,15 @@ function AssetNode(props) {
           width={width - 8}
           height={conversationBtnHeight}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 4, height: "100%", justifyContent: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              height: "100%",
+              justifyContent: "center",
+            }}
+          >
             {(node.messages || []).length > 2 && (
               <button
                 className={styles.deleteNodeBtn}
@@ -835,28 +1129,42 @@ function ToolNode(props) {
   const builtInTools = node.builtInTools || [];
   const customToolsList = node.customTools || [];
   const disabledTools = new Set(node.disabledTools || []);
-  const enabledBuiltIn = builtInTools.filter((t) => !disabledTools.has(t.name)).length;
-  const enabledCustom = customToolsList.filter((t) => !disabledTools.has(t.name || t._id)).length;
+  const enabledBuiltIn = builtInTools.filter(
+    (t) => !disabledTools.has(t.name),
+  ).length;
+  const enabledCustom = customToolsList.filter(
+    (t) => !disabledTools.has(t.name || t._id),
+  ).length;
   const totalEnabled = enabledBuiltIn + enabledCustom;
   const totalTools = builtInTools.length + customToolsList.length;
 
   const isRunning = status === "running";
   const isDone = status === "done";
   const isPrism = isRunning || isDone;
-  const statusGradient = isRunning ? "url(#prism-gradient)" : isDone ? "url(#done-gradient)" : null;
+  const statusGradient = isRunning
+    ? "url(#prism-gradient)"
+    : isDone
+      ? "url(#done-gradient)"
+      : null;
 
   // Show up to 6 tool name pills when expanded
   const TOOL_PILL_HEIGHT = 20;
   const TOOL_PILL_GAP = 3;
   const MAX_PILLS = 6;
   const allToolNames = [
-    ...builtInTools.filter((t) => !disabledTools.has(t.name)).map((t) => t.name),
-    ...customToolsList.filter((t) => !disabledTools.has(t.name || t._id)).map((t) => t.name),
+    ...builtInTools
+      .filter((t) => !disabledTools.has(t.name))
+      .map((t) => t.name),
+    ...customToolsList
+      .filter((t) => !disabledTools.has(t.name || t._id))
+      .map((t) => t.name),
   ];
   const displayedTools = allToolNames.slice(0, MAX_PILLS);
   const remainingCount = allToolNames.length - displayedTools.length;
   const pillRows = displayedTools.length + (remainingCount > 0 ? 1 : 0);
-  const contentH = isExpanded ? pillRows * (TOOL_PILL_HEIGHT + TOOL_PILL_GAP) + 12 : 0;
+  const contentH = isExpanded
+    ? pillRows * (TOOL_PILL_HEIGHT + TOOL_PILL_GAP) + 12
+    : 0;
 
   const portRows = Math.max(inputTypes.length, outputTypes.length, 1);
   const portsHeight = portRows * PORT_SECTION_HEIGHT + 12;
@@ -865,10 +1173,27 @@ function ToolNode(props) {
   const headerContent = (
     <>
       <Wrench size={14} style={{ color: accentColor, flexShrink: 0 }} />
-      <span style={{ fontSize: 12, fontWeight: 600, color: accentColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: accentColor,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
         {node.customName || "Tools"}
       </span>
-      <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text-muted)", flexShrink: 0, marginLeft: "auto" }}>
+      <span
+        style={{
+          fontSize: 10,
+          fontWeight: 600,
+          color: "var(--text-muted)",
+          flexShrink: 0,
+          marginLeft: "auto",
+        }}
+      >
         {totalEnabled}/{totalTools}
       </span>
     </>
@@ -877,7 +1202,14 @@ function ToolNode(props) {
   const headerActions = (
     <>
       {status === "running" && (
-        <Loader2 size={12} style={{ color: "#f59e0b", animation: "spin 1s linear infinite", flexShrink: 0 }} />
+        <Loader2
+          size={12}
+          style={{
+            color: "#f59e0b",
+            animation: "spin 1s linear infinite",
+            flexShrink: 0,
+          }}
+        />
       )}
       <button
         className={`${styles.deleteNodeBtn} ${isExpanded ? styles.configBtnActive : ""}`}
@@ -917,7 +1249,12 @@ function ToolNode(props) {
     >
       {/* Expanded: show tool name pills */}
       {isExpanded && displayedTools.length > 0 && (
-        <foreignObject x={4} y={HEADER_HEIGHT + 4} width={width - 8} height={contentH - 8}>
+        <foreignObject
+          x={4}
+          y={HEADER_HEIGHT + 4}
+          width={width - 8}
+          height={contentH - 8}
+        >
           <div className={styles.toolNodePills}>
             {displayedTools.map((name) => (
               <span key={name} className={styles.toolNodePill}>
@@ -925,7 +1262,9 @@ function ToolNode(props) {
               </span>
             ))}
             {remainingCount > 0 && (
-              <span className={styles.toolNodePillMore}>+{remainingCount} more</span>
+              <span className={styles.toolNodePillMore}>
+                +{remainingCount} more
+              </span>
             )}
           </div>
         </foreignObject>

@@ -28,7 +28,9 @@ function formatValue(value, tab) {
     return value >= 0.01 ? `$${value.toFixed(4)}` : `$${value.toFixed(6)}`;
   }
   if (tab.key === "avgLatency") {
-    return value >= 1000 ? `${(value / 1000).toFixed(1)}s` : `${Math.round(value)}ms`;
+    return value >= 1000
+      ? `${(value / 1000).toFixed(1)}s`
+      : `${Math.round(value)}ms`;
   }
   if (tab.key === "successRate") {
     return `${value}%`;
@@ -38,7 +40,8 @@ function formatValue(value, tab) {
 
 function yTickFormatter(value, tabKey) {
   if (tabKey === "cost") return `$${value.toFixed(2)}`;
-  if (tabKey === "avgLatency") return value >= 1000 ? `${(value / 1000).toFixed(1)}s` : `${value}ms`;
+  if (tabKey === "avgLatency")
+    return value >= 1000 ? `${(value / 1000).toFixed(1)}s` : `${value}ms`;
   if (tabKey === "successRate") return `${value}%`;
   return formatNumber(value);
 }
@@ -62,7 +65,14 @@ function GlowDotComponent({ cx, cy, color }) {
   return (
     <g>
       <circle cx={cx} cy={cy} r="8" fill={color} opacity="0.2" />
-      <circle cx={cx} cy={cy} r="4" fill={color} stroke="#fff" strokeWidth="1.5" />
+      <circle
+        cx={cx}
+        cy={cy}
+        r="4"
+        fill={color}
+        stroke="#fff"
+        strokeWidth="1.5"
+      />
     </g>
   );
 }
@@ -75,7 +85,12 @@ function GlowDotComponent({ cx, cy, color }) {
  *   loading  — boolean
  *   height   — chart height in px (default: 260)
  */
-export default function TimelineChartComponent({ data = [], loading = false, height = 260, title = "Activity Over Time" }) {
+export default function TimelineChartComponent({
+  data = [],
+  loading = false,
+  height = 260,
+  title = "Activity Over Time",
+}) {
   const [activeTab, setActiveTab] = useState("requests");
   const tab = TABS.find((t) => t.key === activeTab) || TABS[0];
 
@@ -86,13 +101,19 @@ export default function TimelineChartComponent({ data = [], loading = false, hei
     return ["auto", "auto"];
   }, [tab.key]);
 
-  const renderTooltip = useCallback((props) => {
-    return <ChartTooltipComponent {...props} tab={tab} />;
-  }, [tab]);
+  const renderTooltip = useCallback(
+    (props) => {
+      return <ChartTooltipComponent {...props} tab={tab} />;
+    },
+    [tab],
+  );
 
-  const renderDot = useCallback((props) => {
-    return <GlowDotComponent {...props} color={tab.color} />;
-  }, [tab]);
+  const renderDot = useCallback(
+    (props) => {
+      return <GlowDotComponent {...props} color={tab.color} />;
+    },
+    [tab],
+  );
 
   return (
     <div className={styles.container}>

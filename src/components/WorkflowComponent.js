@@ -84,7 +84,9 @@ export default function WorkflowComponent({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const safePosition = readOnly ? (onUpdateNodePosition || noop) : (onUpdateNodePosition || noop);
+  const safePosition = readOnly
+    ? onUpdateNodePosition || noop
+    : onUpdateNodePosition || noop;
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) || null;
 
@@ -104,30 +106,38 @@ export default function WorkflowComponent({
   }, [onSelectNode]);
 
   // When loading a workflow on mobile, auto-hide sidebar
-  const handleLoadWorkflowWithHide = useCallback((...args) => {
-    if (window.innerWidth < 768) {
-      setSidebarVisible(false);
-    }
-    onLoadWorkflow?.(...args);
-  }, [onLoadWorkflow]);
+  const handleLoadWorkflowWithHide = useCallback(
+    (...args) => {
+      if (window.innerWidth < 768) {
+        setSidebarVisible(false);
+      }
+      onLoadWorkflow?.(...args);
+    },
+    [onLoadWorkflow],
+  );
 
   // On mobile, close sidebar when selecting a node (opening inspector)
-  const handleSelectNode = useCallback((nodeId) => {
-    if (nodeId && window.innerWidth < 768) {
-      setSidebarVisible(false);
-    }
-    onSelectNode?.(nodeId);
-  }, [onSelectNode]);
+  const handleSelectNode = useCallback(
+    (nodeId) => {
+      if (nodeId && window.innerWidth < 768) {
+        setSidebarVisible(false);
+      }
+      onSelectNode?.(nodeId);
+    },
+    [onSelectNode],
+  );
 
   return (
     <div className={styles.body}>
-      <div className={`${styles.sidebarWrapper} ${sidebarVisible ? "" : styles.sidebarHidden}`}>
+      <div
+        className={`${styles.sidebarWrapper} ${sidebarVisible ? "" : styles.sidebarHidden}`}
+      >
         <WorkflowSidebar
           admin={admin}
           workflows={workflows}
           activeWorkflowId={activeWorkflowId}
           onLoadWorkflow={handleLoadWorkflowWithHide}
-          onDeleteWorkflow={admin ? noop : (onDeleteWorkflow || noop)}
+          onDeleteWorkflow={admin ? noop : onDeleteWorkflow || noop}
           onDownloadWorkflow={onDownloadWorkflow}
           onCopyWorkflow={onCopyWorkflow}
           onAddAsset={admin ? undefined : onAddAsset}
@@ -148,13 +158,13 @@ export default function WorkflowComponent({
         nodes={nodes}
         connections={connections}
         onUpdateNodePosition={safePosition}
-        onDeleteNode={readOnly ? noop : (onDeleteNode || noop)}
-        onAddConnection={readOnly ? noop : (onAddConnection || noop)}
-        onDeleteConnection={readOnly ? noop : (onDeleteConnection || noop)}
-        onUpdateNodeContent={readOnly ? noop : (onUpdateNodeContent || noop)}
-        onUpdateNodeConfig={readOnly ? noop : (onUpdateNodeConfig || noop)}
-        onUpdateFileInput={readOnly ? noop : (onUpdateFileInput || noop)}
-        onDuplicateNode={readOnly ? noop : (onDuplicateNode || noop)}
+        onDeleteNode={readOnly ? noop : onDeleteNode || noop}
+        onAddConnection={readOnly ? noop : onAddConnection || noop}
+        onDeleteConnection={readOnly ? noop : onDeleteConnection || noop}
+        onUpdateNodeContent={readOnly ? noop : onUpdateNodeContent || noop}
+        onUpdateNodeConfig={readOnly ? noop : onUpdateNodeConfig || noop}
+        onUpdateFileInput={readOnly ? noop : onUpdateFileInput || noop}
+        onDuplicateNode={readOnly ? noop : onDuplicateNode || noop}
         nodeStatuses={nodeStatuses}
         nodeResults={nodeResults}
         selectedNodeId={selectedNodeId}
@@ -168,19 +178,23 @@ export default function WorkflowComponent({
       {/* Inspector: bottom sheet on mobile, side panel on desktop */}
       {selectedNode && (
         <>
-          {isMobile && <div className={styles.inspectorBackdrop} onClick={handleClose} />}
+          {isMobile && (
+            <div className={styles.inspectorBackdrop} onClick={handleClose} />
+          )}
           <div className={styles.inspectorWrapper}>
             <WorkflowInspector
               node={selectedNode}
               connections={connections}
               nodes={nodes}
-              allModels={readOnly ? [] : (allModels || [])}
+              allModels={readOnly ? [] : allModels || []}
               nodeResults={nodeResults}
               nodeStatuses={nodeStatuses}
-              onUpdateNodeConfig={readOnly ? noop : (onUpdateNodeConfig || noop)}
-              onUpdateNodeContent={readOnly ? noop : (onUpdateNodeContent || noop)}
-              onUpdateFileInput={readOnly ? noop : (onUpdateFileInput || noop)}
-              onChangeModel={readOnly ? noop : (onChangeModel || noop)}
+              onUpdateNodeConfig={readOnly ? noop : onUpdateNodeConfig || noop}
+              onUpdateNodeContent={
+                readOnly ? noop : onUpdateNodeContent || noop
+              }
+              onUpdateFileInput={readOnly ? noop : onUpdateFileInput || noop}
+              onChangeModel={readOnly ? noop : onChangeModel || noop}
               onSelectNode={handleSelectNode}
               onClose={handleClose}
               readOnly={readOnly}

@@ -202,7 +202,12 @@ export default function AudioRecorderComponent({
         const amp = curPeaks[i];
         const barH = Math.max(2, amp * (h * 0.85));
         ctx.fillStyle = "#ef4444";
-        ctx.fillRect(startX + i * (BAR_WIDTH + BAR_GAP), mid - barH / 2, BAR_WIDTH, barH);
+        ctx.fillRect(
+          startX + i * (BAR_WIDTH + BAR_GAP),
+          mid - barH / 2,
+          BAR_WIDTH,
+          barH,
+        );
       }
     };
     draw();
@@ -281,7 +286,10 @@ export default function AudioRecorderComponent({
     const audio = audioRef.current;
     if (!canvas || !audio || !duration) return;
     const rect = canvas.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const ratio = Math.max(
+      0,
+      Math.min(1, (e.clientX - rect.left) / rect.width),
+    );
     audio.currentTime = ratio * duration;
     setCurrentTime(ratio * duration);
   };
@@ -318,7 +326,10 @@ export default function AudioRecorderComponent({
   if (src) {
     if (square) {
       return (
-        <div className={styles.audioSquare} onMouseDown={(e) => e.stopPropagation()}>
+        <div
+          className={styles.audioSquare}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <audio
             ref={audioRef}
             src={src}
@@ -332,20 +343,32 @@ export default function AudioRecorderComponent({
           />
 
           <div className={styles.squareWaveWrap} onClick={handleCanvasSeek}>
-            <canvas ref={playerCanvasRef} className={styles.squareWaveCanvas}
-              width={200} height={100} />
+            <canvas
+              ref={playerCanvasRef}
+              className={styles.squareWaveCanvas}
+              width={200}
+              height={100}
+            />
           </div>
 
           <div className={styles.squareControls}>
-            <button type="button" className={styles.playBtn} onClick={togglePlayback}
-              title={isPlaying ? "Pause" : "Play"}>
+            <button
+              type="button"
+              className={styles.playBtn}
+              onClick={togglePlayback}
+              title={isPlaying ? "Pause" : "Play"}
+            >
               {isPlaying ? <Pause size={10} /> : <Play size={10} />}
             </button>
             <span className={styles.timer}>
               {formatTime(currentTime)}/{formatTime(duration)}
             </span>
-            <button type="button" className={styles.iconBtn} onClick={toggleMute}
-              title={muted ? "Unmute" : "Mute"}>
+            <button
+              type="button"
+              className={styles.iconBtn}
+              onClick={toggleMute}
+              title={muted ? "Unmute" : "Mute"}
+            >
               {muted ? <VolumeX size={12} /> : <Volume2 size={12} />}
             </button>
           </div>
@@ -353,7 +376,9 @@ export default function AudioRecorderComponent({
       );
     }
     return (
-      <div className={`${styles.audioThumb} ${compact ? styles.audioCompact : ""}`}>
+      <div
+        className={`${styles.audioThumb} ${compact ? styles.audioCompact : ""}`}
+      >
         <audio
           ref={audioRef}
           src={src}
@@ -366,37 +391,64 @@ export default function AudioRecorderComponent({
           hidden
         />
 
-        <button type="button" className={styles.playBtn} onClick={togglePlayback}
-          title={isPlaying ? "Pause" : "Play"}>
+        <button
+          type="button"
+          className={styles.playBtn}
+          onClick={togglePlayback}
+          title={isPlaying ? "Pause" : "Play"}
+        >
           {isPlaying ? <Pause size={11} /> : <Play size={11} />}
         </button>
 
         <div className={styles.waveformWrap} onClick={handleCanvasSeek}>
-          <canvas ref={playerCanvasRef} className={styles.waveformCanvas}
-            width={300} height={28} />
+          <canvas
+            ref={playerCanvasRef}
+            className={styles.waveformCanvas}
+            width={300}
+            height={28}
+          />
         </div>
 
         <span className={styles.timer}>
           {formatTime(currentTime)}/{formatTime(duration)}
         </span>
 
-        <button type="button" className={styles.iconBtn} onClick={toggleMute}
-          title={muted ? "Unmute" : "Mute"}>
+        <button
+          type="button"
+          className={styles.iconBtn}
+          onClick={toggleMute}
+          title={muted ? "Unmute" : "Mute"}
+        >
           {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
         </button>
 
-        <input type="range" min="0" max="1" step="0.01"
-          value={muted ? 0 : volume} onChange={handleVolumeChange}
-          className={styles.volumeSlider} title="Volume" />
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={muted ? 0 : volume}
+          onChange={handleVolumeChange}
+          className={styles.volumeSlider}
+          title="Volume"
+        />
 
-        <button type="button" className={styles.iconBtn} onClick={handleDownload}
-          title="Download">
+        <button
+          type="button"
+          className={styles.iconBtn}
+          onClick={handleDownload}
+          title="Download"
+        >
           <Download size={14} />
         </button>
 
         {onRemove && (
-          <button type="button" className={styles.iconBtn} onClick={onRemove}
-            title="Remove">
+          <button
+            type="button"
+            className={styles.iconBtn}
+            onClick={onRemove}
+            title="Remove"
+          >
             <X size={14} />
           </button>
         )}
@@ -410,14 +462,22 @@ export default function AudioRecorderComponent({
   if (isRecording) {
     return (
       <div className={`${styles.audioThumb} ${styles.audioRecording}`}>
-        <button type="button" className={styles.stopBtn} onClick={stopRecording}
-          title="Stop recording">
+        <button
+          type="button"
+          className={styles.stopBtn}
+          onClick={stopRecording}
+          title="Stop recording"
+        >
           <Square size={10} />
         </button>
 
         <div className={styles.waveformWrap}>
-          <canvas ref={recCanvasRef} className={styles.waveformCanvas}
-            width={300} height={28} />
+          <canvas
+            ref={recCanvasRef}
+            className={styles.waveformCanvas}
+            width={300}
+            height={28}
+          />
         </div>
 
         <span className={styles.recTimer}>{formatTime(recSeconds)}</span>
@@ -435,8 +495,12 @@ export default function AudioRecorderComponent({
   // ───────────────────────────────────────────
   return (
     <TooltipComponent label="Record audio" position="top" trigger="hover">
-      <button type="button" className={styles.micBtn} onClick={startRecording}
-        aria-label="Record Audio">
+      <button
+        type="button"
+        className={styles.micBtn}
+        onClick={startRecording}
+        aria-label="Record Audio"
+      >
         <Mic2 size={18} />
       </button>
     </TooltipComponent>

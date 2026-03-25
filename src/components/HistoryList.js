@@ -19,7 +19,10 @@ import {
   Brain,
 } from "lucide-react";
 import { PROVIDER_LABELS } from "./ProviderLogos";
-import SidebarFilterComponent, { MODALITY_FILTERS, TOOL_FILTERS } from "./SidebarFilterComponent";
+import SidebarFilterComponent, {
+  MODALITY_FILTERS,
+  TOOL_FILTERS,
+} from "./SidebarFilterComponent";
 import DatePickerComponent from "./DatePickerComponent";
 import TooltipComponent from "./TooltipComponent";
 import { DateTime } from "luxon";
@@ -123,7 +126,9 @@ export default function HistoryList({
       }
       if (activeModalities.size > 0) {
         const mod = item.modalities || {};
-        const matches = [...activeModalities].some((key) => mod[`${key}In`] || mod[`${key}Out`]);
+        const matches = [...activeModalities].some(
+          (key) => mod[`${key}In`] || mod[`${key}Out`],
+        );
         if (!matches) return false;
       }
       if (activeTools.size > 0) {
@@ -133,17 +138,30 @@ export default function HistoryList({
       }
       if (activeProviders.size > 0) {
         const itemProviders = item.providers || [];
-        const matches = [...activeProviders].some((p) => itemProviders.includes(p));
+        const matches = [...activeProviders].some((p) =>
+          itemProviders.includes(p),
+        );
         if (!matches) return false;
       }
       if (dateRange.from || dateRange.to) {
         const itemDate = new Date(item.updatedAt || item.createdAt);
         if (dateRange.from && itemDate < new Date(dateRange.from)) return false;
-        if (dateRange.to && itemDate > new Date(dateRange.to + "T23:59:59")) return false;
+        if (dateRange.to && itemDate > new Date(dateRange.to + "T23:59:59"))
+          return false;
       }
       return true;
     });
-  }, [items, searchQuery, activeModalities, activeTools, activeProviders, showFavoritesOnly, favorites, onToggleFavorite, dateRange]);
+  }, [
+    items,
+    searchQuery,
+    activeModalities,
+    activeTools,
+    activeProviders,
+    showFavoritesOnly,
+    favorites,
+    onToggleFavorite,
+    dateRange,
+  ]);
 
   const hasFavorites = !!onToggleFavorite && favorites.length > 0;
 
@@ -180,7 +198,9 @@ export default function HistoryList({
         onToolChange={setActiveTools}
         onProviderChange={setActiveProviders}
         showFavoritesOnly={showFavoritesOnly}
-        onFavoritesToggle={onToggleFavorite ? () => setShowFavoritesOnly((v) => !v) : undefined}
+        onFavoritesToggle={
+          onToggleFavorite ? () => setShowFavoritesOnly((v) => !v) : undefined
+        }
         hasFavorites={hasFavorites}
       />
 
@@ -197,7 +217,9 @@ export default function HistoryList({
       <div className={styles.list}>
         {filtered.map((item) => {
           const isActive = item.id === activeId;
-          const dt = DateTime.fromISO(item.updatedAt || item.createdAt).toRelative();
+          const dt = DateTime.fromISO(
+            item.updatedAt || item.createdAt,
+          ).toRelative();
           const mod = item.modalities || {};
 
           return (
@@ -215,10 +237,24 @@ export default function HistoryList({
               {onToggleFavorite && (
                 <button
                   className={`${styles.favBtn} ${(favorites || []).includes(item.id) ? styles.favBtnActive : ""}`}
-                  onClick={(e) => { e.stopPropagation(); onToggleFavorite(item.id); }}
-                  title={(favorites || []).includes(item.id) ? "Remove from favorites" : "Add to favorites"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleFavorite(item.id);
+                  }}
+                  title={
+                    (favorites || []).includes(item.id)
+                      ? "Remove from favorites"
+                      : "Add to favorites"
+                  }
                 >
-                  <Star size={12} fill={(favorites || []).includes(item.id) ? "currentColor" : "none"} />
+                  <Star
+                    size={12}
+                    fill={
+                      (favorites || []).includes(item.id)
+                        ? "currentColor"
+                        : "none"
+                    }
+                  />
                 </button>
               )}
               <div className={styles.content}>
@@ -233,7 +269,11 @@ export default function HistoryList({
                     <span className={styles.usernameTag}>{item.username}</span>
                   )}
                   {item.tags?.map((tag) => (
-                    <span key={tag.label} className={styles.tag} style={tag.style}>
+                    <span
+                      key={tag.label}
+                      className={styles.tag}
+                      style={tag.style}
+                    >
                       {tag.label}
                     </span>
                   ))}
@@ -253,39 +293,144 @@ export default function HistoryList({
                 {Object.keys(mod).length > 0 && (
                   <div className={styles.modalitiesRow}>
                     <div className={styles.modalities}>
-                      {mod.textIn && <TooltipComponent label="Text input" position="top"><span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.text }}><Type size={11} /></span></TooltipComponent>}
-                      {mod.imageIn && <TooltipComponent label="Image input" position="top"><span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.image }}><Image size={11} /></span></TooltipComponent>}
-                      {mod.audioIn && <TooltipComponent label="Audio input" position="top"><span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.audio }}><Volume2 size={11} /></span></TooltipComponent>}
-                      {mod.videoIn && <TooltipComponent label="Video input" position="top"><span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.video }}><Video size={11} /></span></TooltipComponent>}
-                      {mod.docIn && <TooltipComponent label="Document input" position="top"><span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.pdf }}><DocIcon size={11} /></span></TooltipComponent>}
-                      {(mod.textIn || mod.imageIn || mod.audioIn || mod.videoIn || mod.docIn) &&
+                      {mod.textIn && (
+                        <TooltipComponent label="Text input" position="top">
+                          <span
+                            className={styles.modalityIcon}
+                            style={{ color: MODALITY_COLORS.text }}
+                          >
+                            <Type size={11} />
+                          </span>
+                        </TooltipComponent>
+                      )}
+                      {mod.imageIn && (
+                        <TooltipComponent label="Image input" position="top">
+                          <span
+                            className={styles.modalityIcon}
+                            style={{ color: MODALITY_COLORS.image }}
+                          >
+                            <Image size={11} />
+                          </span>
+                        </TooltipComponent>
+                      )}
+                      {mod.audioIn && (
+                        <TooltipComponent label="Audio input" position="top">
+                          <span
+                            className={styles.modalityIcon}
+                            style={{ color: MODALITY_COLORS.audio }}
+                          >
+                            <Volume2 size={11} />
+                          </span>
+                        </TooltipComponent>
+                      )}
+                      {mod.videoIn && (
+                        <TooltipComponent label="Video input" position="top">
+                          <span
+                            className={styles.modalityIcon}
+                            style={{ color: MODALITY_COLORS.video }}
+                          >
+                            <Video size={11} />
+                          </span>
+                        </TooltipComponent>
+                      )}
+                      {mod.docIn && (
+                        <TooltipComponent label="Document input" position="top">
+                          <span
+                            className={styles.modalityIcon}
+                            style={{ color: MODALITY_COLORS.pdf }}
+                          >
+                            <DocIcon size={11} />
+                          </span>
+                        </TooltipComponent>
+                      )}
+                      {(mod.textIn ||
+                        mod.imageIn ||
+                        mod.audioIn ||
+                        mod.videoIn ||
+                        mod.docIn) &&
                         (mod.textOut || mod.imageOut || mod.audioOut) && (
                           <span className={styles.modalityArrow}>→</span>
                         )}
-                      {mod.textOut && <TooltipComponent label="Text output" position="top"><span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.text }}><Type size={11} /></span></TooltipComponent>}
-                      {mod.imageOut && <TooltipComponent label="Image output" position="top"><span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.image }}><Image size={11} /></span></TooltipComponent>}
-                      {mod.audioOut && <TooltipComponent label="Audio output" position="top"><span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.audio }}><Volume2 size={11} /></span></TooltipComponent>}
+                      {mod.textOut && (
+                        <TooltipComponent label="Text output" position="top">
+                          <span
+                            className={styles.modalityIcon}
+                            style={{ color: MODALITY_COLORS.text }}
+                          >
+                            <Type size={11} />
+                          </span>
+                        </TooltipComponent>
+                      )}
+                      {mod.imageOut && (
+                        <TooltipComponent label="Image output" position="top">
+                          <span
+                            className={styles.modalityIcon}
+                            style={{ color: MODALITY_COLORS.image }}
+                          >
+                            <Image size={11} />
+                          </span>
+                        </TooltipComponent>
+                      )}
+                      {mod.audioOut && (
+                        <TooltipComponent label="Audio output" position="top">
+                          <span
+                            className={styles.modalityIcon}
+                            style={{ color: MODALITY_COLORS.audio }}
+                          >
+                            <Volume2 size={11} />
+                          </span>
+                        </TooltipComponent>
+                      )}
                     </div>
-                    {(mod.thinking || mod.webSearch || mod.codeExecution || mod.functionCalling) && (
+                    {(mod.thinking ||
+                      mod.webSearch ||
+                      mod.codeExecution ||
+                      mod.functionCalling) && (
                       <div className={styles.toolIcons}>
                         {mod.thinking && (
                           <TooltipComponent label="Thinking" position="top">
-                            <span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.thinking }}><Brain size={11} /></span>
+                            <span
+                              className={styles.modalityIcon}
+                              style={{ color: MODALITY_COLORS.thinking }}
+                            >
+                              <Brain size={11} />
+                            </span>
                           </TooltipComponent>
                         )}
                         {mod.webSearch && (
                           <TooltipComponent label="Web search" position="top">
-                            <span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.webSearch }}><Globe size={11} /></span>
+                            <span
+                              className={styles.modalityIcon}
+                              style={{ color: MODALITY_COLORS.webSearch }}
+                            >
+                              <Globe size={11} />
+                            </span>
                           </TooltipComponent>
                         )}
                         {mod.codeExecution && (
-                          <TooltipComponent label="Code execution" position="top">
-                            <span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.codeExecution }}><Code size={11} /></span>
+                          <TooltipComponent
+                            label="Code execution"
+                            position="top"
+                          >
+                            <span
+                              className={styles.modalityIcon}
+                              style={{ color: MODALITY_COLORS.codeExecution }}
+                            >
+                              <Code size={11} />
+                            </span>
                           </TooltipComponent>
                         )}
                         {mod.functionCalling && (
-                          <TooltipComponent label="Function calling" position="top">
-                            <span className={styles.modalityIcon} style={{ color: MODALITY_COLORS.functionCalling }}><Wrench size={11} /></span>
+                          <TooltipComponent
+                            label="Function calling"
+                            position="top"
+                          >
+                            <span
+                              className={styles.modalityIcon}
+                              style={{ color: MODALITY_COLORS.functionCalling }}
+                            >
+                              <Wrench size={11} />
+                            </span>
                           </TooltipComponent>
                         )}
                       </div>
@@ -298,7 +443,10 @@ export default function HistoryList({
                 {onDownload && (
                   <button
                     className={styles.actionBtn}
-                    onClick={(e) => { e.stopPropagation(); onDownload(item.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDownload(item.id);
+                    }}
                     title="Download"
                   >
                     <Download size={12} />
@@ -307,7 +455,10 @@ export default function HistoryList({
                 {onCopy && (
                   <button
                     className={styles.actionBtn}
-                    onClick={(e) => { e.stopPropagation(); onCopy(item.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCopy(item.id);
+                    }}
                     title="Copy"
                   >
                     <Copy size={12} />
@@ -316,7 +467,10 @@ export default function HistoryList({
                 {!readOnly && !admin && onDelete && (
                   <button
                     className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                    onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(item.id);
+                    }}
                     title="Delete"
                   >
                     <Trash2 size={12} />

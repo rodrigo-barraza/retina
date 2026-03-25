@@ -30,14 +30,22 @@ const CONSTELLATIONS = [
     name: "Ursa Major",
     stars: [
       { x: 0.08, y: 0.18 }, // Dubhe (α)
-      { x: 0.11, y: 0.20 }, // Merak (β)
+      { x: 0.11, y: 0.2 }, // Merak (β)
       { x: 0.12, y: 0.15 }, // Phecda (γ)
       { x: 0.09, y: 0.13 }, // Megrez (δ)
       { x: 0.06, y: 0.11 }, // Alioth (ε)
       { x: 0.04, y: 0.09 }, // Mizar (ζ)
       { x: 0.02, y: 0.07 }, // Alkaid (η)
     ],
-    edges: [[0, 1], [1, 2], [2, 3], [3, 0], [3, 4], [4, 5], [5, 6]],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 0],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+    ],
   },
   {
     name: "Ursa Minor",
@@ -50,7 +58,15 @@ const CONSTELLATIONS = [
       { x: 0.12, y: 0.025 }, // ζ
       { x: 0.115, y: 0.035 }, // η
     ],
-    edges: [[0, 6], [6, 5], [5, 4], [4, 3], [3, 2], [2, 1], [1, 0]],
+    edges: [
+      [0, 6],
+      [6, 5],
+      [5, 4],
+      [4, 3],
+      [3, 2],
+      [2, 1],
+      [1, 0],
+    ],
   },
   {
     name: "Cassiopeia",
@@ -59,9 +75,14 @@ const CONSTELLATIONS = [
       { x: 0.28, y: 0.04 }, // Caph (β)
       { x: 0.24, y: 0.05 }, // γ
       { x: 0.22, y: 0.07 }, // δ
-      { x: 0.20, y: 0.06 }, // ε
+      { x: 0.2, y: 0.06 }, // ε
     ],
-    edges: [[0, 1], [0, 2], [2, 3], [3, 4]],
+    edges: [
+      [0, 1],
+      [0, 2],
+      [2, 3],
+      [3, 4],
+    ],
   },
   {
     name: "Orion",
@@ -75,18 +96,33 @@ const CONSTELLATIONS = [
       { x: 0.47, y: 0.62 }, // Saiph (κ)
       { x: 0.43, y: 0.72 }, // Meissa (λ) — head area
     ],
-    edges: [[0, 2], [2, 4], [4, 6], [6, 1], [1, 3], [3, 0], [3, 4], [4, 5], [0, 7]],
+    edges: [
+      [0, 2],
+      [2, 4],
+      [4, 6],
+      [6, 1],
+      [1, 3],
+      [3, 0],
+      [3, 4],
+      [4, 5],
+      [0, 7],
+    ],
   },
   {
     name: "Cygnus",
     stars: [
       { x: 0.58, y: 0.14 }, // Deneb (α)
-      { x: 0.60, y: 0.20 }, // Sadr (γ) — center
+      { x: 0.6, y: 0.2 }, // Sadr (γ) — center
       { x: 0.62, y: 0.26 }, // Albireo (β)
-      { x: 0.56, y: 0.20 }, // Gienah (ε)
+      { x: 0.56, y: 0.2 }, // Gienah (ε)
       { x: 0.64, y: 0.19 }, // δ
     ],
-    edges: [[0, 1], [1, 2], [3, 1], [1, 4]],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [3, 1],
+      [1, 4],
+    ],
   },
   {
     name: "Leo",
@@ -96,10 +132,18 @@ const CONSTELLATIONS = [
       { x: 0.33, y: 0.36 }, // Algieba (γ)
       { x: 0.35, y: 0.35 }, // ζ
       { x: 0.36, y: 0.37 }, // μ
-      { x: 0.34, y: 0.40 }, // Denebola (β)
-      { x: 0.30, y: 0.40 }, // δ
+      { x: 0.34, y: 0.4 }, // Denebola (β)
+      { x: 0.3, y: 0.4 }, // δ
     ],
-    edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 0]],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 0],
+    ],
   },
   {
     name: "Lyra",
@@ -107,10 +151,16 @@ const CONSTELLATIONS = [
       { x: 0.54, y: 0.16 }, // Vega (α)
       { x: 0.55, y: 0.18 }, // ε1
       { x: 0.56, y: 0.18 }, // ε2
-      { x: 0.55, y: 0.20 }, // ζ
-      { x: 0.56, y: 0.20 }, // δ
+      { x: 0.55, y: 0.2 }, // ζ
+      { x: 0.56, y: 0.2 }, // δ
     ],
-    edges: [[0, 1], [0, 2], [1, 3], [2, 4], [3, 4]],
+    edges: [
+      [0, 1],
+      [0, 2],
+      [1, 3],
+      [2, 4],
+      [3, 4],
+    ],
   },
   {
     name: "Gemini",
@@ -122,89 +172,137 @@ const CONSTELLATIONS = [
       { x: 0.36, y: 0.58 }, // ε
       { x: 0.37, y: 0.56 }, // ξ
     ],
-    edges: [[0, 1], [0, 2], [2, 3], [1, 5], [5, 4]],
+    edges: [
+      [0, 1],
+      [0, 2],
+      [2, 3],
+      [1, 5],
+      [5, 4],
+    ],
   },
   {
     name: "Draco",
     stars: [
       { x: 0.16, y: 0.08 }, // Eltanin (γ)
-      { x: 0.17, y: 0.10 }, // Rastaban (β)
+      { x: 0.17, y: 0.1 }, // Rastaban (β)
       { x: 0.19, y: 0.09 }, // ξ
-      { x: 0.20, y: 0.07 }, // δ
+      { x: 0.2, y: 0.07 }, // δ
       { x: 0.19, y: 0.04 }, // ε
       { x: 0.17, y: 0.03 }, // τ
       { x: 0.15, y: 0.05 }, // χ
       { x: 0.14, y: 0.08 }, // η
     ],
-    edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+    ],
   },
   {
     name: "Boötes",
     stars: [
       { x: 0.22, y: 0.22 }, // Arcturus (α)
       { x: 0.21, y: 0.18 }, // η
-      { x: 0.20, y: 0.14 }, // γ
+      { x: 0.2, y: 0.14 }, // γ
       { x: 0.23, y: 0.14 }, // δ
       { x: 0.24, y: 0.18 }, // β
       { x: 0.22, y: 0.26 }, // ε
     ],
-    edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 0], [0, 5]],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 0],
+      [0, 5],
+    ],
   },
   {
     name: "Auriga",
     stars: [
       { x: 0.37, y: 0.46 }, // Capella (α)
       { x: 0.39, y: 0.44 }, // Menkalinan (β)
-      { x: 0.40, y: 0.48 }, // θ
-      { x: 0.38, y: 0.50 }, // ι
+      { x: 0.4, y: 0.48 }, // θ
+      { x: 0.38, y: 0.5 }, // ι
       { x: 0.36, y: 0.48 }, // ε
     ],
-    edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 0]],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 0],
+    ],
   },
   {
     name: "Perseus",
     stars: [
       { x: 0.32, y: 0.28 }, // Mirfak (α)
-      { x: 0.30, y: 0.30 }, // Algol (β)
+      { x: 0.3, y: 0.3 }, // Algol (β)
       { x: 0.31, y: 0.26 }, // γ
       { x: 0.33, y: 0.24 }, // δ
-      { x: 0.34, y: 0.30 }, // ε
+      { x: 0.34, y: 0.3 }, // ε
       { x: 0.29, y: 0.32 }, // ρ
     ],
-    edges: [[0, 1], [0, 2], [2, 3], [0, 4], [1, 5]],
+    edges: [
+      [0, 1],
+      [0, 2],
+      [2, 3],
+      [0, 4],
+      [1, 5],
+    ],
   },
   {
     name: "Andromeda",
     stars: [
-      { x: 0.30, y: 0.16 }, // Alpheratz (α)
+      { x: 0.3, y: 0.16 }, // Alpheratz (α)
       { x: 0.28, y: 0.14 }, // Mirach (β)
       { x: 0.26, y: 0.12 }, // Almach (γ)
       { x: 0.29, y: 0.12 }, // δ
     ],
-    edges: [[0, 1], [1, 2], [1, 3]],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [1, 3],
+    ],
   },
   {
     name: "Aquila",
     stars: [
       { x: 0.62, y: 0.32 }, // Altair (α)
-      { x: 0.61, y: 0.30 }, // Tarazed (γ)
-      { x: 0.63, y: 0.30 }, // Alshain (β)
-      { x: 0.60, y: 0.27 }, // δ
+      { x: 0.61, y: 0.3 }, // Tarazed (γ)
+      { x: 0.63, y: 0.3 }, // Alshain (β)
+      { x: 0.6, y: 0.27 }, // δ
       { x: 0.64, y: 0.34 }, // θ
     ],
-    edges: [[1, 0], [0, 2], [1, 3], [0, 4]],
+    edges: [
+      [1, 0],
+      [0, 2],
+      [1, 3],
+      [0, 4],
+    ],
   },
   {
     name: "Corona Borealis",
     stars: [
-      { x: 0.30, y: 0.20 }, // Alphecca (α)
+      { x: 0.3, y: 0.2 }, // Alphecca (α)
       { x: 0.29, y: 0.21 }, // β
       { x: 0.28, y: 0.22 }, // γ
       { x: 0.29, y: 0.23 }, // δ
       { x: 0.31, y: 0.21 }, // θ
       { x: 0.32, y: 0.22 }, // ε
     ],
-    edges: [[0, 1], [1, 2], [2, 3], [0, 4], [4, 5]],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [0, 4],
+      [4, 5],
+    ],
   },
   {
     name: "Taurus",
@@ -212,25 +310,40 @@ const CONSTELLATIONS = [
       { x: 0.39, y: 0.58 }, // Aldebaran (α)
       { x: 0.38, y: 0.56 }, // Hyades cluster star
       { x: 0.37, y: 0.55 }, // γ
-      { x: 0.40, y: 0.54 }, // ε — horn tip
+      { x: 0.4, y: 0.54 }, // ε — horn tip
       { x: 0.42, y: 0.54 }, // ζ — horn tip
       { x: 0.38, y: 0.57 }, // θ
     ],
-    edges: [[0, 5], [5, 2], [2, 1], [1, 0], [0, 3], [0, 4]],
+    edges: [
+      [0, 5],
+      [5, 2],
+      [2, 1],
+      [1, 0],
+      [0, 3],
+      [0, 4],
+    ],
   },
   {
     name: "Scorpius",
     stars: [
-      { x: 0.72, y: 0.70 }, // Antares (α)
+      { x: 0.72, y: 0.7 }, // Antares (α)
       { x: 0.71, y: 0.68 }, // σ
-      { x: 0.70, y: 0.66 }, // δ
+      { x: 0.7, y: 0.66 }, // δ
       { x: 0.73, y: 0.72 }, // τ
       { x: 0.74, y: 0.75 }, // ε
       { x: 0.76, y: 0.78 }, // ζ — tail
-      { x: 0.78, y: 0.80 }, // η
+      { x: 0.78, y: 0.8 }, // η
       { x: 0.77, y: 0.82 }, // Shaula (λ) — stinger
     ],
-    edges: [[0, 1], [1, 2], [0, 3], [3, 4], [4, 5], [5, 6], [6, 7]],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [0, 3],
+      [3, 4],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+    ],
   },
   {
     name: "Hercules",
@@ -238,12 +351,20 @@ const CONSTELLATIONS = [
       { x: 0.44, y: 0.18 }, // Ras Algethi (α)
       { x: 0.46, y: 0.16 }, // Kornephoros (β)
       { x: 0.48, y: 0.18 }, // γ
-      { x: 0.46, y: 0.20 }, // ε — keystone
+      { x: 0.46, y: 0.2 }, // ε — keystone
       { x: 0.44, y: 0.22 }, // ζ
-      { x: 0.42, y: 0.20 }, // η
+      { x: 0.42, y: 0.2 }, // η
       { x: 0.48, y: 0.22 }, // θ
     ],
-    edges: [[0, 1], [1, 2], [2, 3], [3, 0], [0, 5], [5, 4], [2, 6]],
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 0],
+      [0, 5],
+      [5, 4],
+      [2, 6],
+    ],
   },
 ];
 
@@ -281,34 +402,53 @@ function generateFieldStars(count, w, h, rng) {
     // Size distribution — mostly tiny, few medium
     const sizeRoll = rng();
     let radius;
-    if (sizeRoll < 0.65) radius = rng() * 0.35 + 0.15;      // 0.15–0.5px — dust
-    else if (sizeRoll < 0.90) radius = rng() * 0.35 + 0.5;   // 0.5–0.85px — faint
-    else if (sizeRoll < 0.98) radius = rng() * 0.3 + 0.85;   // 0.85–1.15px — medium
-    else radius = rng() * 0.3 + 1.15;                         // 1.15–1.45px — bright
+    if (sizeRoll < 0.65)
+      radius = rng() * 0.35 + 0.15; // 0.15–0.5px — dust
+    else if (sizeRoll < 0.9)
+      radius = rng() * 0.35 + 0.5; // 0.5–0.85px — faint
+    else if (sizeRoll < 0.98)
+      radius = rng() * 0.3 + 0.85; // 0.85–1.15px — medium
+    else radius = rng() * 0.3 + 1.15; // 1.15–1.45px — bright
 
     const brightness = rng() * 0.35 + 0.25 + (radius > 0.85 ? 0.3 : 0);
 
     // Color temperature
     const temp = rng();
     let r, g, b;
-    if (temp < 0.10) {
-      r = 165 + rng() * 50; g = 185 + rng() * 40; b = 235 + rng() * 20;
+    if (temp < 0.1) {
+      r = 165 + rng() * 50;
+      g = 185 + rng() * 40;
+      b = 235 + rng() * 20;
     } else if (temp < 0.18) {
-      r = 255; g = 230 + rng() * 25; b = 185 + rng() * 35;
+      r = 255;
+      g = 230 + rng() * 25;
+      b = 185 + rng() * 35;
     } else if (temp < 0.23) {
-      r = 255; g = 155 + rng() * 50; b = 115 + rng() * 40;
+      r = 255;
+      g = 155 + rng() * 50;
+      b = 115 + rng() * 40;
     } else {
-      r = 225 + rng() * 30; g = 225 + rng() * 30; b = 230 + rng() * 25;
+      r = 225 + rng() * 30;
+      g = 225 + rng() * 30;
+      b = 230 + rng() * 25;
     }
 
     const twinkleSpeed = rng() * 3.0 + 0.3;
     const twinklePhase = rng() * Math.PI * 2;
-    const twinkleAmount = radius > 0.7 ? rng() * 0.45 + 0.1 : rng() * 0.2 + 0.05;
+    const twinkleAmount =
+      radius > 0.7 ? rng() * 0.45 + 0.1 : rng() * 0.2 + 0.05;
 
     stars.push({
-      x, y, radius, brightness,
-      r: r | 0, g: g | 0, b: b | 0,
-      twinkleSpeed, twinklePhase, twinkleAmount,
+      x,
+      y,
+      radius,
+      brightness,
+      r: r | 0,
+      g: g | 0,
+      b: b | 0,
+      twinkleSpeed,
+      twinklePhase,
+      twinkleAmount,
     });
   }
   return stars;
@@ -355,7 +495,8 @@ function renderNebulaLayer(w, h, rng) {
   for (let i = 0; i < bandPatches; i++) {
     const nx = rng() * 1.2 - 0.1; // normalized x across canvas
     const patchX = nx * w;
-    const patchY = (bandCenterY * cosA + nx * sinA) * h + (rng() - 0.5) * h * 0.12;
+    const patchY =
+      (bandCenterY * cosA + nx * sinA) * h + (rng() - 0.5) * h * 0.12;
     const patchR = (rng() * 0.12 + 0.06) * Math.max(w, h);
     const alpha = rng() * 0.02 + 0.01; // 0.01–0.03 — barely visible
 
@@ -378,7 +519,7 @@ function renderNebulaLayer(w, h, rng) {
   const nebulae = [
     // Emission nebulae (reddish) — near Orion, Cygnus
     { x: 0.44, y: 0.67, r: 0.07, color: [180, 60, 70], a: 0.025 },
-    { x: 0.60, y: 0.22, r: 0.055, color: [170, 55, 65], a: 0.02 },
+    { x: 0.6, y: 0.22, r: 0.055, color: [170, 55, 65], a: 0.02 },
     { x: 0.72, y: 0.72, r: 0.04, color: [185, 50, 60], a: 0.018 },
 
     // Reflection nebulae (blue) — scattered
@@ -391,7 +532,7 @@ function renderNebulaLayer(w, h, rng) {
 
     // Very faint large-scale patches
     { x: 0.15, y: 0.55, r: 0.09, color: [160, 70, 80], a: 0.008 },
-    { x: 0.80, y: 0.30, r: 0.08, color: [90, 100, 160], a: 0.008 },
+    { x: 0.8, y: 0.3, r: 0.08, color: [90, 100, 160], a: 0.008 },
   ];
 
   for (const n of nebulae) {
@@ -419,7 +560,12 @@ function renderNebulaLayer(w, h, rng) {
 
 // ── Component ──
 
-export default function StarfieldComponent({ className, style, panX = 0, panY = 0 }) {
+export default function StarfieldComponent({
+  className,
+  style,
+  panX = 0,
+  panY = 0,
+}) {
   const canvasRef = useRef(null);
   const starsRef = useRef(null);
   const constellationStarsRef = useRef(null);
@@ -462,9 +608,9 @@ export default function StarfieldComponent({ className, style, panX = 0, panY = 
         y: s.y * h,
         radius: 0.55 + Math.random() * 0.3, // slightly brighter than dust, but still sharp
         brightness: 0.8 + Math.random() * 0.2,
-        r: 220 + (Math.random() * 35) | 0,
-        g: 225 + (Math.random() * 30) | 0,
-        b: 235 + (Math.random() * 20) | 0,
+        r: (220 + Math.random() * 35) | 0,
+        g: (225 + Math.random() * 30) | 0,
+        b: (235 + Math.random() * 20) | 0,
         twinkleSpeed: 1.0 + Math.random() * 2.0,
         twinklePhase: Math.random() * Math.PI * 2,
         twinkleAmount: 0.2 + Math.random() * 0.25,
@@ -521,15 +667,19 @@ export default function StarfieldComponent({ className, style, panX = 0, panY = 
       for (const star of fieldStars) {
         // Slow twinkle (intrinsic)
         const twinkle =
-          1 - star.twinkleAmount +
+          1 -
+          star.twinkleAmount +
           star.twinkleAmount *
             (0.5 + 0.5 * Math.sin(t * star.twinkleSpeed + star.twinklePhase));
         // Fast atmospheric scintillation — rapid micro-flicker
         // Brighter/larger stars scintillate more (realistic)
         const scintAmount = star.radius > 0.6 ? 0.12 : 0.05;
-        const scintillation = 1 - scintAmount + scintAmount *
-          (0.5 + 0.5 * Math.sin(t * 11.3 + star.x * 0.7 + star.y * 1.3)) *
-          (0.5 + 0.5 * Math.cos(t * 7.7 + star.y * 0.9 + star.x * 0.4));
+        const scintillation =
+          1 -
+          scintAmount +
+          scintAmount *
+            (0.5 + 0.5 * Math.sin(t * 11.3 + star.x * 0.7 + star.y * 1.3)) *
+            (0.5 + 0.5 * Math.cos(t * 7.7 + star.y * 0.9 + star.x * 0.4));
         const alpha = star.brightness * twinkle * scintillation;
 
         ctx.globalAlpha = alpha;
@@ -568,14 +718,19 @@ export default function StarfieldComponent({ className, style, panX = 0, panY = 
           // Draw constellation anchor stars (brighter than field stars)
           for (const star of c.stars) {
             const twinkle =
-              1 - star.twinkleAmount +
+              1 -
+              star.twinkleAmount +
               star.twinkleAmount *
-                (0.5 + 0.5 * Math.sin(t * star.twinkleSpeed + star.twinklePhase));
+                (0.5 +
+                  0.5 * Math.sin(t * star.twinkleSpeed + star.twinklePhase));
             // Atmospheric scintillation for constellation stars too
-            const scint = 0.10;
-            const scintillation = 1 - scint + scint *
-              (0.5 + 0.5 * Math.sin(t * 9.1 + star.x * 0.5 + star.y * 1.1)) *
-              (0.5 + 0.5 * Math.cos(t * 6.3 + star.y * 0.7 + star.x * 0.3));
+            const scint = 0.1;
+            const scintillation =
+              1 -
+              scint +
+              scint *
+                (0.5 + 0.5 * Math.sin(t * 9.1 + star.x * 0.5 + star.y * 1.1)) *
+                (0.5 + 0.5 * Math.cos(t * 6.3 + star.y * 0.7 + star.x * 0.3));
             const alpha = star.brightness * twinkle * scintillation;
 
             ctx.globalAlpha = alpha;

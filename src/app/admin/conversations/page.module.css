@@ -10,9 +10,6 @@
   height: calc(100dvh);
 }
 
-
-
-
 .liveDot {
   display: inline-flex;
   align-items: center;
@@ -52,7 +49,6 @@
   color: var(--accent-color);
   animation: fadeInOut 1.5s ease-in-out infinite;
 }
-
 
 /* Chat-like 3-panel container */
 .chatContainer {
@@ -203,18 +199,32 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeInOut {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* ── Header meta tooltip (hover popup for deleted messages / real cost) ── */
@@ -244,7 +254,9 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
   z-index: 100;
 
   &::before {

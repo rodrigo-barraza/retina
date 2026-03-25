@@ -52,19 +52,28 @@ function lerpColor(a, b, t) {
 
 function rainbowAt(t) {
   // t in [0,1] → interpolated rainbow color
-  const scaled = ((t % 1) + 1) % 1 * RAINBOW.length;
+  const scaled = (((t % 1) + 1) % 1) * RAINBOW.length;
   const i = Math.floor(scaled);
   const f = scaled - i;
-  return lerpColor(RAINBOW[i % RAINBOW.length], RAINBOW[(i + 1) % RAINBOW.length], f);
+  return lerpColor(
+    RAINBOW[i % RAINBOW.length],
+    RAINBOW[(i + 1) % RAINBOW.length],
+    f,
+  );
 }
 
 function RainbowCanvas({ turbo = false }) {
   const canvasRef = useRef(null);
   const stateRef = useRef({
-    offset: 0, turboVelocity: 0, turboTime: 0, lastTime: 0,
+    offset: 0,
+    turboVelocity: 0,
+    turboTime: 0,
+    lastTime: 0,
   });
   const turboRef = useRef(turbo);
-  useEffect(() => { turboRef.current = turbo; }, [turbo]);
+  useEffect(() => {
+    turboRef.current = turbo;
+  }, [turbo]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -155,7 +164,6 @@ function RainbowCanvas({ turbo = false }) {
 
   return <canvas ref={canvasRef} className={styles.rainbowCanvas} />;
 }
-
 
 const USER_NAV_ITEMS = [
   { href: "/", label: "Conversations", icon: MessageSquare, exact: true },
@@ -296,7 +304,10 @@ export default function NavigationSidebarComponent({
                     <span className={styles.navLabel}>Admin</span>
                   </Link>
                 )}
-                <button className={`${styles.navLink} ${styles.themeToggle}`} onClick={toggleTheme}>
+                <button
+                  className={`${styles.navLink} ${styles.themeToggle}`}
+                  onClick={toggleTheme}
+                >
                   {theme === "dark" ? (
                     <Sun className={styles.navIcon} />
                   ) : (
@@ -384,7 +395,10 @@ export default function NavigationSidebarComponent({
               <span className={styles.navLabel}>Admin</span>
             </Link>
           )}
-          <button className={`${styles.navLink} ${styles.themeToggle}`} onClick={toggleTheme}>
+          <button
+            className={`${styles.navLink} ${styles.themeToggle}`}
+            onClick={toggleTheme}
+          >
             {theme === "dark" ? (
               <Sun className={styles.navIcon} />
             ) : (

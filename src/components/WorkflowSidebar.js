@@ -37,9 +37,12 @@ export default function WorkflowSidebar({
   const items = useMemo(() => {
     return workflows.map((wf) => {
       const id = wf._id || wf.id;
-      const name = wf.name || (wf.userContent
-        ? wf.userContent.substring(0, 80) + (wf.userContent.length > 80 ? "…" : "")
-        : "Untitled Workflow");
+      const name =
+        wf.name ||
+        (wf.userContent
+          ? wf.userContent.substring(0, 80) +
+            (wf.userContent.length > 80 ? "…" : "")
+          : "Untitled Workflow");
 
       return {
         id,

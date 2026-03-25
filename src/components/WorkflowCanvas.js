@@ -57,11 +57,16 @@ export default function WorkflowCanvas({
   // ── View persistence helpers ──
   const VIEWS_KEY = "workflow-views";
   const getStoredViews = () => {
-    try { return JSON.parse(localStorage.getItem(VIEWS_KEY) || "{}"); } catch { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem(VIEWS_KEY) || "{}");
+    } catch {
+      return {};
+    }
   };
 
   const [pan, setPan] = useState(() => {
-    if (!activeWorkflowId || typeof window === "undefined") return { x: 0, y: 0 };
+    if (!activeWorkflowId || typeof window === "undefined")
+      return { x: 0, y: 0 };
     const saved = getStoredViews()[activeWorkflowId];
     return saved ? { x: saved.x, y: saved.y } : { x: 0, y: 0 };
   });
@@ -80,7 +85,11 @@ export default function WorkflowCanvas({
     if (!activeWorkflowId) return;
     const views = getStoredViews();
     views[activeWorkflowId] = { x: pan.x, y: pan.y, zoom };
-    try { localStorage.setItem(VIEWS_KEY, JSON.stringify(views)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(VIEWS_KEY, JSON.stringify(views));
+    } catch {
+      /* ignore */
+    }
   }, [pan, zoom, activeWorkflowId]);
 
   // Restore view when switching workflows
@@ -168,10 +177,18 @@ export default function WorkflowCanvas({
     (e) => {
       if (e.button !== 0) return;
       const el = e.target;
-      const isContainerOrSvg = el === containerRef.current || el === svgRef.current;
-      const isGridBg = el.classList?.contains?.(styles.starfield) || el.tagName === "CANVAS";
-      const isInsideInteractive = el.closest?.("[data-workflow-node], [data-workflow-connection]");
-      if (isContainerOrSvg || isGridBg || (!isInsideInteractive && containerRef.current?.contains(el))) {
+      const isContainerOrSvg =
+        el === containerRef.current || el === svgRef.current;
+      const isGridBg =
+        el.classList?.contains?.(styles.starfield) || el.tagName === "CANVAS";
+      const isInsideInteractive = el.closest?.(
+        "[data-workflow-node], [data-workflow-connection]",
+      );
+      if (
+        isContainerOrSvg ||
+        isGridBg ||
+        (!isInsideInteractive && containerRef.current?.contains(el))
+      ) {
         setIsPanning(true);
         panStart.current = {
           x: e.clientX,
@@ -217,10 +234,18 @@ export default function WorkflowCanvas({
   const settleCountRef = useRef(0);
   const collisionTickRef = useRef(null);
 
-  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
-  useEffect(() => { onUpdatePosRef.current = onUpdateNodePosition; }, [onUpdateNodePosition]);
-  useEffect(() => { draggingRef.current = dragging; }, [dragging]);
-  useEffect(() => { expandedInputsRef.current = expandedInputs; }, [expandedInputs]);
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+  useEffect(() => {
+    onUpdatePosRef.current = onUpdateNodePosition;
+  }, [onUpdateNodePosition]);
+  useEffect(() => {
+    draggingRef.current = dragging;
+  }, [dragging]);
+  useEffect(() => {
+    expandedInputsRef.current = expandedInputs;
+  }, [expandedInputs]);
 
   // Define the tick function once via ref so it can self-schedule
   useEffect(() => {
@@ -230,9 +255,10 @@ export default function WorkflowCanvas({
     // Use calculated dimensions instead of getBBox (foreignObject content isn't measured reliably)
     const getNodeBox = (node) => {
       const expanded = expandedInputsRef.current;
-      const isExpanded = node.nodeType === "viewer"
-        ? !expanded.has(node.id)
-        : expanded.has(node.id);
+      const isExpanded =
+        node.nodeType === "viewer"
+          ? !expanded.has(node.id)
+          : expanded.has(node.id);
       return {
         w: getNodeWidth(node),
         h: getNodeHeight(node, isExpanded),
@@ -256,8 +282,10 @@ export default function WorkflowCanvas({
           const bCx = nB.position.x + boxB.w / 2;
           const bCy = nB.position.y + boxB.h / 2;
 
-          const overlapX = (boxA.w / 2 + boxB.w / 2 + COLLISION_PADDING) - Math.abs(aCx - bCx);
-          const overlapY = (boxA.h / 2 + boxB.h / 2 + COLLISION_PADDING) - Math.abs(aCy - bCy);
+          const overlapX =
+            boxA.w / 2 + boxB.w / 2 + COLLISION_PADDING - Math.abs(aCx - bCx);
+          const overlapY =
+            boxA.h / 2 + boxB.h / 2 + COLLISION_PADDING - Math.abs(aCy - bCy);
 
           if (overlapX > MIN_PUSH && overlapY > MIN_PUSH) {
             const aIsDragged = nA.id === dragId;
@@ -361,31 +389,28 @@ export default function WorkflowCanvas({
   // Use a ref so rapid wheel events always read the latest zoom (avoids stale closures)
   const zoomRef = useRef(zoom);
 
-  const handleWheel = useCallback(
-    (e) => {
-      e.preventDefault();
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
+  const handleWheel = useCallback((e) => {
+    e.preventDefault();
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
 
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
 
-      const currentZoom = zoomRef.current;
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentZoom * delta));
-      const ratio = newZoom / currentZoom;
+    const currentZoom = zoomRef.current;
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentZoom * delta));
+    const ratio = newZoom / currentZoom;
 
-      // Update ref synchronously so next wheel event sees the latest value
-      zoomRef.current = newZoom;
+    // Update ref synchronously so next wheel event sees the latest value
+    zoomRef.current = newZoom;
 
-      setPan((prev) => ({
-        x: mouseX - ratio * (mouseX - prev.x),
-        y: mouseY - ratio * (mouseY - prev.y),
-      }));
-      setZoom(newZoom);
-    },
-    [],
-  );
+    setPan((prev) => ({
+      x: mouseX - ratio * (mouseX - prev.x),
+      y: mouseY - ratio * (mouseY - prev.y),
+    }));
+    setZoom(newZoom);
+  }, []);
 
   useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove);
@@ -438,7 +463,10 @@ export default function WorkflowCanvas({
         const center = getTouchCenter(e.touches, rect);
         const scale = newDist / t.lastDist;
         const currentZoom = zoomRef.current;
-        const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentZoom * scale));
+        const newZoom = Math.min(
+          MAX_ZOOM,
+          Math.max(MIN_ZOOM, currentZoom * scale),
+        );
         const ratio = newZoom / currentZoom;
         zoomRef.current = newZoom;
         setPan((prev) => ({
@@ -491,7 +519,9 @@ export default function WorkflowCanvas({
       }
     };
 
-    container?.addEventListener("touchstart", handleTouchStart, { passive: false });
+    container?.addEventListener("touchstart", handleTouchStart, {
+      passive: false,
+    });
     window.addEventListener("touchmove", handleTouchMove, { passive: false });
     window.addEventListener("touchend", handleTouchEnd);
 
@@ -503,14 +533,24 @@ export default function WorkflowCanvas({
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [handleMouseMove, handleMouseUp, handleWheel, pan, dragging, isPanning, screenToSvg, onUpdateNodePosition]);
+  }, [
+    handleMouseMove,
+    handleMouseUp,
+    handleWheel,
+    pan,
+    dragging,
+    isPanning,
+    screenToSvg,
+    onUpdateNodePosition,
+  ]);
 
   // Keyboard copy-paste
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Skip when typing in inputs or textareas
       const tag = e.target.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable) return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable)
+        return;
 
       if ((e.ctrlKey || e.metaKey) && e.key === "c") {
         if (!selectedNodeId) return;
@@ -540,7 +580,11 @@ export default function WorkflowCanvas({
         setConnectingMouse(null);
         return;
       }
-      setConnecting({ sourceNodeId: nodeId, sourceModality: modality, sourceIndex: index });
+      setConnecting({
+        sourceNodeId: nodeId,
+        sourceModality: modality,
+        sourceIndex: index,
+      });
       const svgPos = screenToSvg(e.clientX, e.clientY);
       setConnectingMouse(svgPos);
     },
@@ -554,7 +598,10 @@ export default function WorkflowCanvas({
       if (readOnly) return;
       if (!connecting) return;
 
-      if (getBaseModality(connecting.sourceModality) !== getBaseModality(modality)) return;
+      if (
+        getBaseModality(connecting.sourceModality) !== getBaseModality(modality)
+      )
+        return;
       if (connecting.sourceNodeId === nodeId) return;
 
       const existingConn = connections.find(
@@ -582,19 +629,27 @@ export default function WorkflowCanvas({
       if (next.has(nodeId)) next.delete(nodeId);
       else next.add(nodeId);
       try {
-        localStorage.setItem("workflow-expanded-nodes", JSON.stringify([...next]));
-      } catch { /* ignore */ }
+        localStorage.setItem(
+          "workflow-expanded-nodes",
+          JSON.stringify([...next]),
+        );
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   }, []);
 
   // Compute expanded state for a specific node
-  const isNodeExpanded = useCallback((node) => {
-    if (node.nodeType === "viewer") {
-      return !expandedInputs.has(node.id); // viewers expanded by default
-    }
-    return expandedInputs.has(node.id);
-  }, [expandedInputs]);
+  const isNodeExpanded = useCallback(
+    (node) => {
+      if (node.nodeType === "viewer") {
+        return !expandedInputs.has(node.id); // viewers expanded by default
+      }
+      return expandedInputs.has(node.id);
+    },
+    [expandedInputs],
+  );
 
   // Toggle ALL nodes expanded/collapsed at once
   const handleToggleAllExpand = useCallback(() => {
@@ -620,27 +675,37 @@ export default function WorkflowCanvas({
         }
       }
       try {
-        localStorage.setItem("workflow-expanded-nodes", JSON.stringify([...next]));
-      } catch { /* ignore */ }
+        localStorage.setItem(
+          "workflow-expanded-nodes",
+          JSON.stringify([...next]),
+        );
+      } catch {
+        /* ignore */
+      }
       return next;
     });
     // Resolve overlaps after React renders the new node sizes
     setTimeout(() => startCollisionLoop(60), 50);
   }, [nodes, startCollisionLoop]);
 
-  const allExpanded = nodes.length > 0 && nodes.filter((n) => isNodeExpanded(n)).length > nodes.length / 2;
+  const allExpanded =
+    nodes.length > 0 &&
+    nodes.filter((n) => isNodeExpanded(n)).length > nodes.length / 2;
 
   // Compute the vertical offset for a node's ports (used by edge routing)
-  const getExpandedOffset = useCallback((node) => {
-    const expanded = isNodeExpanded(node);
-    if (!node.nodeType && expandedInputs.has(node.id)) {
-      return CONFIG_AREA_HEIGHT;
-    }
-    if (expanded && node.nodeType) {
-      return getAssetContentHeight(node);
-    }
-    return 0;
-  }, [expandedInputs, isNodeExpanded]);
+  const getExpandedOffset = useCallback(
+    (node) => {
+      const expanded = isNodeExpanded(node);
+      if (!node.nodeType && expandedInputs.has(node.id)) {
+        return CONFIG_AREA_HEIGHT;
+      }
+      if (expanded && node.nodeType) {
+        return getAssetContentHeight(node);
+      }
+      return 0;
+    },
+    [expandedInputs, isNodeExpanded],
+  );
 
   // Render edges
   const renderConnection = (conn) => {
@@ -648,27 +713,49 @@ export default function WorkflowCanvas({
     const targetNode = nodes.find((n) => n.id === conn.targetNodeId);
     if (!sourceNode || !targetNode) return null;
 
-    const sourceIndex = (sourceNode.outputTypes || []).indexOf(conn.sourceModality);
-    const targetIndex = (targetNode.inputTypes || []).indexOf(conn.targetModality);
+    const sourceIndex = (sourceNode.outputTypes || []).indexOf(
+      conn.sourceModality,
+    );
+    const targetIndex = (targetNode.inputTypes || []).indexOf(
+      conn.targetModality,
+    );
     if (sourceIndex === -1 || targetIndex === -1) return null;
 
     const sourceOffset = getExpandedOffset(sourceNode);
     const targetOffset = getExpandedOffset(targetNode);
 
-    const sourcePos = getPortPosition(sourceNode, "output", sourceIndex, sourceOffset);
-    const targetPos = getPortPosition(targetNode, "input", targetIndex, targetOffset);
+    const sourcePos = getPortPosition(
+      sourceNode,
+      "output",
+      sourceIndex,
+      sourceOffset,
+    );
+    const targetPos = getPortPosition(
+      targetNode,
+      "input",
+      targetIndex,
+      targetOffset,
+    );
     const color = MODALITY_COLORS[conn.sourceModality] || "#888";
 
     const sourceStatus = nodeStatuses[conn.sourceNodeId];
     const isRunning = sourceStatus === "running";
     const isDone = sourceStatus === "done";
     const isActive = isRunning || isDone;
-    const workflowIsRunning = Object.values(nodeStatuses).some((s) => s === "running");
-    const isEdgeSelected = conn.sourceNodeId === selectedNodeId || conn.targetNodeId === selectedNodeId;
+    const workflowIsRunning = Object.values(nodeStatuses).some(
+      (s) => s === "running",
+    );
+    const isEdgeSelected =
+      conn.sourceNodeId === selectedNodeId ||
+      conn.targetNodeId === selectedNodeId;
     const isEdgeFlowing = workflowIsRunning ? isRunning : isEdgeSelected;
 
     return (
-      <g key={conn.id} className={`${styles.connectionGroup}${isEdgeFlowing ? ` ${styles.connectionSelected}` : ""}`} data-workflow-connection>
+      <g
+        key={conn.id}
+        className={`${styles.connectionGroup}${isEdgeFlowing ? ` ${styles.connectionSelected}` : ""}`}
+        data-workflow-connection
+      >
         <path
           d={edgePath(sourcePos.x, sourcePos.y, targetPos.x, targetPos.y)}
           stroke="transparent"
@@ -679,7 +766,13 @@ export default function WorkflowCanvas({
         />
         <path
           d={edgePath(sourcePos.x, sourcePos.y, targetPos.x, targetPos.y)}
-          stroke={isRunning ? "url(#prism-gradient)" : isDone ? "url(#done-gradient)" : color}
+          stroke={
+            isRunning
+              ? "url(#prism-gradient)"
+              : isDone
+                ? "url(#done-gradient)"
+                : color
+          }
           strokeWidth={isActive ? 3 : 2}
           fill="none"
           strokeOpacity={isActive ? 1 : 0.7}
@@ -695,7 +788,10 @@ export default function WorkflowCanvas({
           >
             <button
               className={styles.connectionDeleteBtn}
-              onClick={(e) => { e.stopPropagation(); onDeleteConnection(conn.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteConnection(conn.id);
+              }}
               title="Delete edge"
             >
               <X size={10} />
@@ -712,16 +808,28 @@ export default function WorkflowCanvas({
     const sourceNode = nodes.find((n) => n.id === connecting.sourceNodeId);
     if (!sourceNode) return null;
 
-    const sourceIndex = (sourceNode.outputTypes || []).indexOf(connecting.sourceModality);
+    const sourceIndex = (sourceNode.outputTypes || []).indexOf(
+      connecting.sourceModality,
+    );
     if (sourceIndex === -1) return null;
 
     const srcOffset = getExpandedOffset(sourceNode);
-    const sourcePos = getPortPosition(sourceNode, "output", sourceIndex, srcOffset);
+    const sourcePos = getPortPosition(
+      sourceNode,
+      "output",
+      sourceIndex,
+      srcOffset,
+    );
     const color = MODALITY_COLORS[connecting.sourceModality] || "#888";
 
     return (
       <path
-        d={edgePath(sourcePos.x, sourcePos.y, connectingMouse.x, connectingMouse.y)}
+        d={edgePath(
+          sourcePos.x,
+          sourcePos.y,
+          connectingMouse.x,
+          connectingMouse.y,
+        )}
         stroke={color}
         strokeWidth={2}
         strokeDasharray="6 3"
@@ -738,25 +846,33 @@ export default function WorkflowCanvas({
       className={`${styles.canvas}${isPanning ? ` ${styles.panning}` : ""}`}
       onMouseDown={handleCanvasMouseDown}
     >
-      <StarfieldComponent className={styles.starfield} panX={pan.x} panY={pan.y} />
+      <StarfieldComponent
+        className={styles.starfield}
+        panX={pan.x}
+        panY={pan.y}
+      />
 
       {nodes.length === 0 && !isLoadingWorkflow && (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>⟡</div>
           <div className={styles.emptyTitle}>Start Building Your Workflow</div>
           <div className={styles.emptySubtitle}>
-            Add models and assets from the sidebar to begin chaining them together
+            Add models and assets from the sidebar to begin chaining them
+            together
           </div>
         </div>
       )}
 
-      <svg
-        ref={svgRef}
-        className={styles.svg}
-        style={{ overflow: "visible" }}
-      >
+      <svg ref={svgRef} className={styles.svg} style={{ overflow: "visible" }}>
         <defs>
-          <linearGradient id="prism-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="300" y2="300">
+          <linearGradient
+            id="prism-gradient"
+            gradientUnits="userSpaceOnUse"
+            x1="0"
+            y1="0"
+            x2="300"
+            y2="300"
+          >
             <stop offset="0%" stopColor="#ff0000" />
             <stop offset="16%" stopColor="#ff8800" />
             <stop offset="33%" stopColor="#ffff00" />
@@ -773,7 +889,14 @@ export default function WorkflowCanvas({
               repeatCount="indefinite"
             />
           </linearGradient>
-          <linearGradient id="done-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="300" y2="300">
+          <linearGradient
+            id="done-gradient"
+            gradientUnits="userSpaceOnUse"
+            x1="0"
+            y1="0"
+            x2="300"
+            y2="300"
+          >
             <stop offset="0%" stopColor="#f0b429" />
             <stop offset="50%" stopColor="#d4a017" />
             <stop offset="100%" stopColor="#10b981" />
@@ -828,13 +951,19 @@ export default function WorkflowCanvas({
               onClick={onToggleSidebar}
               title={sidebarVisible ? "Hide sidebar" : "Show sidebar"}
             >
-              {sidebarVisible ? <PanelLeftClose size={14} /> : <PanelLeft size={14} />}
+              {sidebarVisible ? (
+                <PanelLeftClose size={14} />
+              ) : (
+                <PanelLeft size={14} />
+              )}
             </button>
           )}
           <button
             className={styles.toolbarBtn}
             onClick={handleToggleAllExpand}
-            title={allExpanded ? "Collapse all node info" : "Expand all node info"}
+            title={
+              allExpanded ? "Collapse all node info" : "Expand all node info"
+            }
           >
             {allExpanded ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
@@ -843,7 +972,8 @@ export default function WorkflowCanvas({
 
       {nodes.length > 0 && !readOnly && (
         <div className={styles.instructions}>
-          Click an <strong>output port</strong> then an <strong>input port</strong> of the same type to connect
+          Click an <strong>output port</strong> then an{" "}
+          <strong>input port</strong> of the same type to connect
         </div>
       )}
     </div>

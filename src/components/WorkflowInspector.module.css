@@ -365,7 +365,9 @@
 
 .connectionItemClickable {
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 
   &:hover {
     background: var(--accent-subtle);

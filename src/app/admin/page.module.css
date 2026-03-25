@@ -5,8 +5,6 @@
   animation: fadeIn var(--transition-normal) ease-out;
 }
 
-
-
 .pageTitle {
   font-size: 26px;
   font-weight: 700;
@@ -90,8 +88,6 @@
   border-radius: var(--border-radius-md);
   padding: 20px 24px;
 }
-
-
 
 /* Error state */
 .errorBanner {

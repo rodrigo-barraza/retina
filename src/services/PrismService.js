@@ -56,9 +56,6 @@ export default class PrismService {
     return resolveFileRef(ref);
   }
 
-
-
-
   // ---------------------------------------------------------------------------
   // Config
   // ---------------------------------------------------------------------------
@@ -108,7 +105,10 @@ export default class PrismService {
    * @returns {Promise<object>}
    */
   static async patchConversation(id, fields) {
-    return PrismService._request(`/conversations/${id}`, { method: "PATCH", body: fields });
+    return PrismService._request(`/conversations/${id}`, {
+      method: "PATCH",
+      body: fields,
+    });
   }
 
   /**
@@ -117,7 +117,9 @@ export default class PrismService {
    * @returns {Promise<Array<{ _id, workflowName, updatedAt }>>}
    */
   static async getConversationWorkflows(id) {
-    return PrismService._request(`/conversations/${id}/workflows`, { method: "GET" });
+    return PrismService._request(`/conversations/${id}/workflows`, {
+      method: "GET",
+    });
   }
 
   /**
@@ -126,7 +128,10 @@ export default class PrismService {
    * @returns {Promise<Array>}
    */
   static async getConversationsByProject(project) {
-    return PrismService._request(`/conversations?project=${encodeURIComponent(project)}`, { method: "GET" });
+    return PrismService._request(
+      `/conversations?project=${encodeURIComponent(project)}`,
+      { method: "GET" },
+    );
   }
 
   /**
@@ -136,7 +141,10 @@ export default class PrismService {
    * @returns {Promise<object>}
    */
   static async getConversationByProject(id, project) {
-    return PrismService._request(`/conversations/${id}?project=${encodeURIComponent(project)}`, { method: "GET" });
+    return PrismService._request(
+      `/conversations/${id}?project=${encodeURIComponent(project)}`,
+      { method: "GET" },
+    );
   }
 
   /**
@@ -146,7 +154,10 @@ export default class PrismService {
    * @returns {Promise<object>}
    */
   static async deleteConversationByProject(id, project) {
-    return PrismService._request(`/conversations/${id}?project=${encodeURIComponent(project)}`, { method: "DELETE" });
+    return PrismService._request(
+      `/conversations/${id}?project=${encodeURIComponent(project)}`,
+      { method: "DELETE" },
+    );
   }
 
   /**
@@ -201,7 +212,6 @@ export default class PrismService {
     );
   }
 
-
   // ---------------------------------------------------------------------------
   // Custom Tools
   // ---------------------------------------------------------------------------
@@ -222,7 +232,10 @@ export default class PrismService {
    * @returns {Promise<object>}
    */
   static async createCustomTool(tool) {
-    return PrismService._request("/custom-tools", { method: "POST", body: tool });
+    return PrismService._request("/custom-tools", {
+      method: "POST",
+      body: tool,
+    });
   }
 
   /**
@@ -232,7 +245,10 @@ export default class PrismService {
    * @returns {Promise<object>}
    */
   static async updateCustomTool(id, updates) {
-    return PrismService._request(`/custom-tools/${id}`, { method: "PUT", body: updates });
+    return PrismService._request(`/custom-tools/${id}`, {
+      method: "PUT",
+      body: updates,
+    });
   }
 
   /**
@@ -324,7 +340,10 @@ export default class PrismService {
                 onImage(data.data, data.mimeType);
               } else if (data.type === "executableCode" && onExecutableCode) {
                 onExecutableCode(data.code, data.language);
-              } else if (data.type === "codeExecutionResult" && onCodeExecutionResult) {
+              } else if (
+                data.type === "codeExecutionResult" &&
+                onCodeExecutionResult
+              ) {
                 onCodeExecutionResult(data.output, data.outcome);
               } else if (data.type === "webSearchResult" && onWebSearchResult) {
                 onWebSearchResult(data.results);
@@ -363,7 +382,14 @@ export default class PrismService {
    * @returns {Promise<{ images: string[], text?: string }>}
    */
   static async generateImage(payload) {
-    const { prompt, images, systemPrompt, conversationId, conversationMeta, ...rest } = payload;
+    const {
+      prompt,
+      images,
+      systemPrompt,
+      conversationId,
+      conversationMeta,
+      ...rest
+    } = payload;
     const userMessage = {
       role: "user",
       content: prompt || "",
@@ -484,7 +510,9 @@ export default class PrismService {
    * @returns {Promise<{ success: boolean, id: string }>}
    */
   static async saveWorkflow(workflow) {
-    return PrismService._request("/workflows", { body: { ...workflow, source: "retina" } });
+    return PrismService._request("/workflows", {
+      body: { ...workflow, source: "retina" },
+    });
   }
 
   /**
@@ -494,7 +522,10 @@ export default class PrismService {
    * @returns {Promise<{ success: boolean }>}
    */
   static async updateWorkflow(id, workflow) {
-    return PrismService._request(`/workflows/${id}`, { method: "PUT", body: workflow });
+    return PrismService._request(`/workflows/${id}`, {
+      method: "PUT",
+      body: workflow,
+    });
   }
 
   /**
@@ -530,7 +561,9 @@ export default class PrismService {
    */
   static async getMedia(params = {}) {
     const query = new URLSearchParams(params).toString();
-    return PrismService._request(`/media${query ? `?${query}` : ""}`, { method: "GET" });
+    return PrismService._request(`/media${query ? `?${query}` : ""}`, {
+      method: "GET",
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -544,7 +577,9 @@ export default class PrismService {
    */
   static async getText(params = {}) {
     const query = new URLSearchParams(params).toString();
-    return PrismService._request(`/text${query ? `?${query}` : ""}`, { method: "GET" });
+    return PrismService._request(`/text${query ? `?${query}` : ""}`, {
+      method: "GET",
+    });
   }
 
   // ---------------------------------------------------------------------------

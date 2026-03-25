@@ -1,23 +1,55 @@
 "use client";
 
-import { Star, Type, Image, Volume2, Video, FileText as DocIcon, Wrench, Globe, Code, Brain } from "lucide-react";
+import {
+  Star,
+  Type,
+  Image,
+  Volume2,
+  Video,
+  FileText as DocIcon,
+  Wrench,
+  Globe,
+  Code,
+  Brain,
+} from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
-import TooltipComponent from "./TooltipComponent";
+import { FilterIconButtonGroupComponent } from "./FilterBarComponent";
+import { MODALITY_COLORS, TOOL_COLORS } from "./WorkflowNodeConstants";
 import styles from "./SidebarFilterComponent.module.css";
 
 const MODALITY_FILTERS = [
-  { key: "text", icon: Type, title: "Text" },
-  { key: "image", icon: Image, title: "Image" },
-  { key: "audio", icon: Volume2, title: "Audio" },
-  { key: "video", icon: Video, title: "Video" },
-  { key: "doc", icon: DocIcon, title: "Document" },
+  { key: "text", icon: Type, title: "Text", color: MODALITY_COLORS.text },
+  { key: "image", icon: Image, title: "Image", color: MODALITY_COLORS.image },
+  { key: "audio", icon: Volume2, title: "Audio", color: MODALITY_COLORS.audio },
+  { key: "video", icon: Video, title: "Video", color: MODALITY_COLORS.video },
+  { key: "doc", icon: DocIcon, title: "Document", color: MODALITY_COLORS.pdf },
 ];
 
 const TOOL_FILTERS = [
-  { key: "thinking", icon: Brain, title: "Thinking" },
-  { key: "webSearch", icon: Globe, title: "Web Search" },
-  { key: "codeExecution", icon: Code, title: "Code Execution" },
-  { key: "functionCalling", icon: Wrench, title: "Function Calling" },
+  {
+    key: "thinking",
+    icon: Brain,
+    title: "Thinking",
+    color: TOOL_COLORS["Thinking"],
+  },
+  {
+    key: "webSearch",
+    icon: Globe,
+    title: "Web Search",
+    color: TOOL_COLORS["Web Search"],
+  },
+  {
+    key: "codeExecution",
+    icon: Code,
+    title: "Code Execution",
+    color: TOOL_COLORS["Code Execution"],
+  },
+  {
+    key: "functionCalling",
+    icon: Wrench,
+    title: "Function Calling",
+    color: TOOL_COLORS["Function Calling"],
+  },
 ];
 
 /**
@@ -58,90 +90,55 @@ export default function SidebarFilterComponent({
   const showToolRow = tools.length >= 1;
   const showProviderRow = providers.length >= 2;
 
-  if (!showFavoriteRow && !showModalityRow && !showToolRow && !showProviderRow) return null;
+  if (!showFavoriteRow && !showModalityRow && !showToolRow && !showProviderRow)
+    return null;
 
   return (
     <div className={styles.filterSection}>
       {showFavoriteRow && (
-        <div className={styles.filterRow}>
-          <span className={styles.filterLabel}>Favorite</span>
-          <div className={styles.filterBar}>
-            <TooltipComponent label="Favorites" position="bottom">
-              <button
-                className={`${styles.filterBtn} ${showFavoritesOnly ? styles.filterBtnActive : ""}`}
-                onClick={onFavoritesToggle}
-              >
-                <Star size={13} fill={showFavoritesOnly ? "currentColor" : "none"} />
-              </button>
-            </TooltipComponent>
-          </div>
-        </div>
+        <FilterIconButtonGroupComponent
+          options={[{ key: "fav", icon: Star, label: "Favorites" }]}
+          activeKeys={new Set(showFavoritesOnly ? ["fav"] : [])}
+          onChange={() => onFavoritesToggle()}
+        />
       )}
 
       {showModalityRow && (
-        <div className={styles.filterRow}>
-          <span className={styles.filterLabel}>Modality</span>
-          <div className={styles.filterBar}>
-            {modalities.map(({ key, icon: Icon, title }) => (
-              <TooltipComponent key={key} label={title} position="bottom">
-                <button
-                  className={`${styles.filterBtn} ${activeModalities.has(key) ? styles.filterBtnActive : ""}`}
-                  onClick={() => {
-                    const next = new Set(activeModalities);
-                    next.has(key) ? next.delete(key) : next.add(key);
-                    onModalityChange(next);
-                  }}
-                >
-                  <Icon size={13} />
-                </button>
-              </TooltipComponent>
-            ))}
-          </div>
-        </div>
+        <FilterIconButtonGroupComponent
+          options={modalities.map((m) => ({
+            key: m.key,
+            icon: m.icon,
+            label: m.title,
+            color: m.color,
+          }))}
+          activeKeys={activeModalities}
+          onChange={onModalityChange}
+        />
       )}
 
       {showToolRow && (
-        <div className={styles.filterRow}>
-          <span className={styles.filterLabel}>Tools</span>
-          <div className={styles.filterBar}>
-            {tools.map(({ key, icon: Icon, title }) => (
-              <TooltipComponent key={key} label={title} position="bottom">
-                <button
-                  className={`${styles.filterBtn} ${activeTools.has(key) ? styles.filterBtnActive : ""}`}
-                  onClick={() => {
-                    const next = new Set(activeTools);
-                    next.has(key) ? next.delete(key) : next.add(key);
-                    onToolChange(next);
-                  }}
-                >
-                  <Icon size={13} />
-                </button>
-              </TooltipComponent>
-            ))}
-          </div>
-        </div>
+        <FilterIconButtonGroupComponent
+          options={tools.map((t) => ({
+            key: t.key,
+            icon: t.icon,
+            label: t.title,
+            color: t.color,
+          }))}
+          activeKeys={activeTools}
+          onChange={onToolChange}
+        />
       )}
 
       {showProviderRow && (
-        <div className={styles.filterRow}>
-          <span className={styles.filterLabel}>Provider</span>
-          <div className={styles.filterBar}>
-            {providers.map((p) => (
-              <TooltipComponent key={p} label={p} position="bottom">
-                <button
-                  className={`${styles.filterBtn} ${activeProviders.has(p) ? styles.filterBtnActive : ""}`}
-                  onClick={() => {
-                    const next = new Set(activeProviders);
-                    next.has(p) ? next.delete(p) : next.add(p);
-                    onProviderChange(next);
-                  }}
-                >
-                  <ProviderLogo provider={p} size={13} />
-                </button>
-              </TooltipComponent>
-            ))}
-          </div>
-        </div>
+        <FilterIconButtonGroupComponent
+          options={providers.map((p) => ({
+            key: p,
+            customRender: () => <ProviderLogo provider={p} size={14} />,
+            label: p,
+          }))}
+          activeKeys={activeProviders}
+          onChange={onProviderChange}
+        />
       )}
     </div>
   );

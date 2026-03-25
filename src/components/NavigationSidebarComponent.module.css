@@ -277,7 +277,9 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 
   &:active {
     transform: scale(0.92);
@@ -356,4 +358,3 @@
     transform: scale(1) translateY(0);
   }
 }
-

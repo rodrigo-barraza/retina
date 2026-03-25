@@ -3,8 +3,14 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
-  X, Undo2, Eraser, Pen, Save,
-  Minus, Square, Circle as CircleIcon,
+  X,
+  Undo2,
+  Eraser,
+  Pen,
+  Save,
+  Minus,
+  Square,
+  Circle as CircleIcon,
 } from "lucide-react";
 import styles from "./DrawingCanvas.module.css";
 
@@ -133,7 +139,10 @@ export default function DrawingCanvas({ src, onSave, onClose }) {
     }
 
     if (stroke.tool === "pen" || stroke.tool === "eraser") {
-      if (stroke.points.length < 2) { ctx.restore(); return; }
+      if (stroke.points.length < 2) {
+        ctx.restore();
+        return;
+      }
       ctx.beginPath();
       ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
       for (let i = 1; i < stroke.points.length; i++) {
@@ -141,20 +150,29 @@ export default function DrawingCanvas({ src, onSave, onClose }) {
       }
       ctx.stroke();
     } else if (stroke.tool === "line") {
-      if (!stroke.start || !stroke.end) { ctx.restore(); return; }
+      if (!stroke.start || !stroke.end) {
+        ctx.restore();
+        return;
+      }
       ctx.beginPath();
       ctx.moveTo(stroke.start.x, stroke.start.y);
       ctx.lineTo(stroke.end.x, stroke.end.y);
       ctx.stroke();
     } else if (stroke.tool === "rect") {
-      if (!stroke.start || !stroke.end) { ctx.restore(); return; }
+      if (!stroke.start || !stroke.end) {
+        ctx.restore();
+        return;
+      }
       const x = Math.min(stroke.start.x, stroke.end.x);
       const y = Math.min(stroke.start.y, stroke.end.y);
       const w = Math.abs(stroke.end.x - stroke.start.x);
       const h = Math.abs(stroke.end.y - stroke.start.y);
       ctx.strokeRect(x, y, w, h);
     } else if (stroke.tool === "circle") {
-      if (!stroke.start || !stroke.end) { ctx.restore(); return; }
+      if (!stroke.start || !stroke.end) {
+        ctx.restore();
+        return;
+      }
       const cx = (stroke.start.x + stroke.end.x) / 2;
       const cy = (stroke.start.y + stroke.end.y) / 2;
       const rx = Math.abs(stroke.end.x - stroke.start.x) / 2;
@@ -169,18 +187,15 @@ export default function DrawingCanvas({ src, onSave, onClose }) {
 
   /* ── Drawing helpers ── */
 
-  const redrawAll = useCallback(
-    (strokeList) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (const s of strokeList) {
-        renderStroke(ctx, s);
-      }
-    },
-    [],
-  );
+  const redrawAll = useCallback((strokeList) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of strokeList) {
+      renderStroke(ctx, s);
+    }
+  }, []);
 
   useEffect(() => {
     if (bgReady) redrawAll(strokes);
@@ -255,7 +270,7 @@ export default function DrawingCanvas({ src, onSave, onClose }) {
     if (!drawing || !currentStroke) return;
 
     const isValid =
-      (currentStroke.tool === "pen" || currentStroke.tool === "eraser")
+      currentStroke.tool === "pen" || currentStroke.tool === "eraser"
         ? currentStroke.points.length >= 2
         : currentStroke.start && currentStroke.end;
 
@@ -328,7 +343,10 @@ export default function DrawingCanvas({ src, onSave, onClose }) {
             <button
               key={c.value}
               className={`${styles.swatch} ${color === c.value && tool !== "eraser" ? styles.swatchActive : ""}`}
-              style={{ background: c.value, border: c.value === "#000000" ? "2px solid #555" : undefined }}
+              style={{
+                background: c.value,
+                border: c.value === "#000000" ? "2px solid #555" : undefined,
+              }}
               onClick={() => {
                 setColor(c.value);
                 if (tool === "eraser") setTool("pen");
@@ -348,7 +366,10 @@ export default function DrawingCanvas({ src, onSave, onClose }) {
               onClick={() => setSizeIdx(i)}
               title={s.label}
             >
-              <span className={styles.sizeDot} style={{ width: s.dot, height: s.dot }} />
+              <span
+                className={styles.sizeDot}
+                style={{ width: s.dot, height: s.dot }}
+              />
             </button>
           ))}
         </div>

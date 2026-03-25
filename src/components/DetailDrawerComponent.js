@@ -39,7 +39,9 @@ export default function DetailDrawerComponent({
                 {section.items.map((item, ii) => (
                   <div key={ii} className={styles.item}>
                     <span className={styles.label}>{item.label}</span>
-                    <span className={`${styles.value} ${item.mono ? styles.mono : ""}`}>
+                    <span
+                      className={`${styles.value} ${item.mono ? styles.mono : ""}`}
+                    >
                       {item.value ?? "—"}
                     </span>
                   </div>

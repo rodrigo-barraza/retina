@@ -81,12 +81,20 @@ function getModalities(messages) {
     }
 
     // Detect inline web search results (from streaming)
-    if (isAssistant && typeof m.content === "string" && m.content.includes("> **Sources:**")) {
+    if (
+      isAssistant &&
+      typeof m.content === "string" &&
+      m.content.includes("> **Sources:**")
+    ) {
       modalities.webSearch = true;
     }
 
     // Detect inline code execution blocks (from streaming)
-    if (isAssistant && typeof m.content === "string" && m.content.includes("```exec-")) {
+    if (
+      isAssistant &&
+      typeof m.content === "string" &&
+      m.content.includes("```exec-")
+    ) {
       modalities.codeExecution = true;
     }
 
@@ -121,11 +129,20 @@ export default function HistoryPanel({
     return conversations.map((conv) => {
       const totalCost =
         conv.totalCost ||
-        (conv.messages || []).reduce((sum, m) => sum + (m.estimatedCost || 0), 0);
+        (conv.messages || []).reduce(
+          (sum, m) => sum + (m.estimatedCost || 0),
+          0,
+        );
 
       const tags = [];
       if (showProject && conv.project) {
-        tags.push({ label: conv.project, style: { background: "var(--accent-subtle)", color: "var(--accent-color)" } });
+        tags.push({
+          label: conv.project,
+          style: {
+            background: "var(--accent-subtle)",
+            color: "var(--accent-color)",
+          },
+        });
       }
 
       // Extract the most recent model name from assistant messages
@@ -159,7 +176,12 @@ export default function HistoryPanel({
   return (
     <div className={styles.container}>
       {!readOnly && (
-        <button className={styles.newBtn} onClick={onNew} data-panel-close disabled={!activeId}>
+        <button
+          className={styles.newBtn}
+          onClick={onNew}
+          data-panel-close
+          disabled={!activeId}
+        >
           <Plus size={16} /> New Conversation
         </button>
       )}

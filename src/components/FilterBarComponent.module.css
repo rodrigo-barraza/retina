@@ -141,6 +141,39 @@
   box-shadow: var(--shadow-sm);
 }
 
+.discreteGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.discreteBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 2px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+
+.discreteBtn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.discreteBtnActive {
+  background: var(--accent-glow);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
 .filterInput {
   padding: 6px 10px;
   font-size: 13px;
@@ -188,4 +221,3 @@
 .clearBtn:hover {
   color: var(--text-primary);
 }
-

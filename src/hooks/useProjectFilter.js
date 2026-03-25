@@ -36,39 +36,49 @@ export default function useProjectFilter() {
           params.set("project", saved);
           router.replace(`${pathname}?${params.toString()}`);
         }
-      } catch { /* localStorage unavailable */ }
+      } catch {
+        /* localStorage unavailable */
+      }
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     IrisService.getConversationFilters()
       .then((data) => setProjects(data.projects || []))
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
-  const projectOptions = useMemo(() => [
-    { value: "", label: "All Projects" },
-    ...projects.map((p) => ({ value: p, label: p })),
-  ], [projects]);
+  const projectOptions = useMemo(
+    () => [
+      { value: "", label: "All Projects" },
+      ...projects.map((p) => ({ value: p, label: p })),
+    ],
+    [projects],
+  );
 
-  const handleProjectChange = useCallback((val) => {
-    // Persist to localStorage
-    try {
-      if (val) {
-        localStorage.setItem(STORAGE_KEY, val);
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
+  const handleProjectChange = useCallback(
+    (val) => {
+      // Persist to localStorage
+      try {
+        if (val) {
+          localStorage.setItem(STORAGE_KEY, val);
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } catch {
+        /* localStorage unavailable */
       }
-    } catch { /* localStorage unavailable */ }
 
-    const params = new URLSearchParams(searchParams.toString());
-    if (val) {
-      params.set("project", val);
-    } else {
-      params.delete("project");
-    }
-    router.replace(`${pathname}?${params.toString()}`);
-  }, [searchParams, router, pathname]);
+      const params = new URLSearchParams(searchParams.toString());
+      if (val) {
+        params.set("project", val);
+      } else {
+        params.delete("project");
+      }
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [searchParams, router, pathname],
+  );
 
   return { projectFilter: urlProject, projectOptions, handleProjectChange };
 }

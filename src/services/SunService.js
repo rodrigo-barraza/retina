@@ -144,12 +144,7 @@ const FIELDS = {
   ],
 
   // Tides: from TideCache.getTides() → predictions array items
-  TIDES: [
-    "time",
-    "height",
-    "type",
-    "stationId",
-  ],
+  TIDES: ["time", "height", "type", "stationId"],
 
   // Wildfires: from WildfireFetcher
   WILDFIRES: [
@@ -266,18 +261,7 @@ const FIELDS = {
   ],
 
   // Finnhub quote: from FinnhubFetcher.fetchStockQuote()
-  STOCK_QUOTE: [
-    "symbol",
-    "c",
-    "d",
-    "dp",
-    "h",
-    "l",
-    "o",
-    "pc",
-    "t",
-    "cached",
-  ],
+  STOCK_QUOTE: ["symbol", "c", "d", "dp", "h", "l", "o", "pc", "t", "cached"],
 
   // Finnhub company profile: from Finnhub API /stock/profile2
   COMPANY_PROFILE: [
@@ -816,8 +800,7 @@ const TOOL_EXECUTORS = {
   get_twilight: async (args) =>
     fetchJson(buildUrl("/weather/twilight", {}, args)),
 
-  get_tides: async (args) =>
-    fetchJson(buildUrl("/weather/tides", {}, args)),
+  get_tides: async (args) => fetchJson(buildUrl("/weather/tides", {}, args)),
 
   get_wildfires: async (args) =>
     fetchJson(buildUrl("/weather/wildfires", {}, args)),
@@ -886,26 +869,16 @@ const TOOL_EXECUTORS = {
   // ── Finance / Stocks (Finnhub) ──
   get_stock_quote: async (args) =>
     fetchJson(
-      buildUrl(
-        `/finance/quote/${encodeURIComponent(args.symbol)}`,
-        {},
-        args,
-      ),
+      buildUrl(`/finance/quote/${encodeURIComponent(args.symbol)}`, {}, args),
     ),
 
   get_company_profile: async (args) =>
     fetchJson(
-      buildUrl(
-        `/finance/profile/${encodeURIComponent(args.symbol)}`,
-        {},
-        args,
-      ),
+      buildUrl(`/finance/profile/${encodeURIComponent(args.symbol)}`, {}, args),
     ),
 
   get_market_news: async (args) =>
-    fetchJson(
-      buildUrl("/finance/news", { symbol: args.symbol }, args),
-    ),
+    fetchJson(buildUrl("/finance/news", { symbol: args.symbol }, args)),
 
   get_earnings_calendar: async (args) =>
     fetchJson(buildUrl("/finance/earnings", {}, args)),

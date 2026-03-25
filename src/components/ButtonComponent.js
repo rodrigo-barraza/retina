@@ -38,7 +38,11 @@ export default function ButtonComponent({
       {loading ? (
         <span className={styles.spinner} />
       ) : Icon ? (
-        <Icon size={size === "xs" ? 12 : size === "sm" ? 14 : size === "lg" ? 18 : 16} />
+        <Icon
+          size={
+            size === "xs" ? 12 : size === "sm" ? 14 : size === "lg" ? 18 : 16
+          }
+        />
       ) : null}
       {children && <span>{children}</span>}
     </button>

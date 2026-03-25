@@ -99,7 +99,9 @@
 }
 
 @keyframes edgeFlow {
-  to { stroke-dashoffset: -24; }
+  to {
+    stroke-dashoffset: -24;
+  }
 }
 
 .connectionSelected .connectionLine {

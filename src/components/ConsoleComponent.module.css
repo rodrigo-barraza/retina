@@ -129,8 +129,15 @@
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.04); opacity: 1; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
 }
 
 .emptyTitle {
@@ -172,7 +179,8 @@
     border-color: var(--accent-color);
     background: color-mix(in srgb, var(--accent-color) 8%, var(--bg-card));
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent-color) 15%, transparent);
+    box-shadow: 0 2px 8px
+      color-mix(in srgb, var(--accent-color) 15%, transparent);
   }
 }
 
@@ -209,8 +217,13 @@
 }
 
 @keyframes toolGlow {
-  0%, 100% { filter: drop-shadow(0 0 0px var(--accent-color)); }
-  50% { filter: drop-shadow(0 0 6px var(--accent-color)); }
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0px var(--accent-color));
+  }
+  50% {
+    filter: drop-shadow(0 0 6px var(--accent-color));
+  }
 }
 
 .toolPanelBody {
@@ -235,8 +248,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .toolStatusIcon {
@@ -245,8 +264,12 @@
   flex-shrink: 0;
 }
 
-.toolSuccess { color: #22c55e; }
-.toolError { color: #ef4444; }
+.toolSuccess {
+  color: #22c55e;
+}
+.toolError {
+  color: #ef4444;
+}
 
 .toolName {
   font-weight: 600;
@@ -262,7 +285,6 @@
   white-space: nowrap;
 }
 
-
 /* ── Spinner ───────────────────────────────────────────────── */
 
 .spinner {
@@ -270,6 +292,10 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

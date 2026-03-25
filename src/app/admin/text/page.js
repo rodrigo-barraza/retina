@@ -7,7 +7,8 @@ import useProjectFilter from "../../../hooks/useProjectFilter";
 import TextPageComponent from "../../../components/TextPageComponent";
 
 export default function AdminTextPage() {
-  const { projectFilter, projectOptions, handleProjectChange } = useProjectFilter();
+  const { projectFilter, projectOptions, handleProjectChange } =
+    useProjectFilter();
   const { setControls } = useAdminHeader();
 
   useEffect(() => {
@@ -17,7 +18,7 @@ export default function AdminTextPage() {
         options={projectOptions}
         onChange={handleProjectChange}
         placeholder="All Projects"
-      />
+      />,
     );
   }, [setControls, projectFilter, projectOptions, handleProjectChange]);
 

@@ -36,30 +36,38 @@ const MAX_TOOL_ITERATIONS = 25;
  * this only affects what gets re-sent to the model.
  */
 function truncateToolResult(result, maxChars = 8000) {
-    if (!result || typeof result !== "object") return result;
+  if (!result || typeof result !== "object") return result;
 
-    // If result has a known array wrapper, cap items at 10
-    const trimmed = { ...result };
-    const ARRAY_KEYS = ["events", "products", "trends", "articles", "earnings", "predictions", "commodities"];
-    for (const key of ARRAY_KEYS) {
-        if (Array.isArray(trimmed[key]) && trimmed[key].length > 10) {
-            const total = trimmed[key].length;
-            trimmed[key] = trimmed[key].slice(0, 10);
-            trimmed[`_${key}Truncated`] = `Showing 10 of ${total}`;
-        }
+  // If result has a known array wrapper, cap items at 10
+  const trimmed = { ...result };
+  const ARRAY_KEYS = [
+    "events",
+    "products",
+    "trends",
+    "articles",
+    "earnings",
+    "predictions",
+    "commodities",
+  ];
+  for (const key of ARRAY_KEYS) {
+    if (Array.isArray(trimmed[key]) && trimmed[key].length > 10) {
+      const total = trimmed[key].length;
+      trimmed[key] = trimmed[key].slice(0, 10);
+      trimmed[`_${key}Truncated`] = `Showing 10 of ${total}`;
     }
+  }
 
-    // Also handle top-level arrays (e.g. tides, earthquakes)
-    if (Array.isArray(result) && result.length > 10) {
-        const sliced = result.slice(0, 10);
-        sliced.push({ _truncated: `Showing 10 of ${result.length}` });
-        const str = JSON.stringify(sliced);
-        return str.length > maxChars ? str.slice(0, maxChars) + '…}' : sliced;
-    }
+  // Also handle top-level arrays (e.g. tides, earthquakes)
+  if (Array.isArray(result) && result.length > 10) {
+    const sliced = result.slice(0, 10);
+    sliced.push({ _truncated: `Showing 10 of ${result.length}` });
+    const str = JSON.stringify(sliced);
+    return str.length > maxChars ? str.slice(0, maxChars) + "…}" : sliced;
+  }
 
-    const str = JSON.stringify(trimmed);
-    if (str.length <= maxChars) return trimmed;
-    return str.slice(0, maxChars) + '…}';
+  const str = JSON.stringify(trimmed);
+  if (str.length <= maxChars) return trimmed;
+  return str.slice(0, maxChars) + "…}";
 }
 const PROJECT = "retina-console";
 
@@ -82,7 +90,9 @@ export default function ConsoleComponent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [toolActivity, setToolActivity] = useState([]);
   const [showToolPanel, setShowToolPanel] = useState(false);
-  const [conversationId, setConversationId] = useState(() => crypto.randomUUID());
+  const [conversationId, setConversationId] = useState(() =>
+    crypto.randomUUID(),
+  );
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [config, setConfig] = useState(null);
@@ -131,8 +141,8 @@ export default function ConsoleComponent() {
     const filteredTextModels = {};
 
     for (const [provider, models] of Object.entries(textModelsMap)) {
-      const fcModels = models.filter(
-        (m) => m.tools?.includes("Function Calling"),
+      const fcModels = models.filter((m) =>
+        m.tools?.includes("Function Calling"),
       );
       if (fcModels.length > 0) filteredTextModels[provider] = fcModels;
     }
@@ -307,14 +317,17 @@ export default function ConsoleComponent() {
     setPendingImages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleDragEnter = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounter.current++;
-    if (supportsImageInput && e.dataTransfer?.items?.length > 0) {
-      setIsDragging(true);
-    }
-  }, [supportsImageInput]);
+  const handleDragEnter = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter.current++;
+      if (supportsImageInput && e.dataTransfer?.items?.length > 0) {
+        setIsDragging(true);
+      }
+    },
+    [supportsImageInput],
+  );
 
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
@@ -330,40 +343,48 @@ export default function ConsoleComponent() {
     e.stopPropagation();
   }, []);
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    dragCounter.current = 0;
-    if (!supportsImageInput) return;
-    const files = Array.from(e.dataTransfer?.files || []);
-    const images = files.filter((f) => f.type.startsWith("image/"));
-    for (const file of images) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPendingImages((prev) => [...prev, ev.target.result]);
-      };
-      reader.readAsDataURL(file);
-    }
-  }, [supportsImageInput]);
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      dragCounter.current = 0;
+      if (!supportsImageInput) return;
+      const files = Array.from(e.dataTransfer?.files || []);
+      const images = files.filter((f) => f.type.startsWith("image/"));
+      for (const file of images) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setPendingImages((prev) => [...prev, ev.target.result]);
+        };
+        reader.readAsDataURL(file);
+      }
+    },
+    [supportsImageInput],
+  );
 
-  const handlePaste = useCallback((e) => {
-    if (!supportsImageInput) return;
-    const items = Array.from(e.clipboardData?.items || []);
-    const files = items
-      .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
-      .map((item) => item.getAsFile())
-      .filter(Boolean);
-    if (files.length === 0) return;
-    e.preventDefault();
-    for (const file of files) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPendingImages((prev) => [...prev, ev.target.result]);
-      };
-      reader.readAsDataURL(file);
-    }
-  }, [supportsImageInput]);
+  const handlePaste = useCallback(
+    (e) => {
+      if (!supportsImageInput) return;
+      const items = Array.from(e.clipboardData?.items || []);
+      const files = items
+        .filter(
+          (item) => item.kind === "file" && item.type.startsWith("image/"),
+        )
+        .map((item) => item.getAsFile())
+        .filter(Boolean);
+      if (files.length === 0) return;
+      e.preventDefault();
+      for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setPendingImages((prev) => [...prev, ev.target.result]);
+        };
+        reader.readAsDataURL(file);
+      }
+    },
+    [supportsImageInput],
+  );
 
   // ── Orchestration loop ───────────────────────────────────────
   const runOrchestrationLoop = useCallback(
@@ -401,7 +422,9 @@ export default function ConsoleComponent() {
                       id: tc.id,
                       name: tc.name,
                       args: tc.args,
-                      ...(tc.thoughtSignature ? { thoughtSignature: tc.thoughtSignature } : {}),
+                      ...(tc.thoughtSignature
+                        ? { thoughtSignature: tc.thoughtSignature }
+                        : {}),
                     })),
                   };
                   const toolMsgs = m.toolCalls
@@ -410,25 +433,40 @@ export default function ConsoleComponent() {
                       role: "tool",
                       name: tc.name,
                       tool_call_id: tc.id,
-                      content: typeof tc.result === "string" ? tc.result : JSON.stringify(truncateToolResult(tc.result)),
+                      content:
+                        typeof tc.result === "string"
+                          ? tc.result
+                          : JSON.stringify(truncateToolResult(tc.result)),
                     }));
                   return [assistantMsg, ...toolMsgs];
                 }
                 if (m.role === "tool") {
-                  return [{ role: "tool", tool_call_id: m.tool_call_id, name: m.name, content: m.content }];
+                  return [
+                    {
+                      role: "tool",
+                      tool_call_id: m.tool_call_id,
+                      name: m.name,
+                      content: m.content,
+                    },
+                  ];
                 }
-                return [{
-                  role: m.role,
-                  content: m.content,
-                  ...(m.images?.length > 0 ? { images: m.images } : {}),
-                }];
+                return [
+                  {
+                    role: m.role,
+                    content: m.content,
+                    ...(m.images?.length > 0 ? { images: m.images } : {}),
+                  },
+                ];
               }),
             ],
             // Local models (LM Studio, Ollama) should stop receiving tools
             // after their first tool round to force a text response.
             // Cloud providers handle multi-step tool calling natively.
-            ...((settings.provider === "lm-studio" || settings.provider === "ollama")
-              ? (!hasCalledTools ? { tools: allToolSchemas } : {})
+            ...(settings.provider === "lm-studio" ||
+            settings.provider === "ollama"
+              ? !hasCalledTools
+                ? { tools: allToolSchemas }
+                : {}
               : { tools: allToolSchemas }),
             maxTokens: settings.maxTokens,
             conversationId,
@@ -485,7 +523,10 @@ export default function ConsoleComponent() {
                 return {
                   name: tc.name,
                   id: tc.id,
-                  result: await SunService.executeCustomTool(customDef, tc.args),
+                  result: await SunService.executeCustomTool(
+                    customDef,
+                    tc.args,
+                  ),
                 };
               }
               return {
@@ -501,7 +542,9 @@ export default function ConsoleComponent() {
               const result = results.find(
                 (r) =>
                   (r.id && r.id === activity.id) ||
-                  (!r.id && r.name === activity.name && activity.status === "calling"),
+                  (!r.id &&
+                    r.name === activity.name &&
+                    activity.status === "calling"),
               );
               if (result) {
                 return {
@@ -522,7 +565,11 @@ export default function ConsoleComponent() {
             content: JSON.stringify(result.result),
             timestamp: new Date().toISOString(),
           }));
-          PrismService.appendMessages(conversationId, toolResultMessages, PROJECT).catch((err) =>
+          PrismService.appendMessages(
+            conversationId,
+            toolResultMessages,
+            PROJECT,
+          ).catch((err) =>
             console.error("Failed to append tool results:", err),
           );
 
@@ -567,7 +614,14 @@ export default function ConsoleComponent() {
 
       return currentMessages;
     },
-    [settings.provider, settings.model, settings.maxTokens, conversationId, allToolSchemas, customToolMap],
+    [
+      settings.provider,
+      settings.model,
+      settings.maxTokens,
+      conversationId,
+      allToolSchemas,
+      customToolMap,
+    ],
   );
 
   // ── Send handler ─────────────────────────────────────────────
@@ -587,7 +641,8 @@ export default function ConsoleComponent() {
       let resolvedTitle = title;
       if (messages.length === 0) {
         const titleText = text || "Image conversation";
-        resolvedTitle = titleText.length > 60 ? titleText.slice(0, 57) + "..." : titleText;
+        resolvedTitle =
+          titleText.length > 60 ? titleText.slice(0, 57) + "..." : titleText;
         setTitle(resolvedTitle);
       }
 
@@ -600,13 +655,20 @@ export default function ConsoleComponent() {
       setMessages(updatedMessages);
 
       try {
-        const finalMessages = await runOrchestrationLoop(updatedMessages, resolvedTitle);
+        const finalMessages = await runOrchestrationLoop(
+          updatedMessages,
+          resolvedTitle,
+        );
         setMessages(
           finalMessages.filter(
             (m) =>
               m.role !== "tool" &&
               m.role !== "system" &&
-              !(m.role === "assistant" && !m.content?.trim() && !m.toolCalls?.length),
+              !(
+                m.role === "assistant" &&
+                !m.content?.trim() &&
+                !m.toolCalls?.length
+              ),
           ),
         );
         loadConversations();
@@ -624,7 +686,15 @@ export default function ConsoleComponent() {
         abortRef.current = null;
       }
     },
-    [inputValue, pendingImages, isGenerating, messages, title, runOrchestrationLoop, loadConversations],
+    [
+      inputValue,
+      pendingImages,
+      isGenerating,
+      messages,
+      title,
+      runOrchestrationLoop,
+      loadConversations,
+    ],
   );
 
   const handleKeyDown = useCallback(
@@ -654,7 +724,10 @@ export default function ConsoleComponent() {
     async (conv) => {
       if (isGenerating) return;
       try {
-        const full = await PrismService.getConversationByProject(conv.id, PROJECT);
+        const full = await PrismService.getConversationByProject(
+          conv.id,
+          PROJECT,
+        );
         const displayMessages = prepareDisplayMessages(full.messages || []);
         setMessages(displayMessages);
         setConversationId(conv.id);
@@ -794,7 +867,8 @@ export default function ConsoleComponent() {
           >
             <Zap size={14} className={styles.toolPanelIcon} />
             <span>
-              Tool Activity ({toolActivity.filter((t) => t.status === "done").length}/
+              Tool Activity (
+              {toolActivity.filter((t) => t.status === "done").length}/
               {toolActivity.length})
             </span>
             {showToolPanel ? (
@@ -823,9 +897,11 @@ export default function ConsoleComponent() {
                   </span>
                   {Object.keys(activity.args || {}).length > 0 && (
                     <span className={styles.toolArgs}>
-                      ({Object.entries(activity.args)
+                      (
+                      {Object.entries(activity.args)
                         .map(([k, v]) => `${k}: ${v}`)
-                        .join(", ")})
+                        .join(", ")}
+                      )
                     </span>
                   )}
                 </div>
@@ -903,7 +979,10 @@ export default function ConsoleComponent() {
             <button
               type="submit"
               className={isGenerating ? chatStyles.submitGenerating : ""}
-              disabled={(!inputValue.trim() && pendingImages.length === 0) || isGenerating}
+              disabled={
+                (!inputValue.trim() && pendingImages.length === 0) ||
+                isGenerating
+              }
             >
               {isGenerating ? (
                 <Loader2 size={18} className={chatStyles.spin} />
@@ -934,7 +1013,9 @@ export default function ConsoleComponent() {
   // ── Layout ───────────────────────────────────────────────────
   return (
     <ThreePanelLayout
-      navSidebar={<NavigationSidebarComponent mode="user" isGenerating={isGenerating} />}
+      navSidebar={
+        <NavigationSidebarComponent mode="user" isGenerating={isGenerating} />
+      }
       leftPanel={leftPanel}
       leftTitle={null}
       rightPanel={
@@ -952,7 +1033,11 @@ export default function ConsoleComponent() {
         messages.length > 0 ? (
           <div className={styles.headerMeta}>
             <span>
-              {messages.filter((m) => m.role === "user" || m.role === "assistant").length}{" "}
+              {
+                messages.filter(
+                  (m) => m.role === "user" || m.role === "assistant",
+                ).length
+              }{" "}
               messages
             </span>
           </div>

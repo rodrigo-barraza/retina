@@ -13,7 +13,8 @@ import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
 
 export default function AdminWorkflowsPage() {
-  const { projectFilter, projectOptions, handleProjectChange } = useProjectFilter();
+  const { projectFilter, projectOptions, handleProjectChange } =
+    useProjectFilter();
   const searchParams = useSearchParams();
   const initialId = searchParams.get("id") || null;
   const [workflows, setWorkflows] = useState([]);
@@ -61,7 +62,11 @@ export default function AdminWorkflowsPage() {
     // Update URL for deep-linking
     const params = new URLSearchParams(searchParams.toString());
     params.set("id", id);
-    window.history.replaceState(null, "", `/admin/workflows?${params.toString()}`);
+    window.history.replaceState(
+      null,
+      "",
+      `/admin/workflows?${params.toString()}`,
+    );
     setLoadingDetail(true);
     try {
       const wf = await IrisService.getWorkflow(id);
@@ -89,7 +94,8 @@ export default function AdminWorkflowsPage() {
   const nodeStatuses = useMemo(() => ({}), []);
 
   const edgeCount = useMemo(() => {
-    const edges = selectedWorkflow?.edges || selectedWorkflow?.connections || [];
+    const edges =
+      selectedWorkflow?.edges || selectedWorkflow?.connections || [];
     return edges.length;
   }, [selectedWorkflow]);
 
@@ -151,11 +157,22 @@ export default function AdminWorkflowsPage() {
           onChange={handleProjectChange}
           placeholder="All Projects"
         />
-        <WorkflowHeaderStatsComponent nodes={localNodes} edgeCount={edgeCount} />
+        <WorkflowHeaderStatsComponent
+          nodes={localNodes}
+          edgeCount={edgeCount}
+        />
         <ErrorMessage message={error} />
-      </>
+      </>,
     );
-  }, [setControls, projectFilter, projectOptions, handleProjectChange, localNodes, edgeCount, error]);
+  }, [
+    setControls,
+    projectFilter,
+    projectOptions,
+    handleProjectChange,
+    localNodes,
+    edgeCount,
+    error,
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -164,7 +181,6 @@ export default function AdminWorkflowsPage() {
 
   return (
     <div className={styles.page}>
-
       {/* Body */}
       <div className={styles.body}>
         {loadingDetail && !selectedWorkflow ? (
@@ -174,7 +190,9 @@ export default function AdminWorkflowsPage() {
             readOnly
             admin
             nodes={localNodes}
-            connections={selectedWorkflow?.edges || selectedWorkflow?.connections || []}
+            connections={
+              selectedWorkflow?.edges || selectedWorkflow?.connections || []
+            }
             selectedNodeId={selectedNodeId}
             onSelectNode={setSelectedNodeId}
             onUpdateNodePosition={handleUpdateNodePosition}

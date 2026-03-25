@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Server,
-  Loader2,
-  Power,
-  PowerOff,
-  RefreshCw,
-} from "lucide-react";
+import { Server, Loader2, Power, PowerOff, RefreshCw } from "lucide-react";
 import IrisService from "../services/IrisService";
 import PrismService from "../services/PrismService";
 import ModelGrid from "./ModelGrid";
@@ -118,10 +112,12 @@ export default function ModelsPageComponent({ mode = "user" }) {
     } else {
       setFavoriteKeys((prev) => [...prev, key]);
       const [provider, ...rest] = key.split(":");
-      PrismService.addFavorite("model", key, { provider, name: rest.join(":") }).catch(() => {});
+      PrismService.addFavorite("model", key, {
+        provider,
+        name: rest.join(":"),
+      }).catch(() => {});
     }
   };
-
 
   const handleLoad = async (modelKey) => {
     setActionInProgress({ id: modelKey, type: "load" });

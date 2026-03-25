@@ -28,11 +28,11 @@ cp config.example.js config.js
 
 Edit `config.js` with your real values:
 
-| Variable       | Required | Description                                       |
-| -------------- | -------- | ------------------------------------------------- |
-| `PRISM_URL`    | Yes      | URL of the Prism backend                          |
-| `PRISM_WS_URL` | Yes      | WebSocket URL of the Prism backend                |
-| `PRISM_SECRET` | Yes      | Must match `GATEWAY_SECRET` in Prism's secrets    |
+| Variable       | Required | Description                                                         |
+| -------------- | -------- | ------------------------------------------------------------------- |
+| `PRISM_URL`    | Yes      | URL of the Prism backend                                            |
+| `PRISM_WS_URL` | Yes      | WebSocket URL of the Prism backend                                  |
+| `PRISM_SECRET` | Yes      | Must match `GATEWAY_SECRET` in Prism's secrets                      |
 | `ADMIN_SECRET` | No       | Must match `ADMIN_SECRET` in Prism — needed for the admin dashboard |
 
 > **Note:** `secrets.js` is gitignored — never commit it.
@@ -95,15 +95,15 @@ Requires `ADMIN_SECRET` to be configured in `secrets.js`.
 
 ## Tech Stack
 
-| Dependency              | Purpose                          |
-| ----------------------- | -------------------------------- |
-| Next.js 16              | React framework with App Router  |
-| React 19                | UI library                       |
-| react-markdown          | Markdown rendering               |
-| react-syntax-highlighter| Code block syntax highlighting   |
-| remark-gfm              | GitHub-flavored markdown support |
-| lucide-react            | Icon library                     |
-| luxon                   | Date/time formatting             |
+| Dependency               | Purpose                          |
+| ------------------------ | -------------------------------- |
+| Next.js 16               | React framework with App Router  |
+| React 19                 | UI library                       |
+| react-markdown           | Markdown rendering               |
+| react-syntax-highlighter | Code block syntax highlighting   |
+| remark-gfm               | GitHub-flavored markdown support |
+| lucide-react             | Icon library                     |
+| luxon                    | Date/time formatting             |
 
 ## Scripts
 

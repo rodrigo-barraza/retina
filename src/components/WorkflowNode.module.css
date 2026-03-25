@@ -9,7 +9,9 @@
   stroke-width: 1.5;
   stroke-opacity: 0.4;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.25));
-  transition: stroke var(--transition-fast), stroke-opacity var(--transition-fast);
+  transition:
+    stroke var(--transition-fast),
+    stroke-opacity var(--transition-fast);
 }
 
 .nodeGroup:hover .nodeBody {
@@ -526,7 +528,8 @@
 
 /* ── Animations ── */
 @keyframes flashSelect {
-  0%, 100% {
+  0%,
+  100% {
     stroke-opacity: 0.45;
   }
   50% {
@@ -535,7 +538,8 @@
 }
 
 @keyframes pulsePort {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -544,6 +548,10 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

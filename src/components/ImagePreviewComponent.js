@@ -20,7 +20,12 @@ const SIZES = [
   { label: "L", width: 12, dot: 12 },
 ];
 
-export default function ImagePreviewComponent({ src, onClose, onUseAnnotated, readOnly = false }) {
+export default function ImagePreviewComponent({
+  src,
+  onClose,
+  onUseAnnotated,
+  readOnly = false,
+}) {
   const imgRef = useRef(null);
   const canvasRef = useRef(null);
   const [color, setColor] = useState(COLORS[0].value);

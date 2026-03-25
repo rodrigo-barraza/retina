@@ -4,17 +4,29 @@ import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowNodeConstants";
 import styles from "./WorkflowHeaderStatsComponent.module.css";
 
-export default function WorkflowHeaderStatsComponent({ nodes = [], edgeCount = 0 }) {
+export default function WorkflowHeaderStatsComponent({
+  nodes = [],
+  edgeCount = 0,
+}) {
   const workflowStats = useMemo(() => {
     const modelNodes = nodes.filter((n) => !n.nodeType);
-    const models = [...new Map(modelNodes.map((n) => [`${n.provider}:${n.modelName}`, { provider: n.provider, name: n.displayName || n.modelName }])).values()];
+    const models = [
+      ...new Map(
+        modelNodes.map((n) => [
+          `${n.provider}:${n.modelName}`,
+          { provider: n.provider, name: n.displayName || n.modelName },
+        ]),
+      ).values(),
+    ];
     const modalities = new Set();
     for (const n of nodes) {
       // Only boundary nodes: input assets define workflow inputs, viewers define outputs
       if (n.nodeType === "input") {
-        for (const t of n.outputTypes || []) if (t !== "conversation") modalities.add(t);
+        for (const t of n.outputTypes || [])
+          if (t !== "conversation") modalities.add(t);
       } else if (n.nodeType === "viewer") {
-        for (const t of n.inputTypes || []) if (t !== "conversation") modalities.add(t);
+        for (const t of n.inputTypes || [])
+          if (t !== "conversation") modalities.add(t);
       }
     }
     const conversationCount = modelNodes.length;
@@ -32,14 +44,25 @@ export default function WorkflowHeaderStatsComponent({ nodes = [], edgeCount = 0
             const info = MODALITY_ICONS[mod];
             if (!info) return null;
             const Icon = info.icon;
-            return <Icon key={mod} size={11} style={{ color: info.color }} title={info.label} />;
+            return (
+              <Icon
+                key={mod}
+                size={11}
+                style={{ color: info.color }}
+                title={info.label}
+              />
+            );
           })}
         </span>
       )}
       {workflowStats.models.length > 0 && (
         <span className={styles.headerBadge}>
           {workflowStats.models.map((m) => (
-            <span key={`${m.provider}:${m.name}`} className={styles.headerModelTag} title={m.name}>
+            <span
+              key={`${m.provider}:${m.name}`}
+              className={styles.headerModelTag}
+              title={m.name}
+            >
               <ProviderLogo provider={m.provider} size={11} />
               {m.name}
             </span>
@@ -47,7 +70,10 @@ export default function WorkflowHeaderStatsComponent({ nodes = [], edgeCount = 0
         </span>
       )}
       {workflowStats.conversationCount > 0 && (
-        <span className={styles.headerBadge} title="Conversations created per run">
+        <span
+          className={styles.headerBadge}
+          title="Conversations created per run"
+        >
           <MessageSquare size={11} />
           {workflowStats.conversationCount}
         </span>

@@ -145,7 +145,14 @@
 
 .modelKey {
   font-size: 10px;
-  font-family: var(--font-mono, "SF Mono", "Fira Code", "Fira Mono", Menlo, monospace);
+  font-family: var(
+    --font-mono,
+    "SF Mono",
+    "Fira Code",
+    "Fira Mono",
+    Menlo,
+    monospace
+  );
   color: var(--text-secondary);
   opacity: 0.5;
 }

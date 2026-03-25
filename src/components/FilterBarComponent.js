@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import TooltipComponent from "./TooltipComponent";
 import styles from "./FilterBarComponent.module.css";
 
 export function FilterBarComponent({ children, className = "" }) {
@@ -28,7 +29,12 @@ export function FilterPillsComponent({ options, value, onChange }) {
             className={`${styles.pill} ${value === f.key ? styles.pillActive : ""}`}
             onClick={() => onChange(f.key)}
           >
-            {Icon && <Icon size={12} style={f.color ? { color: f.color } : undefined} />}
+            {Icon && (
+              <Icon
+                size={12}
+                style={f.color ? { color: f.color } : undefined}
+              />
+            )}
             {f.label}
           </button>
         );
@@ -37,7 +43,12 @@ export function FilterPillsComponent({ options, value, onChange }) {
   );
 }
 
-export function SearchInputComponent({ value, onChange, onSubmit, placeholder = "Search..." }) {
+export function SearchInputComponent({
+  value,
+  onChange,
+  onSubmit,
+  placeholder = "Search...",
+}) {
   return (
     <form className={styles.searchBox} onSubmit={onSubmit}>
       <Search size={14} />
@@ -58,22 +69,72 @@ export function ViewModeToggleComponent({ mode, onChange, modes }) {
       {modes.map((m) => {
         const Icon = m.icon;
         return (
-          <button
-            key={m.key}
-            type="button"
-            className={`${styles.viewBtn} ${mode === m.key ? styles.viewBtnActive : ""}`}
-            onClick={() => onChange(m.key)}
-            title={m.title}
-          >
-            <Icon size={14} />
-          </button>
+          <TooltipComponent key={m.key} label={m.title} position="bottom">
+            <button
+              type="button"
+              className={`${styles.viewBtn} ${mode === m.key ? styles.viewBtnActive : ""}`}
+              onClick={() => onChange(m.key)}
+            >
+              <Icon size={14} />
+            </button>
+          </TooltipComponent>
         );
       })}
     </div>
   );
 }
 
-export function FilterInputComponent({ value, onChange, placeholder, className = "" }) {
+export function FilterIconButtonGroupComponent({
+  options,
+  activeKeys,
+  onChange,
+  isSingleSelect = false,
+}) {
+  return (
+    <div className={styles.discreteGroup}>
+      {options.map((opt) => {
+        const Icon = opt.icon;
+        const isActive = isSingleSelect
+          ? activeKeys === opt.key
+          : activeKeys?.has(opt.key);
+
+        return (
+          <TooltipComponent key={opt.key} label={opt.label} position="bottom">
+            <button
+              type="button"
+              className={`${styles.discreteBtn} ${isActive ? styles.discreteBtnActive : ""}`}
+              onClick={() => {
+                if (isSingleSelect) {
+                  onChange(isActive ? null : opt.key);
+                } else {
+                  const next = new Set(activeKeys);
+                  next.has(opt.key) ? next.delete(opt.key) : next.add(opt.key);
+                  onChange(next);
+                }
+              }}
+            >
+              {opt.customRender ? (
+                opt.customRender()
+              ) : (
+                <Icon
+                  size={14}
+                  style={opt.color ? { color: opt.color } : undefined}
+                />
+              )}
+            </button>
+          </TooltipComponent>
+        );
+      })}
+    </div>
+  );
+}
+
+export function FilterInputComponent({
+  value,
+  onChange,
+  placeholder,
+  className = "",
+}) {
   return (
     <input
       type="text"
@@ -85,7 +146,12 @@ export function FilterInputComponent({ value, onChange, placeholder, className =
   );
 }
 
-export function FilterSelectComponent({ value, onChange, options, className = "" }) {
+export function FilterSelectComponent({
+  value,
+  onChange,
+  options,
+  className = "",
+}) {
   return (
     <select
       className={`${styles.filterSelect} ${className}`}

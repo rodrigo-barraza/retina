@@ -112,7 +112,10 @@ export default function ModelPickerPopoverComponent({
     if (!open) return;
     const reposition = () => positionPopover();
     window.addEventListener("resize", reposition, { passive: true });
-    window.addEventListener("scroll", reposition, { passive: true, capture: true });
+    window.addEventListener("scroll", reposition, {
+      passive: true,
+      capture: true,
+    });
     return () => {
       window.removeEventListener("resize", reposition);
       window.removeEventListener("scroll", reposition, { capture: true });
@@ -123,8 +126,7 @@ export default function ModelPickerPopoverComponent({
   const currentModel = allModels.find(
     (m) => m.provider === settings?.provider && m.name === settings?.model,
   );
-  const displayLabel =
-    currentModel?.label || settings?.model || "Select Model";
+  const displayLabel = currentModel?.label || settings?.model || "Select Model";
 
   // ── Handle model selection ─────────────────────────────────────────────
   const handleSelect = useCallback(
@@ -236,7 +238,8 @@ function buildAllModels(config) {
           seen.set(id, {
             ...m,
             provider,
-            label: m.label + (suffix && !m.label.endsWith(suffix) ? suffix : ""),
+            label:
+              m.label + (suffix && !m.label.endsWith(suffix) ? suffix : ""),
             organization: inferOrganization(m.name, provider),
           });
         }

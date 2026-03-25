@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ConversationsIndex() {
-    const router = useRouter();
-    useEffect(() => {
-        router.replace("/");
-    }, [router]);
-    return null;
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/");
+  }, [router]);
+  return null;
 }

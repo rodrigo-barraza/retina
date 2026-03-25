@@ -15,7 +15,6 @@
   white-space: nowrap;
 }
 
-
 /* Table */
 .tableWrapper {
   background: var(--bg-card);
@@ -353,8 +352,6 @@
   font-family: "SF Mono", "Fira Code", monospace;
   font-size: 12px;
 }
-
-
 
 @keyframes fadeIn {
   from {
