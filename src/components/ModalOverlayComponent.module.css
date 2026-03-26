@@ -10,15 +10,6 @@
   animation: overlayFadeIn 0.15s ease;
 }
 
-@keyframes overlayFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 /* Variant: dark (for image/document viewers) */
 .dark {
   background: rgba(0, 0, 0, 0.92);

@@ -10,15 +10,6 @@
   animation: overlayFadeIn 0.15s ease;
 }
 
-@keyframes overlayFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 .modal {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);

@@ -70,15 +70,6 @@
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* ── Left Panel (Assets + Inspector) ── */
 .leftPanel {
   display: flex;
@@ -247,15 +238,6 @@
 .loadingSpinner {
   color: var(--accent-color);
   animation: spin 1s linear infinite;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 /* ── Mobile ── */

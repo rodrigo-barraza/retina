@@ -331,17 +331,6 @@
   font-size: 14px;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (max-width: 767px) {
   .mediaGrid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

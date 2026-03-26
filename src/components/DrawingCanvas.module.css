@@ -8,16 +8,7 @@
   justify-content: center;
   background: rgba(0, 0, 0, 0.92);
   backdrop-filter: blur(12px);
-  animation: fadeIn 0.15s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  animation: fadeInPure 0.15s ease;
 }
 
 /* ── Close button ── */
