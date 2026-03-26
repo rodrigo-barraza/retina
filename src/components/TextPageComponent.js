@@ -26,6 +26,7 @@ import {
   SearchInputComponent,
   ViewModeToggleComponent,
 } from "./FilterBarComponent";
+import { formatCost, buildDateRangeParams } from "../utils/utilities";
 import styles from "./TextPageComponent.module.css";
 import { LS_DATE_RANGE } from "../constants";
 
@@ -64,9 +65,7 @@ export default function TextPageComponent({ mode = "user" }) {
       if (search) params.search = search;
       if (provider) params.provider = provider;
       if (model) params.model = model;
-      if (dateRange.from) params.from = new Date(dateRange.from).toISOString();
-      if (dateRange.to)
-        params.to = new Date(dateRange.to + "T23:59:59").toISOString();
+      Object.assign(params, buildDateRangeParams(dateRange));
 
       const service = isAdmin ? IrisService : PrismService;
       const result = await service.getText(params);
@@ -277,7 +276,7 @@ export default function TextPageComponent({ mode = "user" }) {
                 {t.estimatedCost > 0 && (
                   <div className={styles.textFooter}>
                     <span className={styles.cost}>
-                      ${t.estimatedCost.toFixed(5)}
+                      {formatCost(t.estimatedCost)}
                     </span>
                   </div>
                 )}

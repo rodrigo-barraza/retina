@@ -54,7 +54,7 @@
     position: absolute;
     inset: -50%;
     background: var(--prism-conic);
-    animation: prismSpin 2s linear infinite;
+    animation: spin 2s linear infinite;
     z-index: -1;
   }
 }

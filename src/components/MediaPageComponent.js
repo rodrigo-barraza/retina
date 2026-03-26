@@ -32,6 +32,7 @@ import {
   ViewModeToggleComponent,
 } from "./FilterBarComponent";
 import { MODALITY_COLORS } from "./WorkflowNodeConstants";
+import { buildDateRangeParams } from "../utils/utilities";
 import styles from "./MediaPageComponent.module.css";
 import { LS_DATE_RANGE } from "../constants";
 
@@ -132,9 +133,7 @@ export default function MediaPageComponent({
       if (search) params.search = search;
       if (provider) params.provider = provider;
       if (model) params.model = model;
-      if (dateRange.from) params.from = new Date(dateRange.from).toISOString();
-      if (dateRange.to)
-        params.to = new Date(dateRange.to + "T23:59:59").toISOString();
+      Object.assign(params, buildDateRangeParams(dateRange));
 
       const service = isAdmin ? IrisService : PrismService;
       const result = await service.getMedia(params);

@@ -26,13 +26,14 @@ import {
   FilterBarComponent,
   FilterIconButtonGroupComponent,
 } from "./FilterBarComponent";
+import {
+  formatFileSize,
+  formatContextTokens,
+} from "../utils/utilities";
 import styles from "./ModelGrid.module.css";
 
 function formatBytes(bytes) {
-  if (!bytes) return null;
-  if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toFixed(1)} GB`;
-  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
-  return `${(bytes / 1024).toFixed(0)} KB`;
+  return formatFileSize(bytes);
 }
 
 /**
@@ -51,10 +52,7 @@ function parseSize(str) {
 }
 
 function formatContextLength(tokens) {
-  if (!tokens) return null;
-  if (tokens >= 1_000_000)
-    return `${(tokens / 1_000_000).toFixed(tokens % 1_000_000 === 0 ? 0 : 1)}M`;
-  return `${Math.round(tokens / 1000)}K`;
+  return formatContextTokens(tokens);
 }
 
 const ARENA_COLUMNS = [

@@ -7,11 +7,13 @@
   justify-content: center;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
-  animation: overlayFadeIn 0.15s ease;
+  -webkit-backdrop-filter: blur(4px);
+  animation: fadeInPure 0.15s ease;
 }
 
 /* Variant: dark (for image/document viewers) */
 .dark {
   background: rgba(0, 0, 0, 0.92);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }

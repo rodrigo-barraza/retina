@@ -581,7 +581,7 @@ export async function executeWorkflow(
       if (node.nodeType === "input") {
         // Conversation input nodes emit their messages array, merging piped inputs
         if (node.modality === "conversation") {
-          const messages = JSON.parse(JSON.stringify(node.messages || []));
+          const messages = structuredClone(node.messages || []);
 
           // Collect piped data from upstream edges using compound port IDs
           // Port format: "{msgIndex}.{modality}" e.g. "0.text", "1.image"

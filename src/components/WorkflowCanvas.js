@@ -556,7 +556,7 @@ export default function WorkflowCanvas({
         if (!selectedNodeId) return;
         const node = nodes.find((n) => n.id === selectedNodeId);
         if (!node) return;
-        clipboardRef.current = JSON.parse(JSON.stringify(node));
+        clipboardRef.current = structuredClone(node);
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key === "v") {

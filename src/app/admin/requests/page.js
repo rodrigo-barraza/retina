@@ -18,6 +18,8 @@ import {
   formatNumber,
   formatCost,
   formatLatency,
+  formatTokensPerSec,
+  buildDateRangeParams,
 } from "../../../utils/utilities";
 import { MODALITY_COLORS } from "../../../components/WorkflowNodeConstants";
 import SortableTableComponent from "../../../components/SortableTableComponent";
@@ -74,9 +76,7 @@ export default function RequestsPage() {
       Object.entries(filters).forEach(([k, v]) => {
         if (v) params[k] = v;
       });
-      if (dateRange.from) params.from = new Date(dateRange.from).toISOString();
-      if (dateRange.to)
-        params.to = new Date(dateRange.to + "T23:59:59").toISOString();
+      Object.assign(params, buildDateRangeParams(dateRange));
 
       const data = await IrisService.getRequests(params);
       setRequests(data.data || []);
@@ -265,7 +265,7 @@ export default function RequestsPage() {
         key: "tokensPerSec",
         label: "Tok/s",
         render: (r) =>
-          r.tokensPerSec != null ? Number(r.tokensPerSec).toFixed(1) : "—",
+          formatTokensPerSec(r.tokensPerSec),
         align: "right",
       },
       {
@@ -299,7 +299,7 @@ export default function RequestsPage() {
         r.inputTokens || 0,
         r.outputTokens || 0,
         r.estimatedCost || 0,
-        r.tokensPerSec ? Number(r.tokensPerSec).toFixed(1) : "",
+        r.tokensPerSec ? formatTokensPerSec(r.tokensPerSec) : "",
         r.totalTime || 0,
         r.success ? "OK" : "ERR",
       ].join(","),
@@ -528,7 +528,7 @@ export default function RequestsPage() {
                     },
                     {
                       label: "Tokens/sec",
-                      value: selectedRequest.tokensPerSec?.toFixed(1) || "-",
+                      value: formatTokensPerSec(selectedRequest.tokensPerSec),
                     },
                     {
                       label: "Input Chars",

@@ -3,11 +3,12 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: overlayFadeIn 0.15s ease;
+  animation: fadeInPure 0.15s ease;
 }
 
 .modal {

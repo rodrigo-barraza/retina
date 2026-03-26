@@ -13,7 +13,13 @@ import {
   MessageSquare,
 } from "lucide-react";
 import IrisService from "../../services/IrisService";
-import { formatNumber, formatCost, formatLatency } from "../../utils/utilities";
+import {
+  formatNumber,
+  formatCost,
+  formatLatency,
+  formatTokensPerSec,
+  buildDateRangeParams,
+} from "../../utils/utilities";
 import StatsCard from "../../components/StatsCard";
 import DatePickerComponent from "../../components/DatePickerComponent";
 import TimelineChartComponent from "../../components/TimelineChartComponent";
@@ -54,12 +60,10 @@ export default function DashboardPage() {
   // Date range
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
 
-  const dateParams = useMemo(() => {
-    const p = {};
-    if (dateRange.from) p.from = new Date(dateRange.from).toISOString();
-    if (dateRange.to) p.to = new Date(dateRange.to + "T23:59:59").toISOString();
-    return p;
-  }, [dateRange]);
+  const dateParams = useMemo(
+    () => buildDateRangeParams(dateRange),
+    [dateRange],
+  );
 
   const timelineHours = useMemo(() => {
     if (dateRange.from || dateRange.to) return 720;
@@ -251,7 +255,9 @@ export default function DashboardPage() {
           label="Avg Latency"
           value={loading ? "..." : formatLatency(stats?.avgLatency)}
           subtitle={
-            loading ? "" : `${stats?.avgTokensPerSec?.toFixed(0) || 0} tok/s`
+            loading
+              ? ""
+              : `${formatTokensPerSec(stats?.avgTokensPerSec)} tok/s`
           }
           icon={Clock}
           variant="success"
@@ -333,7 +339,7 @@ export default function DashboardPage() {
             key: "avgTokensPerSec",
             label: "Tok/s",
             render: (p) =>
-              p.avgTokensPerSec ? `${p.avgTokensPerSec.toFixed(1)}` : "—",
+              formatTokensPerSec(p.avgTokensPerSec),
           },
           {
             key: "totalCost",
@@ -439,7 +445,7 @@ export default function DashboardPage() {
             key: "avgTokensPerSec",
             label: "Tok/s",
             render: (p) =>
-              p.avgTokensPerSec ? `${p.avgTokensPerSec.toFixed(1)}` : "—",
+              formatTokensPerSec(p.avgTokensPerSec),
           },
           {
             key: "totalCost",
@@ -549,7 +555,7 @@ export default function DashboardPage() {
             key: "avgTokensPerSec",
             label: "Tok/s",
             render: (m) =>
-              m.avgTokensPerSec ? `${m.avgTokensPerSec.toFixed(1)}` : "—",
+              formatTokensPerSec(m.avgTokensPerSec),
           },
           {
             key: "totalCost",

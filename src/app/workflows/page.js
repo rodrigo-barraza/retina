@@ -266,8 +266,8 @@ export default function WorkflowsPage({ initialWorkflowId }) {
     const snapshot = {
       workflowId: wId,
       workflowName: wName,
-      nodes: JSON.parse(JSON.stringify(n)),
-      edges: JSON.parse(JSON.stringify(e)),
+      nodes: structuredClone(n),
+      edges: structuredClone(e),
     };
     undoStackRef.current.push(snapshot);
     if (undoStackRef.current.length > 100) {
@@ -933,7 +933,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
   const handleDuplicateNode = useCallback((nodeData) => {
     pushUndo();
     const newNode = {
-      ...JSON.parse(JSON.stringify(nodeData)),
+      ...structuredClone(nodeData),
       id: generateNodeId(),
       position: {
         x: (nodeData.position?.x || 0) + 40,

@@ -553,6 +553,7 @@
   border-top: 1px solid var(--border-color);
   background: var(--bg-glass);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .inputBox {
@@ -675,7 +676,7 @@
     position: absolute;
     inset: -50%;
     background: var(--prism-conic);
-    animation: prismSpin 2s linear infinite;
+    animation: spin 2s linear infinite;
     z-index: -1;
   }
 
@@ -923,6 +924,7 @@
   justify-content: center;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
 }
 

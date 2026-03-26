@@ -168,6 +168,7 @@
   border-top: 1px solid var(--border-color);
   background: var(--bg-glass);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   flex-shrink: 0;
 }
 

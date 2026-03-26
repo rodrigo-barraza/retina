@@ -42,3 +42,6 @@ secrets.js
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# WSL artifacts
+*:Zone.Identifier

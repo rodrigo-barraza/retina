@@ -9,7 +9,12 @@ import {
 } from "lucide-react";
 
 import IrisService from "../../../services/IrisService";
-import { formatNumber, formatCost } from "../../../utils/utilities";
+import {
+  formatNumber,
+  formatCost,
+  formatTokensPerSec,
+  buildDateRangeParams,
+} from "../../../utils/utilities";
 import StatsCard from "../../../components/StatsCard";
 import SelectDropdown from "../../../components/SelectDropdown";
 import SortableTable from "../../../components/SortableTableComponent";
@@ -37,11 +42,7 @@ const costRender = (row) => (
 const tokensInRender = (row) => formatNumber(row.totalInputTokens);
 const tokensOutRender = (row) => formatNumber(row.totalOutputTokens);
 const requestsRender = (row) => formatNumber(row.totalRequests);
-const tpsRender = (row) => {
-  const v = row.avgTokensPerSec;
-  if (v === null || v === undefined || v === 0) return "—";
-  return `${Number(v).toFixed(1)}`;
-};
+const tpsRender = (row) => formatTokensPerSec(row.avgTokensPerSec);
 
 // Merge endpoint rows that map to the same modality label
 function mergeByModality(rows) {
@@ -86,9 +87,7 @@ export default function UsagePage() {
       setError(null);
       const params = {};
       if (projectFilter) params.project = projectFilter;
-      if (dateRange.from) params.from = new Date(dateRange.from).toISOString();
-      if (dateRange.to)
-        params.to = new Date(dateRange.to + "T23:59:59").toISOString();
+      Object.assign(params, buildDateRangeParams(dateRange));
       const result = await IrisService.getCostStats(params);
       setData(result);
     } catch (err) {

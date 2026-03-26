@@ -24,6 +24,7 @@ import consoleStyles from "./ConsoleComponent.module.css";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import { useEffect, useRef, useState } from "react";
 import PrismService from "../services/PrismService";
+import { formatContextTokens } from "../utils/utilities";
 
 import ToggleSwitchComponent from "./ToggleSwitch";
 import ChatInputButton from "./ChatInputButton";
@@ -157,10 +158,7 @@ function _getOutputTypesForInput(config, inputType) {
 
 
 function _formatContextLength(tokens) {
-  if (!tokens) return null;
-  if (tokens >= 1_000_000)
-    return `${(tokens / 1_000_000).toFixed(tokens % 1_000_000 === 0 ? 0 : 1)}M`;
-  return `${Math.round(tokens / 1000)}K`;
+  return formatContextTokens(tokens);
 }
 
 const ARENA_COLUMNS = [

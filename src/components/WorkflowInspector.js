@@ -575,7 +575,7 @@ export default function WorkflowInspector({
           (node.messages || []).length > 0 &&
           (() => {
             // Build resolved messages by merging static template with connected input content
-            const resolved = JSON.parse(JSON.stringify(node.messages || []));
+            const resolved = structuredClone(node.messages || []);
             for (const conn of incoming) {
               const dotIdx = conn.targetModality.indexOf(".");
               if (dotIdx === -1) continue;

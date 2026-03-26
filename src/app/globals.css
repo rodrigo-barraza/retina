@@ -284,14 +284,7 @@ select option {
   }
 }
 
-@keyframes overlayFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
+/* overlayFadeIn removed — use fadeInPure instead */
 
 @keyframes iconScrollUp {
   0% {
@@ -312,14 +305,7 @@ select option {
   }
 }
 
-@keyframes prismSpin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* prismSpin removed — use spin instead */
 
 @keyframes toastIn {
   from {
