@@ -71,6 +71,8 @@ function RainbowCanvas({ turbo = false }) {
     lastTime: 0,
   });
   const turboRef = useRef(turbo);
+  const rafRef = useRef(null);
+
   useEffect(() => {
     turboRef.current = turbo;
   }, [turbo]);
@@ -86,9 +88,7 @@ function RainbowCanvas({ turbo = false }) {
 
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
-        // Diagonal gradient offset + time offset
         const t = (x / cols + y / rows) * 0.5 + s.offset / 360;
-        // Dither: slight per-pixel noise for that 8-bit feel
         const dither = ((x * 7 + y * 13) % 5) / 40;
         const [r, g, b] = rainbowAt(t + dither);
         ctx.fillStyle = `rgb(${r | 0},${g | 0},${b | 0})`;
@@ -97,58 +97,62 @@ function RainbowCanvas({ turbo = false }) {
     }
   }, []);
 
+  // Start/stop animation loop based on turbo prop
+  useEffect(() => {
+    if (!turbo && !rafRef.current) return; // Already idle, nothing to do
+
+    if (turbo && !rafRef.current) {
+      // Kick-start the loop
+      stateRef.current.lastTime = 0;
+      const tick = (now) => {
+        const s = stateRef.current;
+        if (!s.lastTime) s.lastTime = now;
+        const dt = (now - s.lastTime) / 1000;
+        s.lastTime = now;
+
+        if (turboRef.current) {
+          s.turboTime += dt;
+          s.turboVelocity = TURBO_ACCEL * s.turboTime * s.turboTime;
+        } else if (s.turboVelocity > 0.5) {
+          s.turboTime = 0;
+          const smoothing = 1 - Math.pow(1 - TURBO_RELEASE, dt * 60);
+          s.turboVelocity += (0 - s.turboVelocity) * smoothing;
+        } else {
+          // Wind-down complete — stop the loop, draw one last static frame
+          s.turboVelocity = 0;
+          s.turboTime = 0;
+          draw();
+          rafRef.current = null;
+          return;
+        }
+
+        const speed = BASE_SPEED + s.turboVelocity;
+        s.offset = (s.offset + speed * dt) % 360;
+        draw();
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      rafRef.current = requestAnimationFrame(tick);
+    }
+  }, [turbo, draw]);
+
+  // Resize handling + initial static draw
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const parent = canvas.parentElement;
-    let rafId;
 
     const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
       const rect = parent.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      canvas.style.width = rect.width + "px";
-      canvas.style.height = rect.height + "px";
-      const ctx = canvas.getContext("2d", { alpha: false });
-      ctx.scale(dpr, dpr);
-      // Reset canvas dimensions for drawing in CSS pixels
       canvas.width = rect.width;
       canvas.height = rect.height;
-    };
-
-    const tick = (now) => {
-      const s = stateRef.current;
-      if (!s.lastTime) s.lastTime = now;
-      const dt = (now - s.lastTime) / 1000;
-      s.lastTime = now;
-
-      // Turbo: quadratic ease-in while generating (starts slow, compounds faster)
-      if (turboRef.current) {
-        s.turboTime += dt;
-        s.turboVelocity = TURBO_ACCEL * s.turboTime * s.turboTime;
-      } else if (s.turboVelocity > 0.5) {
-        // Smooth exponential release back to base speed
-        s.turboTime = 0;
-        const smoothing = 1 - Math.pow(1 - TURBO_RELEASE, dt * 60);
-        s.turboVelocity += (0 - s.turboVelocity) * smoothing;
-      } else {
-        s.turboVelocity = 0;
-        s.turboTime = 0;
-      }
-
-      const speed = BASE_SPEED + s.turboVelocity;
-      s.offset = (s.offset + speed * dt) % 360;
-
+      canvas.style.width = rect.width + "px";
+      canvas.style.height = rect.height + "px";
       draw();
-      rafId = requestAnimationFrame(tick);
     };
 
     resize();
     window.addEventListener("resize", resize);
-    rafId = requestAnimationFrame(tick);
 
-    // Re-size when the parent's layout dimensions change (e.g. flex resolving)
     let ro;
     if (typeof ResizeObserver !== "undefined") {
       ro = new ResizeObserver(resize);
@@ -156,7 +160,8 @@ function RainbowCanvas({ turbo = false }) {
     }
 
     return () => {
-      cancelAnimationFrame(rafId);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
       window.removeEventListener("resize", resize);
       ro?.disconnect();
     };

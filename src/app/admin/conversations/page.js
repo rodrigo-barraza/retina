@@ -1,23 +1,48 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Loader, MessageSquare } from "lucide-react";
+import {
+  Loader,
+  MessageSquare,
+  Settings,
+  SlidersHorizontal,
+} from "lucide-react";
 
 import IrisService from "../../../services/IrisService";
 import MessageList, {
   prepareDisplayMessages,
 } from "../../../components/MessageList";
 import SettingsPanel from "../../../components/SettingsPanel";
+import ParametersPanelComponent from "../../../components/ParametersPanelComponent";
 import HistoryPanel from "../../../components/HistoryPanel";
 
 import ThreePanelLayout from "../../../components/ThreePanelLayout";
 import SelectDropdown from "../../../components/SelectDropdown";
+import TooltipComponent from "../../../components/TooltipComponent";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
+import consoleStyles from "../../../components/ConsoleComponent.module.css";
 import styles from "./page.module.css";
 
 const POLL_INTERVAL = 5000; // 5s
+
+const SETTINGS_DEFAULTS = {
+  temperature: 1.0,
+  maxTokens: 2048,
+  topP: 1,
+  topK: 0,
+  frequencyPenalty: 0,
+  presencePenalty: 0,
+  stopSequences: "",
+  thinkingEnabled: false,
+  reasoningEffort: "high",
+  thinkingLevel: "high",
+  thinkingBudget: "",
+  webSearchEnabled: false,
+  verbosity: "",
+  reasoningSummary: "",
+};
 
 export default function ConversationsPage({ initialId = null }) {
   const { projectFilter, projectOptions, handleProjectChange } =
@@ -34,6 +59,7 @@ export default function ConversationsPage({ initialId = null }) {
   const [generatingCount, setGeneratingCount] = useState(0);
   const [recentCount, setRecentCount] = useState(0);
   const [workflows, setWorkflows] = useState([]);
+  const [leftTab, setLeftTab] = useState("settings");
 
   const knownIdsRef = useRef(null); // null = not yet initialized
   const lastFingerprintRef = useRef("");
@@ -252,6 +278,11 @@ export default function ConversationsPage({ initialId = null }) {
     [selectedConv],
   );
 
+  const settingsWithDefaults = useMemo(
+    () => ({ ...SETTINGS_DEFAULTS, ...(selectedConv?.settings || {}) }),
+    [selectedConv],
+  );
+
   const { setControls } = useAdminHeader();
 
   // Inject controls into AdminShell header
@@ -304,12 +335,41 @@ export default function ConversationsPage({ initialId = null }) {
         <ThreePanelLayout
           leftPanel={
             selectedConv?.settings ? (
-              <SettingsPanel
-                config={config}
-                settings={selectedConv.settings}
-                readOnly
-                workflows={workflows}
-              />
+              <>
+                <div className={consoleStyles.tabBar}>
+                  <TooltipComponent label="Settings" position="right">
+                    <button
+                      className={`${consoleStyles.tab} ${leftTab === "settings" ? consoleStyles.tabActive : ""}`}
+                      onClick={() => setLeftTab("settings")}
+                    >
+                      <Settings size={14} />
+                    </button>
+                  </TooltipComponent>
+                  <TooltipComponent label="Params" position="right">
+                    <button
+                      className={`${consoleStyles.tab} ${leftTab === "params" ? consoleStyles.tabActive : ""}`}
+                      onClick={() => setLeftTab("params")}
+                    >
+                      <SlidersHorizontal size={14} />
+                    </button>
+                  </TooltipComponent>
+                </div>
+                {leftTab === "settings" && (
+                  <SettingsPanel
+                    config={config}
+                    settings={settingsWithDefaults}
+                    readOnly
+                    workflows={workflows}
+                  />
+                )}
+                {leftTab === "params" && (
+                  <ParametersPanelComponent
+                    settings={settingsWithDefaults}
+                    config={config}
+                    readOnly
+                  />
+                )}
+              </>
             ) : (
               <div className={styles.emptyPanel}>
                 Select a conversation to view settings
