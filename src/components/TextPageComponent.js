@@ -115,11 +115,12 @@ export default function TextPageComponent({ mode = "user" }) {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <div className={styles.page}>
+    <>
       <PageHeaderComponent
         title="Text"
         subtitle={`${total} messages across conversations`}
       />
+      <div className={styles.page}>
 
       {/* Filters */}
       <FilterBarComponent>
@@ -296,6 +297,7 @@ export default function TextPageComponent({ mode = "user" }) {
         totalItems={total}
         onPageChange={setPage}
       />
-    </div>
+      </div>
+    </>
   );
 }

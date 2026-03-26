@@ -1,4 +1,5 @@
 .content {
+  padding: 32px 40px;
   animation: fadeIn var(--transition-normal) ease-out;
 }
 

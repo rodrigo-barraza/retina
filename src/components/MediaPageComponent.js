@@ -312,11 +312,11 @@ export default function MediaPageComponent({
 
   return (
     <>
+      <PageHeaderComponent
+        title="Media"
+        subtitle={`${total} files across conversations`}
+      />
       <div className={styles.content}>
-        <PageHeaderComponent
-          title="Media"
-          subtitle={`${total} files across conversations`}
-        />
 
         {/* Filters */}
         <FilterBarComponent>

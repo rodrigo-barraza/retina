@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Server, Loader2, Power, PowerOff, RefreshCw } from "lucide-react";
+import { Loader2, Power, PowerOff, RefreshCw } from "lucide-react";
 import IrisService from "../services/IrisService";
 import PrismService from "../services/PrismService";
 import ModelGrid from "./ModelGrid";
+import PageHeaderComponent from "./PageHeaderComponent";
 import { ErrorMessage } from "./StateMessageComponent";
 import { useToast } from "./ToastComponent";
 import styles from "./ModelsPageComponent.module.css";
@@ -214,12 +215,11 @@ export default function ModelsPageComponent({ mode = "user" }) {
     : undefined;
 
   return (
-    <div className={styles.content}>
-      <div className={styles.pageHeader}>
-        <div className={styles.titleRow}>
-          <h1 className={styles.pageTitle}>
-            <Server size={24} /> Models
-          </h1>
+    <>
+      <PageHeaderComponent
+          title="Models"
+          subtitle={`${allModels.length} models across ${providerSet.size} providers`}
+        >
           <button
             className={styles.refreshBtn}
             onClick={handleRefresh}
@@ -228,11 +228,8 @@ export default function ModelsPageComponent({ mode = "user" }) {
             <RefreshCw size={16} className={loading ? styles.spinning : ""} />
             Refresh
           </button>
-        </div>
-        <p className={styles.pageSubtitle}>
-          {allModels.length} models across {providerSet.size} providers
-        </p>
-      </div>
+        </PageHeaderComponent>
+      <div className={styles.content}>
 
       <ErrorMessage message={error} />
 
@@ -251,6 +248,7 @@ export default function ModelsPageComponent({ mode = "user" }) {
           onToggleFavorite={handleToggleFavorite}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }
