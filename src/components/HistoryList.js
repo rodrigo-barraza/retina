@@ -2,8 +2,6 @@
 
 import { useState, useMemo } from "react";
 import {
-  Search,
-  X as XIcon,
   Trash2,
   Type,
   Image,
@@ -25,6 +23,8 @@ import SidebarFilterComponent, {
 } from "./SidebarFilterComponent";
 import DatePickerComponent from "./DatePickerComponent";
 import TooltipComponent from "./TooltipComponent";
+import SearchInputComponent from "./SearchInputComponent";
+import IconButtonComponent from "./IconButtonComponent";
 import { DateTime } from "luxon";
 import styles from "./HistoryList.module.css";
 import { MODALITY_COLORS } from "./WorkflowNodeConstants";
@@ -167,25 +167,12 @@ export default function HistoryList({
 
   return (
     <div className={styles.container}>
-      <div className={styles.searchWrapper}>
-        <Search size={14} className={styles.searchIcon} />
-        <input
-          type="text"
-          className={styles.searchInput}
-          placeholder={searchPlaceholder}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {searchQuery && (
-          <button
-            className={styles.searchClear}
-            onClick={() => setSearchQuery("")}
-            title="Clear search"
-          >
-            <XIcon size={14} />
-          </button>
-        )}
-      </div>
+      <SearchInputComponent
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder={searchPlaceholder}
+        className={styles.searchWrapper}
+      />
 
       <SidebarFilterComponent
         modalities={showModalityFilters ? allModalities : []}
@@ -441,40 +428,38 @@ export default function HistoryList({
               {/* Actions */}
               <div className={styles.actions}>
                 {onDownload && (
-                  <button
-                    className={styles.actionBtn}
+                  <IconButtonComponent
+                    icon={<Download size={12} />}
                     onClick={(e) => {
                       e.stopPropagation();
                       onDownload(item.id);
                     }}
-                    title="Download"
-                  >
-                    <Download size={12} />
-                  </button>
+                    tooltip="Download"
+                    hoverReveal
+                  />
                 )}
                 {onCopy && (
-                  <button
-                    className={styles.actionBtn}
+                  <IconButtonComponent
+                    icon={<Copy size={12} />}
                     onClick={(e) => {
                       e.stopPropagation();
                       onCopy(item.id);
                     }}
-                    title="Copy"
-                  >
-                    <Copy size={12} />
-                  </button>
+                    tooltip="Copy"
+                    hoverReveal
+                  />
                 )}
                 {!readOnly && !admin && onDelete && (
-                  <button
-                    className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                  <IconButtonComponent
+                    icon={<Trash2 size={12} />}
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(item.id);
                     }}
-                    title="Delete"
-                  >
-                    <Trash2 size={12} />
-                  </button>
+                    tooltip="Delete"
+                    variant="danger"
+                    hoverReveal
+                  />
                 )}
               </div>
             </div>

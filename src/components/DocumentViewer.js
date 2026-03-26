@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { X, FileText } from "lucide-react";
+import { useMemo } from "react";
+import { FileText } from "lucide-react";
+import ModalOverlayComponent from "./ModalOverlayComponent";
+import CloseButtonComponent from "./CloseButtonComponent";
 import styles from "./DocumentViewer.module.css";
 
 function decodeDataUrl(dataUrl) {
@@ -25,26 +27,15 @@ export default function DocumentViewer({ dataUrl, onClose }) {
     [dataUrl, isPdf],
   );
 
-  // Close on Escape
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <ModalOverlayComponent onClose={onClose} variant="dark">
       <div className={styles.viewer} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.headerTitle}>
             <FileText size={18} />
             <span>{isPdf ? "PDF Document" : "Text Document"}</span>
           </div>
-          <button className={styles.closeBtn} onClick={onClose}>
-            <X size={20} />
-          </button>
+          <CloseButtonComponent onClick={onClose} size={20} />
         </div>
         <div className={styles.body}>
           {isPdf ? (
@@ -58,6 +49,6 @@ export default function DocumentViewer({ dataUrl, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </ModalOverlayComponent>
   );
 }

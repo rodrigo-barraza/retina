@@ -26,9 +26,9 @@ import CustomToolsPanel from "../components/CustomToolsPanel";
 import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
 import ThreePanelLayout from "../components/ThreePanelLayout";
+import TabBarComponent from "../components/TabBarComponent";
 import consoleStyles from "../components/ConsoleComponent.module.css";
 import ModelPickerPopoverComponent from "../components/ModelPickerPopoverComponent";
-import TooltipComponent from "../components/TooltipComponent";
 
 export default function HomePage({ initialConversationId = null }) {
   const router = useRouter();
@@ -1885,37 +1885,28 @@ Guidelines:
         leftTitle={null}
         leftPanel={
           <>
-            <div className={consoleStyles.tabBar}>
-              <TooltipComponent label="Settings" position="right">
-                <button
-                  className={`${consoleStyles.tab} ${leftTab === "settings" ? consoleStyles.tabActive : ""}`}
-                  onClick={() => setLeftTab("settings")}
-                >
-                  <Settings size={14} />
-                </button>
-              </TooltipComponent>
-              <TooltipComponent label="Function Calling" position="right">
-                <button
-                  className={`${consoleStyles.tab} ${leftTab === "tools" ? consoleStyles.tabActive : ""}${!selectedModelSupportsFc ? ` ${consoleStyles.tabDisabled}` : ""}`}
-                  onClick={() => setLeftTab("tools")}
-                >
-                  <Parentheses size={14} />
-                  {settings.functionCallingEnabled && (
-                    <span className={consoleStyles.tabBadge}>
-                      {allToolSchemas.length}
-                    </span>
-                  )}
-                </button>
-              </TooltipComponent>
-              <TooltipComponent label="Params" position="right">
-                <button
-                  className={`${consoleStyles.tab} ${leftTab === "params" ? consoleStyles.tabActive : ""}`}
-                  onClick={() => setLeftTab("params")}
-                >
-                  <SlidersHorizontal size={14} />
-                </button>
-              </TooltipComponent>
-            </div>
+            <TabBarComponent
+              tabs={[
+                {
+                  key: "settings",
+                  icon: <Settings size={14} />,
+                },
+                {
+                  key: "tools",
+                  icon: <Parentheses size={14} />,
+                  badge: settings.functionCallingEnabled
+                    ? allToolSchemas.length
+                    : undefined,
+                  disabled: !selectedModelSupportsFc,
+                },
+                {
+                  key: "params",
+                  icon: <SlidersHorizontal size={14} />,
+                },
+              ]}
+              activeTab={leftTab}
+              onChange={setLeftTab}
+            />
             {leftTab === "settings" && (
               <SettingsPanel
                 config={config}

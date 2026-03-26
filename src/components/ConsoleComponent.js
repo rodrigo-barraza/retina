@@ -22,6 +22,8 @@ import SettingsPanel from "./SettingsPanel.js";
 import CustomToolsPanel from "./CustomToolsPanel.js";
 import MessageList, { prepareDisplayMessages } from "./MessageList.js";
 import ImagePreviewComponent from "./ImagePreviewComponent.js";
+import TabBarComponent from "./TabBarComponent.js";
+import EmptyStateComponent from "./EmptyStateComponent.js";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./ConsoleComponent.module.css";
@@ -778,21 +780,18 @@ export default function ConsoleComponent() {
 
   const leftPanel = (
     <>
-      <div className={styles.tabBar}>
-        <button
-          className={`${styles.tab} ${leftTab === "settings" ? styles.tabActive : ""}`}
-          onClick={() => setLeftTab("settings")}
-        >
-          Settings
-        </button>
-        <button
-          className={`${styles.tab} ${leftTab === "tools" ? styles.tabActive : ""}`}
-          onClick={() => setLeftTab("tools")}
-        >
-          Function Calling
-          <span className={styles.tabBadge}>{allToolSchemas.length}</span>
-        </button>
-      </div>
+      <TabBarComponent
+        tabs={[
+          { key: "settings", label: "Settings" },
+          {
+            key: "tools",
+            label: "Function Calling",
+            badge: allToolSchemas.length,
+          },
+        ]}
+        activeTab={leftTab}
+        onChange={setLeftTab}
+      />
 
       {leftTab === "settings" && (
         <SettingsPanel
@@ -822,30 +821,24 @@ export default function ConsoleComponent() {
       {/* Messages */}
       <div className={chatStyles.messagesList}>
         {messages.length === 0 && (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>
-              <Terminal size={40} />
-            </div>
-            <h2 className={styles.emptyTitle}>Console</h2>
-            <p className={styles.emptySubtitle}>
-              Ask about weather, events, commodities, trends, or anything
-              powered by the Sun ecosystem.
-            </p>
-            <div className={styles.quickPrompts}>
-              {randomPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  className={styles.quickPrompt}
-                  onClick={() => {
-                    setInputValue(prompt);
-                    textareaRef.current?.focus();
-                  }}
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          </div>
+          <EmptyStateComponent
+            icon={<Terminal size={40} />}
+            title="Console"
+            subtitle="Ask about weather, events, commodities, trends, or anything powered by the Sun ecosystem."
+          >
+            {randomPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                className={styles.quickPrompt}
+                onClick={() => {
+                  setInputValue(prompt);
+                  textareaRef.current?.focus();
+                }}
+              >
+                {prompt}
+              </button>
+            ))}
+          </EmptyStateComponent>
         )}
 
         <MessageList

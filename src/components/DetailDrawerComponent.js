@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import CloseButtonComponent from "./CloseButtonComponent";
 import styles from "./DetailDrawerComponent.module.css";
 
 /**
@@ -27,9 +27,7 @@ export default function DetailDrawerComponent({
       <div className={styles.drawer}>
         <div className={styles.header}>
           <span className={styles.title}>{title}</span>
-          <button className={styles.closeBtn} onClick={onClose}>
-            <X size={18} />
-          </button>
+          <CloseButtonComponent onClick={onClose} />
         </div>
         <div className={styles.body}>
           {sections.map((section, si) => (

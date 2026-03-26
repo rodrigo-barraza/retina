@@ -18,11 +18,10 @@ import HistoryPanel from "../../../components/HistoryPanel";
 
 import ThreePanelLayout from "../../../components/ThreePanelLayout";
 import SelectDropdown from "../../../components/SelectDropdown";
-import TooltipComponent from "../../../components/TooltipComponent";
+import TabBarComponent from "../../../components/TabBarComponent";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
-import consoleStyles from "../../../components/ConsoleComponent.module.css";
 import styles from "./page.module.css";
 
 const POLL_INTERVAL = 5000; // 5s
@@ -336,24 +335,20 @@ export default function ConversationsPage({ initialId = null }) {
           leftPanel={
             selectedConv?.settings ? (
               <>
-                <div className={consoleStyles.tabBar}>
-                  <TooltipComponent label="Settings" position="right">
-                    <button
-                      className={`${consoleStyles.tab} ${leftTab === "settings" ? consoleStyles.tabActive : ""}`}
-                      onClick={() => setLeftTab("settings")}
-                    >
-                      <Settings size={14} />
-                    </button>
-                  </TooltipComponent>
-                  <TooltipComponent label="Params" position="right">
-                    <button
-                      className={`${consoleStyles.tab} ${leftTab === "params" ? consoleStyles.tabActive : ""}`}
-                      onClick={() => setLeftTab("params")}
-                    >
-                      <SlidersHorizontal size={14} />
-                    </button>
-                  </TooltipComponent>
-                </div>
+                <TabBarComponent
+                  tabs={[
+                    {
+                      key: "settings",
+                      icon: <Settings size={14} />,
+                    },
+                    {
+                      key: "params",
+                      icon: <SlidersHorizontal size={14} />,
+                    },
+                  ]}
+                  activeTab={leftTab}
+                  onChange={setLeftTab}
+                />
                 {leftTab === "settings" && (
                   <SettingsPanel
                     config={config}

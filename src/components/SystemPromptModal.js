@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X, Plus } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Plus } from "lucide-react";
 import SelectDropdown from "./SelectDropdown";
+import ModalOverlayComponent from "./ModalOverlayComponent";
+import CloseButtonComponent from "./CloseButtonComponent";
 import styles from "./SystemPromptModal.module.css";
 
 const LS_KEY = "retina_system_instructions";
@@ -34,22 +35,7 @@ export default function SystemPromptModal({ activePrompt, onApply, onClose }) {
     return match ? match.title : "";
   });
   const [body, setBody] = useState(activePrompt || "");
-  const overlayRef = useRef(null);
   const saveTimerRef = useRef(null);
-
-  // Close on Escape
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
-  // Close on overlay click
-  const handleOverlayClick = (e) => {
-    if (e.target === overlayRef.current) onClose();
-  };
 
   // Debounced auto-save
   const persistInstruction = useCallback(
@@ -157,18 +143,12 @@ export default function SystemPromptModal({ activePrompt, onApply, onClose }) {
     },
   ];
 
-  return createPortal(
-    <div
-      className={styles.overlay}
-      ref={overlayRef}
-      onClick={handleOverlayClick}
-    >
+  return (
+    <ModalOverlayComponent onClose={onClose} portal>
       <div className={styles.modal}>
         <div className={styles.header}>
           <h3>System Instructions</h3>
-          <button className={styles.closeBtn} onClick={onClose}>
-            <X size={18} />
-          </button>
+          <CloseButtonComponent onClick={onClose} />
         </div>
 
         <div className={styles.body}>
@@ -211,7 +191,6 @@ export default function SystemPromptModal({ activePrompt, onApply, onClose }) {
           )}
         </div>
       </div>
-    </div>,
-    document.body,
+    </ModalOverlayComponent>
   );
 }

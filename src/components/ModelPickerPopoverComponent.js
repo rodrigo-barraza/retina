@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ChevronDown, Search, X } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import ModelGrid from "./ModelGrid";
+import CloseButtonComponent from "./CloseButtonComponent";
 import styles from "./ModelPickerPopoverComponent.module.css";
 
 /**
@@ -211,13 +212,10 @@ export default function ModelPickerPopoverComponent({
                   <X size={14} />
                 </button>
               )}
-              <button
-                className={styles.closeBtn}
+              <CloseButtonComponent
                 onClick={() => setOpen(false)}
-                title="Close"
-              >
-                <X size={16} />
-              </button>
+                size={16}
+              />
             </div>
 
             {/* Body: ModelGrid with search disabled (hoisted above) */}

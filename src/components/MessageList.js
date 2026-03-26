@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import MarkdownContent from "./MarkdownContent";
+import IconButtonComponent from "./IconButtonComponent";
 import styles from "./MessageList.module.css";
 import { DateTime } from "luxon";
 import PrismService from "../services/PrismService";
@@ -97,13 +98,12 @@ function CopyButton({ text }) {
   }, [text]);
 
   return (
-    <button
-      className={styles.actionBtn}
+    <IconButtonComponent
+      icon={copied ? <Check size={14} /> : <Copy size={14} />}
       onClick={handleCopy}
-      title="Copy raw text"
-    >
-      {copied ? <Check size={14} /> : <Copy size={14} />}
-    </button>
+      tooltip="Copy raw text"
+      hoverReveal
+    />
   );
 }
 
@@ -564,34 +564,32 @@ export default function MessageList({
                     <div className={styles.messageActions}>
                       {msg.role === "user" && (
                         <>
-                          <button
-                            className={styles.actionBtn}
+                          <IconButtonComponent
+                            icon={<Pencil size={14} />}
                             onClick={() =>
                               setEditingIndex(editingIndex === i ? null : i)
                             }
                             disabled={isGenerating}
-                            title="Edit message"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            className={styles.actionBtn}
+                            tooltip="Edit message"
+                            hoverReveal
+                          />
+                          <IconButtonComponent
+                            icon={<RotateCcw size={14} />}
                             onClick={() => onRerun?.(i)}
                             disabled={isGenerating}
-                            title="Rerun this turn"
-                          >
-                            <RotateCcw size={14} />
-                          </button>
+                            tooltip="Rerun this turn"
+                            hoverReveal
+                          />
                         </>
                       )}
                       {msg.content && <CopyButton text={msg.content} />}
-                      <button
-                        className={`${styles.actionBtn} ${styles.dangerBtn}`}
+                      <IconButtonComponent
+                        icon={<Trash2 size={14} />}
                         onClick={() => onDelete?.(i)}
-                        title="Delete message"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                        tooltip="Delete message"
+                        variant="danger"
+                        hoverReveal
+                      />
                     </div>
                   )}
                   {readOnly && msg.content && (

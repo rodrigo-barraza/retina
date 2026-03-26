@@ -2,8 +2,6 @@
 
 import { useState, useMemo } from "react";
 import {
-  Search,
-  X,
   Star,
   ArrowRight,
   Brain,
@@ -23,6 +21,7 @@ import {
 } from "./WorkflowNodeConstants";
 import SortableTableComponent from "./SortableTableComponent";
 import TooltipComponent from "./TooltipComponent";
+import SearchInputComponent from "./SearchInputComponent";
 import {
   FilterBarComponent,
   FilterIconButtonGroupComponent,
@@ -556,25 +555,12 @@ export default function ModelGrid({
     <div className={styles.container}>
       <FilterBarComponent className={styles.toolbar}>
         {showSearch && (
-          <div className={styles.searchWrapper}>
-            <Search size={14} className={styles.searchIcon} />
-            <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="Search models…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button
-                className={styles.searchClear}
-                onClick={() => setSearchQuery("")}
-                title="Clear search"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
+          <SearchInputComponent
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search models…"
+            className={styles.searchWrapper}
+          />
         )}
         {allModalities.length >= 2 && (
           <FilterIconButtonGroupComponent
