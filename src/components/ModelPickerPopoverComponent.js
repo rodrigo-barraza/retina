@@ -58,7 +58,7 @@ export default function ModelPickerPopoverComponent({
     if (!triggerRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const viewportW = window.innerWidth;
-    const popoverW = Math.min(860, viewportW - 32);
+    const popoverW = Math.min(1600, viewportW - 32);
 
     // Center horizontally relative to the ChatArea (the main content section)
     const chatArea = document.querySelector("[data-chat-area]");

@@ -9,13 +9,26 @@ import {
   Upload,
   Undo2,
   RotateCcw,
+  Plus,
+  Save,
+  Package,
+  Bot,
+  MessageSquare,
+  Type,
+  Paperclip,
+  Eye,
+  Workflow,
+  Parentheses,
 } from "lucide-react";
 import PrismService from "../../services/PrismService";
 import WorkflowService from "../../services/WorkflowService";
 import SunService from "../../services/SunService";
 import { executeWorkflow } from "../../services/WorkflowExecutor";
-import WorkflowComponent from "../../components/WorkflowComponent";
+import WorkflowCanvas from "../../components/WorkflowCanvas";
+import WorkflowInspector from "../../components/WorkflowInspector";
 import WorkflowHeaderStatsComponent from "../../components/WorkflowHeaderStatsComponent";
+import HistoryList from "../../components/HistoryList";
+import ThreePanelLayout from "../../components/ThreePanelLayout";
 import NavigationSidebarComponent from "../../components/NavigationSidebarComponent";
 import { useToast } from "../../components/ToastComponent";
 import styles from "./page.module.css";
@@ -908,186 +921,340 @@ export default function WorkflowsPage({ initialWorkflowId }) {
     setSelectedNodeId(newNode.id);
   }, []);
 
-  return (
-    <div className={styles.pageWrapper}>
-      <NavigationSidebarComponent mode="user" />
-      <div className={styles.page}>
-        {/* Header */}
-        <header className={styles.header}>
-          <div className={styles.headerLeft}>
-            <h1 className={styles.headerTitle}>Workflows</h1>
-            <WorkflowHeaderStatsComponent
-              nodes={nodes}
-              edgeCount={edges.length}
-            />
-          </div>
-          <div className={styles.headerRight}>
-            <button
-              className={styles.headerActionBtn}
-              onClick={() => {
-                const data = JSON.stringify({ nodes, edges }, null, 2);
-                const blob = new Blob([data], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `workflow-${Date.now()}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-              title="Export workflow"
-            >
-              <Download size={14} />
-            </button>
-            <button
-              className={styles.headerActionBtn}
-              onClick={() => importRef.current?.click()}
-              title="Import workflow"
-            >
-              <Upload size={14} />
-            </button>
-            <button
-              className={styles.headerActionBtn}
-              onClick={handleUndo}
-              disabled={undoCount === 0}
-              title={`Undo (Ctrl+Z) · ${undoCount} states`}
-            >
-              <Undo2 size={14} />
-            </button>
-            <button
-              className={styles.headerActionBtn}
-              onClick={handleResetWorkflow}
-              disabled={isRunning || Object.keys(nodeStatuses).length === 0}
-              title="Reset execution state"
-            >
-              <RotateCcw size={14} />
-            </button>
-            <input
-              ref={importRef}
-              type="file"
-              accept=".json"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = () => {
-                  try {
-                    const data = JSON.parse(reader.result);
-                    if (data.nodes && (data.edges || data.connections)) {
-                      setNodes(data.nodes);
-                      setEdges(data.edges || data.connections);
-                    }
-                  } catch {
-                    // invalid JSON
-                  }
-                };
-                reader.readAsText(file);
-                e.target.value = "";
-              }}
-            />
-            {isRunning ? (
-              <button
-                className={`${styles.runBtn} ${styles.runBtnStop}`}
-                onClick={handleStopWorkflow}
-              >
-                <Square size={14} />
-                Stop
-              </button>
-            ) : (
-              <button
-                className={styles.runBtn}
-                onClick={handleRunWorkflow}
-                disabled={nodes.length === 0}
-              >
-                <Play size={14} />
-                Run
-              </button>
-            )}
-            {isRunning && <Loader2 size={16} className={styles.spinner} />}
-          </div>
-        </header>
+  // ── Memos for ThreePanelLayout panels ──
 
-        {/* Body */}
-        <div className={styles.body}>
-          {isLoadingWorkflow && (
-            <div className={styles.loadingOverlay}>
-              <Loader2 size={24} className={styles.loadingSpinner} />
+  const selectedNode = useMemo(
+    () => nodes.find((n) => n.id === selectedNodeId) || null,
+    [nodes, selectedNodeId],
+  );
+
+  const historyItems = useMemo(() => {
+    return savedWorkflows.map((wf) => {
+      const id = wf._id || wf.id;
+      const name =
+        wf.name ||
+        (wf.userContent
+          ? wf.userContent.substring(0, 80) +
+            (wf.userContent.length > 80 ? "…" : "")
+          : "Untitled Workflow");
+      return {
+        id,
+        title: name,
+        updatedAt: wf.updatedAt,
+        createdAt: wf.createdAt,
+        totalCost: wf.totalCost || 0,
+        modalities: wf.modalities || {},
+        providers: wf.providers || [],
+        username: wf.userName,
+        searchText: wf.userName || "",
+      };
+    });
+  }, [savedWorkflows]);
+
+  const handleDownloadWorkflow = useCallback(
+    async (id) => {
+      try {
+        const wf = await WorkflowService.getWorkflow(id);
+        if (!wf) return;
+        const data = JSON.stringify(wf, null, 2);
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `workflow-${id}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast("Workflow downloaded");
+      } catch (err) {
+        showToast(`Download failed: ${err.message}`, "error");
+      }
+    },
+    [],
+  );
+
+  const handleCopyWorkflow = useCallback(
+    async (id) => {
+      try {
+        const wf = await WorkflowService.getWorkflow(id);
+        if (!wf) return;
+        await navigator.clipboard.writeText(JSON.stringify(wf, null, 2));
+        showToast("Workflow copied to clipboard");
+      } catch (err) {
+        showToast(`Copy failed: ${err.message}`, "error");
+      }
+    },
+    [],
+  );
+
+  const handleToggleFavorite = useCallback(
+    async (wfId) => {
+      if (wfFavoriteKeys.includes(wfId)) {
+        setWfFavoriteKeys((prev) => prev.filter((k) => k !== wfId));
+        PrismService.removeFavorite("workflow", wfId).catch(() => {});
+      } else {
+        setWfFavoriteKeys((prev) => [...prev, wfId]);
+        const wf = savedWorkflows.find((w) => (w._id || w.id) === wfId);
+        PrismService.addFavorite("workflow", wfId, {
+          title: wf?.name || "Untitled Workflow",
+        }).catch(() => {});
+      }
+    },
+    [wfFavoriteKeys, savedWorkflows],
+  );
+
+  return (
+    <ThreePanelLayout
+      navSidebar={<NavigationSidebarComponent mode="user" />}
+      leftTitle="Assets"
+      leftPanel={
+        <div className={styles.leftPanel}>
+          {/* Asset buttons */}
+          <div className={styles.assetSection}>
+            <div className={styles.assetSectionLabel}>
+              <Package size={11} />
+              Assets
+            </div>
+            <div className={styles.assetButtons}>
+              <button
+                className={styles.assetBtn}
+                onClick={() => handleAddAsset("model")}
+                title="Add AI Model"
+              >
+                <Bot size={12} style={{ color: "#3b82f6" }} />
+                <span>AI Model</span>
+              </button>
+              <button
+                className={styles.assetBtn}
+                onClick={() => handleAddAsset("conversation", "input")}
+                title="Add Chat History"
+              >
+                <MessageSquare size={12} style={{ color: "#8b5cf6" }} />
+                <span>Chat History</span>
+              </button>
+              <button
+                className={styles.assetBtn}
+                onClick={() => handleAddAsset("text", "input")}
+                title="Add Text"
+              >
+                <Type size={12} style={{ color: "#6366f1" }} />
+                <span>Text</span>
+              </button>
+              <button
+                className={styles.assetBtn}
+                onClick={() => handleAddAsset("file", "input")}
+                title="Add Media"
+              >
+                <Paperclip size={12} style={{ color: "#8b5cf6" }} />
+                <span>Media</span>
+              </button>
+              <button
+                className={styles.assetBtn}
+                onClick={() => handleAddAsset("text", "viewer")}
+                title="Add Output"
+              >
+                <Eye size={12} style={{ color: "#a78bfa" }} />
+                <span>Output</span>
+              </button>
+              <button
+                className={styles.assetBtn}
+                onClick={() => handleAddAsset("tools", "tools")}
+                title="Add Function Calling Tools"
+              >
+                <Parentheses size={12} style={{ color: "#f97316" }} />
+                <span>Tools</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Inspector — shows when a node is selected */}
+          {selectedNode && (
+            <div className={styles.inspectorContainer}>
+              <WorkflowInspector
+                node={selectedNode}
+                connections={edges}
+                nodes={nodes}
+                allModels={modelsWithModalities}
+                nodeResults={nodeResults}
+                nodeStatuses={nodeStatuses}
+                onUpdateNodeConfig={handleUpdateNodeConfig}
+                onUpdateNodeContent={handleUpdateNodeContent}
+                onUpdateFileInput={handleUpdateFileInput}
+                onChangeModel={handleChangeModel}
+                onSelectNode={setSelectedNodeId}
+                onClose={() => setSelectedNodeId(null)}
+              />
             </div>
           )}
-          <WorkflowComponent
-            nodes={nodes}
-            connections={edges}
-            selectedNodeId={selectedNodeId}
-            onSelectNode={setSelectedNodeId}
-            nodeStatuses={nodeStatuses}
-            nodeResults={nodeResults}
-            isLoadingWorkflow={isLoadingWorkflow}
-            onUpdateNodePosition={handleUpdateNodePosition}
-            onDeleteNode={handleDeleteNode}
-            onAddConnection={handleAddEdge}
-            onDeleteConnection={handleDeleteEdge}
-            onUpdateNodeContent={handleUpdateNodeContent}
-            onUpdateNodeConfig={handleUpdateNodeConfig}
-            onUpdateFileInput={handleUpdateFileInput}
-            workflows={savedWorkflows}
-            activeWorkflowId={workflowId}
-            onLoadWorkflow={handleLoadWorkflow}
-            onDeleteWorkflow={handleDeleteWorkflow}
-            onAddAsset={handleAddAsset}
-            onNewWorkflow={handleNewWorkflow}
-            onSaveWorkflow={handleSaveWorkflow}
-            workflowName={workflowName}
-            onWorkflowNameChange={setWorkflowName}
-            onDownloadWorkflow={async (id) => {
-              try {
-                const wf = await WorkflowService.getWorkflow(id);
-                if (!wf) return;
-                const data = JSON.stringify(wf, null, 2);
-                const blob = new Blob([data], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `workflow-${id}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                showToast("Workflow downloaded");
-              } catch (err) {
-                showToast(`Download failed: ${err.message}`, "error");
-              }
-            }}
-            onCopyWorkflow={async (id) => {
-              try {
-                const wf = await WorkflowService.getWorkflow(id);
-                if (!wf) return;
-                await navigator.clipboard.writeText(
-                  JSON.stringify(wf, null, 2),
-                );
-                showToast("Workflow copied to clipboard");
-              } catch (err) {
-                showToast(`Copy failed: ${err.message}`, "error");
-              }
-            }}
-            allModels={modelsWithModalities}
-            onChangeModel={handleChangeModel}
-            onDuplicateNode={handleDuplicateNode}
+        </div>
+      }
+      rightTitle={`${savedWorkflows.length} Workflows`}
+      rightPanel={
+        <div className={styles.rightPanel}>
+          {/* Workflow name + actions */}
+          <div className={styles.nameInputWrapper}>
+            <input
+              type="text"
+              className={styles.nameInput}
+              placeholder="Untitled Workflow"
+              value={workflowName || ""}
+              onChange={(e) => setWorkflowName(e.target.value)}
+            />
+            <button
+              className={styles.rightPanelBtn}
+              onClick={handleNewWorkflow}
+              title="New Workflow"
+            >
+              <Plus size={14} />
+            </button>
+            <button
+              className={styles.rightPanelBtn}
+              onClick={handleSaveWorkflow}
+              title="Save Workflow"
+            >
+              <Save size={14} />
+            </button>
+          </div>
+
+          {/* Workflow history list */}
+          <HistoryList
+            items={historyItems}
+            activeId={workflowId}
+            onSelect={(item) => handleLoadWorkflow(item.id)}
+            onDelete={handleDeleteWorkflow}
+            onDownload={handleDownloadWorkflow}
+            onCopy={handleCopyWorkflow}
+            icon={Workflow}
+            readOnly={false}
+            emptyLabel="No workflows yet"
+            searchPlaceholder="Search workflows…"
             favorites={wfFavoriteKeys}
-            onToggleFavorite={async (wfId) => {
-              if (wfFavoriteKeys.includes(wfId)) {
-                setWfFavoriteKeys((prev) => prev.filter((k) => k !== wfId));
-                PrismService.removeFavorite("workflow", wfId).catch(() => {});
-              } else {
-                setWfFavoriteKeys((prev) => [...prev, wfId]);
-                const wf = savedWorkflows.find((w) => (w._id || w.id) === wfId);
-                PrismService.addFavorite("workflow", wfId, {
-                  title: wf?.name || "Untitled Workflow",
-                }).catch(() => {});
-              }
-            }}
+            onToggleFavorite={handleToggleFavorite}
           />
         </div>
-
-        {toastElement}
+      }
+      headerTitle="Workflows"
+      headerMeta={
+        <WorkflowHeaderStatsComponent
+          nodes={nodes}
+          edgeCount={edges.length}
+        />
+      }
+      headerControls={
+        <div className={styles.headerControls}>
+          <button
+            className={styles.headerActionBtn}
+            onClick={() => {
+              const data = JSON.stringify({ nodes, edges }, null, 2);
+              const blob = new Blob([data], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `workflow-${Date.now()}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            title="Export workflow"
+          >
+            <Download size={14} />
+          </button>
+          <button
+            className={styles.headerActionBtn}
+            onClick={() => importRef.current?.click()}
+            title="Import workflow"
+          >
+            <Upload size={14} />
+          </button>
+          <button
+            className={styles.headerActionBtn}
+            onClick={handleUndo}
+            disabled={undoCount === 0}
+            title={`Undo (Ctrl+Z) · ${undoCount} states`}
+          >
+            <Undo2 size={14} />
+          </button>
+          <button
+            className={styles.headerActionBtn}
+            onClick={handleResetWorkflow}
+            disabled={isRunning || Object.keys(nodeStatuses).length === 0}
+            title="Reset execution state"
+          >
+            <RotateCcw size={14} />
+          </button>
+          <input
+            ref={importRef}
+            type="file"
+            accept=".json"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = () => {
+                try {
+                  const data = JSON.parse(reader.result);
+                  if (data.nodes && (data.edges || data.connections)) {
+                    setNodes(data.nodes);
+                    setEdges(data.edges || data.connections);
+                  }
+                } catch {
+                  // invalid JSON
+                }
+              };
+              reader.readAsText(file);
+              e.target.value = "";
+            }}
+          />
+          {isRunning ? (
+            <button
+              className={`${styles.runBtn} ${styles.runBtnStop}`}
+              onClick={handleStopWorkflow}
+            >
+              <Square size={14} />
+              Stop
+            </button>
+          ) : (
+            <button
+              className={styles.runBtn}
+              onClick={handleRunWorkflow}
+              disabled={nodes.length === 0}
+            >
+              <Play size={14} />
+              Run
+            </button>
+          )}
+          {isRunning && <Loader2 size={16} className={styles.spinner} />}
+        </div>
+      }
+    >
+      {/* Center: Workflow Canvas */}
+      <div className={styles.canvasWrapper}>
+        {isLoadingWorkflow && (
+          <div className={styles.loadingOverlay}>
+            <Loader2 size={24} className={styles.loadingSpinner} />
+          </div>
+        )}
+        <WorkflowCanvas
+          nodes={nodes}
+          connections={edges}
+          onUpdateNodePosition={handleUpdateNodePosition}
+          onDeleteNode={handleDeleteNode}
+          onAddConnection={handleAddEdge}
+          onDeleteConnection={handleDeleteEdge}
+          onUpdateNodeContent={handleUpdateNodeContent}
+          onUpdateNodeConfig={handleUpdateNodeConfig}
+          onUpdateFileInput={handleUpdateFileInput}
+          onDuplicateNode={handleDuplicateNode}
+          nodeStatuses={nodeStatuses}
+          nodeResults={nodeResults}
+          selectedNodeId={selectedNodeId}
+          onSelectNode={setSelectedNodeId}
+          activeWorkflowId={workflowId}
+          isLoadingWorkflow={isLoadingWorkflow}
+        />
       </div>
-    </div>
+
+      {toastElement}
+    </ThreePanelLayout>
   );
 }
+

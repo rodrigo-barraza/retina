@@ -1027,7 +1027,7 @@ export default function ConsoleComponent() {
           onDelete={handleDeleteConversation}
         />
       }
-      rightTitle="History"
+      rightTitle={`${conversations.length} Conversations`}
       headerTitle={title}
       headerMeta={
         messages.length > 0 ? (

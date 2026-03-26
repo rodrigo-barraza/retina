@@ -29,7 +29,7 @@ export default function ThreePanelLayout({
   leftPanel,
   leftTitle = "Settings",
   rightPanel,
-  rightTitle = "History",
+  rightTitle = "Conversations",
   headerTitle = "",
   headerMeta = null,
   headerControls = null,

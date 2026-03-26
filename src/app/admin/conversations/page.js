@@ -327,7 +327,7 @@ export default function ConversationsPage({ initialId = null }) {
               newIds={newIds}
             />
           }
-          rightTitle="Conversations"
+          rightTitle={`${conversations.length} Conversations`}
           headerTitle={convTitle}
           headerMeta={
             selectedConv && (

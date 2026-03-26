@@ -1,116 +1,10 @@
-.pageWrapper {
-  display: flex;
-  width: 100%;
-  height: 100dvh;
-  overflow: hidden;
-}
+/* ── Workflows Page (ThreePanelLayout) ───────────────── */
 
-.page {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg-primary);
-}
-
-/* ── Header ── */
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: var(--header-height);
-  min-height: var(--header-height);
-  padding: 0 16px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 10;
-}
-
-.headerLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.backBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--border-radius-sm);
-  color: var(--text-secondary);
-  text-decoration: none;
-  transition: all var(--transition-fast);
-
-  &:hover {
-    background: var(--accent-subtle);
-    color: var(--accent-color);
-  }
-}
-
-.headerTitle {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -0.2px;
-}
-
-.headerBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 2px;
-  background: var(--accent-subtle);
-  color: var(--accent-color);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.headerModelTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 10px;
-  color: var(--text-secondary);
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  &:not(:last-child)::after {
-    content: "·";
-    margin-left: 3px;
-    color: var(--text-muted);
-  }
-}
-
-.headerRight {
+/* ── Header Controls ── */
+.headerControls {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.themeToggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--border-radius-sm);
-  color: var(--text-secondary);
-  transition: all var(--transition-fast);
-
-  &:hover {
-    background: var(--accent-subtle);
-    color: var(--accent-color);
-  }
 }
 
 .headerActionBtn {
@@ -126,6 +20,11 @@
   &:hover {
     background: var(--accent-subtle);
     color: var(--accent-color);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 }
 
@@ -178,12 +77,131 @@
   }
 }
 
-/* ── Body ── */
-.body {
+/* ── Left Panel (Assets + Inspector) ── */
+.leftPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.assetSection {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.assetSectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.assetButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.assetBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--accent-color);
+    background: var(--accent-subtle);
+    color: var(--text-primary);
+  }
+}
+
+/* Inspector container — embedded in the left panel below assets */
+.inspectorContainer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-color);
+
+  /* Override the inspector's own border-left since it's now in the left panel */
+  & > * {
+    border-left: none;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* ── Right Panel (Workflow History) ── */
+.rightPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.rightPanelBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--border-radius-sm);
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--accent-subtle);
+    color: var(--accent-color);
+  }
+}
+
+/* Workflow name + action buttons */
+.nameInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nameInput {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--border-radius-sm);
+
+  &:focus {
+    border-color: var(--accent-color);
+    outline: none;
+  }
+}
+
+/* ── Center Canvas ── */
+.canvasWrapper {
   flex: 1;
   display: flex;
   overflow: hidden;
   position: relative;
+  height: 100%;
 }
 
 .loadingOverlay {
@@ -211,92 +229,9 @@
   }
 }
 
-/* ── Toast ── */
-.toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 8px 20px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-primary);
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
-  animation: toastIn 0.25s ease-out;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.toastUndo {
-  padding: 2px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent-color);
-  background: var(--accent-subtle);
-  border: 1px solid var(--accent-color);
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-
-  &:hover {
-    background: var(--accent-color);
-    color: #fff;
-  }
-}
-
-.success {
-  border-color: var(--success);
-  color: var(--success);
-}
-
-@keyframes toastIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-/* ── Mobile responsive header ── */
+/* ── Mobile ── */
 @media (max-width: 767px) {
-  .header {
-    height: auto;
-    min-height: 48px;
-    padding: 8px 12px;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .headerLeft {
-    gap: 8px;
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .headerTitle {
-    font-size: 13px;
-  }
-
-  .headerBadge {
-    font-size: 10px;
-    padding: 1px 6px;
-  }
-
-  .headerModelTag {
-    display: none;
-  }
-
-  .headerRight {
+  .headerControls {
     gap: 4px;
   }
 
@@ -308,10 +243,5 @@
   .runBtn {
     padding: 4px 10px;
     font-size: 11px;
-  }
-
-  .themeToggle {
-    width: 28px;
-    height: 28px;
   }
 }
