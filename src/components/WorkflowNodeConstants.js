@@ -12,6 +12,12 @@ import {
   Globe,
   Code,
   Brain,
+  Monitor,
+  Search,
+  Link,
+  ImagePlus,
+  Parentheses,
+  Terminal,
 } from "lucide-react";
 
 // ── Modality Icons (icon, label, color) ──
@@ -58,12 +64,38 @@ export const TOOL_COLORS = {
   "Function Calling": "#f97316",
   "Web Search": "#3b82f6",
   "Google Search": "#3b82f6",
+  "Web Fetch": "#3b82f6",
   "Code Execution": "#8b5cf6",
   "Computer Use": "#10b981",
   "File Search": "#64748b",
   "URL Context": "#06b6d4",
   "Image Generation": "#f43f5e",
 };
+
+// ── Tool Icon Map (Component references — render as <Icon size={n} />) ──
+export const TOOL_ICON_MAP = {
+  Thinking: Brain,
+  "Function Calling": Parentheses,
+  "Web Search": Globe,
+  "Google Search": Globe,
+  "Web Fetch": Globe,
+  "Code Execution": Terminal,
+  "Computer Use": Monitor,
+  "File Search": Search,
+  "URL Context": Link,
+  "Image Generation": ImagePlus,
+};
+
+// ── Tools that support toggle switches ──
+export const TOGGLEABLE_TOOLS = new Set([
+  "Thinking",
+  "Web Search",
+  "Google Search",
+  "Web Fetch",
+  "Code Execution",
+  "URL Context",
+  "Function Calling",
+]);
 
 // ── Asset-type Icons ──
 export const ASSET_ICONS = {

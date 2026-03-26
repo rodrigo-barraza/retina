@@ -1132,7 +1132,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
             size="sm"
             icon={Plus}
             onClick={handleNewWorkflow}
-            fullWidth
+            disabled={!workflowId && nodes.length === 0}
             className={styles.newWorkflowBtn}
           >
             New Workflow

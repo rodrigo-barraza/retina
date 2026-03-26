@@ -9,11 +9,7 @@ import {
   Volume2,
   Video,
   FileText,
-  Globe,
   Wrench,
-  Code,
-  Monitor,
-  Search,
   Brain,
   DollarSign,
   GitBranch,
@@ -25,7 +21,12 @@ import ToggleSwitch from "./ToggleSwitch";
 
 import SystemPromptModal from "./SystemPromptModal";
 import styles from "./SettingsPanel.module.css";
-import { MODALITY_COLORS, TOOL_COLORS } from "./WorkflowNodeConstants";
+import {
+  MODALITY_COLORS,
+  TOOL_COLORS,
+  TOOL_ICON_MAP,
+  TOGGLEABLE_TOOLS,
+} from "./WorkflowNodeConstants";
 
 export default function SettingsPanel({
   config,
@@ -109,48 +110,7 @@ export default function SettingsPanel({
 
 
 
-  // Tools that have toggle switches
-  const TOGGLEABLE_TOOLS = new Set([
-    "Thinking",
-    "Web Search",
-    "Google Search",
-    "Web Fetch",
-    "Code Execution",
-    "URL Context",
-    "Function Calling",
-  ]);
 
-  // Icon map for tools
-  const TOOL_ICONS = {
-    Thinking: <Brain size={12} style={{ color: TOOL_COLORS["Thinking"] }} />,
-    "Web Search": (
-      <Globe size={12} style={{ color: TOOL_COLORS["Web Search"] }} />
-    ),
-    "Google Search": (
-      <Globe size={12} style={{ color: TOOL_COLORS["Google Search"] }} />
-    ),
-    "Web Fetch": (
-      <Globe size={12} style={{ color: TOOL_COLORS["Web Fetch"] }} />
-    ),
-    "Function Calling": (
-      <Wrench size={12} style={{ color: TOOL_COLORS["Function Calling"] }} />
-    ),
-    "Code Execution": (
-      <Code size={12} style={{ color: TOOL_COLORS["Code Execution"] }} />
-    ),
-    "Computer Use": (
-      <Monitor size={12} style={{ color: TOOL_COLORS["Computer Use"] }} />
-    ),
-    "File Search": (
-      <Search size={12} style={{ color: TOOL_COLORS["File Search"] }} />
-    ),
-    "Image Generation": (
-      <ImageIcon size={12} style={{ color: TOOL_COLORS["Image Generation"] }} />
-    ),
-    "URL Context": (
-      <Globe size={12} style={{ color: TOOL_COLORS["URL Context"] }} />
-    ),
-  };
 
   // Get toggle state/handler for a tool
   const getToolToggle = (tool) => {
@@ -447,12 +407,20 @@ export default function SettingsPanel({
                       className={`${styles.modalityRow} ${toggle ? styles.toolToggleRow : ""}`}
                     >
                       <span className={styles.modalityIcon}>
-                        {TOOL_ICONS[tool] || (
-                          <Wrench
-                            size={12}
-                            style={{ color: TOOL_COLORS[tool] }}
-                          />
-                        )}
+                        {(() => {
+                          const ToolIcon = TOOL_ICON_MAP[tool];
+                          return ToolIcon ? (
+                            <ToolIcon
+                              size={12}
+                              style={{ color: TOOL_COLORS[tool] }}
+                            />
+                          ) : (
+                            <Wrench
+                              size={12}
+                              style={{ color: TOOL_COLORS[tool] }}
+                            />
+                          );
+                        })()}
                       </span>
                       <span className={styles.modalityName}>
                         {getToolLabel(tool)}

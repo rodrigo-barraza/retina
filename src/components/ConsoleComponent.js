@@ -5,13 +5,9 @@ import {
   Send,
   Loader2,
   Terminal,
-  ChevronDown,
-  ChevronRight,
-  CheckCircle2,
-  AlertCircle,
-  Zap,
   Paperclip,
   X,
+  Zap,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import SunService from "../services/SunService.js";
@@ -24,6 +20,7 @@ import MessageList, { prepareDisplayMessages } from "./MessageList.js";
 import ImagePreviewComponent from "./ImagePreviewComponent.js";
 import TabBarComponent from "./TabBarComponent.js";
 import EmptyStateComponent from "./EmptyStateComponent.js";
+import ToolActivityPanelComponent from "./ToolActivityPanelComponent.js";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./ConsoleComponent.module.css";
@@ -91,7 +88,6 @@ export default function ConsoleComponent() {
   const [inputValue, setInputValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [toolActivity, setToolActivity] = useState([]);
-  const [showToolPanel, setShowToolPanel] = useState(false);
   const [conversationId, setConversationId] = useState(() =>
     crypto.randomUUID(),
   );
@@ -759,14 +755,7 @@ export default function ConsoleComponent() {
     [activeId, handleNewChat],
   );
 
-  // ── Render helpers ──────────────────────────────────────────
 
-  function renderToolName(name) {
-    return name
-      .replace(/^get_/, "")
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-  }
 
   // ── Left sidebar: tab bar + content ──────────────────────────
   const handleToggleBuiltIn = useCallback((toolName) => {
@@ -852,57 +841,7 @@ export default function ConsoleComponent() {
       </div>
 
       {/* Tool Activity Panel */}
-      {toolActivity.length > 0 && (
-        <div className={styles.toolPanel}>
-          <button
-            className={styles.toolPanelHeader}
-            onClick={() => setShowToolPanel(!showToolPanel)}
-          >
-            <Zap size={14} className={styles.toolPanelIcon} />
-            <span>
-              Tool Activity (
-              {toolActivity.filter((t) => t.status === "done").length}/
-              {toolActivity.length})
-            </span>
-            {showToolPanel ? (
-              <ChevronDown size={14} />
-            ) : (
-              <ChevronRight size={14} />
-            )}
-          </button>
-          {showToolPanel && (
-            <div className={styles.toolPanelBody}>
-              {toolActivity.map((activity) => (
-                <div key={activity.id} className={styles.toolActivityItem}>
-                  <span className={styles.toolStatusIcon}>
-                    {activity.status === "calling" && (
-                      <Loader2 size={12} className={styles.spinner} />
-                    )}
-                    {activity.status === "done" && (
-                      <CheckCircle2 size={12} className={styles.toolSuccess} />
-                    )}
-                    {activity.status === "error" && (
-                      <AlertCircle size={12} className={styles.toolError} />
-                    )}
-                  </span>
-                  <span className={styles.toolName}>
-                    {renderToolName(activity.name)}
-                  </span>
-                  {Object.keys(activity.args || {}).length > 0 && (
-                    <span className={styles.toolArgs}>
-                      (
-                      {Object.entries(activity.args)
-                        .map(([k, v]) => `${k}: ${v}`)
-                        .join(", ")}
-                      )
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <ToolActivityPanelComponent activities={toolActivity} />
 
       {/* Input area — same as ChatArea */}
       <div className={chatStyles.inputWrapper}>

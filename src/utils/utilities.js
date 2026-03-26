@@ -15,3 +15,14 @@ export function formatLatency(ms) {
   if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
   return `${Math.round(ms)}ms`;
 }
+
+/**
+ * Convert a snake_case function name to a human-readable title.
+ * e.g. "get_stock_price" → "Stock Price"
+ */
+export function renderToolName(name) {
+  return name
+    .replace(/^get_/, "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}

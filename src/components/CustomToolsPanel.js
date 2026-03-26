@@ -16,6 +16,7 @@ import {
 import PrismService from "../services/PrismService.js";
 import ButtonComponent from "./ButtonComponent.js";
 import ToggleSwitchComponent from "./ToggleSwitch.js";
+import { renderToolName } from "../utils/utilities";
 import styles from "./CustomToolsPanel.module.css";
 
 const PROJECT = "retina-console";
@@ -50,12 +51,7 @@ const EMPTY_TOOL = {
   enabled: true,
 };
 
-function renderToolName(name) {
-  return name
-    .replace(/^get_/, "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
+
 
 export default function CustomToolsPanel({
   tools,

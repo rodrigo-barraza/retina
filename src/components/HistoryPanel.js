@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { MessageSquare, Plus } from "lucide-react";
 import HistoryList from "./HistoryList";
+import ButtonComponent from "./ButtonComponent";
 import styles from "./HistoryPanel.module.css";
 
 function getModalities(messages) {
@@ -176,14 +177,17 @@ export default function HistoryPanel({
   return (
     <div className={styles.container}>
       {!readOnly && (
-        <button
-          className={styles.newBtn}
+        <ButtonComponent
+          variant="primary"
+          size="sm"
+          icon={Plus}
           onClick={onNew}
-          data-panel-close
           disabled={!activeId}
+          className={styles.newBtn}
+          data-panel-close
         >
-          <Plus size={16} /> New Conversation
-        </button>
+          New Conversation
+        </ButtonComponent>
       )}
       <HistoryList
         items={items}

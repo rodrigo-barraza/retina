@@ -9,12 +9,6 @@ import { prepareDisplayMessages } from "./MessageList";
 import StorageService from "../services/StorageService";
 import {
   Send,
-  Zap,
-  ChevronDown,
-  ChevronRight,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
   Settings,
   Parentheses,
   SlidersHorizontal,
@@ -27,8 +21,8 @@ import ChatArea from "../components/ChatArea";
 import HistoryPanel from "../components/HistoryPanel";
 import ThreePanelLayout from "../components/ThreePanelLayout";
 import TabBarComponent from "../components/TabBarComponent";
-import consoleStyles from "../components/ConsoleComponent.module.css";
 import ModelPickerPopoverComponent from "../components/ModelPickerPopoverComponent";
+import ToolActivityPanelComponent from "../components/ToolActivityPanelComponent";
 
 export default function HomePage({ initialConversationId = null }) {
   const router = useRouter();
@@ -95,7 +89,7 @@ export default function HomePage({ initialConversationId = null }) {
   const [disabledBuiltIns, setDisabledBuiltIns] = useState(new Set());
   const [offlineTools, setOfflineTools] = useState(() => new Set());
   const [toolActivity, setToolActivity] = useState([]);
-  const [showToolPanel, setShowToolPanel] = useState(false);
+
   const abortRef = useRef(null);
 
   // Helper to update URL bar without triggering Next.js navigation.
@@ -355,12 +349,7 @@ Guidelines:
     [loadCustomTools],
   );
 
-  function renderToolName(name) {
-    return name
-      .replace(/^get_/, "")
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-  }
+
 
   // Load conversation from URL path on mount
   const urlLoadedRef = useRef(false);
@@ -2168,67 +2157,7 @@ Guidelines:
           functionCallingEnabled={!!settings.functionCallingEnabled}
           toolActivitySlot={
             settings.functionCallingEnabled && toolActivity.length > 0 ? (
-              <div className={consoleStyles.toolPanel}>
-                <button
-                  className={consoleStyles.toolPanelHeader}
-                  onClick={() => setShowToolPanel(!showToolPanel)}
-                >
-                  <Zap size={14} className={consoleStyles.toolPanelIcon} />
-                  <span>
-                    Tool Activity (
-                    {toolActivity.filter((t) => t.status === "done").length}/
-                    {toolActivity.length})
-                  </span>
-                  {showToolPanel ? (
-                    <ChevronDown size={14} />
-                  ) : (
-                    <ChevronRight size={14} />
-                  )}
-                </button>
-                {showToolPanel && (
-                  <div className={consoleStyles.toolPanelBody}>
-                    {toolActivity.map((activity) => (
-                      <div
-                        key={activity.id}
-                        className={consoleStyles.toolActivityItem}
-                      >
-                        <span className={consoleStyles.toolStatusIcon}>
-                          {activity.status === "calling" && (
-                            <Loader2
-                              size={12}
-                              className={consoleStyles.spinner}
-                            />
-                          )}
-                          {activity.status === "done" && (
-                            <CheckCircle2
-                              size={12}
-                              className={consoleStyles.toolSuccess}
-                            />
-                          )}
-                          {activity.status === "error" && (
-                            <AlertCircle
-                              size={12}
-                              className={consoleStyles.toolError}
-                            />
-                          )}
-                        </span>
-                        <span className={consoleStyles.toolName}>
-                          {renderToolName(activity.name)}
-                        </span>
-                        {Object.keys(activity.args || {}).length > 0 && (
-                          <span className={consoleStyles.toolArgs}>
-                            (
-                            {Object.entries(activity.args)
-                              .map(([k, v]) => `${k}: ${v}`)
-                              .join(", ")}
-                            )
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ToolActivityPanelComponent activities={toolActivity} />
             ) : null
           }
         />

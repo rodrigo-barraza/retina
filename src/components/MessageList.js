@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
   Brain,
-  Copy,
   Check,
   Volume2,
   FileText,
@@ -19,6 +18,7 @@ import {
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import MarkdownContent from "./MarkdownContent";
 import IconButtonComponent from "./IconButtonComponent";
+import CopyButtonComponent from "./CopyButtonComponent";
 import styles from "./MessageList.module.css";
 import { DateTime } from "luxon";
 import PrismService from "../services/PrismService";
@@ -84,28 +84,7 @@ function getMimeCategory(ref) {
 
 /* ── Sub-components ──────────────────────────────────────────── */
 
-function CopyButton({ text }) {
-  const [copied, setCopied] = useState(false);
 
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // fallback
-    }
-  }, [text]);
-
-  return (
-    <IconButtonComponent
-      icon={copied ? <Check size={14} /> : <Copy size={14} />}
-      onClick={handleCopy}
-      tooltip="Copy raw text"
-      hoverReveal
-    />
-  );
-}
 
 function ThinkingBlock({ thinking }) {
   const [collapsed, setCollapsed] = useState(true);
@@ -582,7 +561,7 @@ export default function MessageList({
                           />
                         </>
                       )}
-                      {msg.content && <CopyButton text={msg.content} />}
+                      {msg.content && <CopyButtonComponent text={msg.content} tooltip="Copy raw text" />}
                       <IconButtonComponent
                         icon={<Trash2 size={14} />}
                         onClick={() => onDelete?.(i)}
@@ -594,7 +573,7 @@ export default function MessageList({
                   )}
                   {readOnly && msg.content && (
                     <div className={styles.messageActions}>
-                      <CopyButton text={msg.content} />
+                      <CopyButtonComponent text={msg.content} tooltip="Copy raw text" />
                     </div>
                   )}
                 </div>

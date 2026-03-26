@@ -12,12 +12,6 @@ import {
   AlertCircle,
   X,
   Parentheses,
-  Globe,
-  Monitor,
-  Brain,
-  FileSearch,
-  Link,
-  ImagePlus,
 } from "lucide-react";
 import AudioRecorderComponent from "./AudioRecorderComponent";
 import ImagePreviewComponent from "./ImagePreviewComponent";
@@ -33,7 +27,11 @@ import PrismService from "../services/PrismService";
 
 import ToggleSwitchComponent from "./ToggleSwitch";
 import ChatInputButton from "./ChatInputButton";
-import { TOOL_COLORS } from "./WorkflowNodeConstants";
+import {
+  TOOL_COLORS,
+  TOOL_ICON_MAP,
+  TOGGLEABLE_TOOLS,
+} from "./WorkflowNodeConstants";
 
 // Map model input types to file accept strings
 const TYPE_ACCEPT_MAP = {
@@ -216,50 +214,6 @@ export default function ChatArea({
   const selectedModelDef = currentProviderModels.find(
     (m) => m.name === settings?.model,
   );
-
-  const TOGGLEABLE_TOOLS = new Set([
-    "Thinking",
-    "Web Search",
-    "Google Search",
-    "Web Fetch",
-    "Code Execution",
-    "URL Context",
-    "Function Calling",
-  ]);
-
-  const TOOL_ICONS = {
-    Thinking: <Brain size={14} style={{ color: TOOL_COLORS["Thinking"] }} />,
-    "Web Search": (
-      <Globe size={14} style={{ color: TOOL_COLORS["Web Search"] }} />
-    ),
-    "Google Search": (
-      <Globe size={14} style={{ color: TOOL_COLORS["Google Search"] }} />
-    ),
-    "Web Fetch": (
-      <Globe size={14} style={{ color: TOOL_COLORS["Web Fetch"] }} />
-    ),
-    "Function Calling": (
-      <Parentheses
-        size={14}
-        style={{ color: TOOL_COLORS["Function Calling"] }}
-      />
-    ),
-    "Code Execution": (
-      <Terminal size={14} style={{ color: TOOL_COLORS["Code Execution"] }} />
-    ),
-    "Computer Use": (
-      <Monitor size={14} style={{ color: TOOL_COLORS["Computer Use"] }} />
-    ),
-    "File Search": (
-      <FileSearch size={14} style={{ color: TOOL_COLORS["File Search"] }} />
-    ),
-    "URL Context": (
-      <Link size={14} style={{ color: TOOL_COLORS["URL Context"] }} />
-    ),
-    "Image Generation": (
-      <ImagePlus size={14} style={{ color: TOOL_COLORS["Image Generation"] }} />
-    ),
-  };
 
   const getToolToggle = (tool) => {
     switch (tool) {
@@ -699,12 +653,20 @@ export default function ChatArea({
                           opacity: 0.7,
                         }}
                       >
-                        {TOOL_ICONS[tool] || (
-                          <Parentheses
-                            size={14}
-                            style={{ color: TOOL_COLORS[tool] }}
-                          />
-                        )}
+                        {(() => {
+                          const ToolIcon = TOOL_ICON_MAP[tool];
+                          return ToolIcon ? (
+                            <ToolIcon
+                              size={14}
+                              style={{ color: TOOL_COLORS[tool] }}
+                            />
+                          ) : (
+                            <Parentheses
+                              size={14}
+                              style={{ color: TOOL_COLORS[tool] }}
+                            />
+                          );
+                        })()}
                       </span>
                       <span className={styles.toolsBubbleItemName}>{tool}</span>
                     </div>

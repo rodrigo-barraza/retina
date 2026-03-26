@@ -1,22 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, Check } from "lucide-react";
+
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import CopyButtonComponent from "./CopyButtonComponent";
 import styles from "./MarkdownContent.module.css";
 
 function FencedCodeBlock({ language, children }) {
   const codeString = String(children).replace(/\n$/, "");
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(codeString);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   let displayLabel = language;
   let syntaxLang = language;
@@ -32,10 +25,12 @@ function FencedCodeBlock({ language, children }) {
     <div className={styles.codeBlockWrapper}>
       <div className={styles.codeBlockHeader}>
         <span className={styles.codeBlockLang}>{displayLabel}</span>
-        <button className={styles.codeBlockCopy} onClick={handleCopy}>
-          {copied ? <Check size={12} /> : <Copy size={12} />}
-          {copied ? "Copied" : "Copy"}
-        </button>
+        <CopyButtonComponent
+          text={codeString}
+          size={12}
+          showLabel
+          className={styles.codeBlockCopy}
+        />
       </div>
       <SyntaxHighlighter
         style={oneDark}

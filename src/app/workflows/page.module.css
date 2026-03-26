@@ -158,6 +158,7 @@
 /* ── New Workflow Button (top of right panel) ── */
 .newWorkflowBtn {
   margin: 12px;
+  width: calc(100% - 24px);
   height: var(--button-height);
   min-height: var(--button-height);
   flex-shrink: 0;
