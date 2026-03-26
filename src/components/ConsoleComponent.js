@@ -823,7 +823,7 @@ export default function ConsoleComponent() {
           <EmptyStateComponent
             icon={<Terminal size={40} />}
             title="Console"
-            subtitle="Ask about weather, events, commodities, trends, or anything powered by the Sun ecosystem."
+            subtitle="Ask about weather, events, commodities, trends, and more."
           >
             {randomPrompts.map((prompt) => (
               <button

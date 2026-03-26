@@ -17,6 +17,7 @@ import AudioRecorderComponent from "./AudioRecorderComponent";
 import ImagePreviewComponent from "./ImagePreviewComponent";
 import DrawingCanvas from "./DrawingCanvas";
 import DocumentViewer from "./DocumentViewer";
+import EmptyStateComponent from "./EmptyStateComponent";
 import MessageList from "./MessageList";
 
 import styles from "./ChatArea.module.css";
@@ -494,30 +495,24 @@ export default function ChatArea({
           )}
 
         {messages.length === 0 && functionCallingEnabled && (
-          <div className={consoleStyles.emptyState}>
-            <div className={consoleStyles.emptyIcon}>
-              <Parentheses size={40} />
-            </div>
-            <h2 className={consoleStyles.emptyTitle}>Function Calling</h2>
-            <p className={consoleStyles.emptySubtitle}>
-              Ask about weather, events, commodities, trends, or anything
-              powered by the Sun ecosystem.
-            </p>
-            <div className={consoleStyles.quickPrompts}>
-              {fcRandomPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  className={consoleStyles.quickPrompt}
-                  onClick={() => {
-                    setInput(prompt);
-                    textareaRef.current?.focus();
-                  }}
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          </div>
+          <EmptyStateComponent
+            icon={<Parentheses size={40} />}
+            title="Function Calling"
+            subtitle="Ask about weather, events, commodities, trends, and more."
+          >
+            {fcRandomPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                className={consoleStyles.quickPrompt}
+                onClick={() => {
+                  setInput(prompt);
+                  textareaRef.current?.focus();
+                }}
+              >
+                {prompt}
+              </button>
+            ))}
+          </EmptyStateComponent>
         )}
 
         {messages.length === 0 &&
