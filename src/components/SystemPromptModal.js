@@ -6,12 +6,11 @@ import SelectDropdown from "./SelectDropdown";
 import ModalOverlayComponent from "./ModalOverlayComponent";
 import CloseButtonComponent from "./CloseButtonComponent";
 import styles from "./SystemPromptModal.module.css";
-
-const LS_KEY = "retina_system_instructions";
+import { LS_SYSTEM_INSTRUCTIONS } from "../constants";
 
 function loadInstructions() {
   try {
-    const raw = localStorage.getItem(LS_KEY);
+    const raw = localStorage.getItem(LS_SYSTEM_INSTRUCTIONS);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -19,7 +18,7 @@ function loadInstructions() {
 }
 
 function saveInstructions(list) {
-  localStorage.setItem(LS_KEY, JSON.stringify(list));
+  localStorage.setItem(LS_SYSTEM_INSTRUCTIONS, JSON.stringify(list));
 }
 
 export default function SystemPromptModal({ activePrompt, onApply, onClose }) {

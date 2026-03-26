@@ -8,6 +8,7 @@ import {
   PanelRight,
 } from "lucide-react";
 import styles from "./ThreePanelLayout.module.css";
+import { LS_PANEL_LEFT, LS_PANEL_RIGHT } from "../constants";
 
 /**
  * Reusable 3-panel layout with a full-width header spanning all panels.
@@ -51,8 +52,8 @@ export default function ThreePanelLayout({
       setShowRight(false);
     } else {
       // On desktop, restore from localStorage (default open)
-      const storedLeft = localStorage.getItem("panel_left");
-      const storedRight = localStorage.getItem("panel_right");
+      const storedLeft = localStorage.getItem(LS_PANEL_LEFT);
+      const storedRight = localStorage.getItem(LS_PANEL_RIGHT);
       setShowLeft(storedLeft !== null ? storedLeft === "true" : true);
       setShowRight(storedRight !== null ? storedRight === "true" : true);
     }
@@ -76,14 +77,14 @@ export default function ThreePanelLayout({
       // Entering narrow: if both are open, close the right
       if (showLeft && showRight) {
         setShowRight(false);
-        localStorage.setItem("panel_right", "false");
+        localStorage.setItem(LS_PANEL_RIGHT, "false");
       }
     } else {
       // Leaving narrow (back to wide): restore both panels
       setShowLeft(true);
       setShowRight(true);
-      localStorage.setItem("panel_left", "true");
-      localStorage.setItem("panel_right", "true");
+      localStorage.setItem(LS_PANEL_LEFT, "true");
+      localStorage.setItem(LS_PANEL_RIGHT, "true");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNarrow]);
@@ -91,10 +92,10 @@ export default function ThreePanelLayout({
   const toggleLeft = useCallback(() => {
     setShowLeft((prev) => {
       const next = !prev;
-      localStorage.setItem("panel_left", String(next));
+      localStorage.setItem(LS_PANEL_LEFT, String(next));
       if (next && window.innerWidth <= 1400) {
         setShowRight(false);
-        localStorage.setItem("panel_right", "false");
+        localStorage.setItem(LS_PANEL_RIGHT, "false");
       }
       return next;
     });
@@ -103,10 +104,10 @@ export default function ThreePanelLayout({
   const toggleRight = useCallback(() => {
     setShowRight((prev) => {
       const next = !prev;
-      localStorage.setItem("panel_right", String(next));
+      localStorage.setItem(LS_PANEL_RIGHT, String(next));
       if (next && window.innerWidth <= 1400) {
         setShowLeft(false);
-        localStorage.setItem("panel_left", "false");
+        localStorage.setItem(LS_PANEL_LEFT, "false");
       }
       return next;
     });

@@ -3,8 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import IrisService from "../services/IrisService";
-
-const STORAGE_KEY = "admin:projectFilter";
+import { LS_ADMIN_PROJECT_FILTER } from "../constants";
 
 /**
  * Reusable hook for admin project filtering.
@@ -30,7 +29,7 @@ export default function useProjectFilter() {
 
     if (!urlProject) {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const saved = localStorage.getItem(LS_ADMIN_PROJECT_FILTER);
         if (saved) {
           const params = new URLSearchParams(searchParams.toString());
           params.set("project", saved);
@@ -61,9 +60,9 @@ export default function useProjectFilter() {
       // Persist to localStorage
       try {
         if (val) {
-          localStorage.setItem(STORAGE_KEY, val);
+          localStorage.setItem(LS_ADMIN_PROJECT_FILTER, val);
         } else {
-          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(LS_ADMIN_PROJECT_FILTER);
         }
       } catch {
         /* localStorage unavailable */

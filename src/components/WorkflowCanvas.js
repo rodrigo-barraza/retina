@@ -15,6 +15,7 @@ import {
   edgePath,
 } from "./WorkflowNodeConstants";
 import styles from "./WorkflowCanvas.module.css";
+import { LS_WORKFLOW_EXPANDED_NODES, LS_WORKFLOW_VIEWS } from "../constants";
 
 const COLLISION_PADDING = 20; // min gap between nodes
 
@@ -48,17 +49,16 @@ export default function WorkflowCanvas({
   const [expandedInputs, setExpandedInputs] = useState(() => {
     if (typeof window === "undefined") return new Set();
     try {
-      const stored = localStorage.getItem("workflow-expanded-nodes");
+      const stored = localStorage.getItem(LS_WORKFLOW_EXPANDED_NODES);
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
     }
   });
   // ── View persistence helpers ──
-  const VIEWS_KEY = "workflow-views";
   const getStoredViews = () => {
     try {
-      return JSON.parse(localStorage.getItem(VIEWS_KEY) || "{}");
+      return JSON.parse(localStorage.getItem(LS_WORKFLOW_VIEWS) || "{}");
     } catch {
       return {};
     }
@@ -86,7 +86,7 @@ export default function WorkflowCanvas({
     const views = getStoredViews();
     views[activeWorkflowId] = { x: pan.x, y: pan.y, zoom };
     try {
-      localStorage.setItem(VIEWS_KEY, JSON.stringify(views));
+      localStorage.setItem(LS_WORKFLOW_VIEWS, JSON.stringify(views));
     } catch {
       /* ignore */
     }
@@ -630,7 +630,7 @@ export default function WorkflowCanvas({
       else next.add(nodeId);
       try {
         localStorage.setItem(
-          "workflow-expanded-nodes",
+          LS_WORKFLOW_EXPANDED_NODES,
           JSON.stringify([...next]),
         );
       } catch {
@@ -676,7 +676,7 @@ export default function WorkflowCanvas({
       }
       try {
         localStorage.setItem(
-          "workflow-expanded-nodes",
+          LS_WORKFLOW_EXPANDED_NODES,
           JSON.stringify([...next]),
         );
       } catch {

@@ -27,6 +27,7 @@ import {
   ViewModeToggleComponent,
 } from "./FilterBarComponent";
 import styles from "./TextPageComponent.module.css";
+import { LS_DATE_RANGE } from "../constants";
 
 const ORIGIN_FILTERS = [
   { key: "all", label: "All" },
@@ -161,7 +162,7 @@ export default function TextPageComponent({ mode = "user" }) {
               setDateRange(v);
               setPage(1);
             }}
-            storageKey="retina-date-range"
+            storageKey={LS_DATE_RANGE}
           />
         </FilterGroupComponent>
 

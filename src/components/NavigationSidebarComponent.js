@@ -26,6 +26,7 @@ import {
 import { useTheme } from "./ThemeProvider";
 import SpinningCatComponent from "./SpinningCatComponent";
 import styles from "./NavigationSidebarComponent.module.css";
+import { LS_PANEL_NAV } from "../constants";
 
 /** 8-bit dithered rainbow — auto-animates, turbo during LLM generation */
 const PIXEL_SIZE = 6;
@@ -209,7 +210,7 @@ export default function NavigationSidebarComponent({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("panel_nav");
+    const stored = localStorage.getItem(LS_PANEL_NAV);
     if (stored !== null) setShowNav(stored === "true");
   }, []);
 
@@ -223,7 +224,7 @@ export default function NavigationSidebarComponent({
   const toggleNav = useCallback(() => {
     setShowNav((prev) => {
       const next = !prev;
-      localStorage.setItem("panel_nav", String(next));
+      localStorage.setItem(LS_PANEL_NAV, String(next));
       return next;
     });
   }, []);

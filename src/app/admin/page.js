@@ -25,6 +25,7 @@ import { ErrorMessage } from "../../components/StateMessageComponent";
 import { useAdminHeader } from "../../components/AdminHeaderContext";
 import useProjectFilter from "../../hooks/useProjectFilter";
 import styles from "./page.module.css";
+import { LS_DATE_RANGE } from "../../constants";
 
 const PROVIDER_COLORS = [
   "#6366f1",
@@ -201,7 +202,7 @@ export default function DashboardPage() {
           from={dateRange.from}
           to={dateRange.to}
           onChange={setDateRange}
-          storageKey="retina-date-range"
+          storageKey={LS_DATE_RANGE}
         />
       </div>
 

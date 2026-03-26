@@ -1,0 +1,29 @@
+/**
+ * constants.js — Centralized constants for the Retina app.
+ *
+ * All localStorage key strings live here so they're discoverable,
+ * searchable, and impossible to silently misspell.
+ *
+ * Keys used via StorageService are automatically prefixed with "retina:"
+ * by the service itself — these constants hold the *un-prefixed* key.
+ *
+ * Keys used via raw localStorage are stored exactly as-is — these
+ * constants hold the full key string.
+ */
+
+// ── StorageService keys (auto-prefixed "retina:<key>") ───────────
+export const SK_THEME = "theme";
+export const SK_LAST_PROVIDER = "lastProvider";
+export const SK_LAST_MODEL = "lastModel";
+export const SK_INFERENCE_MODE = "inferenceMode";
+
+// ── Raw localStorage keys (no namespace prefix) ─────────────────
+export const LS_PANEL_LEFT = "panel_left";
+export const LS_PANEL_RIGHT = "panel_right";
+export const LS_PANEL_NAV = "panel_nav";
+export const LS_SYSTEM_INSTRUCTIONS = "retina_system_instructions";
+export const LS_WORKFLOW_INSPECTOR_WIDTH = "workflow-inspector-width";
+export const LS_WORKFLOW_EXPANDED_NODES = "workflow-expanded-nodes";
+export const LS_WORKFLOW_VIEWS = "workflow-views";
+export const LS_ADMIN_PROJECT_FILTER = "admin:projectFilter";
+export const LS_DATE_RANGE = "retina-date-range";

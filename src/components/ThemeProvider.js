@@ -8,8 +8,7 @@ import {
   useCallback,
 } from "react";
 import StorageService from "../services/StorageService";
-
-const THEME_KEY = "theme";
+import { SK_THEME } from "../constants";
 
 const ThemeContext = createContext({
   theme: "light",
@@ -19,7 +18,7 @@ const ThemeContext = createContext({
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined") {
-      return StorageService.get(THEME_KEY, "light");
+      return StorageService.get(SK_THEME, "light");
     }
     return "light";
   });
@@ -34,7 +33,7 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     if (!mounted) return;
     document.documentElement.setAttribute("data-theme", theme);
-    StorageService.set(THEME_KEY, theme);
+    StorageService.set(SK_THEME, theme);
   }, [theme, mounted]);
 
   const toggleTheme = useCallback(() => {

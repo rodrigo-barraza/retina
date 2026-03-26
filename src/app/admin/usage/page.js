@@ -20,6 +20,7 @@ import BadgeComponent from "../../../components/BadgeComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
+import { LS_DATE_RANGE } from "../../../constants";
 
 const ENDPOINT_LABELS = {
   chat: "Chat",
@@ -313,7 +314,7 @@ export default function UsagePage() {
           from={dateRange.from}
           to={dateRange.to}
           onChange={setDateRange}
-          storageKey="retina-date-range"
+          storageKey={LS_DATE_RANGE}
         />
       </div>
 

@@ -7,6 +7,7 @@ import PrismService from "../services/PrismService";
 import SunService from "../services/SunService";
 import { prepareDisplayMessages } from "./MessageList";
 import StorageService from "../services/StorageService";
+import { SK_LAST_PROVIDER, SK_LAST_MODEL, SK_INFERENCE_MODE } from "../constants";
 import {
   Send,
   Settings,
@@ -28,7 +29,7 @@ export default function HomePage({ initialConversationId = null }) {
   const router = useRouter();
   const [config, setConfig] = useState(null);
   const [inferenceMode, _setInferenceMode] = useState(() =>
-    StorageService.get("inferenceMode", "async"),
+    StorageService.get(SK_INFERENCE_MODE, "async"),
   );
   const [conversations, setConversations] = useState([]);
 
@@ -151,8 +152,8 @@ export default function HomePage({ initialConversationId = null }) {
         setConfig(cfg);
 
         // Try to restore last-used provider/model from localStorage
-        const savedProvider = StorageService.get("lastProvider");
-        const savedModel = StorageService.get("lastModel");
+        const savedProvider = StorageService.get(SK_LAST_PROVIDER);
+        const savedModel = StorageService.get(SK_LAST_MODEL);
         const savedValid =
           savedProvider &&
           cfg.providerList?.includes(savedProvider) &&
@@ -437,13 +438,13 @@ Guidelines:
   // Persist provider/model to localStorage
   useEffect(() => {
     if (settings.provider)
-      StorageService.set("lastProvider", settings.provider);
-    if (settings.model) StorageService.set("lastModel", settings.model);
+      StorageService.set(SK_LAST_PROVIDER, settings.provider);
+    if (settings.model) StorageService.set(SK_LAST_MODEL, settings.model);
   }, [settings.provider, settings.model]);
 
   // Persist inference mode to localStorage
   useEffect(() => {
-    StorageService.set("inferenceMode", inferenceMode);
+    StorageService.set(SK_INFERENCE_MODE, inferenceMode);
   }, [inferenceMode]);
 
   const handleSelectConversation = async (conv) => {

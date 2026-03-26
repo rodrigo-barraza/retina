@@ -28,6 +28,7 @@ import IconButtonComponent from "./IconButtonComponent";
 import { DateTime } from "luxon";
 import styles from "./HistoryList.module.css";
 import { MODALITY_COLORS } from "./WorkflowNodeConstants";
+import { LS_DATE_RANGE } from "../constants";
 
 /**
  * HistoryList — shared list component for both conversations and workflows.
@@ -197,7 +198,7 @@ export default function HistoryList({
           to={dateRange.to}
           onChange={setDateRange}
           placeholder="All dates"
-          storageKey="retina-date-range"
+          storageKey={LS_DATE_RANGE}
         />
       </div>
 

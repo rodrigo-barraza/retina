@@ -39,6 +39,7 @@ import DetailDrawerComponent from "../../../components/DetailDrawerComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
+import { LS_DATE_RANGE } from "../../../constants";
 
 export default function RequestsPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
@@ -404,7 +405,7 @@ export default function RequestsPage() {
               setDateRange(v);
               setPage(1);
             }}
-            storageKey="retina-date-range"
+            storageKey={LS_DATE_RANGE}
           />
         </FilterGroupComponent>
         <FilterClearButton onClick={clearFilters} />

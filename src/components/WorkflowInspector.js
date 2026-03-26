@@ -26,15 +26,14 @@ import ToggleSwitchComponent from "./ToggleSwitch";
 import PrismService from "../services/PrismService";
 
 import styles from "./WorkflowInspector.module.css";
-
-const STORAGE_KEY = "workflow-inspector-width";
+import { LS_WORKFLOW_INSPECTOR_WIDTH } from "../constants";
 const MIN_WIDTH = 320;
 const MAX_WIDTH = 800;
 const DEFAULT_WIDTH = 320;
 
 function getStoredWidth() {
   try {
-    const v = localStorage.getItem(STORAGE_KEY);
+    const v = localStorage.getItem(LS_WORKFLOW_INSPECTOR_WIDTH);
     if (v) {
       const n = parseInt(v, 10);
       if (!isNaN(n) && n >= MIN_WIDTH && n <= MAX_WIDTH) return n;
@@ -104,7 +103,7 @@ export default function WorkflowInspector({
   // Persist width to localStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, String(inspectorWidth));
+      localStorage.setItem(LS_WORKFLOW_INSPECTOR_WIDTH, String(inspectorWidth));
     } catch {
       /* ignore */
     }
