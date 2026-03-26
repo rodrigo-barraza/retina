@@ -5,13 +5,15 @@
   padding: 14px 18px;
   border-radius: var(--border-radius-sm);
   background: color-mix(in srgb, var(--tool-color) 6%, var(--bg-card));
-  border: 1px solid color-mix(in srgb, var(--tool-color) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tool-color) 18%, transparent);
+  border-left: 3px solid var(--tool-color);
   transition: all 0.25s ease;
   animation: fadeIn 0.4s ease-out both;
 
   &:hover {
     background: color-mix(in srgb, var(--tool-color) 10%, var(--bg-card));
     border-color: color-mix(in srgb, var(--tool-color) 30%, transparent);
+    border-left-color: var(--tool-color);
     transform: translateY(-1px);
     box-shadow: 0 4px 16px color-mix(in srgb, var(--tool-color) 12%, transparent);
   }
@@ -34,6 +36,7 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
 }
 
 .title {
@@ -47,4 +50,21 @@
   font-size: 12px;
   color: var(--text-secondary);
   line-height: 1.4;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+  color: #22c55e;
+  border: 1px solid color-mix(in srgb, #22c55e 20%, transparent);
+  flex-shrink: 0;
+  white-space: nowrap;
 }

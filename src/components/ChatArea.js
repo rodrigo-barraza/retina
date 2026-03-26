@@ -12,6 +12,7 @@ import {
   X,
   Parentheses,
   Square,
+  Zap,
 } from "lucide-react";
 import AudioRecorderComponent from "./AudioRecorderComponent";
 import ImagePreviewComponent from "./ImagePreviewComponent";
@@ -520,6 +521,11 @@ export default function ChatArea({
           if (enabledTools.length === 0) return null;
           return (
             <div className={styles.toolCardsStack}>
+              <div className={styles.toolCardsHeader}>
+                <Zap size={14} />
+                <span>Active Tools</span>
+                <span className={styles.toolCardsCount}>{enabledTools.length}</span>
+              </div>
               {enabledTools.map((tool) => {
                 const ToolIcon = TOOL_ICON_MAP[tool];
                 return (

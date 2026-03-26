@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleCheck } from "lucide-react";
 import styles from "./ToolCardComponent.module.css";
 
 /**
@@ -21,6 +22,10 @@ export default function ToolCardComponent({ icon, title, subtitle, color }) {
       <div className={styles.info}>
         <span className={styles.title}>{title}</span>
         <span className={styles.subtitle}>{subtitle}</span>
+      </div>
+      <div className={styles.badge}>
+        <CircleCheck size={12} />
+        Enabled
       </div>
     </div>
   );

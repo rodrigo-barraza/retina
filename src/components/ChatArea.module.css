@@ -1162,13 +1162,41 @@
   padding: 40px 20px;
 }
 
-.toolCardsStack > *:nth-child(1) { animation-delay: 0s; }
-.toolCardsStack > *:nth-child(2) { animation-delay: 0.06s; }
-.toolCardsStack > *:nth-child(3) { animation-delay: 0.12s; }
-.toolCardsStack > *:nth-child(4) { animation-delay: 0.18s; }
-.toolCardsStack > *:nth-child(5) { animation-delay: 0.24s; }
-.toolCardsStack > *:nth-child(6) { animation-delay: 0.30s; }
-.toolCardsStack > *:nth-child(7) { animation-delay: 0.36s; }
+.toolCardsHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-bottom: 4px;
+  animation: fadeIn 0.3s ease-out both;
+}
+
+.toolCardsCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  background: var(--accent-color);
+  color: #fff;
+}
+
+/* Staggered fade-in — offset by 2 to skip the header */
+.toolCardsStack > *:nth-child(2) { animation-delay: 0.04s; }
+.toolCardsStack > *:nth-child(3) { animation-delay: 0.08s; }
+.toolCardsStack > *:nth-child(4) { animation-delay: 0.12s; }
+.toolCardsStack > *:nth-child(5) { animation-delay: 0.16s; }
+.toolCardsStack > *:nth-child(6) { animation-delay: 0.20s; }
+.toolCardsStack > *:nth-child(7) { animation-delay: 0.24s; }
+.toolCardsStack > *:nth-child(8) { animation-delay: 0.28s; }
 
 .toolCardsPrompts {
   display: flex;
@@ -1178,4 +1206,5 @@
   padding-top: 12px;
   animation: fadeIn 0.4s ease-out 0.3s both;
 }
+
 
