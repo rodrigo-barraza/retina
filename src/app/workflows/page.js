@@ -1090,30 +1090,13 @@ export default function WorkflowsPage({ initialWorkflowId }) {
       rightTitle={`${savedWorkflows.length} Workflows`}
       rightPanel={
         <div className={styles.rightPanel}>
-          {/* Workflow name + actions */}
-          <div className={styles.nameInputWrapper}>
-            <input
-              type="text"
-              className={styles.nameInput}
-              placeholder="Untitled Workflow"
-              value={workflowName || ""}
-              onChange={(e) => setWorkflowName(e.target.value)}
-            />
-            <button
-              className={styles.rightPanelBtn}
-              onClick={handleNewWorkflow}
-              title="New Workflow"
-            >
-              <Plus size={14} />
-            </button>
-            <button
-              className={styles.rightPanelBtn}
-              onClick={handleSaveWorkflow}
-              title="Save Workflow"
-            >
-              <Save size={14} />
-            </button>
-          </div>
+          {/* New Workflow button */}
+          <button
+            className={styles.newWorkflowBtn}
+            onClick={handleNewWorkflow}
+          >
+            <Plus size={16} /> New Workflow
+          </button>
 
           {/* Workflow history list */}
           <HistoryList
@@ -1251,6 +1234,29 @@ export default function WorkflowsPage({ initialWorkflowId }) {
           activeWorkflowId={workflowId}
           isLoadingWorkflow={isLoadingWorkflow}
         />
+      </div>
+
+      {/* Footer: save workflow (matches ChatArea inputWrapper) */}
+      <div className={styles.inputWrapper}>
+        <div className={styles.inputBox}>
+          <input
+            type="text"
+            className={styles.nameInput}
+            placeholder="Untitled Workflow"
+            value={workflowName || ""}
+            onChange={(e) => setWorkflowName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSaveWorkflow();
+            }}
+          />
+          <button
+            className={styles.saveBtn}
+            onClick={handleSaveWorkflow}
+            title="Save Workflow"
+          >
+            <Save size={14} />
+          </button>
+        </div>
       </div>
 
       {toastElement}
