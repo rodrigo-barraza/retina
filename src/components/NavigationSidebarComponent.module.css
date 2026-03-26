@@ -294,7 +294,7 @@
 .triangleOuter {
   position: absolute;
   inset: 0;
-  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  clip-path: polygon(50% 0%, 6.7% 75%, 93.3% 75%);
   overflow: hidden;
 
   & canvas {
@@ -309,7 +309,7 @@
 .triangleInner {
   position: absolute;
   inset: 3px;
-  clip-path: polygon(50% 6%, 4% 98%, 96% 98%);
+  clip-path: polygon(50% 5.4%, 11.4% 72.3%, 88.6% 72.3%);
   background: var(--bg-secondary);
 }
 
@@ -320,21 +320,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: triangleRotateReverse 20s linear infinite;
-  will-change: transform;
   color: var(--text-primary);
   z-index: 1;
-  padding-top: 6px;
 }
 
 @keyframes triangleRotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-@keyframes triangleRotateReverse {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-360deg); }
 }
 
 @media (max-width: 1200px) {
@@ -353,7 +345,7 @@
 /* Compact popover card — floats above the FAB */
 .mobilePopover {
   position: fixed;
-  bottom: 124px;
+  bottom: 196px;
   left: 16px;
   z-index: 10001;
   display: flex;

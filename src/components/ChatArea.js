@@ -6,20 +6,12 @@ import {
   ChevronDown,
   ChevronRight,
   Paperclip,
-  Volume2,
-  Video,
   FileText,
-  Image as ImageIcon,
-  Type,
-  ArrowLeft,
-  Mic,
   Edit3,
   Terminal,
   AlertCircle,
-  LayoutGrid,
   X,
   Parentheses,
-  Clock,
   Globe,
   Monitor,
   Brain,
@@ -32,16 +24,16 @@ import ImagePreviewComponent from "./ImagePreviewComponent";
 import DrawingCanvas from "./DrawingCanvas";
 import DocumentViewer from "./DocumentViewer";
 import MessageList from "./MessageList";
-import ModelGrid from "./ModelGrid";
+
 import styles from "./ChatArea.module.css";
 import consoleStyles from "./ConsoleComponent.module.css";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import { useEffect, useRef, useState } from "react";
 import PrismService from "../services/PrismService";
-import ProviderLogo from "./ProviderLogos";
+
 import ToggleSwitchComponent from "./ToggleSwitch";
 import ChatInputButton from "./ChatInputButton";
-import { MODALITY_COLORS, TOOL_COLORS } from "./WorkflowNodeConstants";
+import { TOOL_COLORS } from "./WorkflowNodeConstants";
 
 // Map model input types to file accept strings
 const TYPE_ACCEPT_MAP = {
@@ -131,40 +123,7 @@ function MediaPreview({ dataUrl: rawDataUrl, onClick, compact = false }) {
   );
 }
 
-const OUTPUT_MODALITIES = [
-  {
-    key: "text",
-    title: "Text",
-    subtitle: "Chat, code, and reasoning",
-    icon: Type,
-  },
-  {
-    key: "image",
-    title: "Image",
-    subtitle: "Create and edit images",
-    icon: ImageIcon,
-  },
-  { key: "audio", title: "Speech", subtitle: "Text to speech", icon: Mic },
-  {
-    key: "video",
-    title: "Video",
-    subtitle: "Generate videos",
-    icon: Video,
-    disabled: true,
-  },
-];
 
-const INPUT_MODALITY_META = {
-  text: { title: "Text", subtitle: "Prompts and conversations", icon: Type },
-  image: {
-    title: "Image",
-    subtitle: "Photos and screenshots",
-    icon: ImageIcon,
-  },
-  audio: { title: "Audio", subtitle: "Voice and sound files", icon: Volume2 },
-  video: { title: "Video", subtitle: "Video clips", icon: Video },
-  pdf: { title: "PDF", subtitle: "Documents and papers", icon: FileText },
-};
 
 function getAllModelsFromConfig(config) {
   if (!config) return [];
@@ -197,14 +156,7 @@ function _getOutputTypesForInput(config, inputType) {
   return [...outputSet];
 }
 
-function getModelsForIO(config, outputType, inputType) {
-  const allModels = getAllModelsFromConfig(config);
-  return allModels.filter(
-    (m) =>
-      m.outputTypes?.includes(outputType) &&
-      (inputType == null || m.inputTypes?.includes(inputType)),
-  );
-}
+
 
 function _formatContextLength(tokens) {
   if (!tokens) return null;
@@ -237,7 +189,6 @@ export default function ChatArea({
   onEdit,
   onRerun,
   config,
-  onSelectModel,
   supportedInputTypes = [],
   isTranscriptionModel = false,
   isTTSModel = false,
@@ -247,9 +198,6 @@ export default function ChatArea({
   newChatKey = 0,
   toolActivitySlot = null,
   functionCallingEnabled = false,
-  conversations = [],
-  favorites = [],
-  onToggleFavorite,
   settings = {},
   onUpdateSettings,
 }) {
@@ -405,10 +353,7 @@ export default function ChatArea({
   const [pendingImages, setPendingImages] = useState([]);
   const [lightboxSrc, setLightboxSrc] = useState(null);
   const [docViewerSrc, setDocViewerSrc] = useState(null);
-  const [welcomeStep, setWelcomeStep] = useState("pickOutput"); // "pickOutput" | "pickInput" | "pickModel"
-  const [welcomeDone, setWelcomeDone] = useState(false);
-  const [selectedOutput, setSelectedOutput] = useState(null);
-  const [selectedInput, setSelectedInput] = useState(null);
+
   const endRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -503,15 +448,7 @@ export default function ChatArea({
     }
   }, [input]);
 
-  // Reset welcome flow when starting a new chat
-  useEffect(() => {
-    if (messages.length === 0) {
-      setWelcomeDone(false);
-      setWelcomeStep("pickOutput");
-      setSelectedOutput(null);
-      setSelectedInput(null);
-    }
-  }, [messages.length, newChatKey]);
+
 
   // Shuffle FC prompt suggestions on new chat
   useEffect(() => {
@@ -628,7 +565,6 @@ export default function ChatArea({
 
         {messages.length === 0 &&
           !functionCallingEnabled &&
-          !welcomeDone &&
           config?.availableProviders?.length === 0 && (
             <div className={styles.welcome}>
               <div
@@ -695,238 +631,12 @@ export default function ChatArea({
 
         {messages.length === 0 &&
           !functionCallingEnabled &&
-          !welcomeDone &&
           config?.availableProviders?.length > 0 && (
-            <div className={styles.welcome}>
-              {welcomeStep === "pickOutput" && (
-                <>
-                  <div className={styles.stepHeader}>
-                    <div>
-                      <h3>What do you wanna make?</h3>
-                      <p className={styles.sectionSubtitle}>
-                        Pick an output type to get started
-                      </p>
-                    </div>
-                  </div>
-                  <div className={styles.capabilityGrid}>
-                    {OUTPUT_MODALITIES.map((mod) => {
-                      const Icon = mod.icon;
-                      return (
-                        <div
-                          key={mod.key}
-                          className={`${styles.capabilityCard} ${mod.disabled ? styles.capabilityDisabled : ""}`}
-                          onClick={() => {
-                            if (!mod.disabled) {
-                              setSelectedOutput(mod.key);
-                              setWelcomeStep("pickInput");
-                            }
-                          }}
-                        >
-                          <div
-                            className={styles.capabilityIcon}
-                            style={{ color: MODALITY_COLORS[mod.key] }}
-                          >
-                            <Icon size={20} />
-                          </div>
-                          <div className={styles.capabilityInfo}>
-                            <h4>{mod.title}</h4>
-                            <p>{mod.subtitle}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Recent models from conversations */}
-                  {(() => {
-                    const seen = new Set();
-                    const recent = [];
-                    for (const conv of conversations) {
-                      const m = conv.settings?.model;
-                      const p = conv.settings?.provider;
-                      if (!m || !p) continue;
-                      const key = `${p}:${m}`;
-                      if (seen.has(key)) continue;
-                      seen.add(key);
-                      recent.push({ provider: p, model: m });
-                      if (recent.length >= 4) break;
-                    }
-                    if (recent.length === 0) return null;
-                    return (
-                      <>
-                        <div className={styles.recentDivider} />
-                        <div className={styles.recentSection}>
-                          <span className={styles.recentLabel}>
-                            <Clock size={12} />
-                            Recently Used Models
-                          </span>
-                          <div className={styles.recentModels}>
-                            {recent.map((r) => (
-                              <div
-                                key={`${r.provider}:${r.model}`}
-                                className={styles.recentModelChip}
-                                onClick={() => {
-                                  setSelectedOutput(null);
-                                  setSelectedInput(null);
-                                  setWelcomeStep("pickOutput");
-                                  setWelcomeDone(true);
-                                  onSelectModel(r.provider, r.model);
-                                }}
-                              >
-                                <ProviderLogo provider={r.provider} size={14} />
-                                <span>{r.model}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-
-                  <div
-                    className={styles.viewAllModelsCard}
-                    onClick={() => {
-                      setSelectedOutput(null);
-                      setSelectedInput(null);
-                      setWelcomeStep("pickModel");
-                    }}
-                  >
-                    <LayoutGrid size={16} />
-                    <span>View all Models</span>
-                  </div>
-                </>
-              )}
-
-              {welcomeStep === "pickInput" &&
-                (() => {
-                  const outputMod = OUTPUT_MODALITIES.find(
-                    (m) => m.key === selectedOutput,
-                  );
-                  return (
-                    <>
-                      <div className={styles.stepHeader}>
-                        <button
-                          className={styles.backButton}
-                          onClick={() => {
-                            setWelcomeStep("pickOutput");
-                            setSelectedOutput(null);
-                          }}
-                        >
-                          <ArrowLeft size={18} />
-                        </button>
-                        <div>
-                          <h3>What do you want to send?</h3>
-                          <p className={styles.sectionSubtitle}>
-                            Making {outputMod?.title?.toLowerCase()} — now pick
-                            your input
-                          </p>
-                        </div>
-                      </div>
-                      <div className={styles.capabilityGrid}>
-                        {Object.entries(INPUT_MODALITY_META).map(
-                          ([key, meta]) => {
-                            const models = getModelsForIO(
-                              config,
-                              selectedOutput,
-                              key,
-                            );
-                            const available = models.length > 0;
-                            const Icon = meta.icon;
-                            return (
-                              <div
-                                key={key}
-                                className={`${styles.capabilityCard} ${!available ? styles.capabilityDisabled : ""}`}
-                                onClick={() => {
-                                  if (available) {
-                                    setSelectedInput(key);
-                                    setWelcomeStep("pickModel");
-                                  }
-                                }}
-                              >
-                                <div
-                                  className={styles.capabilityIcon}
-                                  style={{ color: MODALITY_COLORS[key] }}
-                                >
-                                  <Icon size={20} />
-                                </div>
-                                <div className={styles.capabilityInfo}>
-                                  <h4>{meta.title}</h4>
-                                  <p>{meta.subtitle}</p>
-                                </div>
-                              </div>
-                            );
-                          },
-                        )}
-                      </div>
-                    </>
-                  );
-                })()}
-
-              {welcomeStep === "pickModel" &&
-                (() => {
-                  const isViewAll = !selectedOutput && !selectedInput;
-                  const allModels = isViewAll
-                    ? getAllModelsFromConfig(config)
-                    : getModelsForIO(config, selectedOutput, selectedInput);
-                  const outputMod = OUTPUT_MODALITIES.find(
-                    (m) => m.key === selectedOutput,
-                  );
-                  const inputMeta = INPUT_MODALITY_META[selectedInput];
-
-                  const handleModelSelect = (model) => {
-                    onSelectModel(model.provider || "lm-studio", model.name);
-                    setWelcomeStep("pickOutput");
-                    setSelectedOutput(null);
-                    setSelectedInput(null);
-                    setWelcomeDone(true);
-                  };
-
-                  return (
-                    <div className={styles.modelTableView}>
-                      <div className={styles.stepHeader}>
-                        <button
-                          className={styles.backButton}
-                          onClick={() => {
-                            if (isViewAll) {
-                              setWelcomeStep("pickOutput");
-                            } else {
-                              setWelcomeStep("pickInput");
-                              setSelectedInput(null);
-                            }
-                          }}
-                        >
-                          <ArrowLeft size={18} />
-                        </button>
-                        <div>
-                          <h3>
-                            {isViewAll
-                              ? "All Models"
-                              : `${inputMeta?.title} to ${outputMod?.title}`}
-                          </h3>
-                          <p className={styles.sectionSubtitle}>
-                            Pick a model to get started
-                          </p>
-                        </div>
-                      </div>
-                      <ModelGrid
-                        models={allModels}
-                        onSelect={handleModelSelect}
-                        showSearch={allModels.length > 6}
-                        favorites={favorites}
-                        onToggleFavorite={onToggleFavorite}
-                      />
-                    </div>
-                  );
-                })()}
+            <div className={styles.readyPrompt}>
+              <h3>You&apos;re all set! 🎉</h3>
+              <p>Your model is ready — start typing below to begin.</p>
             </div>
           )}
-
-        {messages.length === 0 && !functionCallingEnabled && welcomeDone && (
-          <div className={styles.readyPrompt}>
-            <h3>You&apos;re all set! 🎉</h3>
-            <p>Your model is ready — start typing below to begin.</p>
-          </div>
-        )}
 
         <MessageList
           messages={messages}

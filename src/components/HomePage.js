@@ -2142,8 +2142,6 @@ Guidelines:
           config={config}
           isTranscriptionModel={isTranscriptionModel}
           isTTSModel={isTTSModel}
-          conversations={conversations}
-          favorites={favoriteKeys}
           customTools={customTools}
           offlineTools={offlineTools}
           disabledBuiltIns={disabledBuiltIns}
@@ -2153,36 +2151,6 @@ Guidelines:
           onUpdateSettings={(updates) =>
             setSettings((s) => ({ ...s, ...updates }))
           }
-          onToggleFavorite={async (key) => {
-            if (favoriteKeys.includes(key)) {
-              setFavoriteKeys((prev) => prev.filter((k) => k !== key));
-              PrismService.removeFavorite("model", key).catch(() => {});
-            } else {
-              setFavoriteKeys((prev) => [...prev, key]);
-              const [provider, ...rest] = key.split(":");
-              PrismService.addFavorite("model", key, {
-                provider,
-                name: rest.join(":"),
-              }).catch(() => {});
-            }
-          }}
-          onSelectModel={(provider, modelName) => {
-            const modelDef =
-              (config?.textToText?.models?.[provider] || []).find(
-                (m) => m.name === modelName,
-              ) ||
-              (config?.textToImage?.models?.[provider] || []).find(
-                (m) => m.name === modelName,
-              );
-            const temp = modelDef?.defaultTemperature ?? 1.0;
-            handleNewChat();
-            setSettings((s) => ({
-              ...s,
-              provider,
-              model: modelName,
-              temperature: temp,
-            }));
-          }}
           supportedInputTypes={
             isTranscriptionModel
               ? ["audio"]

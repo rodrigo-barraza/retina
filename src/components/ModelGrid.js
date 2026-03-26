@@ -127,6 +127,9 @@ function normalizeModel(model) {
     params: model.params || model.params_string || null,
     contextLength: model.contextLength || model.max_context_length || null,
     quantization,
+    bitsPerWeight: model.bitsPerWeight ?? null,
+    architecture: model.architecture || null,
+    publisher: model.publisher || null,
     isLoaded: model.loaded || model.loaded_instances?.length > 0 || false,
     pricing: model.pricing || null,
     arena: model.arena || null,
@@ -184,6 +187,9 @@ function buildRow(rawModel, favorites = []) {
     size: rawModel.size_bytes || parseSize(rawModel.size || model.size) || 0,
     params: parseParams(model.params),
     quant: (model.quantization || "").toLowerCase(),
+    bpw: model.bitsPerWeight ?? 0,
+    arch: (model.architecture || "").toLowerCase(),
+    publisher: (model.publisher || "").toLowerCase(),
     input: rawModel.pricing?.inputPerMillion ?? Infinity,
     output: rawModel.pricing?.outputPerMillion ?? Infinity,
     favorite: favorites.includes(favKey) ? 1 : 0,
@@ -303,6 +309,9 @@ export default function ModelGrid({
   const hasParams = filtered.some((m) => normalizeModel(m).params);
   const hasContext = filtered.some((m) => normalizeModel(m).contextLength);
   const hasQuant = filtered.some((m) => normalizeModel(m).quantization);
+  const hasBpw = filtered.some((m) => normalizeModel(m).bitsPerWeight != null);
+  const hasArch = filtered.some((m) => normalizeModel(m).architecture);
+  const hasPublisher = filtered.some((m) => normalizeModel(m).publisher);
   const hasInputPrice = filtered.some(
     (m) => m.pricing?.inputPerMillion != null,
   );
@@ -466,6 +475,32 @@ export default function ModelGrid({
       });
     }
 
+    if (hasBpw) {
+      cols.push({
+        key: "bpw",
+        label: "BPW",
+        render: (row) =>
+          row._model.bitsPerWeight != null ? row._model.bitsPerWeight : "—",
+      });
+    }
+
+    if (hasArch) {
+      cols.push({
+        key: "arch",
+        label: "Arch",
+        render: (row) => row._model.architecture || "—",
+      });
+    }
+
+    if (hasPublisher) {
+      cols.push({
+        key: "publisher",
+        label: "Publisher",
+        align: "left",
+        render: (row) => row._model.publisher || "—",
+      });
+    }
+
     if (hasInputPrice) {
       cols.push({
         key: "input",
@@ -507,6 +542,9 @@ export default function ModelGrid({
     hasSize,
     hasParams,
     hasQuant,
+    hasBpw,
+    hasArch,
+    hasPublisher,
     hasInputPrice,
     hasOutputPrice,
     hasActions,
