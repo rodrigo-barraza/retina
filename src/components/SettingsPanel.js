@@ -35,6 +35,7 @@ export default function SettingsPanel({
   _hasAssistantImages,
   _inferenceMode,
   readOnly = false,
+  hideProviderModel = false,
   onSystemPromptClick,
   showSystemPromptModal = false,
   onCloseSystemPromptModal,
@@ -188,13 +189,13 @@ export default function SettingsPanel({
           </div>
         )}
 
-        {readOnly && (
+        {readOnly && !hideProviderModel && (
           <div className={styles.sectionTitle}>
             <Cpu size={16} /> Model Settings
           </div>
         )}
 
-        {readOnly && (
+        {readOnly && !hideProviderModel && (
           <div className={styles.formGroup}>
             <label>Provider</label>
             <div className={styles.readOnlyValue}>
@@ -204,7 +205,7 @@ export default function SettingsPanel({
           </div>
         )}
 
-        {readOnly && settings.provider && (
+        {readOnly && !hideProviderModel && settings.provider && (
           <div className={styles.formGroup}>
             <label>Model</label>
             <div

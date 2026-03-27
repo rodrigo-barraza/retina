@@ -33,6 +33,16 @@
   box-shadow: 0 0 12px color-mix(in srgb, var(--accent-color) 15%, transparent);
 }
 
+.triggerReadOnly {
+  cursor: default;
+
+  &:hover {
+    border-color: var(--border-color);
+    background: var(--bg-secondary);
+    box-shadow: none;
+  }
+}
+
 .triggerOpen {
   border-color: var(--accent-color);
   background: color-mix(in srgb, var(--accent-color) 8%, var(--bg-secondary));

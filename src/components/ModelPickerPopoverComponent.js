@@ -28,6 +28,7 @@ export default function ModelPickerPopoverComponent({
   onSelectModel,
   favorites = [],
   onToggleFavorite,
+  readOnly = false,
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -215,10 +216,11 @@ export default function ModelPickerPopoverComponent({
       {/* ── Trigger pill ─────────────────────────────────────────── */}
       <button
         ref={triggerRef}
-        className={`${styles.trigger} ${open ? styles.triggerOpen : ""}`}
-        onClick={open ? () => setOpen(false) : openPopover}
+        className={`${styles.trigger} ${open ? styles.triggerOpen : ""} ${readOnly ? styles.triggerReadOnly : ""}`}
+        onClick={readOnly ? undefined : open ? () => setOpen(false) : openPopover}
         data-model-picker-trigger
-        title="Switch model"
+        title={readOnly ? displayLabel : "Switch model"}
+        style={readOnly ? { cursor: "default" } : undefined}
       >
         <span className={styles.triggerContent}>
           {settings?.provider && (
@@ -226,10 +228,12 @@ export default function ModelPickerPopoverComponent({
           )}
           <span className={styles.triggerLabel}>{displayLabel}</span>
         </span>
-        <ChevronDown
-          size={14}
-          className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}
-        />
+        {!readOnly && (
+          <ChevronDown
+            size={14}
+            className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}
+          />
+        )}
       </button>
 
       {/* ── Popover portal ─────────────────────────────────────────── */}

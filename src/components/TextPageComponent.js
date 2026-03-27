@@ -18,12 +18,11 @@ import ComboboxFilter from "./ComboboxFilter";
 import PaginationComponent from "./PaginationComponent";
 import PageHeaderComponent from "./PageHeaderComponent";
 import DatePickerComponent from "./DatePickerComponent";
+import SearchInputComponent from "./SearchInputComponent";
 import { LoadingMessage, EmptyMessage } from "./StateMessageComponent";
 import {
   FilterBarComponent,
-  FilterGroupComponent,
-  FilterPillsComponent,
-  SearchInputComponent,
+  FilterIconButtonGroupComponent,
   ViewModeToggleComponent,
 } from "./FilterBarComponent";
 import { formatCost, buildDateRangeParams } from "../utils/utilities";
@@ -31,7 +30,6 @@ import styles from "./TextPageComponent.module.css";
 import { LS_DATE_RANGE } from "../constants";
 
 const ORIGIN_FILTERS = [
-  { key: "all", label: "All" },
   { key: "user", label: "Prompts", icon: User },
   { key: "ai", label: "Responses", icon: Sparkles },
 ];
@@ -90,11 +88,7 @@ export default function TextPageComponent({ mode = "user" }) {
       .catch(() => {});
   }, []);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setSearch(searchInput);
-    setPage(1);
-  };
+
 
   const toggleFavorite = async (textKey) => {
     if (favoriteKeys.includes(textKey)) {
@@ -124,79 +118,85 @@ export default function TextPageComponent({ mode = "user" }) {
 
       {/* Filters */}
       <FilterBarComponent>
-        <FilterGroupComponent label="Favorites">
-          <FilterPillsComponent
-            options={[
-              { key: "all", label: "All" },
-              { key: "favorites", label: "★ Favorites" },
-            ]}
-            value={showFavoritesOnly ? "favorites" : "all"}
-            onChange={(v) => setShowFavoritesOnly(v === "favorites")}
-          />
-        </FilterGroupComponent>
-
-        <FilterGroupComponent label="Source">
-          <FilterPillsComponent
-            options={ORIGIN_FILTERS}
-            value={origin}
-            onChange={(v) => {
-              setOrigin(v);
-              setPage(1);
-            }}
-          />
-        </FilterGroupComponent>
-
         <SearchInputComponent
           value={searchInput}
-          onChange={setSearchInput}
-          onSubmit={handleSearch}
-          placeholder="Search text content..."
+          onChange={(v) => {
+            setSearchInput(v);
+            setSearch(v);
+            setPage(1);
+          }}
+          placeholder="Search text…"
+          className={styles.searchWrapper}
         />
 
-        <FilterGroupComponent label="Date">
-          <DatePickerComponent
-            from={dateRange.from}
-            to={dateRange.to}
-            onChange={(v) => {
-              setDateRange(v);
-              setPage(1);
-            }}
-            storageKey={LS_DATE_RANGE}
-          />
-        </FilterGroupComponent>
+        <FilterIconButtonGroupComponent
+          options={ORIGIN_FILTERS.map((f) => ({
+            key: f.key,
+            icon: f.icon,
+            label: f.label,
+          }))}
+          activeKeys={origin === "all" ? null : origin}
+          isSingleSelect
+          onChange={(v) => {
+            setOrigin(v || "all");
+            setPage(1);
+          }}
+        />
 
-        <FilterGroupComponent label="Provider">
-          <ComboboxFilter
-            options={providers}
-            value={provider}
-            onChange={(v) => {
-              setProvider(v);
-              setModel("");
-              setPage(1);
-            }}
-            placeholder="All Providers"
-            allLabel="All Providers"
-          />
-        </FilterGroupComponent>
+        <div className={styles.filterDivider} />
 
-        <FilterGroupComponent label="Model">
-          <ComboboxFilter
-            options={
-              provider
-                ? models.filter((m) => m.startsWith(provider + "/"))
-                : models
-            }
-            value={model}
-            onChange={(v) => {
-              setModel(v);
-              setPage(1);
-            }}
-            placeholder="All Models"
-            allLabel="All Models"
-          />
-        </FilterGroupComponent>
+        <FilterIconButtonGroupComponent
+          options={[
+            {
+              key: "favorites",
+              icon: Star,
+              label: "Favorites only",
+            },
+          ]}
+          activeKeys={showFavoritesOnly ? "favorites" : null}
+          isSingleSelect
+          onChange={(v) => setShowFavoritesOnly(v === "favorites")}
+        />
 
-        {/* Raw / Preview toggle */}
+        <div className={styles.filterDivider} />
+
+        <ComboboxFilter
+          options={providers}
+          value={provider}
+          onChange={(v) => {
+            setProvider(v);
+            setModel("");
+            setPage(1);
+          }}
+          placeholder="All Providers"
+          allLabel="All Providers"
+        />
+
+        <ComboboxFilter
+          options={
+            provider
+              ? models.filter((m) => m.startsWith(provider + "/"))
+              : models
+          }
+          value={model}
+          onChange={(v) => {
+            setModel(v);
+            setPage(1);
+          }}
+          placeholder="All Models"
+          allLabel="All Models"
+        />
+
+        <DatePickerComponent
+          from={dateRange.from}
+          to={dateRange.to}
+          onChange={(v) => {
+            setDateRange(v);
+            setPage(1);
+          }}
+          storageKey={LS_DATE_RANGE}
+        />
+
         <ViewModeToggleComponent
           mode={viewMode}
           onChange={setViewMode}

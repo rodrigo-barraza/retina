@@ -19,6 +19,7 @@ import HistoryPanel from "../../../components/HistoryPanel";
 import ThreePanelLayout from "../../../components/ThreePanelLayout";
 import SelectDropdown from "../../../components/SelectDropdown";
 import TabBarComponent from "../../../components/TabBarComponent";
+import ModelPickerPopoverComponent from "../../../components/ModelPickerPopoverComponent";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
@@ -354,6 +355,7 @@ export default function ConversationsPage({ initialId = null }) {
                     config={config}
                     settings={settingsWithDefaults}
                     readOnly
+                    hideProviderModel
                     workflows={workflows}
                   />
                 )}
@@ -472,6 +474,16 @@ export default function ConversationsPage({ initialId = null }) {
                 )}
               </div>
             )
+          }
+          headerCenter={
+            selectedConv?.settings?.provider ? (
+              <ModelPickerPopoverComponent
+                config={config}
+                settings={settingsWithDefaults}
+                onSelectModel={() => {}}
+                readOnly
+              />
+            ) : null
           }
         >
           <div className={styles.viewerBody} ref={viewerBodyRef}>

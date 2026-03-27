@@ -23,12 +23,11 @@ import PaginationComponent from "./PaginationComponent";
 import SortableTableComponent from "./SortableTableComponent";
 import PageHeaderComponent from "./PageHeaderComponent";
 import DatePickerComponent from "./DatePickerComponent";
+import SearchInputComponent from "./SearchInputComponent";
 import { LoadingMessage, EmptyMessage } from "./StateMessageComponent";
 import {
   FilterBarComponent,
-  FilterGroupComponent,
-  FilterPillsComponent,
-  SearchInputComponent,
+  FilterIconButtonGroupComponent,
   ViewModeToggleComponent,
 } from "./FilterBarComponent";
 import { MODALITY_COLORS } from "./WorkflowNodeConstants";
@@ -37,13 +36,11 @@ import styles from "./MediaPageComponent.module.css";
 import { LS_DATE_RANGE } from "../constants";
 
 const ORIGIN_FILTERS = [
-  { key: "all", label: "All" },
   { key: "user", label: "Uploaded", icon: User },
   { key: "ai", label: "Generated", icon: Sparkles },
 ];
 
 const TYPE_FILTERS = [
-  { key: "all", label: "All" },
   {
     key: "image",
     label: "Images",
@@ -171,12 +168,6 @@ export default function MediaPageComponent({
       .catch(() => {});
   }, []);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setSearch(searchInput);
-    setPage(1);
-  };
-
   const toggleFavorite = async (mediaKey) => {
     if (favoriteKeys.includes(mediaKey)) {
       setFavoriteKeys((prev) => prev.filter((k) => k !== mediaKey));
@@ -207,7 +198,7 @@ export default function MediaPageComponent({
             {m.mediaType === "image" && resolvedUrl ? (
               <img
                 src={resolvedUrl}
-                alt={`${m.origin === "ai" ? "Generated" : "Uploaded"} image`}
+                alt=""
                 className={styles.listThumbImg}
                 style={{ cursor: "pointer" }}
                 loading="lazy"
@@ -320,120 +311,128 @@ export default function MediaPageComponent({
 
         {/* Filters */}
         <FilterBarComponent>
-          <FilterGroupComponent label="Favorites">
-            <FilterPillsComponent
-              options={[
-                { key: "all", label: "All" },
-                { key: "favorites", label: "★ Favorites" },
-              ]}
-              value={showFavoritesOnly ? "favorites" : "all"}
-              onChange={(v) => setShowFavoritesOnly(v === "favorites")}
-            />
-          </FilterGroupComponent>
+          <SearchInputComponent
+            value={searchInput}
+            onChange={(v) => {
+              setSearchInput(v);
+              setSearch(v);
+              setPage(1);
+            }}
+            placeholder="Search media…"
+            className={styles.searchWrapper}
+          />
 
-          <FilterGroupComponent label="Source">
-            <FilterPillsComponent
-              options={ORIGIN_FILTERS}
-              value={origin}
-              onChange={(v) => {
-                setOrigin(v);
-                setPage(1);
-              }}
-            />
-          </FilterGroupComponent>
+          <FilterIconButtonGroupComponent
+            options={ORIGIN_FILTERS.map((f) => ({
+              key: f.key,
+              icon: f.icon,
+              label: f.label,
+            }))}
+            activeKeys={origin === "all" ? null : origin}
+            isSingleSelect
+            onChange={(v) => {
+              setOrigin(v || "all");
+              setPage(1);
+            }}
+          />
 
-          <FilterGroupComponent label="Type">
-            <FilterPillsComponent
-              options={TYPE_FILTERS}
-              value={type}
-              onChange={(v) => {
-                setType(v);
-                setPage(1);
-              }}
-            />
-          </FilterGroupComponent>
+          <div className={styles.filterDivider} />
+
+          <FilterIconButtonGroupComponent
+            options={TYPE_FILTERS.map((f) => ({
+              key: f.key,
+              icon: f.icon,
+              color: f.color,
+              label: f.label,
+            }))}
+            activeKeys={type === "all" ? null : type}
+            isSingleSelect
+            onChange={(v) => {
+              setType(v || "all");
+              setPage(1);
+            }}
+          />
+
+          <div className={styles.filterDivider} />
+
+          <FilterIconButtonGroupComponent
+            options={[
+              {
+                key: "favorites",
+                icon: Star,
+                label: "Favorites only",
+              },
+            ]}
+            activeKeys={showFavoritesOnly ? "favorites" : null}
+            isSingleSelect
+            onChange={(v) => setShowFavoritesOnly(v === "favorites")}
+          />
+
+          <div className={styles.filterDivider} />
 
           {isAdmin && externalProject === undefined && (
-            <FilterGroupComponent label="Project">
-              <ComboboxFilter
-                options={projects}
-                value={project}
-                onChange={(v) => {
-                  setInternalProject(v);
-                  setPage(1);
-                }}
-                placeholder="All Projects"
-                allLabel="All Projects"
-              />
-            </FilterGroupComponent>
+            <ComboboxFilter
+              options={projects}
+              value={project}
+              onChange={(v) => {
+                setInternalProject(v);
+                setPage(1);
+              }}
+              placeholder="All Projects"
+              allLabel="All Projects"
+            />
           )}
 
           {isAdmin && (
-            <FilterGroupComponent label="User">
-              <ComboboxFilter
-                options={usernames}
-                value={username}
-                onChange={(v) => {
-                  setUsername(v);
-                  setPage(1);
-                }}
-                placeholder="All Users"
-                allLabel="All Users"
-              />
-            </FilterGroupComponent>
+            <ComboboxFilter
+              options={usernames}
+              value={username}
+              onChange={(v) => {
+                setUsername(v);
+                setPage(1);
+              }}
+              placeholder="All Users"
+              allLabel="All Users"
+            />
           )}
 
-          <FilterGroupComponent label="Provider">
-            <ComboboxFilter
-              options={providers}
-              value={provider}
-              onChange={(v) => {
-                setProvider(v);
-                setModel("");
-                setPage(1);
-              }}
-              placeholder="All Providers"
-              allLabel="All Providers"
-            />
-          </FilterGroupComponent>
-
-          <FilterGroupComponent label="Model">
-            <ComboboxFilter
-              options={
-                provider
-                  ? models.filter((m) => m.startsWith(provider + "/"))
-                  : models
-              }
-              value={model}
-              onChange={(v) => {
-                setModel(v);
-                setPage(1);
-              }}
-              placeholder="All Models"
-              allLabel="All Models"
-            />
-          </FilterGroupComponent>
-
-          <FilterGroupComponent label="Date">
-            <DatePickerComponent
-              from={dateRange.from}
-              to={dateRange.to}
-              onChange={(v) => {
-                setDateRange(v);
-                setPage(1);
-              }}
-              storageKey={LS_DATE_RANGE}
-            />
-          </FilterGroupComponent>
-
-          <SearchInputComponent
-            value={searchInput}
-            onChange={setSearchInput}
-            onSubmit={handleSearch}
-            placeholder="Search by conversation..."
+          <ComboboxFilter
+            options={providers}
+            value={provider}
+            onChange={(v) => {
+              setProvider(v);
+              setModel("");
+              setPage(1);
+            }}
+            placeholder="All Providers"
+            allLabel="All Providers"
           />
 
-          {/* View mode toggle */}
+          <ComboboxFilter
+            options={
+              provider
+                ? models.filter((m) => m.startsWith(provider + "/"))
+                : models
+            }
+            value={model}
+            onChange={(v) => {
+              setModel(v);
+              setPage(1);
+            }}
+            placeholder="All Models"
+            allLabel="All Models"
+          />
+
+          <DatePickerComponent
+            from={dateRange.from}
+            to={dateRange.to}
+            onChange={(v) => {
+              setDateRange(v);
+              setPage(1);
+            }}
+            storageKey={LS_DATE_RANGE}
+          />
+
           <ViewModeToggleComponent
             mode={viewMode}
             onChange={setViewMode}
@@ -466,11 +465,20 @@ export default function MediaPageComponent({
                     {m.mediaType === "image" && resolvedUrl ? (
                       <img
                         src={resolvedUrl}
-                        alt={`${m.origin === "ai" ? "Generated" : "Uploaded"} image`}
+                        alt=""
                         className={styles.mediaImage}
                         style={{ cursor: "pointer" }}
                         loading="lazy"
                         onClick={() => setLightboxSrc(resolvedUrl)}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.parentElement.classList.add(styles.mediaPlaceholder);
+                          const icon = document.createElement("span");
+                          icon.textContent = "🖼";
+                          icon.style.fontSize = "32px";
+                          icon.style.opacity = "0.3";
+                          e.target.parentElement.appendChild(icon);
+                        }}
                       />
                     ) : m.mediaType === "video" && resolvedUrl ? (
                       <video
