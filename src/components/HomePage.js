@@ -2168,23 +2168,57 @@ Guidelines:
               <ToolActivityPanelComponent activities={toolActivity} />
             ) : null
           }
-          onLiveUserMessage={(text) => {
-            const userMsg = {
-              role: "user",
-              content: text,
-              timestamp: new Date().toISOString(),
-            };
-            setMessages((prev) => [...prev, userMsg]);
+          onLiveUserChunk={(fullText) => {
+            setMessages((prev) => {
+              const lastIdx = prev.length - 1;
+              const lastMsg = prev[lastIdx];
+              // Update existing streaming user message
+              if (lastMsg?.role === "user" && lastMsg._liveStreaming) {
+                const updated = [...prev];
+                updated[lastIdx] = { ...lastMsg, content: fullText };
+                return updated;
+              }
+              // Create new streaming user message
+              return [...prev, {
+                role: "user",
+                content: fullText,
+                timestamp: new Date().toISOString(),
+                _liveStreaming: true,
+              }];
+            });
           }}
-          onLiveAssistantMessage={(text) => {
-            const assistantMsg = {
-              role: "assistant",
-              content: text,
-              timestamp: new Date().toISOString(),
-              provider: settings.provider,
-              model: settings.model,
-            };
-            setMessages((prev) => [...prev, assistantMsg]);
+          onLiveAssistantChunk={(fullText) => {
+            setMessages((prev) => {
+              const lastIdx = prev.length - 1;
+              const lastMsg = prev[lastIdx];
+              // Update existing streaming assistant message
+              if (lastMsg?.role === "assistant" && lastMsg._liveStreaming) {
+                const updated = [...prev];
+                updated[lastIdx] = { ...lastMsg, content: fullText };
+                return updated;
+              }
+              // Create new streaming assistant message
+              return [...prev, {
+                role: "assistant",
+                content: fullText,
+                timestamp: new Date().toISOString(),
+                provider: settings.provider,
+                model: settings.model,
+                _liveStreaming: true,
+              }];
+            });
+          }}
+          onLiveTurnComplete={() => {
+            // Remove _liveStreaming flag to finalize messages
+            setMessages((prev) =>
+              prev.map((m) => {
+                if (m._liveStreaming) {
+                  const { _liveStreaming: _, ...rest } = m;
+                  return rest;
+                }
+                return m;
+              }),
+            );
           }}
         />
       </ThreePanelLayout>

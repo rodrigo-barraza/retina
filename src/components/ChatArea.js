@@ -218,8 +218,9 @@ export default function ChatArea({
   onFcCardHover,
   settings = {},
   onUpdateSettings,
-  onLiveUserMessage,
-  onLiveAssistantMessage,
+  onLiveUserChunk,
+  onLiveAssistantChunk,
+  onLiveTurnComplete,
 }) {
   const [showToolsBubble, setShowToolsBubble] = useState(false);
   const toolsBubbleRef = useRef(null);
@@ -405,7 +406,6 @@ export default function ChatArea({
         callbacks: {
           onSetupComplete: () => {
             setLiveConnected(true);
-            // Start mic after session is ready
             session.startMicrophone().then(() => {
               setLiveMicActive(true);
             }).catch((err) => {
@@ -413,50 +413,42 @@ export default function ChatArea({
             });
           },
           onOutputTranscription: (text) => {
-            // Accumulate model's spoken text
+            // Accumulate and stream model's response in real-time
             liveAssistantTranscriptRef.current += text;
+            onLiveAssistantChunk?.(liveAssistantTranscriptRef.current);
           },
           onInputTranscription: (text) => {
-            // Accumulate user's spoken text
+            // Accumulate and stream user's speech in real-time
             liveUserTranscriptRef.current += text;
+            onLiveUserChunk?.(liveUserTranscriptRef.current);
           },
           onThinking: (content) => {
             console.log("[LiveAPI] Thinking:", content);
           },
           onInterrupted: () => {
-            // User interrupted — flush any accumulated assistant text
+            // User interrupted — finalize any in-progress assistant message
             if (liveAssistantTranscriptRef.current.trim()) {
-              onLiveAssistantMessage?.(liveAssistantTranscriptRef.current.trim());
+              onLiveTurnComplete?.();
               liveAssistantTranscriptRef.current = "";
             }
           },
           onTurnComplete: () => {
-            // Model finished a turn — flush accumulated transcriptions
-            // First flush the user message (what they said)
-            if (liveUserTranscriptRef.current.trim()) {
-              onLiveUserMessage?.(liveUserTranscriptRef.current.trim());
-              liveUserTranscriptRef.current = "";
-            }
-            // Then flush the assistant response
-            if (liveAssistantTranscriptRef.current.trim()) {
-              onLiveAssistantMessage?.(liveAssistantTranscriptRef.current.trim());
-              liveAssistantTranscriptRef.current = "";
-            }
+            // Model finished a turn — finalize messages and reset
+            onLiveTurnComplete?.();
+            liveUserTranscriptRef.current = "";
+            liveAssistantTranscriptRef.current = "";
           },
           onError: (msg) => {
             console.error("[LiveAPI] Error:", msg);
             setLiveMicActive(false);
           },
           onClose: () => {
-            // Flush any remaining transcriptions
-            if (liveUserTranscriptRef.current.trim()) {
-              onLiveUserMessage?.(liveUserTranscriptRef.current.trim());
-              liveUserTranscriptRef.current = "";
+            // Finalize any in-progress messages
+            if (liveUserTranscriptRef.current.trim() || liveAssistantTranscriptRef.current.trim()) {
+              onLiveTurnComplete?.();
             }
-            if (liveAssistantTranscriptRef.current.trim()) {
-              onLiveAssistantMessage?.(liveAssistantTranscriptRef.current.trim());
-              liveAssistantTranscriptRef.current = "";
-            }
+            liveUserTranscriptRef.current = "";
+            liveAssistantTranscriptRef.current = "";
             setLiveConnected(false);
             setLiveMicActive(false);
           },
