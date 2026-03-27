@@ -120,12 +120,12 @@ export default class LiveSessionService {
         break;
 
       case "turnComplete":
-        if (this.callbacks.onTurnComplete) this.callbacks.onTurnComplete();
+        if (this.callbacks.onTurnComplete) this.callbacks.onTurnComplete(data);
         break;
 
       case "interrupted":
         this.stopAudioPlayback();
-        if (this.callbacks.onInterrupted) this.callbacks.onInterrupted();
+        if (this.callbacks.onInterrupted) this.callbacks.onInterrupted(data);
         break;
 
       case "usage":

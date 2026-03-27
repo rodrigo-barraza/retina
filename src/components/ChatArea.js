@@ -350,6 +350,8 @@ export default function ChatArea({
   // Accumulate transcriptions between turn boundaries
   const liveUserTranscriptRef = useRef("");
   const liveAssistantTranscriptRef = useRef("");
+  // Stale = live model with messages but no active session (view-only)
+  const liveSessionStale = isLiveModel && messages.length > 0 && !liveMicActive;
 
   // Clean up live session when model changes or unmounts
   useEffect(() => {
@@ -425,16 +427,16 @@ export default function ChatArea({
           onThinking: (content) => {
             console.log("[LiveAPI] Thinking:", content);
           },
-          onInterrupted: () => {
+          onInterrupted: (turnData) => {
             // User interrupted — finalize any in-progress assistant message
             if (liveAssistantTranscriptRef.current.trim()) {
-              onLiveTurnComplete?.();
+              onLiveTurnComplete?.(turnData);
               liveAssistantTranscriptRef.current = "";
             }
           },
-          onTurnComplete: () => {
+          onTurnComplete: (turnData) => {
             // Model finished a turn — finalize messages and reset
-            onLiveTurnComplete?.();
+            onLiveTurnComplete?.(turnData);
             liveUserTranscriptRef.current = "";
             liveAssistantTranscriptRef.current = "";
           },
@@ -804,10 +806,17 @@ export default function ChatArea({
       )}
 
       {isLiveModel && messages.length > 0 && (
-        <div className={styles.liveStreamBanner}>
-          <span className={styles.liveStreamDot} />
-          Stream is live
-        </div>
+        liveMicActive ? (
+          <div className={styles.liveStreamBanner}>
+            <span className={styles.liveStreamDot} />
+            Stream is live
+          </div>
+        ) : (
+          <div className={`${styles.liveStreamBanner} ${styles.liveStreamStale}`}>
+            <span className={styles.liveStreamDotStale} />
+            Session ended
+          </div>
+        )
       )}
 
       <div className={styles.inputWrapper}>
@@ -988,22 +997,27 @@ export default function ChatArea({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={
-                  isTTSModel
-                    ? "Enter text to convert to speech..."
-                    : "Type a message..."
+                  liveSessionStale
+                    ? "This live session has ended. Start a new conversation."
+                    : isTTSModel
+                      ? "Enter text to convert to speech..."
+                      : "Type a message..."
                 }
                 rows={1}
+                disabled={liveSessionStale}
               />
             )}
             <button
               type="submit"
               className={isGenerating ? styles.submitGenerating : ""}
               disabled={
-                isGenerating
-                  ? false
-                  : isTranscriptionModel
-                    ? pendingImages.length === 0
-                    : !input.trim() && pendingImages.length === 0
+                liveSessionStale
+                  ? true
+                  : isGenerating
+                    ? false
+                    : isTranscriptionModel
+                      ? pendingImages.length === 0
+                      : !input.trim() && pendingImages.length === 0
               }
             >
               {isGenerating ? (

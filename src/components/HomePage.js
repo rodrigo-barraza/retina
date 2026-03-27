@@ -2208,17 +2208,50 @@ Guidelines:
               }];
             });
           }}
-          onLiveTurnComplete={() => {
-            // Remove _liveStreaming flag to finalize messages
-            setMessages((prev) =>
-              prev.map((m) => {
-                if (m._liveStreaming) {
-                  const { _liveStreaming: _, ...rest } = m;
-                  return rest;
+          onLiveTurnComplete={(turnData) => {
+            // Finalize messages: remove _liveStreaming flag, attach audio + usage
+            setMessages((prev) => {
+              const finalized = prev.map((m) => {
+                if (!m._liveStreaming) return m;
+                const { _liveStreaming: _, ...rest } = m;
+                // Attach audioRef and usage to the assistant message
+                if (rest.role === "assistant" && turnData) {
+                  if (turnData.audioRef) rest.audio = turnData.audioRef;
+                  if (turnData.usage) {
+                    rest.usage = turnData.usage;
+                    // Estimate cost using the model pricing from config
+                    const pricing = (() => {
+                      const models = config?.textToText?.models?.[settings.provider] || [];
+                      const md = models.find((x) => x.name === settings.model);
+                      return md?.pricing;
+                    })();
+                    if (pricing && turnData.usage) {
+                      const inCost = (turnData.usage.inputTokens / 1_000_000) * (pricing.inputPerMillion || 0);
+                      const outCost = (turnData.usage.outputTokens / 1_000_000) * (pricing.outputPerMillion || 0);
+                      rest.estimatedCost = parseFloat((inCost + outCost).toFixed(8));
+                    }
+                  }
                 }
-                return m;
-              }),
-            );
+                return rest;
+              });
+
+              // Persist to DB asynchronously
+              const currentId = activeId;
+              const currentTitle = title;
+              if (currentId) {
+                const { systemPrompt, ...modelSettings } = settings;
+                PrismService.patchConversation(currentId, {
+                  title: currentTitle,
+                  messages: finalized,
+                  systemPrompt,
+                  settings: modelSettings,
+                }).then(() => loadConversations()).catch((err) =>
+                  console.error("[Live] Failed to persist:", err),
+                );
+              }
+
+              return finalized;
+            });
           }}
         />
       </ThreePanelLayout>

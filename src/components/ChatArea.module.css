@@ -1261,6 +1261,21 @@
   }
 }
 
+.liveStreamStale {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.liveStreamDotStale {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
 .liveMicBtn {
   position: relative;
   color: #ef4444 !important;
