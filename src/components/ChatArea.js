@@ -534,22 +534,6 @@ export default function ChatArea({
                   />
                 );
               })}
-              {functionCallingEnabled && fcRandomPrompts.length > 0 && (
-                <div className={styles.toolCardsPrompts}>
-                  {fcRandomPrompts.map((prompt) => (
-                    <button
-                      key={prompt}
-                      className={consoleStyles.quickPrompt}
-                      onClick={() => {
-                        setInput(prompt);
-                        textareaRef.current?.focus();
-                      }}
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
         )}
 
@@ -659,6 +643,23 @@ export default function ChatArea({
       </div>
 
       {toolActivitySlot}
+
+      {messages.length === 0 && functionCallingEnabled && fcRandomPrompts.length > 0 && (
+        <div className={styles.toolCardsPrompts}>
+          {fcRandomPrompts.map((prompt) => (
+            <button
+              key={prompt}
+              className={consoleStyles.quickPrompt}
+              onClick={() => {
+                setInput(prompt);
+                textareaRef.current?.focus();
+              }}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className={styles.inputWrapper}>
         {showToolsBubble && activeTools.length > 0 && (
