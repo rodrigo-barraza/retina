@@ -1830,18 +1830,12 @@ Guidelines:
             }
           },
           onDone: async (data) => {
-            // Build WAV URL from accumulated audio chunks
-            let audioUrl = undefined;
-            if (audioPlayerRef.current) {
-              audioUrl = audioPlayerRef.current.buildWavUrl();
-            }
-
             const finalMsg = {
               role: "assistant",
               content: streamedText,
               thinking: streamedThinking || undefined,
               ...(streamedImages.length > 0 ? { images: streamedImages } : {}),
-              ...(audioUrl ? { audioUrl } : {}),
+              ...(data.audioRef ? { audio: data.audioRef } : {}),
               timestamp: placeholderMsg.timestamp,
               provider: settings.provider,
               model: settings.model,
@@ -2174,6 +2168,24 @@ Guidelines:
               <ToolActivityPanelComponent activities={toolActivity} />
             ) : null
           }
+          onLiveUserMessage={(text) => {
+            const userMsg = {
+              role: "user",
+              content: text,
+              timestamp: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, userMsg]);
+          }}
+          onLiveAssistantMessage={(text) => {
+            const assistantMsg = {
+              role: "assistant",
+              content: text,
+              timestamp: new Date().toISOString(),
+              provider: settings.provider,
+              model: settings.model,
+            };
+            setMessages((prev) => [...prev, assistantMsg]);
+          }}
         />
       </ThreePanelLayout>
     </main>
