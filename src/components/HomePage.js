@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../app/page.module.css";
 import PrismService from "../services/PrismService";
+import AudioPlayerService from "../services/AudioPlayerService";
 import SunService from "../services/SunService";
 import { prepareDisplayMessages } from "./MessageList";
 import StorageService from "../services/StorageService";
@@ -100,6 +101,16 @@ export default function HomePage({ initialConversationId = null }) {
   const [toolActivity, setToolActivity] = useState([]);
 
   const abortRef = useRef(null);
+  const audioPlayerRef = useRef(null);
+
+  // Lazily initialise and return the audio player for Live API playback
+  const getAudioPlayer = useCallback(() => {
+    if (!audioPlayerRef.current) {
+      audioPlayerRef.current = new AudioPlayerService();
+    }
+    audioPlayerRef.current.init();
+    return audioPlayerRef.current;
+  }, []);
 
   const handleStop = useCallback(() => {
     if (abortRef.current) {
@@ -108,6 +119,11 @@ export default function HomePage({ initialConversationId = null }) {
     }
     setIsGenerating(false);
     setIsGeneratingImage(false);
+    // Stop audio playback on generation stop
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.stop();
+      audioPlayerRef.current = null;
+    }
   }, []);
 
   // Helper to update URL bar without triggering Next.js navigation.
@@ -1700,6 +1716,12 @@ Guidelines:
         let streamedImages = [];
         const codeBlocks = [];
 
+        // Reset audio player for new generation
+        if (audioPlayerRef.current) {
+          audioPlayerRef.current.stop();
+          audioPlayerRef.current = null;
+        }
+
         // Add placeholder AI message
         const placeholderMsg = {
           role: "assistant",
@@ -1745,6 +1767,11 @@ Guidelines:
               };
               return updated;
             });
+          },
+          onAudio: (data, mimeType) => {
+            // Live playback via Web Audio API
+            const player = getAudioPlayer();
+            player.enqueue(data, mimeType);
           },
           onImage: (data, mimeType, minioRef) => {
             setIsGeneratingImage(true);
@@ -1803,11 +1830,18 @@ Guidelines:
             }
           },
           onDone: async (data) => {
+            // Build WAV URL from accumulated audio chunks
+            let audioUrl = undefined;
+            if (audioPlayerRef.current) {
+              audioUrl = audioPlayerRef.current.buildWavUrl();
+            }
+
             const finalMsg = {
               role: "assistant",
               content: streamedText,
               thinking: streamedThinking || undefined,
               ...(streamedImages.length > 0 ? { images: streamedImages } : {}),
+              ...(audioUrl ? { audioUrl } : {}),
               timestamp: placeholderMsg.timestamp,
               provider: settings.provider,
               model: settings.model,

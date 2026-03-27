@@ -284,6 +284,7 @@ export default class PrismService {
       onChunk,
       onThinking,
       onImage,
+      onAudio,
       onExecutableCode,
       onCodeExecutionResult,
       onWebSearchResult,
@@ -346,6 +347,8 @@ export default class PrismService {
                 onCodeExecutionResult(data.output, data.outcome);
               } else if (data.type === "webSearchResult" && onWebSearchResult) {
                 onWebSearchResult(data.results);
+              } else if (data.type === "audio" && onAudio) {
+                onAudio(data.data, data.mimeType);
               } else if (data.type === "toolCall" && onToolCall) {
                 onToolCall({
                   id: data.id,

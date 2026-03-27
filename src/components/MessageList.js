@@ -255,7 +255,8 @@ export function prepareDisplayMessages(rawMessages) {
           !m.content?.trim() &&
           !m.toolCalls?.length &&
           !m.images?.length &&
-          !m.audio
+          !m.audio &&
+          !m.audioUrl
         ),
     )
     .map((m) => {
@@ -698,6 +699,23 @@ export default function MessageList({
                       )}
                     </div>
                   )}
+
+                {/* Live API audio player (WAV from accumulated PCM chunks) */}
+                {msg.audioUrl && (
+                  <div className={styles.audioCard}>
+                    <div className={styles.audioCardHeader}>
+                      <Volume2 size={16} className={styles.audioCardIcon} />
+                      <span className={styles.audioCardLabel}>Voice Response</span>
+                    </div>
+                    <audio
+                      controls
+                      autoPlay
+                      src={msg.audioUrl}
+                      preload="auto"
+                      className={styles.audioCardPlayer}
+                    />
+                  </div>
+                )}
 
                 {/* Text content */}
                 {msg.role === "user" && !readOnly ? (

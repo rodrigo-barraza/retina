@@ -13,6 +13,8 @@ import {
   Parentheses,
   Square,
   Zap,
+  Mic,
+  MicOff,
 } from "lucide-react";
 import AudioRecorderComponent from "./AudioRecorderComponent";
 import ImagePreviewComponent from "./ImagePreviewComponent";
@@ -20,6 +22,7 @@ import DrawingCanvas from "./DrawingCanvas";
 import DocumentViewer from "./DocumentViewer";
 import ToolCardComponent from "./ToolCardComponent";
 import MessageList from "./MessageList";
+import LiveSessionService from "../services/LiveSessionService";
 
 import styles from "./ChatArea.module.css";
 import consoleStyles from "./ConsoleComponent.module.css";
@@ -335,6 +338,112 @@ export default function ChatArea({
   const [showDrawing, setShowDrawing] = useState(false);
   const [fcRandomPrompts, setFcRandomPrompts] = useState([]);
   const dragCounter = useRef(0);
+
+  // ── Live API mic state ────────────────────────────────────
+  const isLiveModel = selectedModelDef?.liveAPI === true;
+  const liveSessionRef = useRef(null);
+  const [liveMicActive, setLiveMicActive] = useState(false);
+  const [_liveConnected, setLiveConnected] = useState(false);
+  const [_liveTranscript, setLiveTranscript] = useState("");
+
+  // Clean up live session when model changes or unmounts
+  useEffect(() => {
+    return () => {
+      if (liveSessionRef.current) {
+        liveSessionRef.current.disconnect();
+        liveSessionRef.current = null;
+      }
+    };
+  }, [settings?.model]);
+
+  const handleLiveMicToggle = async () => {
+    if (liveMicActive) {
+      // Stop mic
+      if (liveSessionRef.current) {
+        liveSessionRef.current.stopMicrophone();
+      }
+      setLiveMicActive(false);
+      return;
+    }
+
+    // Start mic — connect if not already connected
+    if (!liveSessionRef.current) {
+      liveSessionRef.current = new LiveSessionService();
+    }
+
+    const session = liveSessionRef.current;
+
+    if (!session.connected) {
+      // Build config from current settings
+      const liveConfig = {
+        responseModalities: ["AUDIO"],
+      };
+      if (systemPrompt && systemPrompt !== "You are a helpful AI assistant" && systemPrompt !== "You are a helpful AI assistant.") {
+        liveConfig.systemInstruction = systemPrompt;
+      }
+      if (settings?.temperature !== undefined) {
+        liveConfig.temperature = settings.temperature;
+      }
+      if (settings?.thinkingEnabled) {
+        liveConfig.thinkingConfig = { includeThoughts: true };
+        if (settings?.thinkingLevel) {
+          liveConfig.thinkingConfig.thinkingLevel = settings.thinkingLevel;
+        }
+      }
+
+      session.connect({
+        model: settings?.model || "gemini-3.1-flash-live-preview",
+        config: liveConfig,
+        callbacks: {
+          onSetupComplete: () => {
+            setLiveConnected(true);
+            // Start mic after session is ready
+            session.startMicrophone().then(() => {
+              setLiveMicActive(true);
+            }).catch((err) => {
+              console.error("[LiveMic] Failed to start mic:", err);
+            });
+          },
+          onText: (text) => {
+            setLiveTranscript((prev) => prev + text);
+          },
+          onOutputTranscription: (text) => {
+            setLiveTranscript((prev) => prev + text);
+          },
+          onInputTranscription: (text) => {
+            // Show what the user is saying
+            setInput((prev) => prev + text);
+          },
+          onThinking: (content) => {
+            console.log("[LiveAPI] Thinking:", content);
+          },
+          onInterrupted: () => {
+            console.log("[LiveAPI] Model interrupted by user speech");
+          },
+          onTurnComplete: () => {
+            // Model finished speaking — transcript line done
+            setLiveTranscript((prev) => prev ? prev + "\n" : prev);
+          },
+          onError: (msg) => {
+            console.error("[LiveAPI] Error:", msg);
+            setLiveMicActive(false);
+          },
+          onClose: () => {
+            setLiveConnected(false);
+            setLiveMicActive(false);
+          },
+        },
+      });
+    } else {
+      // Already connected, just toggle mic
+      try {
+        await session.startMicrophone();
+        setLiveMicActive(true);
+      } catch (err) {
+        console.error("[LiveMic] Failed to start mic:", err);
+      }
+    }
+  };
 
   // Check if a file matches the accepted types
   const isFileAccepted = (file) => {
@@ -674,6 +783,13 @@ export default function ChatArea({
         </div>
       )}
 
+      {isLiveModel && messages.length > 0 && (
+        <div className={styles.liveStreamBanner}>
+          <span className={styles.liveStreamDot} />
+          Stream is live
+        </div>
+      )}
+
       <div className={styles.inputWrapper}>
         {showToolsBubble && activeTools.length > 0 && (
           <div className={styles.toolsBubble} ref={toolsBubbleRef}>
@@ -825,11 +941,24 @@ export default function ChatArea({
                 icon="pencil"
               />
             )}
-            {hasAudioInput && (
+            {hasAudioInput && !isLiveModel && (
               <AudioRecorderComponent
                 onRecordingComplete={(dataUrl) =>
                   setPendingImages((prev) => [...prev, dataUrl])
                 }
+              />
+            )}
+            {isLiveModel && (
+              <ChatInputButton
+                onClick={handleLiveMicToggle}
+                label={liveMicActive ? "Stop Live Mic" : "Start Live Mic"}
+                isActive={liveMicActive}
+                icon={
+                  liveMicActive
+                    ? <MicOff size={18} className={styles.liveMicActive} />
+                    : <Mic size={18} />
+                }
+                className={liveMicActive ? styles.liveMicBtn : ""}
               />
             )}
             {!isTranscriptionModel && (
