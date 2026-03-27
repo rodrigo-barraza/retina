@@ -534,6 +534,23 @@ Guidelines:
     }
   };
 
+  const handleEditMessage = async (index, newContent) => {
+    if (isGenerating) return;
+    const updatedMessages = [...messages];
+    updatedMessages[index] = { ...updatedMessages[index], content: newContent };
+    setMessages(updatedMessages);
+
+    if (activeId) {
+      try {
+        await PrismService.patchConversation(activeId, {
+          messages: updatedMessages,
+        });
+      } catch (err) {
+        console.error("Failed to save after edit:", err);
+      }
+    }
+  };
+
   const handleRerunTurn = async (userMsgIndex) => {
     if (isGenerating) return;
     if (isTranscriptionModel) return; // Transcription models don't support rerun
@@ -2136,6 +2153,7 @@ Guidelines:
           newChatKey={newChatKey}
           onSend={handleSend}
           onDelete={handleDeleteMessage}
+          onEdit={handleEditMessage}
           onRerun={handleRerunTurn}
           config={config}
           isTranscriptionModel={isTranscriptionModel}

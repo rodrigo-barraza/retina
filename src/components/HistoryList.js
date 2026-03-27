@@ -11,7 +11,7 @@ import {
   Download,
   Copy,
   Star,
-  Wrench,
+  Parentheses,
   Globe,
   Code,
   Brain,
@@ -417,7 +417,7 @@ export default function HistoryList({
                               className={styles.modalityIcon}
                               style={{ color: MODALITY_COLORS.functionCalling }}
                             >
-                              <Wrench size={11} />
+                              <Parentheses size={11} />
                             </span>
                           </TooltipComponent>
                         )}

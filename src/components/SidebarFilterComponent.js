@@ -10,6 +10,7 @@ import {
   Globe,
   Code,
   Brain,
+  Parentheses,
 } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import { FilterIconButtonGroupComponent } from "./FilterBarComponent";
@@ -45,21 +46,9 @@ const TOOL_FILTERS = [
   },
   {
     key: "functionCalling",
+    icon: Parentheses,
     title: "Function Calling",
     color: TOOL_COLORS["Function Calling"],
-    customRender: () => (
-      <span
-        style={{
-          fontSize: 13,
-          fontWeight: 700,
-          fontFamily: "monospace",
-          lineHeight: 1,
-          color: "inherit",
-        }}
-      >
-        ƒ()
-      </span>
-    ),
   },
 ];
 
