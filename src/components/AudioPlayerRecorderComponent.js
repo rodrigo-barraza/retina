@@ -10,6 +10,7 @@ import {
   Pause,
   Download,
   X,
+  Radio,
 } from "lucide-react";
 import TooltipComponent from "./TooltipComponent";
 import styles from "./AudioPlayerRecorderComponent.module.css";
@@ -82,6 +83,7 @@ export default function AudioPlayerRecorderComponent({
   onRemove,
   compact = false,
   square = false,
+  streaming = false,
 }) {
   // ─── Recorder state ───
   const [isRecording, setIsRecording] = useState(false);
@@ -324,6 +326,29 @@ export default function AudioPlayerRecorderComponent({
     a.click();
     document.body.removeChild(a);
   };
+
+  // ───────────────────────────────────────────
+  // MODE: Streaming (live audio indicator)
+  // ───────────────────────────────────────────
+  if (streaming && !src) {
+    return (
+      <div className={`${styles.audioThumb} ${styles.audioStreaming} ${compact ? styles.audioCompact : ""}`}>
+        <div className={styles.streamingIcon}>
+          <Radio size={14} />
+        </div>
+        <div className={styles.streamingBars}>
+          {Array.from({ length: 24 }).map((_, i) => (
+            <span
+              key={i}
+              className={styles.streamingBar}
+              style={{ animationDelay: `${(i * 0.07).toFixed(2)}s` }}
+            />
+          ))}
+        </div>
+        <span className={styles.streamingLabel}>Playing audio…</span>
+      </div>
+    );
+  }
 
   // ───────────────────────────────────────────
   // MODE: Playback

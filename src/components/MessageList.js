@@ -641,6 +641,13 @@ export default function MessageList({
                   </div>
                 )}
 
+                {/* Streaming audio (live session in progress) */}
+                {msg.role === "assistant" && msg._liveStreaming && !msg.audio && (
+                  <div className={styles.audioCard}>
+                    <AudioPlayerRecorderComponent streaming compact />
+                  </div>
+                )}
+
                 {/* Audio */}
                 {msg.audio && (
                   <div className={styles.imagePreviewRow}>
