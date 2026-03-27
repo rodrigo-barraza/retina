@@ -133,6 +133,7 @@
 
 /* ── Thinking block ── */
 .thinkingBlock {
+  position: relative;
   margin-bottom: 8px;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
@@ -140,6 +141,8 @@
 }
 
 .thinkingToggle {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -160,15 +163,59 @@
 }
 
 .thinkingContent {
+  position: relative;
+  z-index: 1;
   padding: 4px 12px 12px;
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
   color: var(--text-primary);
+  opacity: 0.75;
   word-break: break-word;
   max-height: 400px;
   overflow-y: auto;
   border-top: 1px solid var(--border-color);
+}
+
+/* ── Active thinking streaming state ── */
+.thinkingStreaming {
+  border-color: transparent;
+  box-shadow:
+    0 0 12px -2px rgba(99, 102, 241, 0.4),
+    0 0 24px -4px rgba(139, 92, 246, 0.2);
+
+  /* Spinning conic-gradient pseudo-element as rainbow border */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -200%;
+    background: var(--prism-conic);
+    animation: spin 0.6s linear infinite;
+    z-index: 0;
+  }
+
+  /* Inner fill to mask the gradient, leaving only the border visible */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    background: var(--bg-primary);
+    border-radius: calc(var(--border-radius-sm) - 1px);
+    z-index: 0;
+  }
+
+  & .thinkingToggle {
+    color: var(--accent-color);
+
+    & svg:first-child {
+      animation: thinkingPulse 1.5s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes thinkingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 /* ── Tool Calls block ── */
@@ -440,7 +487,7 @@
 
 /* ── Text / Markdown ── */
 .text {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
   color: var(--text-primary);
 }
@@ -645,20 +692,6 @@
 
   & > :last-child {
     display: inline;
-  }
-
-  & > :last-child::after {
-    content: "▎";
-    display: inline;
-    position: relative;
-    overflow: hidden;
-    font-weight: 700;
-    font-size: 1.1em;
-    color: transparent;
-    animation: caretBlink 0.8s step-end infinite;
-    background: var(--prism-conic);
-    -webkit-background-clip: text;
-    background-clip: text;
   }
 }
 

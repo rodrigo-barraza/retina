@@ -1,0 +1,52 @@
+/* ── StreamingCursorComponent ─────────────────────────────── */
+
+.streamingCursorWrapper {
+  display: inline;
+  position: relative;
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+/* Scramble character — rainbow gradient text, monospace for fixed width */
+.scrambleChar {
+  display: inline-block;
+  width: 0.65em;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.95em;
+  line-height: 1;
+  color: transparent;
+  background: var(--prism-conic);
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: scrambleGlitch 0.15s steps(1) infinite;
+  will-change: contents;
+}
+
+/* Caret — rainbow gradient, blinking */
+.caret {
+  display: inline;
+  font-weight: 700;
+  font-size: 1.1em;
+  color: transparent;
+  background: var(--prism-conic);
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: caretBlink 0.8s step-end infinite;
+}
+
+/* Subtle opacity flicker on the scramble char for extra glitch feel */
+@keyframes scrambleGlitch {
+  0% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.85;
+  }
+}

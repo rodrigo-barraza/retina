@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import MarkdownContent from "./MarkdownContent";
+import StreamingCursorComponent from "./StreamingCursorComponent";
 import IconButtonComponent from "./IconButtonComponent";
 import CopyButtonComponent from "./CopyButtonComponent";
 import styles from "./MessageList.module.css";
@@ -87,34 +88,31 @@ function getMimeCategory(ref) {
 
 
 function ThinkingBlock({ thinking, isStreaming }) {
-  // Manual user override: null = no override (use auto behavior)
-  const [manualCollapse, setManualCollapse] = useState(null);
-  const wasStreamingRef = useRef(false);
+  // User can manually toggle after streaming has finished
+  const [manualOpen, setManualOpen] = useState(false);
+  // User can temporarily close during streaming
+  const [streamClosed, setStreamClosed] = useState(false);
   const contentRef = useRef(null);
 
-  // Reset manual override on streaming transitions
-  if (isStreaming && !wasStreamingRef.current) {
-    // Streaming just started → clear override so auto-expand kicks in
-    if (manualCollapse !== null) setManualCollapse(null);
-  } else if (!isStreaming && wasStreamingRef.current) {
-    // Streaming just ended → clear override so auto-collapse kicks in
-    if (manualCollapse !== null) setManualCollapse(null);
-  }
-  wasStreamingRef.current = isStreaming;
-
-  // Derive effective collapsed state:
-  // - If user has manually toggled, respect that
-  // - Otherwise: expanded while streaming, collapsed when not
-  const collapsed = manualCollapse !== null
-    ? manualCollapse
-    : !isStreaming;
+  // Derive collapsed state:
+  // - Streaming: expanded unless user explicitly closed it
+  // - Not streaming: collapsed unless user explicitly opened it
+  const collapsed = isStreaming ? streamClosed : !manualOpen;
 
   // Auto-scroll to bottom of thinking content while streaming
   useEffect(() => {
-    if (isStreaming && contentRef.current) {
+    if (isStreaming && !streamClosed && contentRef.current) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
-  }, [thinking, isStreaming]);
+  }, [thinking, isStreaming, streamClosed]);
+
+  const handleToggle = () => {
+    if (isStreaming) {
+      setStreamClosed((v) => !v);
+    } else {
+      setManualOpen((v) => !v);
+    }
+  };
 
   if (!thinking) return null;
 
@@ -122,7 +120,7 @@ function ThinkingBlock({ thinking, isStreaming }) {
     <div className={`${styles.thinkingBlock}${isStreaming ? ` ${styles.thinkingStreaming}` : ""}`}>
       <button
         className={styles.thinkingToggle}
-        onClick={() => setManualCollapse(!collapsed)}
+        onClick={handleToggle}
       >
         <Brain size={14} />
         <span>Thoughts</span>
@@ -694,10 +692,13 @@ export default function MessageList({
                     onCancelEdit={() => setEditingIndex(null)}
                   />
                 ) : msg.content ? (
-                  <MarkdownContent
-                    content={msg.content}
-                    className={isStreaming ? styles.streamingText : ""}
-                  />
+                  <>
+                    <MarkdownContent
+                      content={msg.content}
+                      className={isStreaming ? styles.streamingText : ""}
+                    />
+                    <StreamingCursorComponent active={isStreaming} />
+                  </>
                 ) : isStreaming ? (
                   <span className={styles.streamingCursor} />
                 ) : null}
