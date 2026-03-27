@@ -121,6 +121,13 @@
   color: var(--text-secondary);
   white-space: nowrap;
   background: var(--bg-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* Sorted-column highlight for data cells */
+.tdSorted {
+  background: rgba(99, 102, 241, 0.04);
+  color: var(--text-primary);
 }
 
 /* Primary name column — sticky on horizontal scroll */

@@ -246,8 +246,10 @@ export default function SortableTableComponent({
                     >
                       {columns.map((col, ci) => {
                         const isFirst = ci === 0;
+                        const isSorted = sort.key === col.key;
                         const tdClass = isFirst ? styles.tdName : styles.td;
                         const extraClass = col.className || "";
+                        const sortedClass = !isFirst && isSorted ? styles.tdSorted : "";
                         const cellStyle =
                           ci > 0 && col.align !== "left"
                             ? { textAlign: "right" }
@@ -263,7 +265,7 @@ export default function SortableTableComponent({
                         return (
                           <td
                             key={col.key}
-                            className={`${tdClass} ${extraClass}`}
+                            className={`${tdClass} ${extraClass} ${sortedClass}`}
                             style={cellStyle}
                           >
                             {isFirst && isExpandable && (
