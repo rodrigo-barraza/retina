@@ -707,3 +707,42 @@
     opacity: 0;
   }
 }
+
+/* ── Soft-deleted messages (ghostly apparitions) ── */
+.deletedMessage {
+  opacity: 0.3;
+  position: relative;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+
+  &:hover {
+    opacity: 0.5;
+    pointer-events: auto;
+  }
+
+  /* Allow the restore button to remain interactive */
+  & .messageActions {
+    pointer-events: auto;
+  }
+}
+
+.deletedAvatar {
+  filter: grayscale(1);
+}
+
+.deletedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--danger, #ef4444);
+  background: color-mix(in srgb, var(--danger, #ef4444) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger, #ef4444) 25%, transparent);
+  border-radius: 4px;
+  line-height: 1;
+}
+

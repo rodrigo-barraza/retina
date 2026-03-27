@@ -14,6 +14,7 @@ import {
   X as XIcon,
   RefreshCw,
   Zap,
+  Undo2,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import MarkdownContent from "./MarkdownContent";
@@ -226,6 +227,8 @@ function ToolCallsBlock({ toolCalls }) {
 /**
  * Prepare messages for display — filters out tool/system messages
  * and merges tool results into the preceding assistant's toolCalls.
+ * Soft-deleted messages are always included (with their `deleted` flag)
+ * so they render in-place as ghostly apparitions.
  * Use this in both /conversations and /admin/conversations for consistency.
  */
 export function prepareDisplayMessages(rawMessages) {
@@ -485,7 +488,9 @@ export default function MessageList({
   messages = [],
   readOnly = false,
   isGenerating = false,
+
   onDelete,
+  onRestore,
   onEdit,
   onRerun,
   onImageClick,
@@ -496,6 +501,7 @@ export default function MessageList({
   return (
     <div className={styles.messagesList}>
       {messages.map((msg, i) => {
+
         const roleClass =
           msg.role === "user"
             ? styles.userNode
@@ -544,9 +550,9 @@ export default function MessageList({
                 <span className={styles.modelChangeLine} />
               </div>
             )}
-            <div className={`${styles.message} ${roleClass}`}>
+            <div className={`${styles.message} ${roleClass}${msg.deleted ? ` ${styles.deletedMessage}` : ""}`}>
               <div
-                className={`${styles.avatar}${msg.role === "assistant" && isGenerating && i === messages.length - 1 ? ` ${styles.prismAvatar}` : ""}`}
+                className={`${styles.avatar}${msg.role === "assistant" && isGenerating && i === messages.length - 1 ? ` ${styles.prismAvatar}` : ""}${msg.deleted ? ` ${styles.deletedAvatar}` : ""}`}
               >
                 {msg.role === "user" ? "U" : msg.role === "system" ? "S" : "AI"}
               </div>
@@ -565,7 +571,7 @@ export default function MessageList({
                       </span>
                     )}
                   </div>
-                  {!readOnly && (
+                  {!readOnly && !msg.deleted && (
                     <div className={styles.messageActions}>
                       {msg.role === "user" && (
                         <>
@@ -593,6 +599,17 @@ export default function MessageList({
                         onClick={() => onDelete?.(i)}
                         tooltip="Delete message"
                         variant="danger"
+                        className={styles.actionBtn}
+                      />
+                    </div>
+                  )}
+                  {!readOnly && msg.deleted && (
+                    <div className={styles.messageActions}>
+                      <span className={styles.deletedBadge}>Deleted</span>
+                      <IconButtonComponent
+                        icon={<Undo2 size={14} />}
+                        onClick={() => onRestore?.(i)}
+                        tooltip="Restore message"
                         className={styles.actionBtn}
                       />
                     </div>

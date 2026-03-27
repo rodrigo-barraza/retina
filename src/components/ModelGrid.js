@@ -212,6 +212,9 @@ export default function ModelGrid({
   showProviderFilter = true,
   favorites = [],
   onToggleFavorite,
+  activeRowKey,
+  highlightedRowKey,
+  highlightedRowRef,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeProvider, setActiveProvider] = useState(null);
@@ -627,6 +630,9 @@ export default function ModelGrid({
         emptyText={
           searchQuery.trim() ? "No matching models" : "No models found"
         }
+        activeRowKey={activeRowKey}
+        highlightedRowKey={highlightedRowKey}
+        highlightedRowRef={highlightedRowRef}
       />
     </div>
   );

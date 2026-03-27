@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, Circle } from "lucide-react";
+import { CircleCheck, Circle, Lock } from "lucide-react";
 import styles from "./ToolCardComponent.module.css";
 
 /**
@@ -16,6 +16,7 @@ import styles from "./ToolCardComponent.module.css";
  * @param {Function} [onClick] — Click handler to toggle the tool
  * @param {boolean} [glowing=false] — Whether to show a cross-component glow effect
  * @param {Function} [onHover] — (hovering: boolean) => void
+ * @param {boolean} [locked=false] — Whether the tool is locked on (always enabled, non-toggleable)
  */
 export default function ToolCardComponent({
   icon,
@@ -27,15 +28,16 @@ export default function ToolCardComponent({
   onClick,
   glowing = false,
   onHover,
+  locked = false,
 }) {
   return (
     <div
-      className={`${styles.card}${!enabled ? ` ${styles.cardDisabled}` : ""}${glowing ? ` ${styles.cardGlow}` : ""}`}
+      className={`${styles.card}${!enabled ? ` ${styles.cardDisabled}` : ""}${glowing ? ` ${styles.cardGlow}` : ""}${locked ? ` ${styles.cardLocked}` : ""}`}
       style={{ "--tool-color": color }}
-      onClick={onClick}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+      onClick={locked ? undefined : onClick}
+      role={onClick && !locked ? "button" : undefined}
+      tabIndex={onClick && !locked ? 0 : undefined}
+      onKeyDown={onClick && !locked ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
       onMouseEnter={() => onHover?.(true)}
       onMouseLeave={() => onHover?.(false)}
     >
@@ -49,10 +51,17 @@ export default function ToolCardComponent({
         </span>
         <span className={styles.subtitle}>{subtitle}</span>
       </div>
-      <div className={`${styles.badge}${!enabled ? ` ${styles.badgeDisabled}` : ""}`}>
-        {enabled ? <CircleCheck size={12} /> : <Circle size={12} />}
-        {enabled ? "Enabled" : "Disabled"}
-      </div>
+      {locked ? (
+        <div className={styles.badgeLocked}>
+          <Lock size={10} />
+          Always On
+        </div>
+      ) : (
+        <div className={`${styles.badge}${!enabled ? ` ${styles.badgeDisabled}` : ""}`}>
+          {enabled ? <CircleCheck size={12} /> : <Circle size={12} />}
+          {enabled ? "Enabled" : "Disabled"}
+        </div>
+      )}
     </div>
   );
 }

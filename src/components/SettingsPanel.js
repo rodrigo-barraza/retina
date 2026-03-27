@@ -115,12 +115,14 @@ export default function SettingsPanel({
   // Get toggle state/handler for a tool
   const getToolToggle = (tool) => {
     switch (tool) {
-      case "Thinking":
+      case "Thinking": {
+        const isLmStudio = settings.provider === "lm-studio";
         return {
-          checked: settings.thinkingEnabled || false,
+          checked: isLmStudio || (settings.thinkingEnabled || false),
           onChange: handleThinkingEnabledChange,
-          disabled: false,
+          disabled: isLmStudio,
         };
+      }
       case "Web Search":
       case "Google Search":
       case "Web Fetch":

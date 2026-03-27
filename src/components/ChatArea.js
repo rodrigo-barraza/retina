@@ -197,6 +197,7 @@ export default function ChatArea({
   onSend,
   onStop,
   onDelete,
+  onRestore,
   onEdit,
   onRerun,
   config,
@@ -233,12 +234,14 @@ export default function ChatArea({
 
   const getToolToggle = (tool) => {
     switch (tool) {
-      case "Thinking":
+      case "Thinking": {
+        const isLmStudio = settings?.provider === "lm-studio";
         return {
-          checked: settings?.thinkingEnabled || false,
+          checked: isLmStudio || (settings?.thinkingEnabled || false),
           onChange: (val) => onUpdateSettings?.({ thinkingEnabled: val }),
-          disabled: false,
+          disabled: isLmStudio,
         };
+      }
       case "Web Search":
       case "Google Search":
       case "Web Fetch":
@@ -523,6 +526,7 @@ export default function ChatArea({
                 const ToolIcon = TOOL_ICON_MAP[tool];
                 const toggle = getToolToggle(tool);
                 const isEnabled = toggle?.checked || false;
+                const isLocked = toggle?.disabled || false;
                 return (
                   <ToolCardComponent
                     key={tool}
@@ -532,6 +536,7 @@ export default function ChatArea({
                     color={TOOL_COLORS[tool]}
                     count={tool === "Function Calling" ? toolCount : undefined}
                     enabled={isEnabled}
+                    locked={isLocked}
                     onClick={toggle ? () => toggle.onChange(!isEnabled) : undefined}
                     glowing={tool === "Function Calling" && fcCardGlowing}
                     onHover={tool === "Function Calling" ? (h) => onFcCardHover?.(h) : undefined}
@@ -616,10 +621,14 @@ export default function ChatArea({
             </div>
           )}
 
+
+
+
         <MessageList
           messages={messages}
           isGenerating={isGenerating}
           onDelete={onDelete}
+          onRestore={onRestore}
           onEdit={onEdit}
           onRerun={onRerun}
           onImageClick={(url) => setLightboxSrc(url)}

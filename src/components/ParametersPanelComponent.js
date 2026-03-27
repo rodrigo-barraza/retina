@@ -186,7 +186,7 @@ export default function ParametersPanelComponent({
       {/* Thinking sub-settings — shown when Thinking is toggled on */}
       {isReasoning &&
         !selectedModelDef?.responsesAPI &&
-        settings.thinkingEnabled && (
+        (settings.thinkingEnabled || settings.provider === "lm-studio") && (
           <>
             {["openai", "lm-studio", "vllm", "anthropic", "ollama"].includes(
               settings.provider,

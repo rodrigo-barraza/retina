@@ -33,6 +33,9 @@ export default function SortableTableComponent({
   sortDir: externalSortDir,
   onSort,
   maxHeight,
+  activeRowKey,
+  highlightedRowKey,
+  highlightedRowRef,
 }) {
   const [internalSort, setInternalSort] = useState({ key: null, dir: "desc" });
   const sort = onSort
@@ -224,12 +227,15 @@ export default function SortableTableComponent({
                 const isExpanded = expanded.has(key);
                 const isExpandable = subRows && subRows.length > 0;
                 const clickable = !!onRowClick || isExpandable;
+                const isActive = activeRowKey != null && key === activeRowKey;
+                const isHighlighted = highlightedRowKey != null && key === highlightedRowKey;
 
                 return (
                   <Fragment key={key}>
                     <tr
                       key={key}
-                      className={`${styles.tr} ${clickable ? styles.clickable : ""} ${isExpandable ? styles.expandableRow : ""}`}
+                      ref={isHighlighted && highlightedRowRef ? highlightedRowRef : undefined}
+                      className={`${styles.tr} ${clickable ? styles.clickable : ""} ${isExpandable ? styles.expandableRow : ""} ${isActive ? styles.activeRow : ""} ${isHighlighted ? styles.highlightedRow : ""}`}
                       onClick={
                         isExpandable
                           ? () => toggleExpand(key)

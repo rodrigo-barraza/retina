@@ -32,8 +32,14 @@ export default function ModelPickerPopoverComponent({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [popoverStyle, setPopoverStyle] = useState({});
+  const [highlightIndex, setHighlightIndex] = useState(-1);
   const triggerRef = useRef(null);
   const searchRef = useRef(null);
+  const highlightedRowRef = useCallback((el) => {
+    if (el) {
+      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, []);
 
   // ── Build unified model list across all sections ─────────────────────
   const allModels = buildAllModels(config);
@@ -53,6 +59,8 @@ export default function ModelPickerPopoverComponent({
         );
       })
     : allModels;
+
+
 
   // ── Position the popover below the trigger, centered on the ChatArea ─
   const positionPopover = useCallback(() => {
@@ -110,15 +118,59 @@ export default function ModelPickerPopoverComponent({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // Close on Escape
+  // ── Handle model selection ─────────────────────────────────────────────
+  const handleSelect = useCallback(
+    (rawModel) => {
+      const provider = rawModel.provider || "lm-studio";
+      const name = rawModel.name || rawModel.key;
+      onSelectModel(provider, name);
+      setOpen(false);
+      setHighlightIndex(-1);
+    },
+    [onSelectModel],
+  );
+
+  // Keyboard navigation (Escape / ArrowUp / ArrowDown / Enter)
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+
+      // Arrow navigation
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setHighlightIndex((prev) => {
+          const max = filteredModels.length - 1;
+          if (max < 0) return -1;
+          return prev < max ? prev + 1 : 0;
+        });
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setHighlightIndex((prev) => {
+          const max = filteredModels.length - 1;
+          if (max < 0) return -1;
+          return prev > 0 ? prev - 1 : max;
+        });
+        return;
+      }
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (highlightIndex >= 0 && highlightIndex < filteredModels.length) {
+          handleSelect(filteredModels[highlightIndex]);
+        }
+        return;
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [open]);
+  }, [open, highlightIndex, filteredModels, handleSelect]);
 
   // Re-position on scroll / resize / ChatArea resize (sidebar transitions)
   useEffect(() => {
@@ -157,17 +209,6 @@ export default function ModelPickerPopoverComponent({
     const providerName = PROVIDER_LABELS[provider] || provider;
     return `${providerName}'s ${rawLabel}`;
   })();
-
-  // ── Handle model selection ─────────────────────────────────────────────
-  const handleSelect = useCallback(
-    (rawModel) => {
-      const provider = rawModel.provider || "lm-studio";
-      const name = rawModel.name || rawModel.key;
-      onSelectModel(provider, name);
-      setOpen(false);
-    },
-    [onSelectModel],
-  );
 
   return (
     <>
@@ -208,7 +249,10 @@ export default function ModelPickerPopoverComponent({
                 className={styles.searchInput}
                 placeholder="Type to filter models…"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setHighlightIndex(-1);
+                }}
               />
               {search && (
                 <button
@@ -234,6 +278,17 @@ export default function ModelPickerPopoverComponent({
                 showProviderFilter
                 favorites={favorites}
                 onToggleFavorite={onToggleFavorite}
+                activeRowKey={
+                  currentModel
+                    ? `${currentModel.provider}-${currentModel.name}`
+                    : undefined
+                }
+                highlightedRowKey={
+                  highlightIndex >= 0 && filteredModels[highlightIndex]
+                    ? `${filteredModels[highlightIndex].provider}-${filteredModels[highlightIndex].name}`
+                    : undefined
+                }
+                highlightedRowRef={highlightedRowRef}
               />
             </div>
           </div>,

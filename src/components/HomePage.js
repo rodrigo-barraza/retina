@@ -59,6 +59,7 @@ export default function HomePage({ initialConversationId = null }) {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
   const [newChatKey, setNewChatKey] = useState(0);
   const [showModelList, setShowModelList] = useState(false);
   const [showSystemPromptModal, setShowSystemPromptModal] = useState(false);
@@ -518,8 +519,9 @@ Guidelines:
 
   const handleDeleteMessage = async (index) => {
     if (isGenerating) return;
+    // Soft-delete: mark the message as deleted rather than removing it
     const updatedMessages = [...messages];
-    updatedMessages.splice(index, 1);
+    updatedMessages[index] = { ...updatedMessages[index], deleted: true };
     setMessages(updatedMessages);
 
     if (activeId) {
@@ -529,7 +531,26 @@ Guidelines:
         });
         loadConversations();
       } catch (err) {
-        console.error("Failed to save after deletion:", err);
+        console.error("Failed to save after soft-delete:", err);
+      }
+    }
+  };
+
+  const handleRestoreMessage = async (index) => {
+    if (isGenerating) return;
+    const updatedMessages = [...messages];
+    const { deleted: _, ...restored } = updatedMessages[index];
+    updatedMessages[index] = restored;
+    setMessages(updatedMessages);
+
+    if (activeId) {
+      try {
+        await PrismService.patchConversation(activeId, {
+          messages: updatedMessages,
+        });
+        loadConversations();
+      } catch (err) {
+        console.error("Failed to save after restore:", err);
       }
     }
   };
@@ -719,9 +740,10 @@ Guidelines:
                 ...currentMessages
                   .filter(
                     (m) =>
-                      m.role !== "assistant" ||
+                      !m.deleted &&
+                      (m.role !== "assistant" ||
                       m.content?.trim() ||
-                      m.toolCalls?.length,
+                      m.toolCalls?.length),
                   )
                   .flatMap((m) => {
                     // Expand assistant messages with toolCalls into
@@ -954,17 +976,19 @@ Guidelines:
 
     // ── Normal text rerun branch ─────────────────────────────────
     try {
-      const _currentId = activeId;
-      const _currentTitle = title;
+      const currentId = activeId;
+      const currentTitle = title;
 
       const systemMsg = settings.systemPrompt
         ? [{ role: "system", content: settings.systemPrompt }]
         : [];
-      const payloadMessages = [...systemMsg, ...historyUpToUser].map((m) => ({
-        role: m.role,
-        content: m.content,
-        ...(m.images ? { images: m.images } : {}),
-      }));
+      const payloadMessages = [...systemMsg, ...historyUpToUser]
+        .filter((m) => !m.deleted)
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+          ...(m.images ? { images: m.images } : {}),
+        }));
       const stopArray = settings.stopSequences
         ? settings.stopSequences
             .split(",")
@@ -977,6 +1001,7 @@ Guidelines:
       const selectedModelDef = currentModels.find(
         (m) => m.name === settings.model,
       );
+
 
       const payload = {
         provider: settings.provider,
@@ -997,7 +1022,7 @@ Guidelines:
                 : {}),
             }
           : {}),
-        ...(!selectedModelDef?.responsesAPI && settings.thinkingEnabled
+        ...(!selectedModelDef?.responsesAPI && (settings.thinkingEnabled || settings.provider === "lm-studio")
           ? {
               thinkingEnabled: true,
               reasoningEffort: settings.reasoningEffort,
@@ -1012,6 +1037,7 @@ Guidelines:
         ...(settings.codeExecutionEnabled ? { codeExecution: true } : {}),
         ...(settings.urlContextEnabled ? { urlContext: true } : {}),
         ...(settings.verbosity ? { verbosity: settings.verbosity } : {}),
+        conversationId: currentId,
       };
 
       await new Promise((resolve, reject) => {
@@ -1145,6 +1171,23 @@ Guidelines:
               updated[insertIndex] = finalMsg;
               return updated;
             });
+
+            // Persist the updated messages to the database
+            if (currentId) {
+              try {
+                const finalMessages = [...newMessages];
+                finalMessages.splice(insertIndex, 0, finalMsg);
+                const { systemPrompt: sp, ...modelSettings } = settings;
+                await PrismService.patchConversation(currentId, {
+                  title: currentTitle,
+                  messages: finalMessages,
+                  systemPrompt: sp,
+                  settings: modelSettings,
+                });
+              } catch (saveErr) {
+                console.error("Failed to save rerun:", saveErr);
+              }
+            }
 
             loadConversations();
             resolve();
@@ -1440,9 +1483,10 @@ Guidelines:
                 ...currentMessages
                   .filter(
                     (m) =>
-                      m.role !== "assistant" ||
+                      !m.deleted &&
+                      (m.role !== "assistant" ||
                       m.content?.trim() ||
-                      m.toolCalls?.length,
+                      m.toolCalls?.length),
                   )
                   .flatMap((m) => {
                     // Expand assistant messages with toolCalls into
@@ -1698,7 +1742,9 @@ Guidelines:
       const systemMsg = settings.systemPrompt
         ? [{ role: "system", content: settings.systemPrompt }]
         : [];
-      const payloadMessages = [...systemMsg, ...newMessages].map((m) => ({
+      const payloadMessages = [...systemMsg, ...newMessages]
+        .filter((m) => !m.deleted)
+        .map((m) => ({
         role: m.role,
         content: m.content,
         ...(m.images ? { images: m.images } : {}),
@@ -1735,7 +1781,7 @@ Guidelines:
                 : {}),
             }
           : {}),
-        ...(!selectedModelDef?.responsesAPI && settings.thinkingEnabled
+        ...(!selectedModelDef?.responsesAPI && (settings.thinkingEnabled || settings.provider === "lm-studio")
           ? {
               thinkingEnabled: true,
               reasoningEffort: settings.reasoningEffort,
@@ -2153,6 +2199,7 @@ Guidelines:
           newChatKey={newChatKey}
           onSend={handleSend}
           onDelete={handleDeleteMessage}
+          onRestore={handleRestoreMessage}
           onEdit={handleEditMessage}
           onRerun={handleRerunTurn}
           config={config}

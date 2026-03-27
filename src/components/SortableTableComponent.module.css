@@ -95,6 +95,26 @@
   }
 }
 
+/* Currently selected / active row */
+.activeRow td {
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.activeRow td:first-child {
+  background: rgba(99, 102, 241, 0.10);
+  box-shadow: inset 2px 0 0 var(--accent-color);
+}
+
+/* Keyboard-highlighted row */
+.highlightedRow td {
+  background: rgba(99, 102, 241, 0.10);
+}
+
+.highlightedRow td:first-child {
+  background: rgba(99, 102, 241, 0.14);
+  box-shadow: inset 2px 0 0 var(--accent-color);
+}
+
 .td {
   padding: 10px 14px;
   text-align: right;
