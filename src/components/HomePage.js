@@ -43,6 +43,8 @@ export default function HomePage({ initialConversationId = null }) {
   const [messages, setMessages] = useState([]);
   // Ref to synchronously track live conversation ID (avoids stale closure in setMessages updater)
   const liveConvIdRef = useRef(null);
+  // Chain live persistence ops to prevent race conditions (e.g. PATCH before POST completes)
+  const livePersistChainRef = useRef(Promise.resolve());
 
   const [settings, setSettings] = useState({
     provider: "",
@@ -412,6 +414,7 @@ Guidelines:
   const handleNewChat = () => {
     setActiveId(null);
     liveConvIdRef.current = null;
+    livePersistChainRef.current = Promise.resolve();
     updateUrl(null);
     setTitle("New Conversation");
     setMessages([]);
@@ -2251,20 +2254,24 @@ Guidelines:
                 setTitle(liveTitle);
                 updateUrl(currentId);
 
-                PrismService.appendMessages(currentId, finalized, null, {
-                  title: liveTitle,
-                  systemPrompt,
-                  settings: modelSettings,
-                }).then(() => loadConversations()).catch((err) =>
+                livePersistChainRef.current = livePersistChainRef.current.then(() =>
+                  PrismService.appendMessages(currentId, finalized, null, {
+                    title: liveTitle,
+                    systemPrompt,
+                    settings: modelSettings,
+                  }).then(() => loadConversations()),
+                ).catch((err) =>
                   console.error("[Live] Failed to create conversation:", err),
                 );
               } else {
-                // Subsequent turns — update messages only (title already set on creation)
-                PrismService.patchConversation(currentId, {
-                  messages: finalized,
-                  systemPrompt,
-                  settings: modelSettings,
-                }).then(() => loadConversations()).catch((err) =>
+                // Subsequent turns — chain after creation to avoid 404
+                livePersistChainRef.current = livePersistChainRef.current.then(() =>
+                  PrismService.patchConversation(currentId, {
+                    messages: finalized,
+                    systemPrompt,
+                    settings: modelSettings,
+                  }).then(() => loadConversations()),
+                ).catch((err) =>
                   console.error("[Live] Failed to persist:", err),
                 );
               }
