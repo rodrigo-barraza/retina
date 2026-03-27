@@ -692,13 +692,12 @@ export default function MessageList({
                     onCancelEdit={() => setEditingIndex(null)}
                   />
                 ) : msg.content ? (
-                  <>
-                    <MarkdownContent
+                  <MarkdownContent
                       content={msg.content}
                       className={isStreaming ? styles.streamingText : ""}
-                    />
-                    <StreamingCursorComponent active={isStreaming} />
-                  </>
+                    >
+                      <StreamingCursorComponent active={isStreaming} />
+                    </MarkdownContent>
                 ) : isStreaming ? (
                   <span className={styles.streamingCursor} />
                 ) : null}

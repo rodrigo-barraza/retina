@@ -60,7 +60,7 @@ function CodeBlock({ children, className, ...rest }) {
   return <FencedCodeBlock language={match[1]}>{children}</FencedCodeBlock>;
 }
 
-export default function MarkdownContent({ content, className }) {
+export default function MarkdownContent({ content, className, children }) {
   if (!content) return null;
   return (
     <div className={`${styles.text} ${className || ""}`}>
@@ -70,6 +70,7 @@ export default function MarkdownContent({ content, className }) {
       >
         {content}
       </ReactMarkdown>
+      {children}
     </div>
   );
 }

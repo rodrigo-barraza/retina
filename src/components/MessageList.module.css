@@ -690,7 +690,10 @@
 .streamingText {
   position: relative;
 
-  & > :last-child {
+  /* The cursor <span> is now the last child inside the wrapper.
+     Target the element just before it (the last markdown block)
+     and make it inline so the cursor sits at the end of the text. */
+  & > :nth-last-child(2) {
     display: inline;
   }
 }
