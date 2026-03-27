@@ -1025,10 +1025,12 @@ Guidelines:
               return updated;
             });
           },
-          onImage: (data, mimeType) => {
+          onImage: (data, mimeType, minioRef) => {
             setIsGeneratingImage(true);
-            const dataUrl = `data:${mimeType};base64,${data}`;
-            streamedImages = [...streamedImages, dataUrl];
+            const imageUrl = minioRef
+              ? PrismService.getFileUrl(minioRef)
+              : `data:${mimeType};base64,${data}`;
+            streamedImages = [...streamedImages, minioRef || imageUrl];
             setMessages((prev) => {
               const updated = [...prev];
               updated[insertIndex] = {
@@ -1744,10 +1746,12 @@ Guidelines:
               return updated;
             });
           },
-          onImage: (data, mimeType) => {
+          onImage: (data, mimeType, minioRef) => {
             setIsGeneratingImage(true);
-            const dataUrl = `data:${mimeType};base64,${data}`;
-            streamedImages = [...streamedImages, dataUrl];
+            const imageUrl = minioRef
+              ? PrismService.getFileUrl(minioRef)
+              : `data:${mimeType};base64,${data}`;
+            streamedImages = [...streamedImages, minioRef || imageUrl];
             setMessages((prev) => {
               const updated = [...prev];
               updated[updated.length - 1] = {

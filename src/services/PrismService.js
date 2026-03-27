@@ -276,7 +276,7 @@ export default class PrismService {
   /**
    * Stream text generation via SSE (Server-Sent Events).
    * @param {object} payload - { provider, model, messages, temperature?, maxTokens?, tools?, conversationId?, conversationMeta? }
-   * @param {object} callbacks - { onChunk, onThinking, onImage, onExecutableCode, onCodeExecutionResult, onWebSearchResult, onStatus, onDone, onError }
+   * @param {object} callbacks - { onChunk, onThinking, onImage(data, mimeType, minioRef), onExecutableCode, onCodeExecutionResult, onWebSearchResult, onStatus, onDone, onError }
    * @returns {Function} abort - Call to cancel the stream early
    */
   static streamText(payload, callbacks) {
@@ -336,7 +336,7 @@ export default class PrismService {
               } else if (data.type === "thinking" && onThinking) {
                 onThinking(data.content);
               } else if (data.type === "image" && onImage) {
-                onImage(data.data, data.mimeType);
+                onImage(data.data, data.mimeType, data.minioRef);
               } else if (data.type === "executableCode" && onExecutableCode) {
                 onExecutableCode(data.code, data.language);
               } else if (
@@ -360,8 +360,15 @@ export default class PrismService {
               } else if (data.type === "error" && onError) {
                 onError(new Error(data.message));
               }
-            } catch {
-              // Ignore JSON parse errors on individual lines
+            } catch (parseErr) {
+              // Log parse errors on non-empty data lines for diagnosis
+              if (json.length > 0) {
+                console.warn(
+                  `[PrismService] SSE JSON parse failed (${json.length} chars):`,
+                  parseErr.message,
+                  json.slice(0, 120),
+                );
+              }
             }
           }
         }
