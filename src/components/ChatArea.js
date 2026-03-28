@@ -391,11 +391,17 @@ export default function ChatArea({
       if (settings?.temperature !== undefined) {
         liveConfig.temperature = settings.temperature;
       }
-      if (settings?.thinkingEnabled) {
-        liveConfig.thinkingConfig = { includeThoughts: true };
-        if (settings?.thinkingLevel) {
-          liveConfig.thinkingConfig.thinkingLevel = settings.thinkingLevel;
-        }
+      // Voice selection — passed to Prism's speechConfig.voiceConfig
+      if (settings?.liveVoice) {
+        liveConfig.voiceName = settings.liveVoice;
+      }
+      // Thinking level — "none" means no thinking, otherwise pass the level
+      const thinkingLevel = settings?.liveThinkingLevel || "none";
+      if (thinkingLevel !== "none") {
+        liveConfig.thinkingConfig = {
+          includeThoughts: true,
+          thinkingLevel,
+        };
       }
 
       // Reset transcript accumulators

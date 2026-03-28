@@ -14,6 +14,7 @@ import {
   DollarSign,
   GitBranch,
   ExternalLink,
+  AudioLines,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import SelectDropdown from "./SelectDropdown";
@@ -498,8 +499,69 @@ export default function SettingsPanel({
             ) : null;
           })()}
 
+        {/* Live API model: Voice + Thinking Level dropdowns */}
+        {selectedModelDef?.liveAPI && !readOnly &&
+          (() => {
+            const googleVoices =
+              config?.textToSpeech?.voices?.google || [];
+            const currentLiveVoice = settings.liveVoice || "Puck";
+            const voiceOptions = googleVoices.map((v) => ({
+              value: v.name,
+              label: `${v.name} (${v.gender})`,
+              icon: <AudioLines size={18} />,
+            }));
+            return voiceOptions.length > 0 ? (
+              <div className={styles.formGroup}>
+                <label>Voice</label>
+                <SelectDropdown
+                  value={currentLiveVoice}
+                  options={voiceOptions}
+                  onChange={(val) => onChange({ liveVoice: val })}
+                  placeholder="Select Voice"
+                  icon={<AudioLines size={18} />}
+                />
+              </div>
+            ) : null;
+          })()}
+
+        {selectedModelDef?.liveAPI && !readOnly && (
+          <div className={styles.formGroup}>
+            <label>Thinking Level</label>
+            <SelectDropdown
+              value={settings.liveThinkingLevel || "none"}
+              options={[
+                { value: "none", label: "No Thinking" },
+                { value: "low", label: "Low" },
+                { value: "medium", label: "Medium" },
+                { value: "high", label: "High" },
+              ]}
+              onChange={(val) => onChange({ liveThinkingLevel: val })}
+              icon={<Brain size={18} />}
+            />
+          </div>
+        )}
+
+        {/* readOnly: show live voice if saved */}
+        {readOnly && selectedModelDef?.liveAPI && settings.liveVoice && (
+          <div className={styles.formGroup}>
+            <label>Voice</label>
+            <div className={styles.readOnlyValue}>
+              <AudioLines size={14} /> {settings.liveVoice}
+            </div>
+          </div>
+        )}
+
+        {readOnly && selectedModelDef?.liveAPI && settings.liveThinkingLevel && (
+          <div className={styles.formGroup}>
+            <label>Thinking Level</label>
+            <div className={styles.readOnlyValue}>
+              <Brain size={14} /> {settings.liveThinkingLevel === "none" ? "No Thinking" : settings.liveThinkingLevel}
+            </div>
+          </div>
+        )}
+
         {/* readOnly: show voice if saved even without TTS model context */}
-        {readOnly && !isTTS && settings.voice && (
+        {readOnly && !isTTS && !selectedModelDef?.liveAPI && settings.voice && (
           <div className={styles.formGroup}>
             <label>Voice</label>
             <div className={styles.readOnlyValue}>
