@@ -13,6 +13,7 @@ import {
   Radio,
 } from "lucide-react";
 import TooltipComponent from "./TooltipComponent";
+import RainbowCanvasComponent from "./RainbowCanvasComponent";
 import styles from "./AudioPlayerRecorderComponent.module.css";
 
 function formatTime(totalSeconds) {
@@ -333,19 +334,24 @@ export default function AudioPlayerRecorderComponent({
   if (streaming && !src) {
     return (
       <div className={`${styles.audioThumb} ${styles.audioStreaming} ${compact ? styles.audioCompact : ""}`}>
-        <div className={styles.streamingIcon}>
-          <Radio size={14} />
+        <div className={styles.streamingCanvasWrap}>
+          <RainbowCanvasComponent turbo className={styles.streamingCanvas} />
         </div>
-        <div className={styles.streamingBars}>
-          {Array.from({ length: 24 }).map((_, i) => (
-            <span
-              key={i}
-              className={styles.streamingBar}
-              style={{ animationDelay: `${(i * 0.07).toFixed(2)}s` }}
-            />
-          ))}
+        <div className={styles.streamingOverlay}>
+          <div className={styles.streamingIcon}>
+            <Radio size={14} />
+          </div>
+          <div className={styles.streamingBars}>
+            {Array.from({ length: 24 }).map((_, i) => (
+              <span
+                key={i}
+                className={styles.streamingBar}
+                style={{ animationDelay: `${(i * 0.07).toFixed(2)}s` }}
+              />
+            ))}
+          </div>
+          <span className={styles.streamingLabel}>Playing audio…</span>
         </div>
-        <span className={styles.streamingLabel}>Playing audio…</span>
       </div>
     );
   }

@@ -176,10 +176,13 @@ export default class LiveSessionService {
     if (this.isRecording) return;
 
     try {
-      // Initialize AudioContext and load worklet
+      // Initialize AudioContext at 16kHz — Gemini's native input rate.
+      // The browser handles hardware resampling from the mic's native
+      // rate (typically 48kHz) down to 16kHz using a high-quality
+      // polyphase resampler, eliminating manual downsampling.
       if (!this.audioContext) {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-          sampleRate: 48000,
+          sampleRate: 16000,
         });
         await this.audioContext.audioWorklet.addModule("/pcm-processor.js");
       }
@@ -188,13 +191,13 @@ export default class LiveSessionService {
         await this.audioContext.resume();
       }
 
-      // Get microphone stream
+      // Get microphone stream with WebRTC audio processing
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          sampleRate: 48000,
-          channelCount: 1,
+          sampleRate: 16000,
           echoCancellation: true,
           noiseSuppression: true,
+          autoGainControl: true,
         },
       });
 
@@ -204,13 +207,8 @@ export default class LiveSessionService {
       this.audioWorkletNode.port.onmessage = (event) => {
         if (!this.isRecording) return;
 
-        // Downsample from audioContext rate to 16kHz and convert to Int16 PCM
-        const downsampled = this._downsampleBuffer(
-          event.data,
-          this.audioContext.sampleRate,
-          16000,
-        );
-        const pcm16 = this._convertFloat32ToInt16(downsampled);
+        // Already at 16kHz from the AudioContext — convert Float32 → Int16 PCM
+        const pcm16 = this._convertFloat32ToInt16(event.data);
 
         // Send as base64 to Prism
         const base64 = this._arrayBufferToBase64(pcm16);
@@ -223,13 +221,8 @@ export default class LiveSessionService {
         }
       };
 
+      // Connect mic → worklet (no output connection — prevents echo)
       source.connect(this.audioWorkletNode);
-
-      // Mute local feedback (prevent echo)
-      const muteGain = this.audioContext.createGain();
-      muteGain.gain.value = 0;
-      this.audioWorkletNode.connect(muteGain);
-      muteGain.connect(this.audioContext.destination);
 
       this.isRecording = true;
     } catch (err) {
@@ -316,28 +309,6 @@ export default class LiveSessionService {
   }
 
   // ── Audio Utils ────────────────────────────────────────────
-
-  _downsampleBuffer(buffer, sampleRate, outSampleRate) {
-    if (outSampleRate === sampleRate) return buffer;
-    const ratio = sampleRate / outSampleRate;
-    const newLength = Math.round(buffer.length / ratio);
-    const result = new Float32Array(newLength);
-    let offsetResult = 0;
-    let offsetBuffer = 0;
-    while (offsetResult < result.length) {
-      const nextOffsetBuffer = Math.round((offsetResult + 1) * ratio);
-      let accum = 0;
-      let count = 0;
-      for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
-        accum += buffer[i];
-        count++;
-      }
-      result[offsetResult] = accum / count;
-      offsetResult++;
-      offsetBuffer = nextOffsetBuffer;
-    }
-    return result;
-  }
 
   _convertFloat32ToInt16(buffer) {
     const buf = new Int16Array(buffer.length);
