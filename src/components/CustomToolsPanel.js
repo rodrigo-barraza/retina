@@ -346,6 +346,28 @@ export default function CustomToolsPanel({
     });
   }, []);
 
+  const toggleDomainTools = useCallback(
+    (domainTools) => {
+      const onlineTools = domainTools.filter(
+        (t) => !offlineTools.has(t.name),
+      );
+      if (onlineTools.length === 0) return;
+      const allEnabled = onlineTools.every(
+        (t) => !disabledBuiltIns.has(t.name),
+      );
+      // If all enabled → disable all; if any disabled → enable all
+      for (const tool of onlineTools) {
+        const isCurrentlyDisabled = disabledBuiltIns.has(tool.name);
+        if (allEnabled && !isCurrentlyDisabled) {
+          onToggleBuiltIn?.(tool.name); // disable it
+        } else if (!allEnabled && isCurrentlyDisabled) {
+          onToggleBuiltIn?.(tool.name); // enable it
+        }
+      }
+    },
+    [disabledBuiltIns, offlineTools, onToggleBuiltIn],
+  );
+
   // ── Edit form ────────────────────────────────────────────────
 
   if (editingTool) {
@@ -776,9 +798,15 @@ export default function CustomToolsPanel({
         groupedBuiltInTools.map(([domain, domainTools]) => {
           const DomainIcon = DOMAIN_ICONS[domain] || Layers;
           const isDomainCollapsed = collapsedDomains.has(domain);
-          const enabledCount = domainTools.filter(
-            (t) => !disabledBuiltIns.has(t.name) && !offlineTools.has(t.name),
+          const onlineDomainTools = domainTools.filter(
+            (t) => !offlineTools.has(t.name),
+          );
+          const enabledCount = onlineDomainTools.filter(
+            (t) => !disabledBuiltIns.has(t.name),
           ).length;
+          const allDomainEnabled =
+            onlineDomainTools.length > 0 &&
+            enabledCount === onlineDomainTools.length;
 
           return (
             <div key={domain} className={styles.domainGroup}>
@@ -796,6 +824,18 @@ export default function CustomToolsPanel({
                 <span className={styles.domainCount}>
                   {enabledCount}/{domainTools.length}
                 </span>
+                {onlineDomainTools.length > 0 && (
+                  <div
+                    className={styles.domainActions}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ToggleSwitchComponent
+                      checked={allDomainEnabled}
+                      onChange={() => toggleDomainTools(domainTools)}
+                      size="small"
+                    />
+                  </div>
+                )}
               </div>
 
               {!isDomainCollapsed &&

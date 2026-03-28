@@ -103,7 +103,13 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.domainActions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
 }
 
