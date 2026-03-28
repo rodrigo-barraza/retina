@@ -790,14 +790,32 @@ export default function MessageList({
                         {msg.usage?.inputTokens != null &&
                         msg.usage?.outputTokens != null
                           ? (() => {
-                              const cached =
-                                (msg.usage.cacheReadInputTokens || 0) +
-                                (msg.usage.cacheCreationInputTokens || 0);
+                              const cacheRead =
+                                msg.usage.cacheReadInputTokens || 0;
+                              const cacheWrite =
+                                msg.usage.cacheCreationInputTokens || 0;
+                              const cached = cacheRead + cacheWrite;
                               const totalIn =
                                 msg.usage.inputTokens + cached;
-                              const inLabel = cached
-                                ? `${totalIn.toLocaleString()} in (cached)`
-                                : `${msg.usage.inputTokens.toLocaleString()} in`;
+                              let inLabel;
+                              if (cached) {
+                                const parts = [];
+                                if (msg.usage.inputTokens)
+                                  parts.push(
+                                    `${msg.usage.inputTokens.toLocaleString()} new`,
+                                  );
+                                if (cacheRead)
+                                  parts.push(
+                                    `${cacheRead.toLocaleString()} read`,
+                                  );
+                                if (cacheWrite)
+                                  parts.push(
+                                    `${cacheWrite.toLocaleString()} write`,
+                                  );
+                                inLabel = `${totalIn.toLocaleString()} in (${parts.join(" · ")})`;
+                              } else {
+                                inLabel = `${msg.usage.inputTokens.toLocaleString()} in`;
+                              }
                               return `${msg.voice ? " • " : ""}${inLabel} · ${msg.usage.outputTokens.toLocaleString()} out tokens`;
                             })()
                           : msg.usage?.outputTokens != null
