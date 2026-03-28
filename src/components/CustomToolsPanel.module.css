@@ -94,6 +94,75 @@
   color: #ef4444;
 }
 
+/* ── Data Source Badges ────────────────────────────────────── */
+
+.dataSourceBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dataSourceBadge[data-type="cached"] {
+  background: color-mix(in srgb, #0ea5e9 14%, transparent);
+  color: #0ea5e9;
+}
+
+.dataSourceBadge[data-type="onDemand"] {
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  color: #f59e0b;
+}
+
+.dataSourceBadge[data-type="static"] {
+  background: color-mix(in srgb, #a855f7 14%, transparent);
+  color: #a855f7;
+}
+
+.intervalInline {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin-left: 1px;
+}
+
+/* ── Data Source Info (expanded view) ──────────────────────── */
+
+.dataSourceInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bg-card) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+}
+
+.dataSourceRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text-secondary);
+
+  & > svg {
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+  }
+
+  & strong {
+    color: var(--text-primary);
+  }
+}
+
+.dataSourceLabel {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 /* ── New Tool Button ───────────────────────────────────────── */
 
 .newToolBtn {

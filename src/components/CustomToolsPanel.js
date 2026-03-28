@@ -12,6 +12,11 @@ import {
   Globe,
   Cpu,
   Shield,
+  Database,
+  Zap,
+  HardDrive,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ButtonComponent from "./ButtonComponent.js";
@@ -21,6 +26,29 @@ import { renderToolName } from "../utils/utilities";
 import styles from "./CustomToolsPanel.module.css";
 
 const PROJECT = "retina-console";
+
+/** Format seconds into a human-readable polling interval */
+function formatInterval(seconds) {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${seconds / 60}m`;
+  if (seconds < 86400) {
+    const h = seconds / 3600;
+    return Number.isInteger(h) ? `${h}h` : `${h.toFixed(1)}h`;
+  }
+  return `${(seconds / 86400).toFixed(0)}d`;
+}
+
+const DATA_SOURCE_ICONS = {
+  cached: Database,
+  onDemand: Zap,
+  static: HardDrive,
+};
+
+const DATA_SOURCE_LABELS = {
+  cached: "Cached",
+  onDemand: "On-Demand",
+  static: "Static",
+};
 
 const PARAM_TYPES = [
   { value: "string", label: "String" },
@@ -707,6 +735,22 @@ export default function CustomToolsPanel({
                   <span className={styles.toolCardMeta}>
                     {isOffline ? (
                       <span className={styles.offlineBadge}>Offline</span>
+                    ) : tool.dataSource ? (
+                      <span
+                        className={styles.dataSourceBadge}
+                        data-type={tool.dataSource.type}
+                      >
+                        {(() => {
+                          const Icon = DATA_SOURCE_ICONS[tool.dataSource.type];
+                          return Icon ? <Icon size={8} /> : null;
+                        })()}
+                        {DATA_SOURCE_LABELS[tool.dataSource.type] || tool.dataSource.type}
+                        {tool.dataSource.intervalSeconds && (
+                          <span className={styles.intervalInline}>
+                            {formatInterval(tool.dataSource.intervalSeconds)}
+                          </span>
+                        )}
+                      </span>
                     ) : (
                       <span className={styles.builtInBadge}>Built-in</span>
                     )}
@@ -726,6 +770,50 @@ export default function CustomToolsPanel({
               {isExpanded && (
                 <div className={styles.toolCardBody}>
                   <p className={styles.toolCardDesc}>{tool.description}</p>
+                  {tool.dataSource && (
+                    <div className={styles.dataSourceInfo}>
+                      <div className={styles.dataSourceRow}>
+                        {(() => {
+                          const Icon = DATA_SOURCE_ICONS[tool.dataSource.type];
+                          return Icon ? <Icon size={11} /> : null;
+                        })()}
+                        <span className={styles.dataSourceLabel}>
+                          {tool.dataSource.type === "cached"
+                            ? "Background Polled"
+                            : tool.dataSource.type === "onDemand"
+                              ? "Fetched On Request"
+                              : "In-Memory Dataset"}
+                        </span>
+                      </div>
+                      {tool.dataSource.provider && tool.dataSource.provider !== "internal" && (
+                        <div className={styles.dataSourceRow}>
+                          <ExternalLink size={11} />
+                          <span>{tool.dataSource.provider}</span>
+                        </div>
+                      )}
+                      {tool.dataSource.provider === "internal" && tool.dataSource.type === "cached" && (
+                        <div className={styles.dataSourceRow}>
+                          <Database size={11} />
+                          <span>Internal aggregated data</span>
+                        </div>
+                      )}
+                      {tool.dataSource.dataset && (
+                        <div className={styles.dataSourceRow}>
+                          <HardDrive size={11} />
+                          <span>{tool.dataSource.dataset}</span>
+                        </div>
+                      )}
+                      {tool.dataSource.intervalSeconds && (
+                        <div className={styles.dataSourceRow}>
+                          <Clock size={11} />
+                          <span>
+                            Polls every{" "}
+                            <strong>{formatInterval(tool.dataSource.intervalSeconds)}</strong>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {paramCount > 0 && (
                     <div className={styles.toolCardParams}>
                       {Object.entries(tool.parameters.properties).map(

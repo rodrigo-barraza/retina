@@ -63,7 +63,7 @@ function ImageOrEmbed({ src, alt, ...rest }) {
   // Detect map embed URLs and render as interactive iframe
   if (src && src.includes("/utility/map/embed")) {
     return (
-      <div className={styles.mapEmbedWrapper}>
+      <span className={styles.mapEmbedWrapper}>
         <iframe
           src={src}
           className={styles.mapEmbed}
@@ -71,10 +71,10 @@ function ImageOrEmbed({ src, alt, ...rest }) {
           loading="lazy"
           referrerPolicy="no-referrer"
         />
-      </div>
+      </span>
     );
   }
-  // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+  // eslint-disable-next-line @next/next/no-img-element
   return <img src={src} alt={alt} {...rest} />;
 }
 
