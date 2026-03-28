@@ -32,6 +32,7 @@ import { useAdminHeader } from "../../components/AdminHeaderContext";
 import useProjectFilter from "../../hooks/useProjectFilter";
 import styles from "./page.module.css";
 import { LS_DATE_RANGE } from "../../constants";
+import { getRequestsColumns } from "./requestsColumns";
 
 const PROVIDER_COLORS = [
   "#6366f1",
@@ -624,53 +625,7 @@ export default function DashboardPage() {
             </Link>
           </span>
         }
-        columns={[
-          {
-            key: "timestamp",
-            label: "Time",
-            render: (r) =>
-              r.timestamp
-                ? new Date(r.timestamp).toLocaleString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                  })
-                : "-",
-          },
-          { key: "model", label: "Model", render: (r) => r.model || "-" },
-          {
-            key: "tokens",
-            label: "Tokens",
-            render: (r) =>
-              formatNumber((r.inputTokens || 0) + (r.outputTokens || 0)),
-          },
-          {
-            key: "success",
-            label: "Status",
-            render: (r) => (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "3px 8px",
-                  borderRadius: 2,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: "0.02em",
-                  background: r.success
-                    ? "var(--success-subtle)"
-                    : "var(--danger-subtle)",
-                  color: r.success ? "var(--success)" : "var(--danger)",
-                }}
-              >
-                {r.success ? "OK" : "ERR"}
-              </span>
-            ),
-          },
-        ]}
+        columns={getRequestsColumns()}
         data={recentRequests}
         getRowKey={(r, i) => r.requestId || i}
         emptyText={loading ? "Loading..." : "No requests yet"}

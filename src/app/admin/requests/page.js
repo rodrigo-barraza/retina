@@ -1,17 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  Download,
-  MessageSquare,
-  GitBranch,
-  Type,
-  Image as ImageIcon,
-  Volume2,
-  Hash,
-  ArrowRight,
-  Parentheses,
-} from "lucide-react";
+import { Download, MessageSquare, GitBranch } from "lucide-react";
 import Link from "next/link";
 import IrisService from "../../../services/IrisService";
 import {
@@ -21,11 +11,11 @@ import {
   formatTokensPerSec,
   buildDateRangeParams,
 } from "../../../utils/utilities";
-import { MODALITY_COLORS } from "../../../components/WorkflowNodeConstants";
+
 import SortableTableComponent from "../../../components/SortableTableComponent";
 import PaginationComponent from "../../../components/PaginationComponent";
 import DatePickerComponent from "../../../components/DatePickerComponent";
-import TooltipComponent from "../../../components/TooltipComponent";
+
 import SelectDropdown from "../../../components/SelectDropdown";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import {
@@ -42,6 +32,7 @@ import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
 import { LS_DATE_RANGE } from "../../../constants";
+import { getRequestsColumns } from "../requestsColumns";
 
 export default function RequestsPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
@@ -137,162 +128,7 @@ export default function RequestsPage() {
     setPage(1);
   }
 
-  const columns = useMemo(
-    () => [
-      {
-        key: "timestamp",
-        label: "Time",
-        render: (r) =>
-          r.timestamp ? new Date(r.timestamp).toLocaleString() : "-",
-      },
-      { key: "project", label: "Project" },
-      {
-        key: "modality",
-        label: "Modality",
-        sortable: false,
-        render: (r) => {
-          const map = {
-            chat: {
-              inIcon: Type,
-              inColor: MODALITY_COLORS.text,
-              outIcon: Type,
-              outColor: MODALITY_COLORS.text,
-              label: "Text → Text",
-            },
-            "chat/image-api": {
-              inIcon: Type,
-              inColor: MODALITY_COLORS.text,
-              outIcon: ImageIcon,
-              outColor: MODALITY_COLORS.image,
-              label: "Text → Image",
-            },
-            "text-to-audio": {
-              inIcon: Type,
-              inColor: MODALITY_COLORS.text,
-              outIcon: Volume2,
-              outColor: MODALITY_COLORS.audio,
-              label: "Text → Audio",
-            },
-            "audio-to-text": {
-              inIcon: Volume2,
-              inColor: MODALITY_COLORS.audio,
-              outIcon: Type,
-              outColor: MODALITY_COLORS.text,
-              label: "Audio → Text",
-            },
-            embed: {
-              inIcon: Type,
-              inColor: MODALITY_COLORS.text,
-              outIcon: Hash,
-              outColor: MODALITY_COLORS.embedding,
-              label: "Text → Embedding",
-            },
-          };
-          let m = map[r.endpoint];
-          // Detect image-output models that go through the chat endpoint
-          if (
-            (!m || r.endpoint === "chat") &&
-            r.model &&
-            /image/i.test(r.model)
-          ) {
-            m = map["chat/image-api"];
-          }
-          m = m || map["chat"];
-          const InIcon = m.inIcon;
-          const OutIcon = m.outIcon;
-          return (
-            <span className={styles.modalityCell}>
-              <TooltipComponent label={m.label.split(" → ")[0]} position="top">
-                <InIcon size={13} style={{ color: m.inColor }} />
-              </TooltipComponent>
-              <ArrowRight size={10} className={styles.modalityArrow} />
-              <TooltipComponent label={m.label.split(" → ")[1]} position="top">
-                <OutIcon size={13} style={{ color: m.outColor }} />
-              </TooltipComponent>
-            </span>
-          );
-        },
-      },
-      {
-        key: "endpoint",
-        label: "Endpoint",
-        render: (r) => (
-          <BadgeComponent variant="endpoint">
-            {r.endpoint || "-"}
-          </BadgeComponent>
-        ),
-      },
-      {
-        key: "provider",
-        label: "Provider",
-        render: (r) => (
-          <BadgeComponent variant="provider">
-            {r.provider || "-"}
-          </BadgeComponent>
-        ),
-      },
-      { key: "model", label: "Model" },
-      {
-        key: "toolsUsed",
-        label: "Tools",
-        sortable: true,
-        render: (r) =>
-          r.toolsUsed ? (
-            <Parentheses size={13} style={{ color: "var(--accent)" }} />
-          ) : (
-            <span style={{ color: "var(--text-muted)" }}>—</span>
-          ),
-      },
-      {
-        key: "inputTokens",
-        label: "In Tokens",
-        render: (r) => formatNumber(r.inputTokens),
-        align: "right",
-      },
-      {
-        key: "outputTokens",
-        label: "Out Tokens",
-        render: (r) => formatNumber(r.outputTokens),
-        align: "right",
-      },
-      {
-        key: "totalTokens",
-        label: "Tokens",
-        sortable: false,
-        render: (r) =>
-          formatNumber((r.inputTokens || 0) + (r.outputTokens || 0)),
-        align: "right",
-      },
-      {
-        key: "estimatedCost",
-        label: "Cost",
-        render: (r) => formatCost(r.estimatedCost),
-        align: "right",
-      },
-      {
-        key: "tokensPerSec",
-        label: "Tok/s",
-        render: (r) => formatTokensPerSec(r.tokensPerSec),
-        align: "right",
-      },
-      {
-        key: "totalTime",
-        label: "Latency",
-        render: (r) => formatLatency(r.totalTime),
-        align: "right",
-      },
-      {
-        key: "success",
-        label: "Status",
-        render: (r) => (
-          <BadgeComponent variant={r.success ? "success" : "error"}>
-            {r.success ? "OK" : "ERR"}
-          </BadgeComponent>
-        ),
-      },
-    ],
-    [],
-  );
+  const columns = useMemo(() => getRequestsColumns(), []);
 
   const exportCSV = useCallback(() => {
     const headers = columns.map((c) => c.label).join(",");

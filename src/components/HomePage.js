@@ -812,13 +812,26 @@ export default function HomePage({ initialConversationId = null }) {
                 return updated;
               });
             },
-            onDone: () => resolve(),
+            onDone: (data) => {
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.role === "assistant") {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    usage: data.usage,
+                    totalTime: data.totalTime,
+                    tokensPerSec: data.tokensPerSec,
+                    estimatedCost: data.estimatedCost,
+                  };
+                }
+                return updated;
+              });
+              resolve();
+            },
             onError: (err) => reject(err),
           });
         });
-        // We rely on the server side to append final tool result messages via patches.
-        // Once done, we reload conversations. No need to mutate state heavily here, SSE handles chunks.
-        loadConversations();
         loadConversations();
       } catch (error) {
         console.error(error);
@@ -1415,7 +1428,24 @@ export default function HomePage({ initialConversationId = null }) {
                 return updated;
               });
             },
-            onDone: () => resolve(),
+            onDone: (data) => {
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.role === "assistant") {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    usage: data.usage,
+                    totalTime: data.totalTime,
+                    tokensPerSec: data.tokensPerSec,
+                    estimatedCost: data.estimatedCost,
+                  };
+                }
+                return updated;
+              });
+              setToolActivity([]);
+              resolve();
+            },
             onError: (err) => reject(err),
           });
         });
@@ -1670,28 +1700,29 @@ export default function HomePage({ initialConversationId = null }) {
             });
           },
           onDone: async (data) => {
-            // Include toolCalls from toolActivity if any tools were used
-            const finalizedToolCalls = Array.isArray(toolActivity) && toolActivity.length > 0 
-              ? [...toolActivity] 
-              : undefined;
-
-            const finalMsg = {
-              role: "assistant",
-              content: streamedText,
-              thinking: streamedThinking || undefined,
-              ...(streamedImages.length > 0 ? { images: streamedImages } : {}),
-              ...(data.audioRef ? { audio: data.audioRef } : {}),
-              ...(finalizedToolCalls ? { toolCalls: finalizedToolCalls } : {}),
-              timestamp: placeholderMsg.timestamp,
-              provider: settings.provider,
-              model: settings.model,
-              usage: data.usage,
-              totalTime: data.totalTime,
-              tokensPerSec: data.tokensPerSec,
-              estimatedCost: data.estimatedCost,
-            };
-            const updatedMessages = [...newMessages, finalMsg];
-            setMessages(updatedMessages);
+            setMessages((prev) => {
+              const prevAssistant = prev[prev.length - 1];
+              const safeToolCalls = prevAssistant?.toolCalls?.length > 0 ? prevAssistant.toolCalls : undefined;
+              
+              const finalMsg = {
+                role: "assistant",
+                content: streamedText,
+                thinking: streamedThinking || undefined,
+                ...(streamedImages.length > 0 ? { images: streamedImages } : {}),
+                ...(data.audioRef ? { audio: data.audioRef } : {}),
+                ...(safeToolCalls ? { toolCalls: safeToolCalls } : {}),
+                timestamp: placeholderMsg.timestamp,
+                provider: settings.provider,
+                model: settings.model,
+                usage: data.usage,
+                totalTime: data.totalTime,
+                tokensPerSec: data.tokensPerSec,
+                estimatedCost: data.estimatedCost,
+              };
+              
+              const updatedMessages = [...newMessages, finalMsg];
+              return updatedMessages;
+            });
 
             // Clear tool activity for next turn
             setToolActivity([]);
