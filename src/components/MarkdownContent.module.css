@@ -80,6 +80,15 @@
     border-top: 1px solid var(--border-color);
     margin: 16px 0;
   }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border-color);
+    margin: 8px 0;
+    display: block;
+  }
 }
 
 .inlineCode {

@@ -151,7 +151,8 @@ function ToolCallResultBlock({ result }) {
     parsed = result;
   }
 
-  const staticMapUrl = parsed?.staticMapUrl || null;
+  const mapEmbedUrl = parsed?.mapEmbedUrl || null;
+  const staticMapUrl = !mapEmbedUrl ? (parsed?.staticMapUrl || null) : null;
 
   const formatted =
     typeof result === "string"
@@ -167,6 +168,17 @@ function ToolCallResultBlock({ result }) {
 
   return (
     <div className={styles.toolCallResultWrapper}>
+      {mapEmbedUrl && (
+        <div className={styles.toolCallMapPreview}>
+          <iframe
+            src={mapEmbedUrl}
+            className={styles.toolCallMapEmbed}
+            title="Map"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      )}
       {staticMapUrl && (
         <div className={styles.toolCallMapPreview}>
           {/* eslint-disable-next-line @next/next/no-img-element */}

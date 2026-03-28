@@ -59,13 +59,32 @@ function CodeBlock({ children, className, ...rest }) {
   return <FencedCodeBlock language={match[1]}>{children}</FencedCodeBlock>;
 }
 
+function ImageOrEmbed({ src, alt, ...rest }) {
+  // Detect map embed URLs and render as interactive iframe
+  if (src && src.includes("/utility/map/embed")) {
+    return (
+      <div className={styles.mapEmbedWrapper}>
+        <iframe
+          src={src}
+          className={styles.mapEmbed}
+          title={alt || "Map"}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
+      </div>
+    );
+  }
+  // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+  return <img src={src} alt={alt} {...rest} />;
+}
+
 export default function MarkdownContent({ content, className, children }) {
   if (!content) return null;
   return (
     <div className={`${styles.text} ${className || ""}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        components={{ code: CodeBlock }}
+        components={{ code: CodeBlock, img: ImageOrEmbed }}
       >
         {content}
       </ReactMarkdown>
