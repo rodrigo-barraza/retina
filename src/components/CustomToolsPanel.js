@@ -17,6 +17,17 @@ import {
   HardDrive,
   Clock,
   ExternalLink,
+  CloudSun,
+  CalendarDays,
+  TrendingUp,
+  ShoppingCart,
+  BarChart3,
+  BookOpen,
+  Film,
+  Heart,
+  Bus,
+  Wrench,
+  Layers,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ButtonComponent from "./ButtonComponent.js";
@@ -49,6 +60,36 @@ const DATA_SOURCE_LABELS = {
   onDemand: "On-Demand",
   static: "Static",
 };
+
+const DOMAIN_ICONS = {
+  "Weather & Environment": CloudSun,
+  "Events": CalendarDays,
+  "Markets & Commodities": BarChart3,
+  "Trends": TrendingUp,
+  "Products": ShoppingCart,
+  "Finance": BarChart3,
+  "Knowledge": BookOpen,
+  "Movies & TV": Film,
+  "Health": Heart,
+  "Transit": Bus,
+  "Utilities": Wrench,
+  "Other": Layers,
+};
+
+const DOMAIN_ORDER = [
+  "Weather & Environment",
+  "Events",
+  "Markets & Commodities",
+  "Trends",
+  "Products",
+  "Finance",
+  "Knowledge",
+  "Movies & TV",
+  "Health",
+  "Transit",
+  "Utilities",
+  "Other",
+];
 
 const PARAM_TYPES = [
   { value: "string", label: "String" },
@@ -97,6 +138,7 @@ export default function CustomToolsPanel({
   const [customOpen, setCustomOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
+  const [collapsedDomains, setCollapsedDomains] = useState(new Set());
 
   // ── CRUD ─────────────────────────────────────────────────────
 
@@ -274,6 +316,35 @@ export default function CustomToolsPanel({
       console.error("Failed to toggle all custom tools:", err);
     }
   }, [allCustomEnabled, tools, onToolsChange]);
+
+  // ── Group built-in tools by domain ──────────────────────────
+  const groupedBuiltInTools = useMemo(() => {
+    const groups = new Map();
+    for (const tool of filteredBuiltInTools) {
+      const domain = tool.domain || "Other";
+      if (!groups.has(domain)) groups.set(domain, []);
+      groups.get(domain).push(tool);
+    }
+    // Sort by DOMAIN_ORDER
+    const sorted = [];
+    for (const domain of DOMAIN_ORDER) {
+      if (groups.has(domain)) sorted.push([domain, groups.get(domain)]);
+    }
+    // Any remaining domains not in the order
+    for (const [domain, tools] of groups) {
+      if (!DOMAIN_ORDER.includes(domain)) sorted.push([domain, tools]);
+    }
+    return sorted;
+  }, [filteredBuiltInTools]);
+
+  const toggleDomain = useCallback((domain) => {
+    setCollapsedDomains((prev) => {
+      const next = new Set(prev);
+      if (next.has(domain)) next.delete(domain);
+      else next.add(domain);
+      return next;
+    });
+  }, []);
 
   // ── Edit form ────────────────────────────────────────────────
 
@@ -702,139 +773,194 @@ export default function CustomToolsPanel({
       )}
 
       {builtInOpen &&
-        filteredBuiltInTools.map((tool) => {
-          const isDisabled = disabledBuiltIns.has(tool.name);
-          const isOffline = offlineTools.has(tool.name);
-          const isExpanded = expandedId === `builtin-${tool.name}`;
-          const paramCount = Object.keys(
-            tool.parameters?.properties || {},
+        groupedBuiltInTools.map(([domain, domainTools]) => {
+          const DomainIcon = DOMAIN_ICONS[domain] || Layers;
+          const isDomainCollapsed = collapsedDomains.has(domain);
+          const enabledCount = domainTools.filter(
+            (t) => !disabledBuiltIns.has(t.name) && !offlineTools.has(t.name),
           ).length;
 
           return (
-            <div
-              key={`builtin-${tool.name}`}
-              className={`${styles.toolCard} ${styles.builtInCard} ${isOffline ? styles.offlineCard : ""} ${isDisabled ? styles.toolDisabled : ""}`}
-            >
+            <div key={domain} className={styles.domainGroup}>
               <div
-                className={styles.toolCardHeader}
-                onClick={() =>
-                  setExpandedId(isExpanded ? null : `builtin-${tool.name}`)
-                }
+                className={styles.domainHeader}
+                onClick={() => toggleDomain(domain)}
               >
-                <button className={styles.expandBtn}>
-                  {isExpanded ? (
-                    <ChevronDown size={14} />
-                  ) : (
-                    <ChevronRight size={14} />
-                  )}
-                </button>
-                <div className={styles.toolCardInfo}>
-                  <span className={styles.toolCardName}>
-                    {renderToolName(tool.name)}
-                  </span>
-                  <span className={styles.toolCardMeta}>
-                    {isOffline ? (
-                      <span className={styles.offlineBadge}>Offline</span>
-                    ) : tool.dataSource ? (
-                      <span
-                        className={styles.dataSourceBadge}
-                        data-type={tool.dataSource.type}
-                      >
-                        {(() => {
-                          const Icon = DATA_SOURCE_ICONS[tool.dataSource.type];
-                          return Icon ? <Icon size={8} /> : null;
-                        })()}
-                        {DATA_SOURCE_LABELS[tool.dataSource.type] || tool.dataSource.type}
-                        {tool.dataSource.intervalSeconds && (
-                          <span className={styles.intervalInline}>
-                            {formatInterval(tool.dataSource.intervalSeconds)}
-                          </span>
-                        )}
-                      </span>
-                    ) : (
-                      <span className={styles.builtInBadge}>Built-in</span>
-                    )}
-                    {paramCount > 0 && <span>{paramCount} params</span>}
-                  </span>
-                </div>
-                <div className={styles.toolCardActions}>
-                  <ToggleSwitchComponent
-                    checked={!isDisabled}
-                    onChange={() => onToggleBuiltIn?.(tool.name)}
-                    size="small"
-                    disabled={isOffline}
-                  />
-                </div>
+                {isDomainCollapsed ? (
+                  <ChevronRight size={10} />
+                ) : (
+                  <ChevronDown size={10} />
+                )}
+                <DomainIcon size={11} className={styles.domainIcon} />
+                <span className={styles.domainLabel}>{domain}</span>
+                <span className={styles.domainCount}>
+                  {enabledCount}/{domainTools.length}
+                </span>
               </div>
 
-              {isExpanded && (
-                <div className={styles.toolCardBody}>
-                  <p className={styles.toolCardDesc}>{tool.description}</p>
-                  {tool.dataSource && (
-                    <div className={styles.dataSourceInfo}>
-                      <div className={styles.dataSourceRow}>
-                        {(() => {
-                          const Icon = DATA_SOURCE_ICONS[tool.dataSource.type];
-                          return Icon ? <Icon size={11} /> : null;
-                        })()}
-                        <span className={styles.dataSourceLabel}>
-                          {tool.dataSource.type === "cached"
-                            ? "Background Polled"
-                            : tool.dataSource.type === "onDemand"
-                              ? "Fetched On Request"
-                              : "In-Memory Dataset"}
-                        </span>
-                      </div>
-                      {tool.dataSource.provider && tool.dataSource.provider !== "internal" && (
-                        <div className={styles.dataSourceRow}>
-                          <ExternalLink size={11} />
-                          <span>{tool.dataSource.provider}</span>
-                        </div>
-                      )}
-                      {tool.dataSource.provider === "internal" && tool.dataSource.type === "cached" && (
-                        <div className={styles.dataSourceRow}>
-                          <Database size={11} />
-                          <span>Internal aggregated data</span>
-                        </div>
-                      )}
-                      {tool.dataSource.dataset && (
-                        <div className={styles.dataSourceRow}>
-                          <HardDrive size={11} />
-                          <span>{tool.dataSource.dataset}</span>
-                        </div>
-                      )}
-                      {tool.dataSource.intervalSeconds && (
-                        <div className={styles.dataSourceRow}>
-                          <Clock size={11} />
-                          <span>
-                            Polls every{" "}
-                            <strong>{formatInterval(tool.dataSource.intervalSeconds)}</strong>
+              {!isDomainCollapsed &&
+                domainTools.map((tool) => {
+                  const isDisabled = disabledBuiltIns.has(tool.name);
+                  const isOffline = offlineTools.has(tool.name);
+                  const isExpanded = expandedId === `builtin-${tool.name}`;
+                  const paramCount = Object.keys(
+                    tool.parameters?.properties || {},
+                  ).length;
+
+                  return (
+                    <div
+                      key={`builtin-${tool.name}`}
+                      className={`${styles.toolCard} ${styles.builtInCard} ${isOffline ? styles.offlineCard : ""} ${isDisabled ? styles.toolDisabled : ""}`}
+                    >
+                      <div
+                        className={styles.toolCardHeader}
+                        onClick={() =>
+                          setExpandedId(
+                            isExpanded ? null : `builtin-${tool.name}`,
+                          )
+                        }
+                      >
+                        <button className={styles.expandBtn}>
+                          {isExpanded ? (
+                            <ChevronDown size={14} />
+                          ) : (
+                            <ChevronRight size={14} />
+                          )}
+                        </button>
+                        <div className={styles.toolCardInfo}>
+                          <span className={styles.toolCardName}>
+                            {renderToolName(tool.name)}
                           </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {paramCount > 0 && (
-                    <div className={styles.toolCardParams}>
-                      {Object.entries(tool.parameters.properties).map(
-                        ([name, schema]) => (
-                          <div key={name} className={styles.toolCardParam}>
-                            <code>{name}</code>
-                            <span className={styles.paramType}>
-                              {schema.type}
-                            </span>
-                            {tool.parameters.required?.includes(name) && (
-                              <span className={styles.paramRequired}>
-                                required
+                          <span className={styles.toolCardMeta}>
+                            {isOffline ? (
+                              <span className={styles.offlineBadge}>
+                                Offline
+                              </span>
+                            ) : tool.dataSource ? (
+                              <span
+                                className={styles.dataSourceBadge}
+                                data-type={tool.dataSource.type}
+                              >
+                                {(() => {
+                                  const Icon =
+                                    DATA_SOURCE_ICONS[tool.dataSource.type];
+                                  return Icon ? <Icon size={8} /> : null;
+                                })()}
+                                {DATA_SOURCE_LABELS[tool.dataSource.type] ||
+                                  tool.dataSource.type}
+                                {tool.dataSource.intervalSeconds && (
+                                  <span className={styles.intervalInline}>
+                                    {formatInterval(
+                                      tool.dataSource.intervalSeconds,
+                                    )}
+                                  </span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className={styles.builtInBadge}>
+                                Built-in
                               </span>
                             )}
-                          </div>
-                        ),
+                            {paramCount > 0 && (
+                              <span>{paramCount} params</span>
+                            )}
+                          </span>
+                        </div>
+                        <div className={styles.toolCardActions}>
+                          <ToggleSwitchComponent
+                            checked={!isDisabled}
+                            onChange={() => onToggleBuiltIn?.(tool.name)}
+                            size="small"
+                            disabled={isOffline}
+                          />
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className={styles.toolCardBody}>
+                          <p className={styles.toolCardDesc}>
+                            {tool.description}
+                          </p>
+                          {tool.dataSource && (
+                            <div className={styles.dataSourceInfo}>
+                              <div className={styles.dataSourceRow}>
+                                {(() => {
+                                  const Icon =
+                                    DATA_SOURCE_ICONS[tool.dataSource.type];
+                                  return Icon ? <Icon size={11} /> : null;
+                                })()}
+                                <span className={styles.dataSourceLabel}>
+                                  {tool.dataSource.type === "cached"
+                                    ? "Background Polled"
+                                    : tool.dataSource.type === "onDemand"
+                                      ? "Fetched On Request"
+                                      : "In-Memory Dataset"}
+                                </span>
+                              </div>
+                              {tool.dataSource.provider &&
+                                tool.dataSource.provider !== "internal" && (
+                                  <div className={styles.dataSourceRow}>
+                                    <ExternalLink size={11} />
+                                    <span>{tool.dataSource.provider}</span>
+                                  </div>
+                                )}
+                              {tool.dataSource.provider === "internal" &&
+                                tool.dataSource.type === "cached" && (
+                                  <div className={styles.dataSourceRow}>
+                                    <Database size={11} />
+                                    <span>Internal aggregated data</span>
+                                  </div>
+                                )}
+                              {tool.dataSource.dataset && (
+                                <div className={styles.dataSourceRow}>
+                                  <HardDrive size={11} />
+                                  <span>{tool.dataSource.dataset}</span>
+                                </div>
+                              )}
+                              {tool.dataSource.intervalSeconds && (
+                                <div className={styles.dataSourceRow}>
+                                  <Clock size={11} />
+                                  <span>
+                                    Polls every{" "}
+                                    <strong>
+                                      {formatInterval(
+                                        tool.dataSource.intervalSeconds,
+                                      )}
+                                    </strong>
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {paramCount > 0 && (
+                            <div className={styles.toolCardParams}>
+                              {Object.entries(tool.parameters.properties).map(
+                                ([name, schema]) => (
+                                  <div
+                                    key={name}
+                                    className={styles.toolCardParam}
+                                  >
+                                    <code>{name}</code>
+                                    <span className={styles.paramType}>
+                                      {schema.type}
+                                    </span>
+                                    {tool.parameters.required?.includes(
+                                      name,
+                                    ) && (
+                                      <span className={styles.paramRequired}>
+                                        required
+                                      </span>
+                                    )}
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-              )}
+                  );
+                })}
             </div>
           );
         })}

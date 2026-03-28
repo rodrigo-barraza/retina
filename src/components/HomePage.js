@@ -278,6 +278,15 @@ export default function HomePage({ initialConversationId = null }) {
     return map;
   }, [customTools]);
 
+  // Schema lookup for ToolActivityPanel data source badges
+  const toolSchemaMap = useMemo(() => {
+    const map = new Map();
+    for (const t of SunService.getToolSchemas()) {
+      map.set(t.name, t);
+    }
+    return map;
+  }, []);
+
   const loadCustomTools = useCallback(async () => {
     try {
       const tools = await PrismService.getCustomTools();
@@ -2187,7 +2196,10 @@ export default function HomePage({ initialConversationId = null }) {
           }
           toolActivitySlot={
             settings.functionCallingEnabled && toolActivity.length > 0 ? (
-              <ToolActivityPanelComponent activities={toolActivity} />
+              <ToolActivityPanelComponent
+                activities={toolActivity}
+                toolSchemaMap={toolSchemaMap}
+              />
             ) : null
           }
           onLiveUserChunk={(fullText) => {

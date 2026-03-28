@@ -228,6 +228,15 @@ export default function ConsoleComponent() {
     return map;
   }, [customTools]);
 
+  // Schema lookup for ToolActivityPanel data source badges
+  const toolSchemaMap = useMemo(() => {
+    const map = new Map();
+    for (const t of SunService.getToolSchemas()) {
+      map.set(t.name, t);
+    }
+    return map;
+  }, []);
+
   // Pick 5 random prompt suggestions — re-shuffles on new chat (client-only to avoid hydration mismatch)
   const [randomPrompts, setRandomPrompts] = useState([]);
 
@@ -767,7 +776,10 @@ export default function ConsoleComponent() {
       </div>
 
       {/* Tool Activity Panel */}
-      <ToolActivityPanelComponent activities={toolActivity} />
+      <ToolActivityPanelComponent
+        activities={toolActivity}
+        toolSchemaMap={toolSchemaMap}
+      />
 
       {/* Input area — same as ChatArea */}
       <div className={chatStyles.inputWrapper}>

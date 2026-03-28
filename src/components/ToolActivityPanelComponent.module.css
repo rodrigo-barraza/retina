@@ -72,3 +72,33 @@
   color: var(--text-muted);
   font-size: 11px;
 }
+
+/* ── Data Source Type Badge (inline) ─────────────────────────── */
+
+.toolTypeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.toolTypeBadge[data-type="cached"] {
+  background: color-mix(in srgb, #0ea5e9 14%, transparent);
+  color: #0ea5e9;
+}
+
+.toolTypeBadge[data-type="onDemand"] {
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  color: #f59e0b;
+}
+
+.toolTypeBadge[data-type="static"] {
+  background: color-mix(in srgb, #a855f7 14%, transparent);
+  color: #a855f7;
+}
