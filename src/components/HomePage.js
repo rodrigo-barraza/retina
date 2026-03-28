@@ -2225,15 +2225,23 @@ Guidelines:
                   if (turnData.audioRef) rest.audio = turnData.audioRef;
                   if (turnData.usage) {
                     rest.usage = turnData.usage;
-                    const pricing = (() => {
-                      const models = config?.textToText?.models?.[settings.provider] || [];
-                      const md = models.find((x) => x.name === settings.model);
-                      return md?.pricing;
-                    })();
-                    if (pricing && turnData.usage) {
-                      const inCost = (turnData.usage.inputTokens / 1_000_000) * (pricing.inputPerMillion || 0);
-                      const outCost = (turnData.usage.outputTokens / 1_000_000) * (pricing.outputPerMillion || 0);
-                      rest.estimatedCost = parseFloat((inCost + outCost).toFixed(8));
+                    // Prefer server-computed cost (uses audioInputPerMillion + audioOutputPerMillion)
+                    if (turnData.estimatedCost != null) {
+                      rest.estimatedCost = turnData.estimatedCost;
+                    } else {
+                      // Fallback: compute locally with audio-aware rates
+                      const pricing = (() => {
+                        const models = config?.textToText?.models?.[settings.provider] || [];
+                        const md = models.find((x) => x.name === settings.model);
+                        return md?.pricing;
+                      })();
+                      if (pricing && turnData.usage) {
+                        const inputRate = pricing.audioInputPerMillion || pricing.inputPerMillion || 0;
+                        const outputRate = pricing.audioOutputPerMillion || pricing.outputPerMillion || 0;
+                        const inCost = (turnData.usage.inputTokens / 1_000_000) * inputRate;
+                        const outCost = (turnData.usage.outputTokens / 1_000_000) * outputRate;
+                        rest.estimatedCost = parseFloat((inCost + outCost).toFixed(8));
+                      }
                     }
                   }
                 }

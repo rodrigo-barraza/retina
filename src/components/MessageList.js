@@ -546,7 +546,7 @@ export default function MessageList({
                 <div className={styles.messageHeader}>
                   <div className={styles.roleLabel}>
                     {msg.role === "user"
-                      ? "You"
+                      ? "User"
                       : msg.role === "system"
                         ? "System"
                         : "Model"}
