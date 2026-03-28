@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import PrismService from "../../services/PrismService";
 import WorkflowService from "../../services/WorkflowService";
-import SunService from "../../services/SunService";
 import { executeWorkflow } from "../../services/WorkflowExecutor";
 import WorkflowCanvas from "../../components/WorkflowCanvas";
 import WorkflowInspector from "../../components/WorkflowInspector";
@@ -368,13 +367,12 @@ export default function WorkflowsPage({ initialWorkflowId }) {
 
       // Tool node — function calling tools
       if (modality === "tools") {
-        const builtIn = SunService.getToolSchemas();
         const newNode = {
           id: generateNodeId(),
           nodeType: "tools",
           inputTypes: [],
           outputTypes: ["tools"],
-          builtInTools: builtIn,
+          builtInTools: [],
           customTools: [],
           disabledTools: [],
           position: {
@@ -382,16 +380,19 @@ export default function WorkflowsPage({ initialWorkflowId }) {
             y: 80 + nodes.length * 40 + Math.random() * 40,
           },
         };
-        // Try to load custom tools and attach them
-        PrismService.getCustomTools()
-          .then((tools) => {
-            setNodes((prev) =>
-              prev.map((n) =>
-                n.id === newNode.id ? { ...n, customTools: tools } : n,
-              ),
-            );
-          })
-          .catch(() => {});
+        // Load both custom tools and built-in schemas, then attach them
+        Promise.all([
+          PrismService.getCustomTools().catch(() => []),
+          PrismService.getBuiltInToolSchemas().catch(() => []),
+        ]).then(([custom, builtIn]) => {
+          setNodes((prev) =>
+            prev.map((n) =>
+              n.id === newNode.id
+                ? { ...n, customTools: custom, builtInTools: builtIn }
+                : n,
+            ),
+          );
+        });
         setNodes((prev) => [...prev, newNode]);
         setSelectedNodeId(newNode.id);
         return;

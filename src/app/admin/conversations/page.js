@@ -440,9 +440,7 @@ export default function ConversationsPage({ initialId = null }) {
                     </>
                   );
                 })()}
-                {requestCount > 0 && (
-                  <span>{requestCount} requests</span>
-                )}
+                {requestCount > 0 && <span>{requestCount} requests</span>}
                 {uniqueModels.length === 1 && <span>{uniqueModels[0]}</span>}
                 {uniqueModels.length > 1 && (
                   <span className={styles.modelDropdownWrapper}>

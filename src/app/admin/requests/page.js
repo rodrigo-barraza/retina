@@ -611,69 +611,67 @@ export default function RequestsPage() {
               {loadingAssociations ? (
                 <span style={{ color: "var(--text-muted)" }}>Loading…</span>
               ) : (
-              <div className={styles.associationGrid}>
-                <div className={styles.associationGroup}>
-                  <span className={styles.associationGroupLabel}>
-                    <MessageSquare size={12} /> Conversations
-                  </span>
-                  {associations?.conversations?.length > 0 ? (
-                    <ul className={styles.associationList}>
-                      {associations.conversations.map((c) => (
-                        <li key={c.id} className={styles.associationItem}>
-                          <Link
-                            href={`/admin/conversations/${c.id}`}
-                            className={styles.associationLink}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <span className={styles.associationTitle}>
-                              {c.title || "Untitled"}
-                            </span>
-                            <span className={styles.associationMeta}>
-                              {c.project}
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className={styles.associationEmpty}>—</span>
-                  )}
+                <div className={styles.associationGrid}>
+                  <div className={styles.associationGroup}>
+                    <span className={styles.associationGroupLabel}>
+                      <MessageSquare size={12} /> Conversations
+                    </span>
+                    {associations?.conversations?.length > 0 ? (
+                      <ul className={styles.associationList}>
+                        {associations.conversations.map((c) => (
+                          <li key={c.id} className={styles.associationItem}>
+                            <Link
+                              href={`/admin/conversations/${c.id}`}
+                              className={styles.associationLink}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span className={styles.associationTitle}>
+                                {c.title || "Untitled"}
+                              </span>
+                              <span className={styles.associationMeta}>
+                                {c.project}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className={styles.associationEmpty}>—</span>
+                    )}
+                  </div>
+                  <div className={styles.associationGroup}>
+                    <span className={styles.associationGroupLabel}>
+                      <GitBranch size={12} /> Workflows
+                    </span>
+                    {associations?.workflows?.length > 0 ? (
+                      <ul className={styles.associationList}>
+                        {associations.workflows.map((w) => (
+                          <li key={w.id} className={styles.associationItem}>
+                            <Link
+                              href={`/admin/workflows/${w.id}`}
+                              className={styles.associationLink}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span className={styles.associationTitle}>
+                                {w.name}
+                              </span>
+                              <span className={styles.associationMeta}>
+                                {w.nodeCount} nodes · {w.edgeCount} edges
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className={styles.associationEmpty}>—</span>
+                    )}
+                  </div>
                 </div>
-                <div className={styles.associationGroup}>
-                  <span className={styles.associationGroupLabel}>
-                    <GitBranch size={12} /> Workflows
-                  </span>
-                  {associations?.workflows?.length > 0 ? (
-                    <ul className={styles.associationList}>
-                      {associations.workflows.map((w) => (
-                        <li key={w.id} className={styles.associationItem}>
-                          <Link
-                            href={`/admin/workflows/${w.id}`}
-                            className={styles.associationLink}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <span className={styles.associationTitle}>
-                              {w.name}
-                            </span>
-                            <span className={styles.associationMeta}>
-                              {w.nodeCount} nodes · {w.edgeCount} edges
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className={styles.associationEmpty}>—</span>
-                  )}
-                </div>
-              </div>
-            )}
+              )}
             </div>
             {selectedRequest.requestPayload && (
               <div className={styles.detailSection}>
-                <div className={styles.detailSectionTitle}>
-                  Request Payload
-                </div>
+                <div className={styles.detailSectionTitle}>Request Payload</div>
                 <pre className={styles.payloadBlock}>
                   {JSON.stringify(selectedRequest.requestPayload, null, 2)}
                 </pre>

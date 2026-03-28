@@ -5,11 +5,9 @@ import { useRouter } from "next/navigation";
 import styles from "../app/page.module.css";
 import PrismService from "../services/PrismService";
 import AudioPlayerService from "../services/AudioPlayerService";
-import SunService from "../services/SunService";
 import { prepareDisplayMessages } from "./MessageList";
 import StorageService from "../services/StorageService";
 import {
-  truncateToolResult,
   expandMessagesForFC,
   sanitizeToolName,
 } from "../utils/FunctionCallingUtilities";
@@ -18,7 +16,6 @@ import {
   SK_LAST_PROVIDER,
   SK_LAST_MODEL,
   SK_INFERENCE_MODE,
-  MAX_TOOL_ITERATIONS,
 } from "../constants";
 import { Send, Settings, Parentheses, SlidersHorizontal } from "lucide-react";
 import NavigationSidebarComponent from "../components/NavigationSidebarComponent";
@@ -103,7 +100,7 @@ export default function HomePage({ initialConversationId = null }) {
   }, [selectedModelSupportsFc, leftTab]);
   const [customTools, setCustomTools] = useState([]);
   const [disabledBuiltIns, setDisabledBuiltIns] = useState(new Set());
-  const [offlineTools, setOfflineTools] = useState(() => new Set());
+  const [builtInTools, setBuiltInTools] = useState([]);
   const [toolActivity, setToolActivity] = useState([]);
 
   const abortRef = useRef(null);
@@ -191,7 +188,7 @@ export default function HomePage({ initialConversationId = null }) {
       }).catch((err) => console.error("Failed to save system prompt:", err));
     }, 500);
     return () => clearTimeout(timer);
-  }, [settings.systemPrompt]);
+  }, [settings, activeId, messages.length]);
 
   // Fetch workflows that include this conversation
   useEffect(() => {
@@ -261,9 +258,7 @@ export default function HomePage({ initialConversationId = null }) {
   const FC_SYSTEM_PROMPT = buildFCSystemPrompt();
 
   const allToolSchemas = useMemo(() => {
-    const builtIn = SunService.getToolSchemas().filter(
-      (t) => !disabledBuiltIns.has(t.name) && !offlineTools.has(t.name),
-    );
+    const builtIn = builtInTools.filter((t) => !disabledBuiltIns.has(t.name));
     const custom = customTools
       .filter((t) => t.enabled)
       .map((t) => ({
@@ -287,24 +282,16 @@ export default function HomePage({ initialConversationId = null }) {
         },
       }));
     return [...builtIn, ...custom];
-  }, [customTools, disabledBuiltIns, offlineTools]);
-
-  const customToolMap = useMemo(() => {
-    const map = new Map();
-    for (const t of customTools) {
-      if (t.enabled) map.set(sanitizeToolName(t.name), t);
-    }
-    return map;
-  }, [customTools]);
+  }, [customTools, disabledBuiltIns, builtInTools]);
 
   // Schema lookup for ToolActivityPanel data source badges
   const toolSchemaMap = useMemo(() => {
     const map = new Map();
-    for (const t of SunService.getToolSchemas()) {
+    for (const t of builtInTools) {
       map.set(t.name, t);
     }
     return map;
-  }, []);
+  }, [builtInTools]);
 
   const loadCustomTools = useCallback(async () => {
     try {
@@ -320,10 +307,10 @@ export default function HomePage({ initialConversationId = null }) {
     loadCustomTools();
   }, [loadCustomTools]);
 
-  // Check API health on mount
+  // Fetch built-in tools on mount
   useEffect(() => {
-    SunService.checkApiHealth()
-      .then(({ offline }) => setOfflineTools(offline))
+    PrismService.getBuiltInToolSchemas()
+      .then(setBuiltInTools)
       .catch(console.error);
   }, []);
 
@@ -340,9 +327,8 @@ export default function HomePage({ initialConversationId = null }) {
     (enableAll) => {
       setDisabledBuiltIns((prev) => {
         const next = new Set(prev);
-        const allSchemas = SunService.getToolSchemas();
+        const allSchemas = builtInTools;
         for (const tool of allSchemas) {
-          if (offlineTools.has(tool.name)) continue;
           if (enableAll) {
             next.delete(tool.name);
           } else {
@@ -352,7 +338,7 @@ export default function HomePage({ initialConversationId = null }) {
         return next;
       });
     },
-    [offlineTools],
+    [builtInTools],
   );
 
   const handleToggleCustomTool = useCallback(
@@ -716,248 +702,123 @@ export default function HomePage({ initialConversationId = null }) {
         const _currentTitle = title;
         const systemPromptText = settings.systemPrompt || FC_SYSTEM_PROMPT;
         const currentMessages = [...historyUpToUser];
-        let iterations = 0;
-        let hasCalledTools = false;
 
-        while (iterations < MAX_TOOL_ITERATIONS) {
-          iterations++;
-          let streamedText = "";
-          let streamedThinking = "";
-          let turnDoneData = {};
-          const pendingToolCalls = [];
-
-          // Insert placeholder so the blinking cursor shows immediately
-          setMessages((prev) => {
-            const cleaned = prev.filter(
-              (m) =>
-                !(
-                  m.role === "assistant" &&
-                  !m.content?.trim() &&
-                  !m.toolCalls?.length
-                ),
-            );
-            return [
-              ...cleaned,
-              {
-                role: "assistant",
-                content: "",
-                timestamp: new Date().toISOString(),
-                provider: settings.provider,
-                model: settings.model,
-              },
-            ];
-          });
-
-          await new Promise((resolve, reject) => {
-            const payload = {
-              provider: settings.provider,
-              model: settings.model,
-              messages: [
-                { role: "system", content: systemPromptText },
-                ...expandMessagesForFC(currentMessages),
-              ],
-              // Local models (LM Studio, Ollama) should stop receiving tools
-              // after their first tool round to force a text response.
-              // Cloud providers handle multi-step tool calling natively.
-              ...(settings.provider === "lm-studio" ||
-              settings.provider === "ollama"
-                ? !hasCalledTools
-                  ? { tools: allToolSchemas }
-                  : {}
-                : { tools: allToolSchemas }),
-              maxTokens: settings.maxTokens,
-              temperature: settings.temperature,
-              conversationId: currentId,
-            };
-
-            abortRef.current = PrismService.streamText(payload, {
-              onChunk: (chunk) => {
-                streamedText += chunk;
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const lastMsg = updated[updated.length - 1];
-                  if (
-                    lastMsg?.role === "assistant" &&
-                    !lastMsg.toolCalls?.length
-                  ) {
-                    lastMsg.content = streamedText;
-                  } else {
-                    updated.push({ role: "assistant", content: streamedText });
-                  }
-                  return updated;
-                });
-              },
-              onToolCall: (toolCall) => {
-                pendingToolCalls.push(toolCall);
-                setToolActivity((prev) => [
-                  ...prev,
-                  {
-                    id: toolCall.id || `tc-${Date.now()}-${Math.random()}`,
-                    name: toolCall.name,
-                    args: toolCall.args,
-                    status: "calling",
-                    timestamp: Date.now(),
-                  },
-                ]);
-              },
-              onDone: (data) => {
-                turnDoneData = data || {};
-                resolve();
-              },
-              onError: (err) => reject(err),
-              onThinking: (content) => {
-                streamedThinking += content;
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const lastMsg = updated[updated.length - 1];
-                  if (lastMsg?.role === "assistant") {
-                    lastMsg.thinking = streamedThinking;
-                  }
-                  return updated;
-                });
-              },
-            });
-          });
-
-          if (pendingToolCalls.length > 0) {
-            const results = await Promise.all(
-              pendingToolCalls.map(async (tc) => {
-                const customDef = customToolMap.get(tc.name);
-                if (customDef) {
-                  return {
-                    name: tc.name,
-                    id: tc.id,
-                    result: await SunService.executeCustomTool(
-                      customDef,
-                      tc.args,
-                    ),
-                  };
-                }
-                return {
-                  name: tc.name,
-                  id: tc.id,
-                  result: await SunService.executeTool(tc.name, tc.args),
-                };
-              }),
-            );
-
-            setToolActivity((prev) =>
-              prev.map((activity) => {
-                const result = results.find(
-                  (r) =>
-                    (r.id && r.id === activity.id) ||
-                    (!r.id &&
-                      r.name === activity.name &&
-                      activity.status === "calling"),
-                );
-                if (result) {
-                  return {
-                    ...activity,
-                    status: result.result?.error ? "error" : "done",
-                    result: result.result,
-                  };
-                }
-                return activity;
-              }),
-            );
-
-            // Persist tool result messages to the conversation
-            const toolResultMessages = results.map((result) => ({
-              role: "tool",
-              name: result.name,
-              tool_call_id: result.id,
-              content: JSON.stringify(result.result),
-              timestamp: new Date().toISOString(),
-            }));
-            PrismService.appendMessages(currentId, toolResultMessages).catch(
-              (err) => console.error("Failed to append tool results:", err),
-            );
-
-            const assistantMsg = {
-              role: "assistant",
-              content: streamedText || "",
-              thinking: streamedThinking || undefined,
-              timestamp: new Date().toISOString(),
-              provider: turnDoneData.provider || settings.provider,
-              model: turnDoneData.model || settings.model,
-              usage: turnDoneData.usage,
-              totalTime: turnDoneData.totalTime,
-              tokensPerSec: turnDoneData.tokensPerSec,
-              estimatedCost: turnDoneData.estimatedCost,
-              toolCalls: pendingToolCalls.map((tc) => {
-                const match = results.find((r) => r.id === tc.id);
-                return {
-                  id: tc.id,
-                  name: tc.name,
-                  args: tc.args,
-                  thoughtSignature: tc.thoughtSignature || undefined,
-                  result: match ? match.result : null,
-                };
-              }),
-            };
-            currentMessages.push(assistantMsg);
-
-            for (const result of results) {
-              currentMessages.push({
-                role: "tool",
-                name: result.name,
-                tool_call_id: result.id,
-                content: JSON.stringify(truncateToolResult(result.result)),
-              });
-            }
-
-            hasCalledTools = true;
-
-            streamedText = "";
-            setMessages((prev) => {
-              const updated = [...prev];
-              const lastIdx = updated.findLastIndex(
-                (m) => m.role === "assistant",
-              );
-              if (lastIdx >= 0) {
-                updated[lastIdx] = assistantMsg;
-              } else {
-                updated.push(assistantMsg);
-              }
-              return updated;
-            });
-            continue;
-          }
-
-          // No tool calls — terminal state (text response or empty)
-          if (streamedText) {
-            currentMessages.push({
-              role: "assistant",
-              content: streamedText,
-              thinking: streamedThinking || undefined,
-              timestamp: new Date().toISOString(),
-              provider: turnDoneData.provider || settings.provider,
-              model: turnDoneData.model || settings.model,
-              usage: turnDoneData.usage,
-              totalTime: turnDoneData.totalTime,
-              tokensPerSec: turnDoneData.tokensPerSec,
-              estimatedCost: turnDoneData.estimatedCost,
-            });
-          } else if (iterations > 1) {
-            console.warn(
-              "[FC] Model returned empty response after tool results",
-            );
-          }
-          break;
-        }
-
-        setMessages(
-          currentMessages.filter(
+        // Insert placeholder so the blinking cursor shows immediately
+        setMessages((prev) => {
+          const cleaned = prev.filter(
             (m) =>
-              m.role !== "tool" &&
-              m.role !== "system" &&
               !(
                 m.role === "assistant" &&
                 !m.content?.trim() &&
                 !m.toolCalls?.length
               ),
-          ),
-        );
+          );
+          return [
+            ...cleaned,
+            {
+              role: "assistant",
+              content: "",
+              timestamp: new Date().toISOString(),
+              provider: settings.provider,
+              model: settings.model,
+            },
+          ];
+        });
+
+        await new Promise((resolve, reject) => {
+          const payload = {
+            provider: settings.provider,
+            model: settings.model,
+            messages: [
+              { role: "system", content: systemPromptText },
+              ...expandMessagesForFC(currentMessages),
+            ],
+            functionCallingEnabled: true,
+            enabledTools: allToolSchemas.map(t => t.name),
+            maxTokens: settings.maxTokens,
+            temperature: settings.temperature,
+            conversationId: currentId,
+            conversationMeta: {
+              title: _currentTitle,
+              systemPrompt: systemPromptText,
+            },
+          };
+
+          let streamedText = "";
+          let streamedThinking = "";
+
+          abortRef.current = PrismService.streamText(payload, {
+            onChunk: (chunk) => {
+              streamedText += chunk;
+              setMessages((prev) => {
+                const updated = [...prev];
+                const lastMsg = updated[updated.length - 1];
+                if (
+                  lastMsg?.role === "assistant" &&
+                  !lastMsg.toolCalls?.length
+                ) {
+                  lastMsg.content = streamedText;
+                } else {
+                  updated.push({ role: "assistant", content: streamedText });
+                }
+                return updated;
+              });
+            },
+            onThinking: (content) => {
+              streamedThinking += content;
+              setMessages((prev) => {
+                const updated = [...prev];
+                const lastMsg = updated[updated.length - 1];
+                if (lastMsg?.role === "assistant") {
+                  lastMsg.thinking = streamedThinking;
+                }
+                return updated;
+              });
+            },
+            onToolExecution: (data) => {
+              const tc = data.tool;
+              setToolActivity((prev) => {
+                let updated = [];
+                if (data.status === "calling") {
+                  updated = [
+                    ...prev,
+                    {
+                      id: tc.id || `tc-${Date.now()}-${Math.random()}`,
+                      name: tc.name,
+                      args: tc.args,
+                      status: "calling",
+                      timestamp: Date.now(),
+                    },
+                  ];
+                } else {
+                  updated = prev.map((activity) => {
+                    if (
+                      (tc.id && activity.id === tc.id) ||
+                      (!tc.id && activity.name === tc.name && activity.status === "calling")
+                    ) {
+                      return { ...activity, status: data.status, result: tc.result };
+                    }
+                    return activity;
+                  });
+                }
+                setMessages((msgPrev) => {
+                  const arr = [...msgPrev];
+                  const last = arr[arr.length - 1];
+                  if (last?.role === "assistant") {
+                    arr[arr.length - 1] = { ...last, toolCalls: updated };
+                  }
+                  return arr;
+                });
+                return updated;
+              });
+            },
+            onDone: () => resolve(),
+            onError: (err) => reject(err),
+          });
+        });
+        // We rely on the server side to append final tool result messages via patches.
+        // Once done, we reload conversations. No need to mutate state heavily here, SSE handles chunks.
+        loadConversations();
         loadConversations();
       } catch (error) {
         console.error(error);
@@ -1444,256 +1305,121 @@ export default function HomePage({ initialConversationId = null }) {
 
         const systemPromptText = settings.systemPrompt || FC_SYSTEM_PROMPT;
         const currentMessages = [...newMessages];
-        let iterations = 0;
-        // For local providers: after the first tool round, omit tools to force text
-        let hasCalledTools = false;
 
-        while (iterations < MAX_TOOL_ITERATIONS) {
-          iterations++;
-          let streamedText = "";
-          let streamedThinking = "";
-          let turnDoneData = {};
-          const pendingToolCalls = [];
-
-          // Insert placeholder so the blinking cursor shows immediately
-          setMessages((prev) => {
-            const cleaned = prev.filter(
-              (m) =>
-                !(
-                  m.role === "assistant" &&
-                  !m.content?.trim() &&
-                  !m.toolCalls?.length
-                ),
-            );
-            return [
-              ...cleaned,
-              {
-                role: "assistant",
-                content: "",
-                timestamp: new Date().toISOString(),
-                provider: settings.provider,
-                model: settings.model,
-              },
-            ];
-          });
-
-          await new Promise((resolve, reject) => {
-            const payload = {
-              provider: settings.provider,
-              model: settings.model,
-              messages: [
-                { role: "system", content: systemPromptText },
-                ...expandMessagesForFC(currentMessages),
-              ],
-              // Local models (LM Studio, Ollama) should stop receiving tools
-              // after their first tool round to force a text response.
-              // Cloud providers handle multi-step tool calling natively.
-              ...(settings.provider === "lm-studio" ||
-              settings.provider === "ollama"
-                ? !hasCalledTools
-                  ? { tools: allToolSchemas }
-                  : {}
-                : { tools: allToolSchemas }),
-              maxTokens: settings.maxTokens,
-              temperature: settings.temperature,
-              conversationId: currentId,
-            };
-
-            if (iterations === 1) {
-              payload.conversationMeta = {
-                title: currentTitle,
-                systemPrompt: systemPromptText,
-              };
-            }
-
-            abortRef.current = PrismService.streamText(payload, {
-              onChunk: (chunk) => {
-                streamedText += chunk;
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const lastMsg = updated[updated.length - 1];
-                  if (
-                    lastMsg?.role === "assistant" &&
-                    !lastMsg.toolCalls?.length
-                  ) {
-                    lastMsg.content = streamedText;
-                  } else {
-                    updated.push({ role: "assistant", content: streamedText });
-                  }
-                  return updated;
-                });
-              },
-              onToolCall: (toolCall) => {
-                pendingToolCalls.push(toolCall);
-                setToolActivity((prev) => [
-                  ...prev,
-                  {
-                    id: toolCall.id || `tc-${Date.now()}-${Math.random()}`,
-                    name: toolCall.name,
-                    args: toolCall.args,
-                    status: "calling",
-                    timestamp: Date.now(),
-                  },
-                ]);
-              },
-              onDone: (data) => {
-                turnDoneData = data || {};
-                resolve();
-              },
-              onError: (err) => reject(err),
-              onThinking: (content) => {
-                streamedThinking += content;
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const lastMsg = updated[updated.length - 1];
-                  if (lastMsg?.role === "assistant") {
-                    lastMsg.thinking = streamedThinking;
-                  }
-                  return updated;
-                });
-              },
-            });
-          });
-
-          if (pendingToolCalls.length > 0) {
-            const results = await Promise.all(
-              pendingToolCalls.map(async (tc) => {
-                const customDef = customToolMap.get(tc.name);
-                if (customDef) {
-                  return {
-                    name: tc.name,
-                    id: tc.id,
-                    result: await SunService.executeCustomTool(
-                      customDef,
-                      tc.args,
-                    ),
-                  };
-                }
-                return {
-                  name: tc.name,
-                  id: tc.id,
-                  result: await SunService.executeTool(tc.name, tc.args),
-                };
-              }),
-            );
-
-            setToolActivity((prev) =>
-              prev.map((activity) => {
-                const result = results.find(
-                  (r) =>
-                    (r.id && r.id === activity.id) ||
-                    (!r.id &&
-                      r.name === activity.name &&
-                      activity.status === "calling"),
-                );
-                if (result) {
-                  return {
-                    ...activity,
-                    status: result.result?.error ? "error" : "done",
-                    result: result.result,
-                  };
-                }
-                return activity;
-              }),
-            );
-
-            // Persist tool result messages to the conversation
-            const toolResultMessages = results.map((result) => ({
-              role: "tool",
-              name: result.name,
-              tool_call_id: result.id,
-              content: JSON.stringify(result.result),
-              timestamp: new Date().toISOString(),
-            }));
-            PrismService.appendMessages(currentId, toolResultMessages).catch(
-              (err) => console.error("Failed to append tool results:", err),
-            );
-
-            const assistantMsg = {
-              role: "assistant",
-              content: streamedText || "",
-              thinking: streamedThinking || undefined,
-              timestamp: new Date().toISOString(),
-              provider: turnDoneData.provider || settings.provider,
-              model: turnDoneData.model || settings.model,
-              usage: turnDoneData.usage,
-              totalTime: turnDoneData.totalTime,
-              tokensPerSec: turnDoneData.tokensPerSec,
-              estimatedCost: turnDoneData.estimatedCost,
-              toolCalls: pendingToolCalls.map((tc) => {
-                const match = results.find((r) => r.id === tc.id);
-                return {
-                  id: tc.id,
-                  name: tc.name,
-                  args: tc.args,
-                  thoughtSignature: tc.thoughtSignature || undefined,
-                  result: match ? truncateToolResult(match.result) : null,
-                };
-              }),
-            };
-            currentMessages.push(assistantMsg);
-
-            for (const result of results) {
-              currentMessages.push({
-                role: "tool",
-                name: result.name,
-                tool_call_id: result.id,
-                content: JSON.stringify(truncateToolResult(result.result)),
-              });
-            }
-
-            hasCalledTools = true;
-
-            streamedText = "";
-            setMessages((prev) => {
-              const updated = [...prev];
-              const lastIdx = updated.findLastIndex(
-                (m) => m.role === "assistant",
-              );
-              if (lastIdx >= 0) {
-                updated[lastIdx] = assistantMsg;
-              } else {
-                updated.push(assistantMsg);
-              }
-              return updated;
-            });
-            continue;
-          }
-
-          // No tool calls — terminal state (text response or empty)
-          if (streamedText) {
-            currentMessages.push({
-              role: "assistant",
-              content: streamedText,
-              thinking: streamedThinking || undefined,
-              timestamp: new Date().toISOString(),
-              provider: turnDoneData.provider || settings.provider,
-              model: turnDoneData.model || settings.model,
-              usage: turnDoneData.usage,
-              totalTime: turnDoneData.totalTime,
-              tokensPerSec: turnDoneData.tokensPerSec,
-              estimatedCost: turnDoneData.estimatedCost,
-            });
-          } else if (iterations > 1) {
-            console.warn(
-              "[FC] Model returned empty response after tool results",
-            );
-          }
-          break;
-        }
-
-        setMessages(
-          currentMessages.filter(
+        // Insert placeholder so the blinking cursor shows immediately
+        setMessages((prev) => {
+          const cleaned = prev.filter(
             (m) =>
-              m.role !== "tool" &&
-              m.role !== "system" &&
               !(
                 m.role === "assistant" &&
                 !m.content?.trim() &&
                 !m.toolCalls?.length
               ),
-          ),
-        );
+          );
+          return [
+            ...cleaned,
+            {
+              role: "assistant",
+              content: "",
+              timestamp: new Date().toISOString(),
+              provider: settings.provider,
+              model: settings.model,
+            },
+          ];
+        });
+
+        await new Promise((resolve, reject) => {
+          const payload = {
+            provider: settings.provider,
+            model: settings.model,
+            messages: [
+              { role: "system", content: systemPromptText },
+              ...expandMessagesForFC(currentMessages),
+            ],
+            functionCallingEnabled: true,
+            enabledTools: allToolSchemas.map(t => t.name),
+            maxTokens: settings.maxTokens,
+            temperature: settings.temperature,
+            conversationId: currentId,
+            conversationMeta: {
+              title: currentTitle,
+              systemPrompt: systemPromptText,
+            },
+          };
+
+          let streamedText = "";
+          let streamedThinking = "";
+
+          abortRef.current = PrismService.streamText(payload, {
+            onChunk: (chunk) => {
+              streamedText += chunk;
+              setMessages((prev) => {
+                const updated = [...prev];
+                const lastMsg = updated[updated.length - 1];
+                if (
+                  lastMsg?.role === "assistant" &&
+                  !lastMsg.toolCalls?.length
+                ) {
+                  lastMsg.content = streamedText;
+                } else {
+                  updated.push({ role: "assistant", content: streamedText });
+                }
+                return updated;
+              });
+            },
+            onThinking: (content) => {
+              streamedThinking += content;
+              setMessages((prev) => {
+                const updated = [...prev];
+                const lastMsg = updated[updated.length - 1];
+                if (lastMsg?.role === "assistant") {
+                  lastMsg.thinking = streamedThinking;
+                }
+                return updated;
+              });
+            },
+            onToolExecution: (data) => {
+              const tc = data.tool;
+              setToolActivity((prev) => {
+                let updated = [];
+                if (data.status === "calling") {
+                  updated = [
+                    ...prev,
+                    {
+                      id: tc.id || `tc-${Date.now()}-${Math.random()}`,
+                      name: tc.name,
+                      args: tc.args,
+                      status: "calling",
+                      timestamp: Date.now(),
+                    },
+                  ];
+                } else {
+                  updated = prev.map((activity) => {
+                    if (
+                      (tc.id && activity.id === tc.id) ||
+                      (!tc.id && activity.name === tc.name && activity.status === "calling")
+                    ) {
+                      return { ...activity, status: data.status, result: tc.result };
+                    }
+                    return activity;
+                  });
+                }
+                setMessages((msgPrev) => {
+                  const arr = [...msgPrev];
+                  const last = arr[arr.length - 1];
+                  if (last?.role === "assistant") {
+                    arr[arr.length - 1] = { ...last, toolCalls: updated };
+                  }
+                  return arr;
+                });
+                return updated;
+              });
+            },
+            onDone: () => resolve(),
+            onError: (err) => reject(err),
+          });
+        });
+
         loadConversations();
       } catch (error) {
         console.error(error);
@@ -1906,13 +1632,56 @@ export default function HomePage({ initialConversationId = null }) {
               });
             }
           },
+          onToolExecution: (data) => {
+            const tc = data.tool;
+            setToolActivity((prev) => {
+              let updated = [];
+              if (data.status === "calling") {
+                updated = [
+                  ...prev,
+                  {
+                    id: tc.id || `tc-${Date.now()}-${Math.random()}`,
+                    name: tc.name,
+                    args: tc.args,
+                    status: "calling",
+                    timestamp: Date.now(),
+                  },
+                ];
+              } else {
+                updated = prev.map((activity) => {
+                  if (
+                    (tc.id && activity.id === tc.id) ||
+                    (!tc.id && activity.name === tc.name && activity.status === "calling")
+                  ) {
+                    return { ...activity, status: data.status, result: tc.result };
+                  }
+                  return activity;
+                });
+              }
+              setMessages((msgPrev) => {
+                const arr = [...msgPrev];
+                const last = arr[arr.length - 1];
+                if (last?.role === "assistant") {
+                  arr[arr.length - 1] = { ...last, toolCalls: updated };
+                }
+                return arr;
+              });
+              return updated;
+            });
+          },
           onDone: async (data) => {
+            // Include toolCalls from toolActivity if any tools were used
+            const finalizedToolCalls = Array.isArray(toolActivity) && toolActivity.length > 0 
+              ? [...toolActivity] 
+              : undefined;
+
             const finalMsg = {
               role: "assistant",
               content: streamedText,
               thinking: streamedThinking || undefined,
               ...(streamedImages.length > 0 ? { images: streamedImages } : {}),
               ...(data.audioRef ? { audio: data.audioRef } : {}),
+              ...(finalizedToolCalls ? { toolCalls: finalizedToolCalls } : {}),
               timestamp: placeholderMsg.timestamp,
               provider: settings.provider,
               model: settings.model,
@@ -1924,6 +1693,8 @@ export default function HomePage({ initialConversationId = null }) {
             const updatedMessages = [...newMessages, finalMsg];
             setMessages(updatedMessages);
 
+            // Clear tool activity for next turn
+            setToolActivity([]);
             loadConversations();
             resolve();
           },
@@ -1998,11 +1769,10 @@ export default function HomePage({ initialConversationId = null }) {
               <CustomToolsPanel
                 tools={customTools}
                 onToolsChange={loadCustomTools}
-                builtInTools={SunService.getToolSchemas()}
+                builtInTools={builtInTools}
                 disabledBuiltIns={disabledBuiltIns}
                 onToggleBuiltIn={handleToggleBuiltIn}
                 onToggleAllBuiltIn={handleToggleAllBuiltIn}
-                offlineTools={offlineTools}
               />
             )}
             {leftTab === "params" && (
@@ -2104,9 +1874,7 @@ export default function HomePage({ initialConversationId = null }) {
                   </span>
                 );
               })()}
-              {requestCount > 0 && (
-                <span>{requestCount} requests</span>
-              )}
+              {requestCount > 0 && <span>{requestCount} requests</span>}
               {uniqueModels.length === 1 && <span>{uniqueModels[0]}</span>}
               {uniqueModels.length > 1 && (
                 <span className={styles.modelDropdownWrapper}>
@@ -2217,7 +1985,6 @@ export default function HomePage({ initialConversationId = null }) {
           isTranscriptionModel={isTranscriptionModel}
           isTTSModel={isTTSModel}
           customTools={customTools}
-          offlineTools={offlineTools}
           disabledBuiltIns={disabledBuiltIns}
           onToggleBuiltIn={handleToggleBuiltIn}
           onToggleCustomTool={handleToggleCustomTool}

@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Send, Square, Terminal, Paperclip, X, Zap } from "lucide-react";
 import PrismService from "../services/PrismService.js";
-import SunService from "../services/SunService.js";
 import ThreePanelLayout from "./ThreePanelLayout.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
 import HistoryPanel from "./HistoryPanel.js";
@@ -16,12 +15,11 @@ import EmptyStateComponent from "./EmptyStateComponent.js";
 import ToolActivityPanelComponent from "./ToolActivityPanelComponent.js";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import {
-  truncateToolResult,
   expandMessagesForFC,
   sanitizeToolName,
 } from "../utils/FunctionCallingUtilities.js";
 import { buildFCSystemPrompt } from "../utils/utilities.js";
-import { MAX_TOOL_ITERATIONS, PROJECT_CONSOLE } from "../constants.js";
+import { PROJECT_CONSOLE } from "../constants.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./ConsoleComponent.module.css";
 import ChatInputButton from "./ChatInputButton.js";
@@ -43,11 +41,8 @@ export default function ConsoleComponent() {
   const [title, setTitle] = useState("Console");
   const [leftTab, setLeftTab] = useState("settings"); // "settings" | "tools"
   const [customTools, setCustomTools] = useState([]);
-  const [disabledBuiltIns, setDisabledBuiltIns] = useState(new Set());
-  const [offlineTools, setOfflineTools] = useState(
-    () => new Set(SunService.getToolSchemas().map((t) => t.name)),
-  );
-
+  const [builtInTools, setBuiltInTools] = useState([]);
+  const [disabledBuiltIns, setDisabledBuiltIns] = useState(() => new Set());
   const [settings, setSettings] = useState({
     provider: "google",
     model: "gemini-3-flash-preview",
@@ -181,18 +176,16 @@ export default function ConsoleComponent() {
     loadCustomTools();
   }, [loadCustomTools]);
 
-  // Check API health on mount
+  // Fetch built-in tools on mount
   useEffect(() => {
-    SunService.checkApiHealth()
-      .then(({ offline }) => setOfflineTools(offline))
+    PrismService.getBuiltInToolSchemas()
+      .then(setBuiltInTools)
       .catch(console.error);
   }, []);
 
   // Merge enabled built-in + enabled custom tool schemas
   const allToolSchemas = useMemo(() => {
-    const builtIn = SunService.getToolSchemas().filter(
-      (t) => !disabledBuiltIns.has(t.name) && !offlineTools.has(t.name),
-    );
+    const builtIn = builtInTools.filter((t) => !disabledBuiltIns.has(t.name));
 
     const custom = customTools
       .filter((t) => t.enabled)
@@ -217,25 +210,16 @@ export default function ConsoleComponent() {
         },
       }));
     return [...builtIn, ...custom];
-  }, [customTools, disabledBuiltIns, offlineTools]);
-
-  // Build a lookup for custom tools by sanitized name for execution
-  const customToolMap = useMemo(() => {
-    const map = new Map();
-    for (const t of customTools) {
-      if (t.enabled) map.set(sanitizeToolName(t.name), t);
-    }
-    return map;
-  }, [customTools]);
+  }, [customTools, builtInTools, disabledBuiltIns]);
 
   // Schema lookup for ToolActivityPanel data source badges
   const toolSchemaMap = useMemo(() => {
     const map = new Map();
-    for (const t of SunService.getToolSchemas()) {
+    for (const t of builtInTools) {
       map.set(t.name, t);
     }
     return map;
-  }, []);
+  }, [builtInTools]);
 
   // Pick 5 random prompt suggestions — re-shuffles on new chat (client-only to avoid hydration mismatch)
   const [randomPrompts, setRandomPrompts] = useState([]);
@@ -339,192 +323,109 @@ export default function ConsoleComponent() {
   const runOrchestrationLoop = useCallback(
     async (conversationMessages, resolvedTitle) => {
       const currentMessages = [...conversationMessages];
-      let iterations = 0;
-      // For local providers: after the first tool round, omit tools to force text
-      let hasCalledTools = false;
 
-      while (iterations < MAX_TOOL_ITERATIONS) {
-        iterations++;
+      // Clean up any stale empty assistant placeholders
+      setMessages((prev) =>
+        prev.filter((m) => !(m.role === "assistant" && !m.content?.trim())),
+      );
+
+      await new Promise((resolve, reject) => {
+        const payload = {
+          provider: settings.provider,
+          model: settings.model,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            ...expandMessagesForFC(currentMessages, { filterDeleted: false }),
+          ],
+          functionCallingEnabled: true,
+          enabledTools: allToolSchemas.map(t => t.name),
+          maxTokens: settings.maxTokens,
+          conversationId,
+          conversationMeta: {
+            title: resolvedTitle,
+            systemPrompt: SYSTEM_PROMPT,
+          },
+        };
+
         let streamedText = "";
         let streamedThinking = "";
-        const pendingToolCalls = [];
 
-        // Clean up any stale empty assistant placeholders
-        setMessages((prev) =>
-          prev.filter((m) => !(m.role === "assistant" && !m.content?.trim())),
-        );
-
-        await new Promise((resolve, reject) => {
-          const payload = {
-            provider: settings.provider,
-            model: settings.model,
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              ...expandMessagesForFC(currentMessages, { filterDeleted: false }),
-            ],
-            // Local models (LM Studio, Ollama) should stop receiving tools
-            // after their first tool round to force a text response.
-            // Cloud providers handle multi-step tool calling natively.
-            ...(settings.provider === "lm-studio" ||
-            settings.provider === "ollama"
-              ? !hasCalledTools
-                ? { tools: allToolSchemas }
-                : {}
-              : { tools: allToolSchemas }),
-            maxTokens: settings.maxTokens,
-            conversationId,
-          };
-
-          // Only send meta on the first iteration
-          // (subsequent iterations are tool-result follow-ups)
-          if (iterations === 1) {
-            payload.conversationMeta = {
-              title: resolvedTitle,
-              systemPrompt: SYSTEM_PROMPT,
-            };
-          }
-
-          abortRef.current = PrismService.streamText(payload, {
-            onChunk: (content) => {
-              streamedText += content;
-              setMessages((prev) => {
-                const updated = [...prev];
-                const lastMsg = updated[updated.length - 1];
-                if (lastMsg?.role === "assistant") {
-                  lastMsg.content = streamedText;
-                } else {
-                  updated.push({ role: "assistant", content: streamedText });
-                }
-                return updated;
-              });
-            },
-            onToolCall: (toolCall) => {
-              pendingToolCalls.push(toolCall);
-              setToolActivity((prev) => [
-                ...prev,
-                {
-                  id: toolCall.id || `tc-${Date.now()}-${Math.random()}`,
-                  name: toolCall.name,
-                  args: toolCall.args,
-                  status: "calling",
-                  timestamp: Date.now(),
-                },
-              ]);
-            },
-            onDone: () => resolve(),
-            onError: (err) => reject(err),
-            onThinking: (content) => {
-              streamedThinking += content;
-              setMessages((prev) => {
-                const updated = [...prev];
-                const lastMsg = updated[updated.length - 1];
-                if (lastMsg?.role === "assistant") {
-                  lastMsg.thinking = streamedThinking;
-                }
-                return updated;
-              });
-            },
-          });
-        });
-
-        if (pendingToolCalls.length > 0) {
-          const results = await Promise.all(
-            pendingToolCalls.map(async (tc) => {
-              const customDef = customToolMap.get(tc.name);
-              if (customDef) {
-                return {
-                  name: tc.name,
-                  id: tc.id,
-                  result: await SunService.executeCustomTool(
-                    customDef,
-                    tc.args,
-                  ),
-                };
+        abortRef.current = PrismService.streamText(payload, {
+          onChunk: (content) => {
+            streamedText += content;
+            setMessages((prev) => {
+              const updated = [...prev];
+              const lastMsg = updated[updated.length - 1];
+              if (lastMsg?.role === "assistant") {
+                lastMsg.content = streamedText;
+              } else {
+                updated.push({ role: "assistant", content: streamedText });
               }
-              return {
-                name: tc.name,
-                id: tc.id,
-                result: await SunService.executeTool(tc.name, tc.args),
-              };
-            }),
-          );
-
-          setToolActivity((prev) =>
-            prev.map((activity) => {
-              const result = results.find(
-                (r) =>
-                  (r.id && r.id === activity.id) ||
-                  (!r.id &&
-                    r.name === activity.name &&
-                    activity.status === "calling"),
-              );
-              if (result) {
-                return {
-                  ...activity,
-                  status: result.result?.error ? "error" : "done",
-                  result: result.result,
-                };
-              }
-              return activity;
-            }),
-          );
-
-          // Persist tool result messages to the conversation
-          const toolResultMessages = results.map((result) => ({
-            role: "tool",
-            name: result.name,
-            tool_call_id: result.id,
-            content: JSON.stringify(result.result),
-            timestamp: new Date().toISOString(),
-          }));
-          PrismService.appendMessages(
-            conversationId,
-            toolResultMessages,
-            PROJECT_CONSOLE,
-          ).catch((err) =>
-            console.error("Failed to append tool results:", err),
-          );
-
-          const assistantMsg = {
-            role: "assistant",
-            content: streamedText || "",
-            toolCalls: pendingToolCalls.map((tc) => {
-              const match = results.find((r) => r.id === tc.id);
-              return {
-                id: tc.id || null,
-                name: tc.name,
-                args: tc.args,
-                thoughtSignature: tc.thoughtSignature || undefined,
-                result: match ? match.result : null,
-              };
-            }),
-          };
-          currentMessages.push(assistantMsg);
-
-          for (const result of results) {
-            currentMessages.push({
-              role: "tool",
-              name: result.name,
-              content: JSON.stringify(truncateToolResult(result.result)),
+              return updated;
             });
-          }
+          },
+          onThinking: (content) => {
+            streamedThinking += content;
+            setMessages((prev) => {
+              const updated = [...prev];
+              const lastMsg = updated[updated.length - 1];
+              if (lastMsg?.role === "assistant") {
+                lastMsg.thinking = streamedThinking;
+              } else {
+                updated.push({
+                  role: "assistant",
+                  content: "",
+                  thinking: streamedThinking,
+                });
+              }
+              return updated;
+            });
+          },
+          onToolExecution: (data) => {
+            const tc = data.tool;
+            setToolActivity((prev) => {
+              let updated = [];
+              if (data.status === "calling") {
+                updated = [
+                  ...prev,
+                  {
+                    id: tc.id || `tc-${Date.now()}-${Math.random()}`,
+                    name: tc.name,
+                    args: tc.args,
+                    status: "calling",
+                    timestamp: Date.now(),
+                  },
+                ];
+              } else {
+                updated = prev.map((activity) => {
+                  if (
+                    (tc.id && activity.id === tc.id) ||
+                    (!tc.id && activity.name === tc.name && activity.status === "calling")
+                  ) {
+                    return { ...activity, status: data.status, result: tc.result };
+                  }
+                  return activity;
+                });
+              }
+              setMessages((msgPrev) => {
+                const arr = [...msgPrev];
+                const last = arr[arr.length - 1];
+                if (last?.role === "assistant") {
+                  arr[arr.length - 1] = { ...last, toolCalls: updated };
+                }
+                return arr;
+              });
+              return updated;
+            });
+          },
+          onDone: () => resolve(),
+          onError: (err) => reject(err),
+        });
+      });
 
-          hasCalledTools = true;
-
-          streamedText = "";
-          setMessages((prev) =>
-            prev.filter((m) => !(m.role === "assistant" && !m.content?.trim())),
-          );
-          continue;
-        }
-
-        if (streamedText) {
-          currentMessages.push({ role: "assistant", content: streamedText });
-          break;
-        }
-      }
-
-      return currentMessages;
+      // No need to return mutated messages, the backend completely persists and finalizes them.
+      // We will reload the conversation if needed, or simply let the SSE state updates handle the UI.
+      return [];
     },
     [
       settings.provider,
@@ -532,7 +433,6 @@ export default function ConsoleComponent() {
       settings.maxTokens,
       conversationId,
       allToolSchemas,
-      customToolMap,
     ],
   );
 
@@ -686,9 +586,8 @@ export default function ConsoleComponent() {
     (enableAll) => {
       setDisabledBuiltIns((prev) => {
         const next = new Set(prev);
-        const allSchemas = SunService.getToolSchemas();
+        const allSchemas = builtInTools;
         for (const tool of allSchemas) {
-          if (offlineTools.has(tool.name)) continue;
           if (enableAll) {
             next.delete(tool.name);
           } else {
@@ -698,7 +597,7 @@ export default function ConsoleComponent() {
         return next;
       });
     },
-    [offlineTools],
+    [builtInTools],
   );
 
   const leftPanel = (
@@ -729,11 +628,10 @@ export default function ConsoleComponent() {
         <CustomToolsPanel
           tools={customTools}
           onToolsChange={loadCustomTools}
-          builtInTools={SunService.getToolSchemas()}
+          builtInTools={builtInTools}
           disabledBuiltIns={disabledBuiltIns}
           onToggleBuiltIn={handleToggleBuiltIn}
           onToggleAllBuiltIn={handleToggleAllBuiltIn}
-          offlineTools={offlineTools}
         />
       )}
     </>

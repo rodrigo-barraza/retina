@@ -68,6 +68,14 @@ export default class PrismService {
     return PrismService._request("/config", { method: "GET" });
   }
 
+  /**
+   * Fetch all built-in tool schemas from Prism.
+   * @returns {Promise<Array>}
+   */
+  static async getBuiltInToolSchemas() {
+    return PrismService._request("/config/tools", { method: "GET" });
+  }
+
   // ---------------------------------------------------------------------------
   // Conversations
   // ---------------------------------------------------------------------------
@@ -292,6 +300,7 @@ export default class PrismService {
       onCodeExecutionResult,
       onWebSearchResult,
       onToolCall,
+      onToolExecution,
       onStatus,
       onDone,
       onError,
@@ -359,6 +368,8 @@ export default class PrismService {
                   args: data.args,
                   thoughtSignature: data.thoughtSignature,
                 });
+              } else if (data.type === "tool_execution" && onToolExecution) {
+                onToolExecution(data);
               } else if (data.type === "status" && onStatus) {
                 onStatus(data.message);
               } else if (data.type === "done" && onDone) {

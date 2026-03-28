@@ -63,17 +63,17 @@ const DATA_SOURCE_LABELS = {
 
 const DOMAIN_ICONS = {
   "Weather & Environment": CloudSun,
-  "Events": CalendarDays,
+  Events: CalendarDays,
   "Markets & Commodities": BarChart3,
-  "Trends": TrendingUp,
-  "Products": ShoppingCart,
-  "Finance": BarChart3,
-  "Knowledge": BookOpen,
+  Trends: TrendingUp,
+  Products: ShoppingCart,
+  Finance: BarChart3,
+  Knowledge: BookOpen,
   "Movies & TV": Film,
-  "Health": Heart,
-  "Transit": Bus,
-  "Utilities": Wrench,
-  "Other": Layers,
+  Health: Heart,
+  Transit: Bus,
+  Utilities: Wrench,
+  Other: Layers,
 };
 
 const DOMAIN_ORDER = [
@@ -348,9 +348,7 @@ export default function CustomToolsPanel({
 
   const toggleDomainTools = useCallback(
     (domainTools) => {
-      const onlineTools = domainTools.filter(
-        (t) => !offlineTools.has(t.name),
-      );
+      const onlineTools = domainTools.filter((t) => !offlineTools.has(t.name));
       if (onlineTools.length === 0) return;
       const allEnabled = onlineTools.every(
         (t) => !disabledBuiltIns.has(t.name),
@@ -901,9 +899,7 @@ export default function CustomToolsPanel({
                                 Built-in
                               </span>
                             )}
-                            {paramCount > 0 && (
-                              <span>{paramCount} params</span>
-                            )}
+                            {paramCount > 0 && <span>{paramCount} params</span>}
                           </span>
                         </div>
                         <div className={styles.toolCardActions}>

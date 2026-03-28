@@ -3,7 +3,6 @@
  * and calling PrismService for each model, passing outputs forward via edges.
  */
 import PrismService from "./PrismService";
-import SunService from "./SunService";
 
 /**
  * Determine which Prism endpoint to use based on the model's modalities
@@ -61,11 +60,7 @@ async function resolveToDataUrl(ref) {
  * @param {Array<{type: string, data: string}>} inputData - Collected inputs from edges
  * @returns {Promise<Object>} - { [modality]: data }
  */
-async function executeModelNode(
-  node,
-  inputData,
-  { onNodeContentUpdate, toolSchemas, customToolMap } = {},
-) {
+async function executeModelNode(node, inputData, { onNodeContentUpdate, toolSchemas } = {}) {
   const endpoint = resolveEndpoint(node, inputData);
   const outputs = {};
 
@@ -224,66 +219,11 @@ async function executeModelNode(
       messages: finalMessages,
       conversationId,
       conversationMeta,
-      ...(toolSchemas && toolSchemas.length > 0 ? { tools: toolSchemas } : {}),
+      functionCallingEnabled: toolSchemas !== null,
+      enabledTools: toolSchemas ? toolSchemas.map(t => t.name || t.function?.name) : [],
     });
 
-    // ── Tool-call orchestration loop ──
-    // If the model returns tool_calls, execute them and re-call the model
-    // up to MAX_TOOL_ITERATIONS times until a final text response is produced.
-    const MAX_TOOL_ITERATIONS = 5;
-    let currentResult = result;
-    const loopMessages = [...finalMessages];
-
-    for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
-      const toolCalls = currentResult.tool_calls || currentResult.toolCalls;
-      if (!toolCalls || toolCalls.length === 0) break;
-
-      // Append the assistant message with tool_calls to the conversation
-      loopMessages.push({
-        role: "assistant",
-        content: currentResult.text || currentResult.content || "",
-        tool_calls: toolCalls,
-      });
-
-      // Execute tool calls
-      for (const tc of toolCalls) {
-        const toolName = tc.function?.name || tc.name;
-        const toolArgs = tc.function?.arguments || tc.arguments || {};
-        const parsedArgs =
-          typeof toolArgs === "string" ? JSON.parse(toolArgs) : toolArgs;
-
-        let toolResult;
-        // Check custom tools first, then built-in
-        const customDef = customToolMap?.get(toolName);
-        if (customDef) {
-          toolResult = await SunService.executeCustomTool(
-            customDef,
-            parsedArgs,
-          );
-        } else {
-          toolResult = await SunService.executeTool(toolName, parsedArgs);
-        }
-
-        loopMessages.push({
-          role: "tool",
-          content: JSON.stringify(toolResult),
-          tool_call_id: tc.id,
-          name: toolName,
-        });
-      }
-
-      // Re-call the model with tool results
-      currentResult = await PrismService.generateText({
-        provider: node.provider,
-        model: node.modelName,
-        messages: loopMessages,
-        conversationId,
-        conversationMeta,
-        ...(toolSchemas && toolSchemas.length > 0
-          ? { tools: toolSchemas }
-          : {}),
-      });
-    }
+    const currentResult = result;
 
     // Propagate minio refs returned by Prism back to input node content
     if (currentResult.messages && onNodeContentUpdate) {

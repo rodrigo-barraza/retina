@@ -91,10 +91,7 @@ export default function ToolActivityPanelComponent({
                   {renderToolName(activity.name)}
                 </span>
                 {dsType && (
-                  <span
-                    className={styles.toolTypeBadge}
-                    data-type={dsType}
-                  >
+                  <span className={styles.toolTypeBadge} data-type={dsType}>
                     {(() => {
                       const Icon = DATA_SOURCE_ICONS[dsType];
                       return Icon ? <Icon size={8} /> : null;

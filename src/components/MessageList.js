@@ -152,7 +152,7 @@ function ToolCallResultBlock({ result }) {
   }
 
   const mapEmbedUrl = parsed?.mapEmbedUrl || null;
-  const staticMapUrl = !mapEmbedUrl ? (parsed?.staticMapUrl || null) : null;
+  const staticMapUrl = !mapEmbedUrl ? parsed?.staticMapUrl || null : null;
 
   const formatted =
     typeof result === "string"
@@ -795,8 +795,7 @@ export default function MessageList({
                               const cacheWrite =
                                 msg.usage.cacheCreationInputTokens || 0;
                               const cached = cacheRead + cacheWrite;
-                              const totalIn =
-                                msg.usage.inputTokens + cached;
+                              const totalIn = msg.usage.inputTokens + cached;
                               let inLabel;
                               if (cached) {
                                 const parts = [];
