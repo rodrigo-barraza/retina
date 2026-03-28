@@ -205,17 +205,15 @@ export default function ParametersPanelComponent({
               </div>
             )}
 
-            {settings.provider === "google" && (
+            {settings.provider === "google" && selectedModelDef?.thinkingLevels && (
               <div className={styles.formGroup}>
                 <label>Thinking Level</label>
                 <SelectDropdown
                   value={settings.thinkingLevel || "high"}
-                  options={[
-                    { value: "minimal", label: "Minimal" },
-                    { value: "low", label: "Low" },
-                    { value: "medium", label: "Medium" },
-                    { value: "high", label: "High" },
-                  ]}
+                  options={selectedModelDef.thinkingLevels.map((level) => ({
+                    value: level,
+                    label: level.charAt(0).toUpperCase() + level.slice(1),
+                  }))}
                   onChange={handleThinkingLevelChange}
                 />
               </div>

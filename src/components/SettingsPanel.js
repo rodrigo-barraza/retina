@@ -119,10 +119,22 @@ export default function SettingsPanel({
     switch (tool) {
       case "Thinking": {
         const isLmStudio = settings.provider === "lm-studio";
+        const isLive = selectedModelDef?.liveAPI;
+        const canDisable = !selectedModelDef?.thinkingLevels ||
+          selectedModelDef.thinkingLevels.includes("minimal");
+        const alwaysOn = !canDisable && settings.provider === "google";
         return {
-          checked: isLmStudio || (settings.thinkingEnabled || false),
-          onChange: handleThinkingEnabledChange,
-          disabled: isLmStudio,
+          checked: isLive
+            ? (settings.liveThinkingLevel || "none") !== "none"
+            : isLmStudio || alwaysOn || (settings.thinkingEnabled || false),
+          onChange: isLive
+            ? (val) => onChange({
+                liveThinkingLevel: val ? "low" : "none",
+              })
+            : alwaysOn
+              ? () => {} // can't disable
+              : handleThinkingEnabledChange,
+          disabled: isLmStudio || alwaysOn,
         };
       }
       case "Web Search":
@@ -499,6 +511,38 @@ export default function SettingsPanel({
             ) : null;
           })()}
 
+        {/* Google models (non-live): Thinking Level dropdown — always visible */}
+        {!selectedModelDef?.liveAPI &&
+          settings.provider === "google" &&
+          selectedModelDef?.thinkingLevels &&
+          !readOnly && (() => {
+          const canDisable = selectedModelDef.thinkingLevels.includes("minimal");
+          const options = [
+            ...(canDisable ? [{ value: "none", label: "No Thinking" }] : []),
+            ...selectedModelDef.thinkingLevels.map((level) => ({
+              value: level,
+              label: level.charAt(0).toUpperCase() + level.slice(1),
+            })),
+          ];
+          const currentValue = settings.thinkingEnabled === false && canDisable
+            ? "none"
+            : settings.thinkingLevel || "high";
+          return (
+            <div className={styles.formGroup}>
+              <label>Thinking Level</label>
+              <SelectDropdown
+                value={currentValue}
+                options={options}
+                onChange={(val) => onChange({
+                  thinkingLevel: val === "none" ? undefined : val,
+                  thinkingEnabled: val !== "none",
+                })}
+                icon={<Brain size={18} />}
+              />
+            </div>
+          );
+        })()}
+
         {/* Live API model: Voice + Thinking Level dropdowns */}
         {selectedModelDef?.liveAPI && !readOnly &&
           (() => {
@@ -524,22 +568,30 @@ export default function SettingsPanel({
             ) : null;
           })()}
 
-        {selectedModelDef?.liveAPI && !readOnly && (
-          <div className={styles.formGroup}>
-            <label>Thinking Level</label>
-            <SelectDropdown
-              value={settings.liveThinkingLevel || "none"}
-              options={[
-                { value: "none", label: "No Thinking" },
-                { value: "low", label: "Low" },
-                { value: "medium", label: "Medium" },
-                { value: "high", label: "High" },
-              ]}
-              onChange={(val) => onChange({ liveThinkingLevel: val })}
-              icon={<Brain size={18} />}
-            />
-          </div>
-        )}
+        {selectedModelDef?.liveAPI && !readOnly && selectedModelDef?.thinkingLevels && (() => {
+          const canDisable = selectedModelDef.thinkingLevels.includes("minimal");
+          const options = [
+            ...(canDisable ? [{ value: "none", label: "No Thinking" }] : []),
+            ...selectedModelDef.thinkingLevels.map((level) => ({
+              value: level,
+              label: level.charAt(0).toUpperCase() + level.slice(1),
+            })),
+          ];
+          return (
+            <div className={styles.formGroup}>
+              <label>Thinking Level</label>
+              <SelectDropdown
+                value={settings.liveThinkingLevel || (canDisable ? "none" : selectedModelDef.thinkingLevels[0])}
+                options={options}
+                onChange={(val) => onChange({
+                  liveThinkingLevel: val,
+                  thinkingEnabled: val !== "none",
+                })}
+                icon={<Brain size={18} />}
+              />
+            </div>
+          );
+        })()}
 
         {/* readOnly: show live voice if saved */}
         {readOnly && selectedModelDef?.liveAPI && settings.liveVoice && (
