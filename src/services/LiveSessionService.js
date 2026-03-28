@@ -23,7 +23,8 @@ const LIVE_WS_URL = `${PRISM_WS_URL}/ws/live?project=retina&username=default`;
 export default class LiveSessionService {
   constructor() {
     this.ws = null;
-    this.audioContext = null;
+    this.audioContext = null;      // Capture context (16kHz)
+    this.playbackContext = null;   // Playback context (24kHz)
     this.mediaStream = null;
     this.audioWorkletNode = null;
     this.isRecording = false;
@@ -153,6 +154,14 @@ export default class LiveSessionService {
       this.ws.close();
       this.ws = null;
     }
+    if (this.audioContext) {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
+    if (this.playbackContext) {
+      this.playbackContext.close();
+      this.playbackContext = null;
+    }
     this.connected = false;
   }
 
@@ -239,27 +248,29 @@ export default class LiveSessionService {
     }
     if (this.audioWorkletNode) {
       this.audioWorkletNode.disconnect();
+      this.audioWorkletNode.port.close();
       this.audioWorkletNode = null;
     }
   }
 
   // ── Audio Playback ─────────────────────────────────────────
 
-  async _initPlaybackContext() {
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      await this.audioContext.audioWorklet.addModule("/pcm-processor.js");
+  // Lazily create a dedicated 24kHz playback context.
+  // Separate from the 16kHz capture context to avoid resampling
+  // the model's 24kHz output audio through a 16kHz context.
+  _ensurePlaybackContext() {
+    if (!this.playbackContext) {
+      this.playbackContext = new (window.AudioContext || window.webkitAudioContext)({
+        sampleRate: 24000,
+      });
     }
-    if (this.audioContext.state === "suspended") {
-      await this.audioContext.resume();
+    if (this.playbackContext.state === "suspended") {
+      this.playbackContext.resume();
     }
   }
 
   _playAudioChunk(base64Data) {
-    if (!this.audioContext) return;
-    if (this.audioContext.state === "suspended") {
-      this.audioContext.resume();
-    }
+    this._ensurePlaybackContext();
 
     try {
       // Decode base64 → ArrayBuffer → Int16 → Float32
@@ -275,15 +286,15 @@ export default class LiveSessionService {
         float32[i] = pcmData[i] / 32768.0;
       }
 
-      // Live API outputs at 24kHz
-      const buffer = this.audioContext.createBuffer(1, float32.length, 24000);
+      // Playback context runs at 24kHz — matches Gemini's output rate natively
+      const buffer = this.playbackContext.createBuffer(1, float32.length, 24000);
       buffer.getChannelData(0).set(float32);
 
-      const source = this.audioContext.createBufferSource();
+      const source = this.playbackContext.createBufferSource();
       source.buffer = buffer;
-      source.connect(this.audioContext.destination);
+      source.connect(this.playbackContext.destination);
 
-      const now = this.audioContext.currentTime;
+      const now = this.playbackContext.currentTime;
       this.nextPlayTime = Math.max(now, this.nextPlayTime);
       source.start(this.nextPlayTime);
       this.nextPlayTime += buffer.duration;
@@ -303,8 +314,8 @@ export default class LiveSessionService {
       try { s.stop(); } catch { /* already stopped */ }
     });
     this.scheduledSources = [];
-    if (this.audioContext) {
-      this.nextPlayTime = this.audioContext.currentTime;
+    if (this.playbackContext) {
+      this.nextPlayTime = this.playbackContext.currentTime;
     }
   }
 
