@@ -36,6 +36,9 @@ yarn-error.log*
 # secrets (real values — never commit)
 secrets.js
 
+# editor settings (local)
+.vscode/settings.json
+
 # vercel
 .vercel
 
