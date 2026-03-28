@@ -279,6 +279,25 @@ export default function ConversationsPage({ initialId = null }) {
     [selectedConv],
   );
 
+  const { totalTokens, requestCount } = useMemo(() => {
+    let input = 0;
+    let output = 0;
+    let requests = 0;
+    for (const m of selectedConv?.messages || []) {
+      if (m.role !== "assistant" || !m.usage) continue;
+      requests++;
+      input +=
+        (m.usage.inputTokens || 0) +
+        (m.usage.cacheReadInputTokens || 0) +
+        (m.usage.cacheCreationInputTokens || 0);
+      output += m.usage.outputTokens || 0;
+    }
+    return {
+      totalTokens: { input, output, total: input + output },
+      requestCount: requests,
+    };
+  }, [selectedConv]);
+
   const settingsWithDefaults = useMemo(
     () => ({ ...SETTINGS_DEFAULTS, ...(selectedConv?.settings || {}) }),
     [selectedConv],
@@ -421,6 +440,9 @@ export default function ConversationsPage({ initialId = null }) {
                     </>
                   );
                 })()}
+                {requestCount > 0 && (
+                  <span>{requestCount} requests</span>
+                )}
                 {uniqueModels.length === 1 && <span>{uniqueModels[0]}</span>}
                 {uniqueModels.length > 1 && (
                   <span className={styles.modelDropdownWrapper}>
@@ -450,22 +472,32 @@ export default function ConversationsPage({ initialId = null }) {
                 {(() => {
                   const originalCost = selectedConv.totalCost || 0;
                   const costDiff = originalCost - totalCost;
-                  return totalCost > 0 ? (
-                    <span
-                      className={
-                        costDiff > 0.000001
-                          ? styles.metaTooltipWrapper
-                          : undefined
-                      }
-                    >
-                      {formatCost(totalCost)}
-                      {costDiff > 0.000001 && (
-                        <span className={styles.metaTooltip}>
-                          {formatCost(originalCost)} total
+                  return (
+                    <>
+                      {totalTokens.total > 0 && (
+                        <span>
+                          {totalTokens.input.toLocaleString()} in ·{" "}
+                          {totalTokens.output.toLocaleString()} out
                         </span>
                       )}
-                    </span>
-                  ) : null;
+                      {totalCost > 0 && (
+                        <span
+                          className={
+                            costDiff > 0.000001
+                              ? styles.metaTooltipWrapper
+                              : undefined
+                          }
+                        >
+                          {formatCost(totalCost)}
+                          {costDiff > 0.000001 && (
+                            <span className={styles.metaTooltip}>
+                              {formatCost(originalCost)} total
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </>
+                  );
                 })()}
                 {selectedConv.isGenerating && (
                   <span className={styles.generatingBadge}>

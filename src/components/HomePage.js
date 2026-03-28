@@ -157,6 +157,25 @@ export default function HomePage({ initialConversationId = null }) {
     [messages],
   );
 
+  const { totalTokens, requestCount } = useMemo(() => {
+    let input = 0;
+    let output = 0;
+    let requests = 0;
+    for (const m of messages) {
+      if (m.role !== "assistant" || !m.usage) continue;
+      requests++;
+      input +=
+        (m.usage.inputTokens || 0) +
+        (m.usage.cacheReadInputTokens || 0) +
+        (m.usage.cacheCreationInputTokens || 0);
+      output += m.usage.outputTokens || 0;
+    }
+    return {
+      totalTokens: { input, output, total: input + output },
+      requestCount: requests,
+    };
+  }, [messages]);
+
   // Auto-save system prompt on edit (debounced)
   useEffect(() => {
     if (!activeId || messages.length === 0) return;
@@ -2085,6 +2104,9 @@ export default function HomePage({ initialConversationId = null }) {
                   </span>
                 );
               })()}
+              {requestCount > 0 && (
+                <span>{requestCount} requests</span>
+              )}
               {uniqueModels.length === 1 && <span>{uniqueModels[0]}</span>}
               {uniqueModels.length > 1 && (
                 <span className={styles.modelDropdownWrapper}>
@@ -2109,6 +2131,12 @@ export default function HomePage({ initialConversationId = null }) {
                       </div>
                     </>
                   )}
+                </span>
+              )}
+              {totalTokens.total > 0 && (
+                <span>
+                  {totalTokens.input.toLocaleString()} in ·{" "}
+                  {totalTokens.output.toLocaleString()} out
                 </span>
               )}
               {totalCost > 0 &&

@@ -256,6 +256,14 @@ export default function RequestsPage() {
         align: "right",
       },
       {
+        key: "totalTokens",
+        label: "Tokens",
+        sortable: false,
+        render: (r) =>
+          formatNumber((r.inputTokens || 0) + (r.outputTokens || 0)),
+        align: "right",
+      },
+      {
         key: "estimatedCost",
         label: "Cost",
         render: (r) => formatCost(r.estimatedCost),
@@ -426,7 +434,16 @@ export default function RequestsPage() {
           sortKey={sort}
           sortDir={order}
           onSort={handleSort}
-          onRowClick={(req) => setSelectedRequest(req)}
+          onRowClick={async (req) => {
+            setSelectedRequest(req);
+            // Fetch full detail (includes payloads)
+            try {
+              const full = await IrisService.getRequest(req.requestId);
+              setSelectedRequest(full);
+            } catch {
+              /* keep partial data */
+            }
+          }}
           getRowKey={(req, i) => req.requestId || i}
           emptyText={loading ? "Loading..." : "No requests found"}
         />
@@ -588,11 +605,12 @@ export default function RequestsPage() {
         }
       >
         {selectedRequest && (
-          <div className={styles.detailSection}>
-            <div className={styles.detailSectionTitle}>Associations</div>
-            {loadingAssociations ? (
-              <span style={{ color: "var(--text-muted)" }}>Loading…</span>
-            ) : (
+          <>
+            <div className={styles.detailSection}>
+              <div className={styles.detailSectionTitle}>Associations</div>
+              {loadingAssociations ? (
+                <span style={{ color: "var(--text-muted)" }}>Loading…</span>
+              ) : (
               <div className={styles.associationGrid}>
                 <div className={styles.associationGroup}>
                   <span className={styles.associationGroupLabel}>
@@ -650,7 +668,28 @@ export default function RequestsPage() {
                 </div>
               </div>
             )}
-          </div>
+            </div>
+            {selectedRequest.requestPayload && (
+              <div className={styles.detailSection}>
+                <div className={styles.detailSectionTitle}>
+                  Request Payload
+                </div>
+                <pre className={styles.payloadBlock}>
+                  {JSON.stringify(selectedRequest.requestPayload, null, 2)}
+                </pre>
+              </div>
+            )}
+            {selectedRequest.responsePayload && (
+              <div className={styles.detailSection}>
+                <div className={styles.detailSectionTitle}>
+                  Response Payload
+                </div>
+                <pre className={styles.payloadBlock}>
+                  {JSON.stringify(selectedRequest.responsePayload, null, 2)}
+                </pre>
+              </div>
+            )}
+          </>
         )}
       </DetailDrawerComponent>
     </div>
