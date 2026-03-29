@@ -217,6 +217,7 @@ export default function ChatArea({
   onLiveUserChunk,
   onLiveAssistantChunk,
   onLiveTurnComplete,
+  onLiveUserAudioReady,
 }) {
   const [showToolsBubble, setShowToolsBubble] = useState(false);
   const toolsBubbleRef = useRef(null);
@@ -435,6 +436,9 @@ export default function ChatArea({
           },
           onThinking: (content) => {
             console.log("[LiveAPI] Thinking:", content);
+          },
+          onUserAudioReady: (userAudioRef) => {
+            onLiveUserAudioReady?.(userAudioRef);
           },
           onInterrupted: (turnData) => {
             // User interrupted — finalize any in-progress assistant message

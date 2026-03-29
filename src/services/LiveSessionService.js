@@ -122,6 +122,12 @@ export default class LiveSessionService {
         }
         break;
 
+      case "userAudioReady":
+        if (this.callbacks.onUserAudioReady) {
+          this.callbacks.onUserAudioReady(data.userAudioRef);
+        }
+        break;
+
       case "turnComplete":
         if (this.callbacks.onTurnComplete) this.callbacks.onTurnComplete(data);
         break;

@@ -29,7 +29,9 @@ export function getModalities(messages) {
     const isUser = m.role === "user";
     const isAssistant = m.role === "assistant";
     if (m.content && (isUser || isAssistant)) {
-      if (isUser) modalities.textIn = true;
+      // liveTranscription = the content is a speech-to-text transcript
+      // from the Live API, not typed text — don't count as textIn.
+      if (isUser && !m.liveTranscription) modalities.textIn = true;
       if (isAssistant) modalities.textOut = true;
     }
     if (m.audio) {

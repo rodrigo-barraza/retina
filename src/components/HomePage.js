@@ -2091,6 +2091,7 @@ export default function HomePage({ initialConversationId = null }) {
                   content: fullText,
                   timestamp: new Date().toISOString(),
                   _liveStreaming: true,
+                  _liveTranscription: true,
                 },
               ];
             });
@@ -2124,7 +2125,9 @@ export default function HomePage({ initialConversationId = null }) {
             setMessages((prev) => {
               const finalized = prev.map((m) => {
                 if (!m._liveStreaming) return m;
-                const { _liveStreaming: _, ...rest } = m;
+                const { _liveStreaming: _, _liveTranscription, ...rest } = m;
+                // Preserve speech-transcription flag (stripped of underscore prefix)
+                if (_liveTranscription) rest.liveTranscription = true;
                 // Attach audioRef and usage to the assistant message
                 if (rest.role === "assistant" && turnData) {
                   if (turnData.audioRef) rest.audio = turnData.audioRef;
@@ -2209,6 +2212,22 @@ export default function HomePage({ initialConversationId = null }) {
               }
 
               return finalized;
+            });
+          }}
+          onLiveUserAudioReady={(userAudioRef) => {
+            // Eagerly attach the user's uploaded audio to their message
+            // The server sends this as soon as the model starts its turn,
+            // so the audio card appears immediately, not after the model finishes.
+            setMessages((prev) => {
+              const updated = [...prev];
+              // Find the most recent user message (streaming or finalized)
+              for (let i = updated.length - 1; i >= 0; i--) {
+                if (updated[i].role === "user") {
+                  updated[i] = { ...updated[i], audio: userAudioRef };
+                  break;
+                }
+              }
+              return updated;
             });
           }}
         />
