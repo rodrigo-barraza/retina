@@ -15,18 +15,14 @@ import EmptyStateComponent from "./EmptyStateComponent.js";
 import ToolActivityPanelComponent from "./ToolActivityPanelComponent.js";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import {
-  expandMessagesForFC,
   buildToolSchemas,
   buildToolSchemaMap,
 } from "../utils/FunctionCallingUtilities.js";
-import { buildFCSystemPrompt } from "../utils/utilities.js";
 import { PROJECT_CONSOLE, SETTINGS_DEFAULTS } from "../constants.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./ConsoleComponent.module.css";
 import ChatInputButton from "./ChatInputButton.js";
 import useToolToggles from "../hooks/useToolToggles.js";
-
-const SYSTEM_PROMPT = buildFCSystemPrompt();
 
 export default function ConsoleComponent() {
   // ── State ────────────────────────────────────────────────────
@@ -48,7 +44,7 @@ export default function ConsoleComponent() {
     useToolToggles(builtInTools);
   const [settings, setSettings] = useState({
     ...SETTINGS_DEFAULTS,
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt: "You are a helpful AI assistant.",
     maxTokens: 8192,
   });
 
@@ -133,7 +129,12 @@ export default function ConsoleComponent() {
 
   // Fetch Prism config
   useEffect(() => {
-    PrismService.getConfig().then(setConfig).catch(console.error);
+    PrismService.getConfig().then((cfg) => {
+      setConfig(cfg);
+      if (cfg.fcSystemPrompt) {
+        setSettings((s) => ({ ...s, systemPrompt: cfg.fcSystemPrompt }));
+      }
+    }).catch(console.error);
   }, []);
 
   // Load conversation history
@@ -293,12 +294,13 @@ export default function ConsoleComponent() {
       );
 
       await new Promise((resolve, reject) => {
+        const systemPromptText = settings.systemPrompt.replace("{{CURRENT_DATE_TIME}}", new Date().toLocaleString());
         const payload = {
           provider: settings.provider,
           model: settings.model,
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            ...expandMessagesForFC(currentMessages, { filterDeleted: false }),
+            { role: "system", content: systemPromptText },
+            ...currentMessages,
           ],
           functionCallingEnabled: true,
           enabledTools: allToolSchemas.map(t => t.name),
@@ -306,7 +308,7 @@ export default function ConsoleComponent() {
           conversationId,
           conversationMeta: {
             title: resolvedTitle,
-            systemPrompt: SYSTEM_PROMPT,
+            systemPrompt: systemPromptText,
           },
         };
 
@@ -394,6 +396,7 @@ export default function ConsoleComponent() {
       settings.provider,
       settings.model,
       settings.maxTokens,
+      settings.systemPrompt,
       conversationId,
       allToolSchemas,
     ],

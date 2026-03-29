@@ -9,12 +9,10 @@ import { prepareDisplayMessages } from "./MessageList";
 import { getModalities } from "./HistoryPanel";
 import StorageService from "../services/StorageService";
 import {
-  expandMessagesForFC,
   buildToolSchemas,
   buildToolSchemaMap,
 } from "../utils/FunctionCallingUtilities";
 import {
-  buildFCSystemPrompt,
   getUniqueModels,
   getConversationCost,
   getConversationTokenStats,
@@ -235,7 +233,7 @@ export default function HomePage({ initialConversationId = null }) {
 
   // ── Function Calling infrastructure ────────────────────────
 
-  const FC_SYSTEM_PROMPT = buildFCSystemPrompt();
+  const FC_SYSTEM_PROMPT = config?.fcSystemPrompt?.replace("{{CURRENT_DATE_TIME}}", new Date().toLocaleString()) || "You are a helpful AI assistant.";
 
   const allToolSchemas = useMemo(
     () => buildToolSchemas(builtInTools, disabledBuiltIns, customTools),
@@ -667,7 +665,7 @@ export default function HomePage({ initialConversationId = null }) {
             model: settings.model,
             messages: [
               { role: "system", content: systemPromptText },
-              ...expandMessagesForFC(currentMessages),
+              ...currentMessages,
             ],
             functionCallingEnabled: true,
             enabledTools: allToolSchemas.map(t => t.name),
@@ -1313,7 +1311,7 @@ export default function HomePage({ initialConversationId = null }) {
             model: settings.model,
             messages: [
               { role: "system", content: systemPromptText },
-              ...expandMessagesForFC(currentMessages),
+              ...currentMessages,
             ],
             functionCallingEnabled: true,
             enabledTools: allToolSchemas.map(t => t.name),
