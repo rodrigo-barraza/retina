@@ -11,7 +11,7 @@ import styles from "./SortableTableComponent.module.css";
  *
  * @param {Object} props
  * @param {string} [props.title] — Section title above the table
- * @param {Array<{key: string, label: string, sortable?: boolean, align?: string, render?: Function, className?: string}>} props.columns
+ * @param {Array<{key: string, label: string, sortable?: boolean, align?: string, render?: Function, sortValue?: Function, className?: string}>} props.columns
  * @param {Array} props.data — Array of row objects
  * @param {Function} [props.getRowKey] — (row, i) => unique key
  * @param {Function} [props.getSubRows] — (row) => array of sub-row objects
@@ -145,11 +145,12 @@ export default function SortableTableComponent({
   }
 
   // Sort data (only if not controlled)
+  const sortCol = sort.key ? columns.find((c) => c.key === sort.key) : null;
   const sorted =
     sort.key && !onSort
       ? [...data].sort((a, b) => {
-          const va = a[sort.key] ?? 0;
-          const vb = b[sort.key] ?? 0;
+          const va = sortCol?.sortValue ? sortCol.sortValue(a) : (a[sort.key] ?? 0);
+          const vb = sortCol?.sortValue ? sortCol.sortValue(b) : (b[sort.key] ?? 0);
           if (typeof va === "string" && typeof vb === "string") {
             return sort.dir === "asc"
               ? va.localeCompare(vb)

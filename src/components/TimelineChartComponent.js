@@ -24,114 +24,39 @@ const TABS = [
 ];
 
 /**
- * Compute the number of vertical sub-divisions to draw between each data point.
+ * VerticalGridLines — renders thin vertical lines at every data point.
+ * Used for 10-min and hourly granularity to visually subdivide the chart
+ * without adding extra XAxis labels.
  *
- * ≤ 24 hourly points  → 6 subs (one line every 10 min)
- * 25–168 hourly points → 1 per data point (just data-point grid lines)
- * date-level or larger → 0 (keep as-is)
+ * Injected via Recharts' <Customized /> component.
  */
-function getSubDivisions(data) {
-  if (!data.length) return 0;
-  const isHourly = data[0]?.hour?.length > 10;
-  if (!isHourly) return 0;
-  if (data.length <= 24) return 6;   // ≤ 1 day → every 10 min
-  if (data.length <= 168) return 1;  // 1–7 days → every hour (data-point lines)
-  return 0;
-}
+function VerticalGridLines(props) {
+  const { formattedGraphicalItems, offset } = props;
 
-/**
- * SubGridLines — renders minor vertical grid lines between data points.
- * Injected via Recharts' <Customized /> component, which passes chart internals.
- */
-function SubGridLines(props) {
-  const {
-    xAxisMap,
-    yAxisMap,
-    formattedGraphicalItems,
-    offset,
-  } = props;
-
-  const xAxis = xAxisMap && Object.values(xAxisMap)[0];
-  const yAxis = yAxisMap && Object.values(yAxisMap)[0];
-  if (!xAxis || !yAxis) return null;
-
-  // Recharts v3: items are { graphicalItem, data, points } or { props: { points } }
   const areaItem = formattedGraphicalItems?.[0];
   const points =
-    areaItem?.props?.points ||      // v2 format
-    areaItem?.points ||              // v3 format
-    [];
+    areaItem?.props?.points || areaItem?.points || [];
   if (points.length < 2) return null;
-
-  // Recover original data for period detection
-  const sourceData =
-    areaItem?.item?.props?.data ||   // v2
-    areaItem?.props?.data ||         // v3 alt
-    props.chartData ||               // possible direct pass
-    [];
-  const subs = getSubDivisions(sourceData);
-  if (subs === 0) return null;
 
   const yTop = offset?.top ?? 0;
   const yBottom = yTop + (offset?.height ?? 0);
-  const lines = [];
 
-  if (subs === 1) {
-    // 1–7 day range: thin vertical line at each hourly data point
-    for (let i = 0; i < points.length; i++) {
-      lines.push(
+  return (
+    <g className="vertical-grid-lines">
+      {points.map((pt, i) => (
         <line
-          key={`dg-${i}`}
-          x1={points[i].x}
+          key={`vg-${i}`}
+          x1={pt.x}
           y1={yTop}
-          x2={points[i].x}
+          x2={pt.x}
           y2={yBottom}
           stroke="rgba(255,255,255,0.04)"
           strokeWidth={0.5}
-        />,
-      );
-    }
-  } else {
-    // ≤ 24h: data-point lines + sub-division lines between them
-    for (let i = 0; i < points.length; i++) {
-      // Data point vertical line (slightly more visible than sub-divs)
-      lines.push(
-        <line
-          key={`dp-${i}`}
-          x1={points[i].x}
-          y1={yTop}
-          x2={points[i].x}
-          y2={yBottom}
-          stroke="rgba(255,255,255,0.05)"
-          strokeWidth={0.5}
-        />,
-      );
-      // Sub-division lines to the next data point
-      if (i < points.length - 1) {
-        const x0 = points[i].x;
-        const x1Pos = points[i + 1].x;
-        const step = (x1Pos - x0) / subs;
-        for (let j = 1; j < subs; j++) {
-          const x = x0 + step * j;
-          lines.push(
-            <line
-              key={`sg-${i}-${j}`}
-              x1={x}
-              y1={yTop}
-              x2={x}
-              y2={yBottom}
-              stroke="rgba(255,255,255,0.025)"
-              strokeWidth={0.5}
-            />,
-          );
-        }
-      }
-    }
-  }
-
-  return <g className="sub-grid-lines">{lines}</g>;
+        />
+      ))}
+    </g>
+  );
 }
-
 
 function formatValue(value, tab) {
   if (value === null || value === undefined) return "—";
@@ -157,7 +82,7 @@ function yTickFormatter(value, tabKey) {
   return formatNumber(value);
 }
 
-/* Custom tooltip */
+/* Custom tooltip — uses `label` field (always present, e.g. "14:10") */
 function ChartTooltipComponent({ active, payload, label, tab }) {
   if (!active || !payload?.length) return null;
   return (
@@ -189,10 +114,31 @@ function GlowDotComponent({ cx, cy, color }) {
 }
 
 /**
+ * Custom XAxis tick — only renders text when `tickLabel` is non-empty.
+ * This keeps the axis sparse for 10-min granularity (label only at hour marks).
+ */
+function SparseTick({ x, y, payload, data }) {
+  const entry = data?.[payload?.index];
+  const text = entry?.tickLabel;
+  if (!text) return null;
+  return (
+    <text
+      x={x}
+      y={y + 12}
+      textAnchor="middle"
+      fill="#5a6078"
+      fontSize={11}
+    >
+      {text}
+    </text>
+  );
+}
+
+/**
  * TimelineChartComponent — tabbed area chart for timeline data.
  *
  * Props:
- *   data     — array of { hour, requests, tokens, cost, avgLatency, successRate, label }
+ *   data     — array of { hour, requests, tokens, cost, avgLatency, successRate, label, tickLabel }
  *   loading  — boolean
  *   height   — chart height in px (default: 260)
  */
@@ -226,12 +172,24 @@ export default function TimelineChartComponent({
     [tab],
   );
 
-  // Determine whether we need vertical data-point grid lines
-  const showVerticalGrid = useMemo(() => {
+  // Detect if we have sub-hour data (10-min bins) where we need sparse labels
+  const has10MinBins = useMemo(() => {
     if (!data.length) return false;
-    const isHourly = data[0]?.hour?.length > 10;
-    return isHourly && data.length > 24 && data.length <= 168;
+    return data[0]?.hour?.includes(":") ?? false;
   }, [data]);
+
+  // For 10-min and hourly data we draw vertical grid lines at every data point
+  const needsVerticalGrid = useMemo(() => {
+    if (!data.length) return false;
+    const h = data[0]?.hour || "";
+    return h.length > 10; // hourly or 10-min (not daily)
+  }, [data]);
+
+  // Custom tick renderer that pulls tickLabel from data
+  const renderTick = useCallback(
+    (props) => <SparseTick {...props} data={data} />,
+    [data],
+  );
 
   return (
     <div className={styles.container}>
@@ -260,15 +218,17 @@ export default function TimelineChartComponent({
               <CartesianGrid
                 strokeDasharray="3 6"
                 stroke="rgba(255,255,255,0.04)"
-                vertical={showVerticalGrid}
+                vertical={false}
               />
-              <Customized component={SubGridLines} />
+              {needsVerticalGrid && (
+                <Customized component={VerticalGridLines} />
+              )}
               <XAxis
                 dataKey="label"
-                tick={{ fill: "#5a6078", fontSize: 11 }}
+                tick={has10MinBins ? renderTick : { fill: "#5a6078", fontSize: 11 }}
                 axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
                 tickLine={false}
-                interval="preserveStartEnd"
+                interval={has10MinBins ? 0 : "preserveStartEnd"}
               />
               <YAxis
                 tick={{ fill: "#5a6078", fontSize: 11 }}

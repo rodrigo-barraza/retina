@@ -209,6 +209,8 @@ export default function AdminWorkflowsPage() {
             loading={loading}
             onDownloadWorkflow={handleDownloadWorkflow}
             onCopyWorkflow={handleCopyWorkflow}
+            initialProviders={providerFilter ? [providerFilter] : undefined}
+            initialSearch={modelFilter || ""}
           />
         )}
       </div>

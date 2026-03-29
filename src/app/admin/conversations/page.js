@@ -408,6 +408,8 @@ export default function ConversationsPage({ initialId = null }) {
               showProject
               showUsername
               newIds={newIds}
+              initialProviders={providerFilter ? [providerFilter] : undefined}
+              initialSearch={modelFilter || ""}
             />
           }
           rightTitle={`${conversations.length} Conversations`}

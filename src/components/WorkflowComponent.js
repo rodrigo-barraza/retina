@@ -70,6 +70,8 @@ export default function WorkflowComponent({
   isLoadingWorkflow = false,
   favorites = [],
   onToggleFavorite,
+  initialProviders,
+  initialSearch = "",
 
   allModels,
   onChangeModel,
@@ -148,6 +150,8 @@ export default function WorkflowComponent({
           loading={loading}
           favorites={favorites}
           onToggleFavorite={onToggleFavorite}
+          initialProviders={initialProviders}
+          initialSearch={initialSearch}
         />
       </div>
       {/* Mobile sidebar backdrop */}

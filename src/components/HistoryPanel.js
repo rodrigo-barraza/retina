@@ -124,6 +124,8 @@ export default function HistoryPanel({
   newIds,
   favorites = [],
   onToggleFavorite,
+  initialProviders,
+  initialSearch = "",
 }) {
   // Normalize conversations into HistoryList items
   const items = useMemo(() => {
@@ -205,6 +207,8 @@ export default function HistoryPanel({
         newIds={newIds}
         favorites={favorites}
         onToggleFavorite={onToggleFavorite}
+        initialProviders={initialProviders}
+        initialSearch={initialSearch}
       />
     </div>
   );

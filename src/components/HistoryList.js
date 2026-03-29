@@ -48,11 +48,15 @@ export default function HistoryList({
   newIds,
   favorites = [],
   onToggleFavorite,
+  initialProviders,
+  initialSearch = "",
 }) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [activeModalities, setActiveModalities] = useState(new Set());
   const [activeTools, setActiveTools] = useState(new Set());
-  const [activeProviders, setActiveProviders] = useState(new Set());
+  const [activeProviders, setActiveProviders] = useState(
+    () => new Set(initialProviders || []),
+  );
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
 

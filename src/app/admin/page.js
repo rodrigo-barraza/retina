@@ -200,19 +200,32 @@ export default function DashboardPage() {
   const chartData = useMemo(() => {
     return timeline.map((t) => {
       let label = "";
+      let tickLabel = "";
       if (t.hour) {
         if (t.hour.length <= 10) {
+          // Daily bin: "2026-03-21"
           const [y, m, d] = t.hour.split("-").map(Number);
           const date = new Date(y, m - 1, d);
           label = date.toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
           });
+          tickLabel = label;
+        } else if (t.hour.includes(":")) {
+          // 10-minute bin: "2026-03-21T14:10" or "2026-03-21T14:0"
+          const timePart = t.hour.slice(11); // "14:10" or "14:0"
+          const [hh, mm] = timePart.split(":");
+          const paddedMM = (mm || "0").padStart(2, "0");
+          label = `${hh}:${paddedMM}`;
+          // Only show tick label on hour marks (minute = 0)
+          tickLabel = paddedMM === "00" ? `${hh}h` : "";
         } else {
+          // Hourly bin: "2026-03-21T14"
           label = t.hour.slice(11) + "h";
+          tickLabel = label;
         }
       }
-      return { ...t, label };
+      return { ...t, label, tickLabel };
     });
   }, [timeline]);
 
@@ -330,6 +343,7 @@ export default function DashboardPage() {
           {
             key: "usage",
             label: "Usage",
+            sortValue: (p) => p.totalRequests,
             render: (p) => (
               <UsageBarComponent
                 value={p.totalRequests}
@@ -437,6 +451,7 @@ export default function DashboardPage() {
           {
             key: "usage",
             label: "Usage",
+            sortValue: (p) => p.totalRequests,
             render: (p, i) => (
               <UsageBarComponent
                 value={p.totalRequests}
@@ -523,6 +538,7 @@ export default function DashboardPage() {
           {
             key: "usage",
             label: "Usage",
+            sortValue: (m) => m.totalRequests,
             render: (m) => (
               <UsageBarComponent
                 value={m.totalRequests}

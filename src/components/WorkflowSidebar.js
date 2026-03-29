@@ -32,6 +32,8 @@ export default function WorkflowSidebar({
   loading = false,
   favorites = [],
   onToggleFavorite,
+  initialProviders,
+  initialSearch = "",
 }) {
   // Normalize workflows into HistoryList items
   const items = useMemo(() => {
@@ -172,6 +174,8 @@ export default function WorkflowSidebar({
         admin={admin}
         favorites={favorites}
         onToggleFavorite={onToggleFavorite}
+        initialProviders={initialProviders}
+        initialSearch={initialSearch}
       />
     </div>
   );
