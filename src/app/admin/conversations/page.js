@@ -24,7 +24,7 @@ import ModelPickerPopoverComponent from "../../../components/ModelPickerPopoverC
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
-import { formatCost } from "../../../utils/utilities";
+
 import styles from "./page.module.css";
 
 const POLL_INTERVAL = 5000; // 5s
@@ -59,7 +59,7 @@ export default function ConversationsPage({ initialId = null }) {
   const [selectedConv, setSelectedConv] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [config, setConfig] = useState(null);
-  const [showModelList, setShowModelList] = useState(false);
+
   const [newIds, setNewIds] = useState(new Set());
   const [generatingCount, setGeneratingCount] = useState(0);
   const [recentCount, setRecentCount] = useState(0);
@@ -304,6 +304,22 @@ export default function ConversationsPage({ initialId = null }) {
     };
   }, [selectedConv]);
 
+  // Derive tools used across all messages with invocation counts
+  const usedTools = useMemo(() => {
+    const counts = new Map();
+    for (const m of selectedConv?.messages || []) {
+      if (m.role !== "assistant") continue;
+      if (m.thinking) counts.set("Thinking", (counts.get("Thinking") || 0) + 1);
+      if (m.toolCalls?.length > 0) {
+        counts.set("Function Calling", (counts.get("Function Calling") || 0) + 1);
+        for (const tc of m.toolCalls) {
+          if (tc.name) counts.set(tc.name, (counts.get(tc.name) || 0) + 1);
+        }
+      }
+    }
+    return [...counts.entries()].map(([name, count]) => ({ name, count }));
+  }, [selectedConv]);
+
   const settingsWithDefaults = useMemo(
     () => ({ ...SETTINGS_DEFAULTS, ...(selectedConv?.settings || {}) }),
     [selectedConv],
@@ -383,6 +399,22 @@ export default function ConversationsPage({ initialId = null }) {
                     readOnly
                     hideProviderModel
                     workflows={workflows}
+                    conversationStats={
+                      selectedConv?.messages?.length > 0
+                        ? {
+                            messageCount: selectedConv.messages.length,
+                            deletedCount:
+                              (selectedConv.messageCount || selectedConv.messages.length) -
+                              selectedConv.messages.length,
+                            requestCount,
+                            uniqueModels,
+                            totalTokens,
+                            totalCost,
+                            originalTotalCost: selectedConv.totalCost || 0,
+                            usedTools,
+                          }
+                        : null
+                    }
                   />
                 )}
                 {leftTab === "params" && (
@@ -424,87 +456,6 @@ export default function ConversationsPage({ initialId = null }) {
                       {selectedConv.username}
                     </span>
                   )}
-                {(() => {
-                  const currentMsgCount = selectedConv.messages?.length || 0;
-                  const deletedCount =
-                    (selectedConv.messageCount || currentMsgCount) -
-                    currentMsgCount;
-                  return (
-                    <>
-                      <span
-                        className={
-                          deletedCount > 0
-                            ? styles.metaTooltipWrapper
-                            : undefined
-                        }
-                      >
-                        {currentMsgCount} messages
-                        {deletedCount > 0 && (
-                          <span className={styles.metaTooltip}>
-                            {deletedCount} deleted
-                          </span>
-                        )}
-                      </span>
-                    </>
-                  );
-                })()}
-                {requestCount > 0 && <span>{requestCount} requests</span>}
-                {uniqueModels.length === 1 && <span>{uniqueModels[0]}</span>}
-                {uniqueModels.length > 1 && (
-                  <span className={styles.modelDropdownWrapper}>
-                    <button
-                      className={styles.modelDropdownTrigger}
-                      onClick={() => setShowModelList((v) => !v)}
-                    >
-                      {uniqueModels.length} models
-                    </button>
-                    {showModelList && (
-                      <>
-                        <div
-                          className={styles.modelDropdownBackdrop}
-                          onClick={() => setShowModelList(false)}
-                        />
-                        <div className={styles.modelDropdown}>
-                          {uniqueModels.map((m) => (
-                            <div key={m} className={styles.modelDropdownItem}>
-                              {m}
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </span>
-                )}
-                {(() => {
-                  const originalCost = selectedConv.totalCost || 0;
-                  const costDiff = originalCost - totalCost;
-                  return (
-                    <>
-                      {totalTokens.total > 0 && (
-                        <span>
-                          {totalTokens.input.toLocaleString()} in ·{" "}
-                          {totalTokens.output.toLocaleString()} out
-                        </span>
-                      )}
-                      {totalCost > 0 && (
-                        <span
-                          className={
-                            costDiff > 0.000001
-                              ? styles.metaTooltipWrapper
-                              : undefined
-                          }
-                        >
-                          {formatCost(totalCost)}
-                          {costDiff > 0.000001 && (
-                            <span className={styles.metaTooltip}>
-                              {formatCost(originalCost)} total
-                            </span>
-                          )}
-                        </span>
-                      )}
-                    </>
-                  );
-                })()}
                 {selectedConv.isGenerating && (
                   <span className={styles.generatingBadge}>
                     <Loader size={12} className={styles.spinning} />
