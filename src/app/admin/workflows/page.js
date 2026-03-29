@@ -18,6 +18,8 @@ export default function AdminWorkflowsPage() {
     useProjectFilter();
   const searchParams = useSearchParams();
   const initialId = searchParams.get("id") || null;
+  const providerFilter = searchParams.get("provider") || null;
+  const modelFilter = searchParams.get("model") || null;
   const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,6 +40,8 @@ export default function AdminWorkflowsPage() {
         order: "desc",
       };
       if (projectFilter) params.project = projectFilter;
+      if (providerFilter) params.provider = providerFilter;
+      if (modelFilter) params.model = modelFilter;
       const data = await IrisService.getWorkflows(params);
       const list = data.data || [];
       setWorkflows(list);
@@ -50,7 +54,7 @@ export default function AdminWorkflowsPage() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectFilter]);
+  }, [projectFilter, providerFilter, modelFilter]);
 
   useEffect(() => {
     loadWorkflows();

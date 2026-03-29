@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Loader,
   MessageSquare,
@@ -48,6 +49,9 @@ const SETTINGS_DEFAULTS = {
 export default function ConversationsPage({ initialId = null }) {
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
+  const searchParams = useSearchParams();
+  const providerFilter = searchParams.get("provider") || null;
+  const modelFilter = searchParams.get("model") || null;
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -94,6 +98,8 @@ export default function ConversationsPage({ initialId = null }) {
         order: "desc",
       };
       if (projectFilter) params.project = projectFilter;
+      if (providerFilter) params.provider = providerFilter;
+      if (modelFilter) params.model = modelFilter;
       const data = await IrisService.getConversations(params);
       const list = data.data || [];
 
@@ -142,7 +148,7 @@ export default function ConversationsPage({ initialId = null }) {
       setError(err.message);
       setLoading((prev) => (prev ? false : prev));
     }
-  }, [projectFilter]);
+  }, [projectFilter, providerFilter, modelFilter]);
 
   // Initial stats fetch + SSE subscription for real-time updates
   useEffect(() => {

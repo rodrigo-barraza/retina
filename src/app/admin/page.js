@@ -13,6 +13,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import IrisService from "../../services/IrisService";
+import PrismService from "../../services/PrismService";
 import {
   formatNumber,
   formatCost,
@@ -26,9 +27,11 @@ import TimelineChartComponent from "../../components/TimelineChartComponent";
 import DistributionChartComponent from "../../components/DistributionChartComponent";
 import UsageBarComponent from "../../components/UsageBarComponent";
 import SortableTableComponent from "../../components/SortableTableComponent";
+import TooltipComponent from "../../components/TooltipComponent";
 import SelectDropdown from "../../components/SelectDropdown";
 import { ErrorMessage } from "../../components/StateMessageComponent";
 import { useAdminHeader } from "../../components/AdminHeaderContext";
+import { TOOL_ICON_MAP, TOOL_COLORS } from "../../components/WorkflowNodeConstants";
 import useProjectFilter from "../../hooks/useProjectFilter";
 import styles from "./page.module.css";
 import { LS_DATE_RANGE } from "../../constants";
@@ -52,6 +55,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [projectStats, setProjectStats] = useState([]);
   const [modelStats, setModelStats] = useState([]);
+  const [configModels, setConfigModels] = useState({});
 
   const [timeline, setTimeline] = useState([]);
   const [recentRequests, setRecentRequests] = useState([]);
@@ -79,7 +83,7 @@ export default function DashboardPage() {
       const filterParams = { ...dateParams };
       if (projectFilter) filterParams.project = projectFilter;
 
-      const [statsData, projects, models, timelineData, requestsData] =
+      const [statsData, projects, models, timelineData, requestsData, prismConfig] =
         await Promise.all([
           IrisService.getStats(filterParams),
           IrisService.getProjectStats(filterParams),
@@ -91,11 +95,24 @@ export default function DashboardPage() {
             order: "desc",
             ...filterParams,
           }),
+          PrismService.getConfig().catch(() => null),
         ]);
 
       setStats(statsData);
       setProjectStats(projects);
       setModelStats(models);
+
+      // Build model→tools lookup from Prism config
+      if (prismConfig?.textToText?.models) {
+        const lookup = {};
+        for (const [provider, models] of Object.entries(prismConfig.textToText.models)) {
+          for (const m of models) {
+            const key = `${provider}:${m.name}`;
+            if (m.tools?.length) lookup[key] = m.tools;
+          }
+        }
+        setConfigModels(lookup);
+      }
 
       setTimeline(timelineData.data || timelineData);
       setRecentRequests(requestsData.data || []);
@@ -459,16 +476,13 @@ export default function DashboardPage() {
             label: "Conversations",
             render: (p) =>
               p.conversationCount > 0 ? (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
+                <Link
+                  href={`/admin/conversations?provider=${encodeURIComponent(p.provider)}`}
+                  className={styles.workflowLink}
                 >
                   <MessageSquare size={12} />
                   {p.conversationCount}
-                </span>
+                </Link>
               ) : (
                 <span style={{ color: "var(--text-muted)" }}>0</span>
               ),
@@ -478,16 +492,13 @@ export default function DashboardPage() {
             label: "Workflows",
             render: (p) =>
               p.workflowCount > 0 ? (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
+                <Link
+                  href={`/admin/workflows?provider=${encodeURIComponent(p.provider)}`}
+                  className={styles.workflowLink}
                 >
                   <Workflow size={12} />
                   {p.workflowCount}
-                </span>
+                </Link>
               ) : (
                 <span style={{ color: "var(--text-muted)" }}>0</span>
               ),
@@ -529,14 +540,35 @@ export default function DashboardPage() {
           {
             key: "toolsUsed",
             label: "Tools",
-            render: (m) =>
-              m.toolsUsed ? (
-                <span style={{ color: "var(--success)", fontWeight: 600 }}>
-                  ✓
+            align: "left",
+            sortable: false,
+            render: (m) => {
+              const tools = configModels[`${m.provider}:${m.model}`];
+              if (!tools?.length) {
+                return <span style={{ color: "var(--text-muted)" }}>—</span>;
+              }
+              return (
+                <span className={styles.toolPills}>
+                  {tools.map((t) => {
+                    const Icon = TOOL_ICON_MAP[t];
+                    if (!Icon) {
+                      return (
+                        <TooltipComponent key={t} label={t} position="top">
+                          <span className={styles.toolPill}>{t}</span>
+                        </TooltipComponent>
+                      );
+                    }
+                    return (
+                      <TooltipComponent key={t} label={t} position="top">
+                        <span className={styles.toolPill}>
+                          <Icon size={12} style={{ color: TOOL_COLORS[t] }} />
+                        </span>
+                      </TooltipComponent>
+                    );
+                  })}
                 </span>
-              ) : (
-                <span style={{ color: "var(--text-muted)" }}>—</span>
-              ),
+              );
+            },
           },
           {
             key: "totalInputTokens",
@@ -568,16 +600,13 @@ export default function DashboardPage() {
             label: "Conversations",
             render: (m) =>
               m.conversationCount > 0 ? (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
+                <Link
+                  href={`/admin/conversations?model=${encodeURIComponent(m.model)}`}
+                  className={styles.workflowLink}
                 >
                   <MessageSquare size={12} />
                   {m.conversationCount}
-                </span>
+                </Link>
               ) : (
                 <span style={{ color: "var(--text-muted)" }}>0</span>
               ),
@@ -587,16 +616,13 @@ export default function DashboardPage() {
             label: "Workflows",
             render: (m) =>
               m.workflowCount > 0 ? (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
+                <Link
+                  href={`/admin/workflows?model=${encodeURIComponent(m.model)}`}
+                  className={styles.workflowLink}
                 >
                   <Workflow size={12} />
                   {m.workflowCount}
-                </span>
+                </Link>
               ) : (
                 <span style={{ color: "var(--text-muted)" }}>0</span>
               ),
