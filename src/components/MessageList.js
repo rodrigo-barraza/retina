@@ -15,7 +15,9 @@ import {
   Zap,
   Undo2,
   AlertTriangle,
+  Wrench,
 } from "lucide-react";
+import { TOOL_ICON_MAP, TOOL_COLORS } from "./WorkflowNodeConstants";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import MarkdownContent from "./MarkdownContent";
 import StreamingCursorComponent from "./StreamingCursorComponent";
@@ -135,6 +137,78 @@ function ThinkingBlock({ thinking, isStreaming }) {
   );
 }
 
+/**
+ * Extract a concise, human-readable summary from tool result data.
+ * Shows the first few meaningful values to give the user immediate insight.
+ */
+function extractResultSummary(result) {
+  let parsed = null;
+  if (typeof result === "string") {
+    try { parsed = JSON.parse(result); } catch { return null; }
+  } else if (typeof result === "object") {
+    parsed = result;
+  }
+  if (!parsed) return null;
+
+  // Array results: show count + first few item names/titles
+  if (Array.isArray(parsed)) {
+    const count = parsed.length;
+    const labels = parsed.slice(0, 4).map((item) => {
+      if (typeof item === "string") return item;
+      return item?.name || item?.title || item?.label || item?.id || null;
+    }).filter(Boolean);
+    if (labels.length > 0) {
+      const suffix = count > labels.length ? ` +${count - labels.length} more` : "";
+      return `${count} result${count !== 1 ? "s" : ""}: ${labels.join(", ")}${suffix}`;
+    }
+    return `${count} result${count !== 1 ? "s" : ""}`;
+  }
+
+  // Object with count/results pattern (paginated APIs)
+  if (parsed.count != null || parsed.total != null || parsed.results) {
+    const count = parsed.count ?? parsed.total ?? parsed.results?.length;
+    const items = parsed.results || parsed.data || parsed.items;
+    if (Array.isArray(items) && items.length > 0) {
+      const labels = items.slice(0, 3).map((item) =>
+        item?.name || item?.title || item?.label || null
+      ).filter(Boolean);
+      if (labels.length > 0) {
+        return `${count} result${count !== 1 ? "s" : ""}: ${labels.join(", ")}${count > 3 ? " …" : ""}`;
+      }
+    }
+    if (count != null) return `${count} result${count !== 1 ? "s" : ""}`;
+  }
+
+  // Object with a 'name' or 'title': show it directly
+  if (parsed.name || parsed.title) {
+    return parsed.name || parsed.title;
+  }
+
+  // Fallback: count top-level keys
+  const keys = Object.keys(parsed);
+  if (keys.length > 0 && keys.length <= 6) {
+    return keys.join(", ");
+  }
+  return `${keys.length} fields`;
+}
+
+/**
+ * Resolve a tool function name (e.g. `compare_food_nutrition`) to the
+ * matching icon & color from TOOL_ICON_MAP/TOOL_COLORS. Falls back to
+ * `Wrench` icon and the amber accent used for Function Calling.
+ */
+function resolveToolVisuals(rawName) {
+  // Direct match first (e.g. "Web Search")
+  if (TOOL_ICON_MAP[rawName]) {
+    return { Icon: TOOL_ICON_MAP[rawName], color: TOOL_COLORS[rawName] || "#f59e0b" };
+  }
+  // All custom function-calling tools fall under "Function Calling"
+  return {
+    Icon: TOOL_ICON_MAP["Function Calling"] || Wrench,
+    color: TOOL_COLORS["Function Calling"] || "#f97316",
+  };
+}
+
 function ToolCallResultBlock({ result }) {
   const [showResult, setShowResult] = useState(false);
 
@@ -211,49 +285,75 @@ function ToolCallResultBlock({ result }) {
 }
 
 function ToolCallsBlock({ toolCalls }) {
-  const [collapsed, setCollapsed] = useState(true);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
   if (!toolCalls || toolCalls.length === 0) return null;
 
-  const names = toolCalls.map((tc) =>
-    (tc.name || "unknown")
+  const formatName = (raw) =>
+    (raw || "unknown")
       .replace(/^get_/, "")
       .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase()),
-  );
+      .replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
     <div className={styles.toolCallsBlock}>
+      {/* ── Header toggle ── */}
       <button
         className={styles.toolCallsToggle}
-        onClick={() => setCollapsed((c) => !c)}
+        onClick={() => setHeaderCollapsed((c) => !c)}
       >
         <Zap size={13} />
         <span>
           {toolCalls.length === 1
-            ? `Used tool: ${names[0]}`
+            ? `Used tool: ${formatName(toolCalls[0].name)}`
             : `Used ${toolCalls.length} tools`}
         </span>
-        {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        {headerCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
       </button>
-      {!collapsed && (
+
+      {/* ── Always-visible tool cards ── */}
+      {!headerCollapsed && (
         <div className={styles.toolCallsContent}>
-          {toolCalls.map((tc, j) => (
-            <div key={j} className={styles.toolCallItem}>
-              <div className={styles.toolCallHeader}>
-                <span className={styles.toolCallName}>{names[j]}</span>
-                {tc.args && Object.keys(tc.args).length > 0 && (
-                  <span className={styles.toolCallArgs}>
-                    (
-                    {Object.entries(tc.args)
-                      .map(([k, v]) => `${k}: ${v}`)
-                      .join(", ")}
-                    )
+          {toolCalls.map((tc, j) => {
+            const name = formatName(tc.name);
+            const { Icon, color } = resolveToolVisuals(tc.name);
+            const summary = tc.result ? extractResultSummary(tc.result) : null;
+            const argEntries = tc.args ? Object.entries(tc.args) : [];
+
+            return (
+              <div key={j} className={styles.toolCallItem}>
+                <div className={styles.toolCallHeader}>
+                  <span className={styles.toolCallIcon} style={{ color }}>
+                    <Icon size={14} />
                   </span>
+                  <span className={styles.toolCallName}>{name}</span>
+                </div>
+
+                {/* Arg pills */}
+                {argEntries.length > 0 && (
+                  <div className={styles.toolCallArgPills}>
+                    {argEntries.map(([k, v]) => (
+                      <span key={k} className={styles.toolCallArgPill}>
+                        <span className={styles.toolCallArgKey}>{k}</span>
+                        <span className={styles.toolCallArgValue}>
+                          {typeof v === "string" ? v : JSON.stringify(v)}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
                 )}
+
+                {/* Quick result summary */}
+                {summary && (
+                  <div className={styles.toolCallSummary}>
+                    <Check size={11} />
+                    <span>{summary}</span>
+                  </div>
+                )}
+
+                <ToolCallResultBlock result={tc.result} />
               </div>
-              <ToolCallResultBlock result={tc.result} />
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

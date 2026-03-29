@@ -11,7 +11,7 @@ import {
   expandMessagesForFC,
   sanitizeToolName,
 } from "../utils/FunctionCallingUtilities";
-import { buildFCSystemPrompt, formatCost } from "../utils/utilities";
+import { buildFCSystemPrompt } from "../utils/utilities";
 import {
   SK_LAST_PROVIDER,
   SK_LAST_MODEL,
@@ -69,7 +69,7 @@ export default function HomePage({ initialConversationId = null }) {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   const [newChatKey, setNewChatKey] = useState(0);
-  const [showModelList, setShowModelList] = useState(false);
+
   const [showSystemPromptModal, setShowSystemPromptModal] = useState(false);
   const skipSystemPromptSave = useRef(false);
   const [workflows, setWorkflows] = useState([]);
@@ -171,6 +171,22 @@ export default function HomePage({ initialConversationId = null }) {
       totalTokens: { input, output, total: input + output },
       requestCount: requests,
     };
+  }, [messages]);
+
+  // Derive tools used across all messages with invocation counts
+  const usedTools = useMemo(() => {
+    const counts = new Map();
+    for (const m of messages) {
+      if (m.role !== "assistant") continue;
+      if (m.thinking) counts.set("Thinking", (counts.get("Thinking") || 0) + 1);
+      if (m.toolCalls?.length > 0) {
+        counts.set("Function Calling", (counts.get("Function Calling") || 0) + 1);
+        for (const tc of m.toolCalls) {
+          if (tc.name) counts.set(tc.name, (counts.get(tc.name) || 0) + 1);
+        }
+      }
+    }
+    return [...counts.entries()].map(([name, count]) => ({ name, count }));
   }, [messages]);
 
   // Auto-save system prompt on edit (debounced)
@@ -1848,6 +1864,20 @@ export default function HomePage({ initialConversationId = null }) {
                 showSystemPromptModal={showSystemPromptModal}
                 onCloseSystemPromptModal={() => setShowSystemPromptModal(false)}
                 workflows={workflows}
+                conversationStats={
+                  messages.length > 0
+                    ? {
+                        messageCount: messages.length,
+                        deletedCount: originalMessageCount - messages.length,
+                        requestCount,
+                        uniqueModels,
+                        totalTokens,
+                        totalCost,
+                        originalTotalCost,
+                        usedTools,
+                      }
+                    : null
+                }
               />
             )}
             {leftTab === "tools" && selectedModelSupportsFc && (
@@ -1939,82 +1969,7 @@ export default function HomePage({ initialConversationId = null }) {
             }}
           />
         }
-        headerMeta={
-          messages.length > 0 ? (
-            <div className={styles.headerMeta}>
-              {(() => {
-                const deletedCount = originalMessageCount - messages.length;
-                return (
-                  <span
-                    className={
-                      deletedCount > 0 ? styles.metaTooltipWrapper : undefined
-                    }
-                  >
-                    {messages.length} messages
-                    {deletedCount > 0 && (
-                      <span className={styles.metaTooltip}>
-                        {deletedCount} deleted
-                      </span>
-                    )}
-                  </span>
-                );
-              })()}
-              {requestCount > 0 && <span>{requestCount} requests</span>}
-              {uniqueModels.length === 1 && <span>{uniqueModels[0]}</span>}
-              {uniqueModels.length > 1 && (
-                <span className={styles.modelDropdownWrapper}>
-                  <button
-                    className={styles.modelDropdownTrigger}
-                    onClick={() => setShowModelList((v) => !v)}
-                  >
-                    {uniqueModels.length} models
-                  </button>
-                  {showModelList && (
-                    <>
-                      <div
-                        className={styles.modelDropdownBackdrop}
-                        onClick={() => setShowModelList(false)}
-                      />
-                      <div className={styles.modelDropdown}>
-                        {uniqueModels.map((m) => (
-                          <div key={m} className={styles.modelDropdownItem}>
-                            {m}
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </span>
-              )}
-              {totalTokens.total > 0 && (
-                <span>
-                  {totalTokens.input.toLocaleString()} in ·{" "}
-                  {totalTokens.output.toLocaleString()} out
-                </span>
-              )}
-              {totalCost > 0 &&
-                (() => {
-                  const costDiff = originalTotalCost - totalCost;
-                  return (
-                    <span
-                      className={
-                        costDiff > 0.000001
-                          ? styles.metaTooltipWrapper
-                          : undefined
-                      }
-                    >
-                      {formatCost(totalCost)}
-                      {costDiff > 0.000001 && (
-                        <span className={styles.metaTooltip}>
-                          {formatCost(originalTotalCost)} total
-                        </span>
-                      )}
-                    </span>
-                  );
-                })()}
-            </div>
-          ) : null
-        }
+        headerMeta={null}
         headerControls={
           <div className={styles.headerControls}>
             {messages.length > 0 && (

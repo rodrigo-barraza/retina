@@ -232,18 +232,24 @@
 
 /* ── Tool Calls block ── */
 .toolCallsBlock {
-  margin-bottom: 8px;
-  border: 1px solid color-mix(in srgb, #f59e0b 25%, var(--border-color));
+  margin-bottom: 10px;
+  border: 1px solid color-mix(in srgb, #f97316 20%, var(--border-color));
   border-radius: var(--border-radius-sm);
   overflow: hidden;
+  background: color-mix(in srgb, #f97316 3%, var(--bg-primary));
+  transition: border-color 0.2s ease;
+}
+
+.toolCallsBlock:hover {
+  border-color: color-mix(in srgb, #f97316 35%, var(--border-color));
 }
 
 .toolCallsToggle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   width: 100%;
-  padding: 7px 12px;
+  padding: 9px 14px;
   font-size: 12px;
   font-weight: 600;
   color: #f59e0b;
@@ -251,49 +257,159 @@
   border: none;
   cursor: pointer;
   letter-spacing: 0.3px;
-  transition: background 0.15s;
+  transition: background 0.2s, color 0.2s;
 }
 
 .toolCallsToggle:hover {
-  background: var(--bg-tertiary);
+  background: color-mix(in srgb, #f97316 6%, var(--bg-tertiary));
+  color: #fbbf24;
+}
+
+.toolCallsToggle svg:first-child {
+  filter: drop-shadow(0 0 3px rgba(249, 115, 22, 0.4));
 }
 
 .toolCallsContent {
-  padding: 4px 12px 8px;
-  border-top: 1px solid color-mix(in srgb, #f59e0b 15%, var(--border-color));
+  padding: 2px 10px 10px;
+  border-top: 1px solid color-mix(in srgb, #f97316 12%, var(--border-color));
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
 }
 
 .toolCallItem {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   font-size: 12px;
-  padding: 4px 0;
+  padding: 10px 8px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+  animation: toolCardFadeIn 0.25s ease-out both;
 }
 
+.toolCallItem:hover {
+  background: color-mix(in srgb, #f97316 4%, var(--bg-tertiary));
+}
+
+@keyframes toolCardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toolCallItem:nth-child(2) { animation-delay: 0.04s; }
+.toolCallItem:nth-child(3) { animation-delay: 0.08s; }
+.toolCallItem:nth-child(4) { animation-delay: 0.12s; }
+
 .toolCallItem + .toolCallItem {
-  border-top: 1px solid color-mix(in srgb, #f59e0b 10%, var(--border-color));
-  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, #f97316 8%, var(--border-color));
 }
 
 .toolCallHeader {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+.toolCallIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  flex-shrink: 0;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.toolCallItem:hover .toolCallIcon {
+  transform: scale(1.08);
+  background: color-mix(in srgb, currentColor 15%, transparent);
 }
 
 .toolCallName {
   font-weight: 600;
   color: var(--text-primary);
+  font-size: 13px;
+  letter-spacing: 0.01em;
 }
 
-.toolCallArgs {
-  color: var(--text-secondary);
+/* ── Argument pills ── */
+.toolCallArgPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-left: 32px;
+}
+
+.toolCallArgPill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  overflow: hidden;
   font-size: 11px;
-  opacity: 0.7;
+  line-height: 1;
+  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  background: var(--bg-tertiary);
+  transition: border-color 0.15s ease;
+}
+
+.toolCallArgPill:hover {
+  border-color: var(--border-color);
+}
+
+.toolCallArgKey {
+  padding: 3px 6px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--bg-secondary) 50%, var(--bg-tertiary));
+  letter-spacing: 0.02em;
+}
+
+.toolCallArgValue {
+  padding: 3px 7px;
+  color: var(--text-primary);
+  font-weight: 400;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Result summary chip ── */
+.toolCallSummary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  margin-left: 32px;
+  font-size: 11px;
+  font-weight: 500;
+  color: color-mix(in srgb, #22c55e 85%, var(--text-primary));
+  background: color-mix(in srgb, #22c55e 8%, transparent);
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, #22c55e 18%, transparent);
+  width: fit-content;
+  line-height: 1.3;
+  max-width: calc(100% - 32px);
+}
+
+.toolCallSummary span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolCallSummary svg {
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.3));
 }
 
 .toolCallMapPreview {
@@ -324,6 +440,7 @@
 
 .toolCallResultWrapper {
   margin-top: 2px;
+  padding-left: 32px;
 }
 
 .toolCallResultToggle {

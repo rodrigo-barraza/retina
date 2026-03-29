@@ -15,6 +15,11 @@ import {
   GitBranch,
   ExternalLink,
   AudioLines,
+  MessageSquare,
+  Layers,
+  Zap,
+  Coins,
+  Hash,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import SelectDropdown from "./SelectDropdown";
@@ -29,6 +34,12 @@ import {
   TOGGLEABLE_TOOLS,
 } from "./WorkflowNodeConstants";
 
+/** Format a cost value — matches formatCost from utilities (5 decimal places) */
+function formatCostBadge(cost) {
+  if (cost === null || cost === undefined) return "$0.00";
+  return `$${cost.toFixed(5)}`;
+}
+
 export default function SettingsPanel({
   config,
   settings,
@@ -41,6 +52,7 @@ export default function SettingsPanel({
   showSystemPromptModal = false,
   onCloseSystemPromptModal,
   workflows = [],
+  conversationStats = null,
 }) {
   const { _providers = {}, textToText = {} } = config || {};
   const textModelsMap = textToText.models || {};
@@ -172,6 +184,85 @@ export default function SettingsPanel({
   return (
     <>
       <div className={styles.container}>
+        {conversationStats && (
+          <div className={styles.conversationStats}>
+            <div className={styles.statsHeader}>
+              <Layers size={12} style={{ marginRight: 4 }} /> Conversation
+            </div>
+            <div className={styles.statsBadges}>
+              <span className={styles.statBadge}>
+                <MessageSquare size={11} />
+                {conversationStats.messageCount} message{conversationStats.messageCount !== 1 ? "s" : ""}
+                {conversationStats.deletedCount > 0 && (
+                  <span className={styles.statBadgeSub}>
+                    ({conversationStats.deletedCount} deleted)
+                  </span>
+                )}
+              </span>
+              {conversationStats.requestCount > 0 && (
+                <span className={styles.statBadge}>
+                  <Zap size={11} />
+                  {conversationStats.requestCount} request{conversationStats.requestCount !== 1 ? "s" : ""}
+                </span>
+              )}
+              {conversationStats.uniqueModels.length > 0 && (
+                <span className={styles.statBadge}>
+                  <Cpu size={11} />
+                  {conversationStats.uniqueModels.length === 1
+                    ? conversationStats.uniqueModels[0]
+                    : `${conversationStats.uniqueModels.length} models`}
+                </span>
+              )}
+              {conversationStats.totalTokens.total > 0 && (
+                <>
+                  <span className={styles.statBadge}>
+                    <Hash size={11} />
+                    {conversationStats.totalTokens.input.toLocaleString()} tokens in
+                  </span>
+                  <span className={styles.statBadge}>
+                    <Hash size={11} />
+                    {conversationStats.totalTokens.output.toLocaleString()} tokens out
+                  </span>
+                  <span className={styles.statBadge}>
+                    <Hash size={11} />
+                    {conversationStats.totalTokens.total.toLocaleString()} tokens total
+                  </span>
+                </>
+              )}
+              {conversationStats.totalCost > 0 && (
+                <span className={`${styles.statBadge} ${styles.statBadgeCost}`}>
+                  <Coins size={11} />
+                  {formatCostBadge(conversationStats.totalCost)}
+                  {conversationStats.originalTotalCost - conversationStats.totalCost > 0.000001 && (
+                    <span className={styles.statBadgeSub}>
+                      ({formatCostBadge(conversationStats.originalTotalCost)} total)
+                    </span>
+                  )}
+                </span>
+              )}
+              {conversationStats.usedTools?.length > 0 &&
+                conversationStats.usedTools.map((tool) => {
+                  const ToolIcon = TOOL_ICON_MAP[tool.name] || Wrench;
+                  const color = TOOL_COLORS[tool.name] || "#c4956a";
+                  return (
+                    <span
+                      key={tool.name}
+                      className={styles.statBadge}
+                      style={{
+                        color,
+                        borderColor: `color-mix(in srgb, ${color} 30%, transparent)`,
+                      }}
+                    >
+                      <ToolIcon size={11} />
+                      {tool.name}
+                      <span className={styles.statBadgeCount}>×{tool.count}</span>
+                    </span>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
         {workflows.length > 0 && (
           <div className={styles.modalities} style={{ marginBottom: 12 }}>
             <div className={styles.modalitiesHeader}>
