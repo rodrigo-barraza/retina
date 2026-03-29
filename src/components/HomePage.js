@@ -50,6 +50,8 @@ export default function HomePage({ initialConversationId = null }) {
   const [messages, setMessages] = useState([]);
   // Ref to synchronously track live conversation ID (avoids stale closure in setMessages updater)
   const liveConvIdRef = useRef(null);
+  // Whether the live conversation document has been created in MongoDB (via appendMessages)
+  const liveConvCreatedRef = useRef(false);
   // Chain live persistence ops to prevent race conditions (e.g. PATCH before POST completes)
   const livePersistChainRef = useRef(Promise.resolve());
 
@@ -356,6 +358,7 @@ export default function HomePage({ initialConversationId = null }) {
   const handleNewChat = () => {
     setActiveId(null);
     liveConvIdRef.current = null;
+    liveConvCreatedRef.current = false;
     livePersistChainRef.current = Promise.resolve();
     updateUrl(null);
     setTitle("New Conversation");
@@ -393,6 +396,9 @@ export default function HomePage({ initialConversationId = null }) {
     try {
       const full = await PrismService.getConversation(conv.id);
       setActiveId(full.id);
+      liveConvIdRef.current = full.id;
+      liveConvCreatedRef.current = true; // Doc exists in DB
+      livePersistChainRef.current = Promise.resolve();
       updateUrl(full.id);
       setTitle(full.title);
       const displayMessages = prepareDisplayMessages(full.messages);
@@ -2086,15 +2092,19 @@ export default function HomePage({ initialConversationId = null }) {
               const { systemPrompt, ...modelSettings } = settings;
 
               if (!currentId) {
-                // First turn — create the conversation via appendMessages (auto-creates doc)
-                const firstUserMsg = finalized.find((m) => m.role === "user");
-                const liveTitle =
-                  firstUserMsg?.content?.slice(0, 40) || "Live Conversation";
+                // ID not yet assigned — generate one and assign it now
                 currentId = crypto.randomUUID();
                 liveConvIdRef.current = currentId;
                 setActiveId(currentId);
-                setTitle(liveTitle);
                 updateUrl(currentId);
+              }
+
+              if (!liveConvCreatedRef.current) {
+                // First persist — create the conversation via appendMessages (auto-creates doc)
+                const firstUserMsg = finalized.find((m) => m.role === "user");
+                const liveTitle =
+                  firstUserMsg?.content?.slice(0, 40) || "Live Conversation";
+                setTitle(liveTitle);
 
                 livePersistChainRef.current = livePersistChainRef.current
                   .then(() =>
@@ -2102,13 +2112,16 @@ export default function HomePage({ initialConversationId = null }) {
                       title: liveTitle,
                       systemPrompt,
                       settings: modelSettings,
-                    }).then(() => loadConversations()),
+                    }).then(() => {
+                      liveConvCreatedRef.current = true;
+                      loadConversations();
+                    }),
                   )
                   .catch((err) =>
                     console.error("[Live] Failed to create conversation:", err),
                   );
               } else {
-                // Subsequent turns — chain after creation to avoid 404
+                // Subsequent turns — doc exists, safe to PATCH
                 livePersistChainRef.current = livePersistChainRef.current
                   .then(() =>
                     PrismService.patchConversation(currentId, {

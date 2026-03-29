@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Download, MessageSquare, GitBranch } from "lucide-react";
+import { Download, MessageSquare, GitBranch, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import HistoryItemComponent from "../../../components/HistoryItemComponent";
 import IrisService from "../../../services/IrisService";
@@ -45,13 +45,14 @@ function extractMediaAssets(obj) {
         node.startsWith("minio://") ||
         node.startsWith("data:image/") ||
         node.startsWith("data:audio/") ||
-        node.startsWith("data:video/")
+        node.startsWith("data:video/") ||
+        node.startsWith("data:application/pdf")
       ) {
         assets.add(node);
       } else if (node.startsWith("http://") || node.startsWith("https://")) {
         const ext = node.split("?")[0].split(".").pop()?.toLowerCase();
         if (
-          ["png", "jpg", "jpeg", "gif", "webp", "mp3", "wav", "ogg", "webm", "mp4", "mov", "avi"].includes(
+          ["png", "jpg", "jpeg", "gif", "webp", "mp3", "wav", "ogg", "webm", "mp4", "mov", "avi", "pdf"].includes(
             ext
           )
         ) {
@@ -577,12 +578,16 @@ export default function RequestsPage() {
                     {mediaAssets.map((ref, idx) => {
                       const src = PrismService.getFileUrl(ref);
                       const isData = ref.startsWith("data:");
+                      const ext = ref.split("?")[0].split(".").pop()?.toLowerCase();
                       const isAudio = isData
                         ? ref.startsWith("data:audio")
                         : /\.(mp3|wav|ogg|webm)$/i.test(ref.split("?")[0]);
                       const isVideo = isData
                         ? ref.startsWith("data:video")
                         : /\.(mp4|avi|mov)$/i.test(ref.split("?")[0]);
+                      const isPdf = isData
+                        ? ref.startsWith("data:application/pdf")
+                        : ext === "pdf";
 
                       if (isAudio) {
                         return (
@@ -596,22 +601,38 @@ export default function RequestsPage() {
                       }
                       if (isVideo) {
                         return (
-                          <video
+                          <a key={idx} href={src} target="_blank" rel="noopener noreferrer">
+                            <video
+                              src={src}
+                              controls
+                              className={styles.videoPreview}
+                            />
+                          </a>
+                        );
+                      }
+                      if (isPdf) {
+                        return (
+                          <a
                             key={idx}
-                            src={src}
-                            controls
-                            className={styles.videoPreview}
-                          />
+                            href={src}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.pdfPreview}
+                          >
+                            <FileText size={24} />
+                            <span>PDF</span>
+                          </a>
                         );
                       }
                       return (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          key={idx}
-                          src={src}
-                          alt="Asset preview"
-                          className={styles.imagePreview}
-                        />
+                        <a key={idx} href={src} target="_blank" rel="noopener noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={src}
+                            alt="Asset preview"
+                            className={styles.imagePreview}
+                          />
+                        </a>
                       );
                     })}
                   </div>
