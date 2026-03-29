@@ -24,9 +24,10 @@ import {
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import SelectDropdown from "./SelectDropdown";
 import ToggleSwitch from "./ToggleSwitch";
-
+import ModalityIconsComponent from "./ModalityIconsComponent";
 import SystemPromptModal from "./SystemPromptModal";
 import styles from "./SettingsPanel.module.css";
+import { formatCost } from "../utils/utilities";
 import {
   MODALITY_COLORS,
   TOOL_COLORS,
@@ -34,11 +35,7 @@ import {
   TOGGLEABLE_TOOLS,
 } from "./WorkflowNodeConstants";
 
-/** Format a cost value — matches formatCost from utilities (5 decimal places) */
-function formatCostBadge(cost) {
-  if (cost === null || cost === undefined) return "$0.00";
-  return `$${cost.toFixed(5)}`;
-}
+
 
 export default function SettingsPanel({
   config,
@@ -232,10 +229,10 @@ export default function SettingsPanel({
               {conversationStats.totalCost > 0 && (
                 <span className={`${styles.statBadge} ${styles.statBadgeCost}`}>
                   <Coins size={11} />
-                  {formatCostBadge(conversationStats.totalCost)}
-                  {conversationStats.originalTotalCost - conversationStats.totalCost > 0.000001 && (
+                  {formatCost(conversationStats.totalCost)}
+                  {conversationStats.originalTotalCost > 0 && conversationStats.originalTotalCost !== conversationStats.totalCost && (
                     <span className={styles.statBadgeSub}>
-                      ({formatCostBadge(conversationStats.originalTotalCost)} total)
+                      ({formatCost(conversationStats.originalTotalCost)} total)
                     </span>
                   )}
                 </span>
@@ -263,56 +260,10 @@ export default function SettingsPanel({
               {conversationStats.modalities &&
                 Object.values(conversationStats.modalities).some(Boolean) && (
                   <span className={styles.statBadge}>
-                    {conversationStats.modalities.textIn && (
-                      <span className={styles.modalityDot} style={{ color: MODALITY_COLORS.text }} title="Text input">
-                        <Type size={11} />
-                      </span>
-                    )}
-                    {conversationStats.modalities.imageIn && (
-                      <span className={styles.modalityDot} style={{ color: MODALITY_COLORS.image }} title="Image input">
-                        <ImageIcon size={11} />
-                      </span>
-                    )}
-                    {conversationStats.modalities.audioIn && (
-                      <span className={styles.modalityDot} style={{ color: MODALITY_COLORS.audio }} title="Audio input">
-                        <Volume2 size={11} />
-                      </span>
-                    )}
-                    {conversationStats.modalities.videoIn && (
-                      <span className={styles.modalityDot} style={{ color: MODALITY_COLORS.video }} title="Video input">
-                        <Video size={11} />
-                      </span>
-                    )}
-                    {conversationStats.modalities.docIn && (
-                      <span className={styles.modalityDot} style={{ color: MODALITY_COLORS.pdf }} title="Document input">
-                        <FileText size={11} />
-                      </span>
-                    )}
-                    {(conversationStats.modalities.textIn ||
-                      conversationStats.modalities.imageIn ||
-                      conversationStats.modalities.audioIn ||
-                      conversationStats.modalities.videoIn ||
-                      conversationStats.modalities.docIn) &&
-                      (conversationStats.modalities.textOut ||
-                        conversationStats.modalities.imageOut ||
-                        conversationStats.modalities.audioOut) && (
-                        <span className={styles.modalityArrow}>→</span>
-                      )}
-                    {conversationStats.modalities.textOut && (
-                      <span className={styles.modalityDot} style={{ color: MODALITY_COLORS.text }} title="Text output">
-                        <Type size={11} />
-                      </span>
-                    )}
-                    {conversationStats.modalities.imageOut && (
-                      <span className={styles.modalityDot} style={{ color: MODALITY_COLORS.image }} title="Image output">
-                        <ImageIcon size={11} />
-                      </span>
-                    )}
-                    {conversationStats.modalities.audioOut && (
-                      <span className={styles.modalityDot} style={{ color: MODALITY_COLORS.audio }} title="Audio output">
-                        <Volume2 size={11} />
-                      </span>
-                    )}
+                    <ModalityIconsComponent
+                      modalities={conversationStats.modalities}
+                      variant="badge"
+                    />
                   </span>
                 )}
             </div>

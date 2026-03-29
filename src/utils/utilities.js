@@ -125,3 +125,63 @@ Guidelines:
 - For questions that don't require API data, respond naturally without tool calls.
 - The current local date/time is: ${new Date().toLocaleString()}`;
 }
+
+/**
+ * Get unique model names from assistant messages.
+ * Shared between HomePage and admin/conversations.
+ */
+export function getUniqueModels(messages) {
+  return [
+    ...new Set(
+      messages
+        .filter((m) => m.role === "assistant" && m.model)
+        .map((m) => m.model),
+    ),
+  ];
+}
+
+/**
+ * Sum estimatedCost across all messages.
+ */
+export function getConversationCost(messages) {
+  return messages.reduce((sum, m) => sum + (m.estimatedCost || 0), 0);
+}
+
+/**
+ * Aggregate input/output tokens and request count from assistant messages.
+ * Returns { totalTokens: { input, output, total }, requestCount }.
+ */
+export function getConversationTokenStats(messages) {
+  let input = 0;
+  let output = 0;
+  let requests = 0;
+  for (const m of messages) {
+    if (m.role !== "assistant" || !m.usage) continue;
+    requests++;
+    input += getTotalInputTokens(m.usage);
+    output += m.usage.outputTokens || 0;
+  }
+  return {
+    totalTokens: { input, output, total: input + output },
+    requestCount: requests,
+  };
+}
+
+/**
+ * Count tool invocations across all messages.
+ * Returns [{ name, count }] sorted by count.
+ */
+export function getUsedTools(messages) {
+  const counts = new Map();
+  for (const m of messages) {
+    if (m.role !== "assistant") continue;
+    if (m.thinking) counts.set("Thinking", (counts.get("Thinking") || 0) + 1);
+    if (m.toolCalls?.length > 0) {
+      counts.set("Function Calling", (counts.get("Function Calling") || 0) + 1);
+      for (const tc of m.toolCalls) {
+        if (tc.name) counts.set(tc.name, (counts.get(tc.name) || 0) + 1);
+      }
+    }
+  }
+  return [...counts.entries()].map(([name, count]) => ({ name, count }));
+}

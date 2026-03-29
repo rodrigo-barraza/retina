@@ -31,3 +31,24 @@ export const LS_WORKFLOW_EXPANDED_NODES = "workflow-expanded-nodes";
 export const LS_WORKFLOW_VIEWS = "workflow-views";
 export const LS_ADMIN_PROJECT_FILTER = "admin:projectFilter";
 export const LS_DATE_RANGE = "retina-date-range";
+
+// ── Settings defaults (shared by HomePage, Console, admin) ──────
+export const SETTINGS_DEFAULTS = {
+  provider: "",
+  model: "",
+  systemPrompt: "You are a helpful AI assistant",
+  temperature: 1.0,
+  maxTokens: 2048,
+  topP: 1,
+  topK: 0,
+  frequencyPenalty: 0,
+  presencePenalty: 0,
+  stopSequences: "",
+  thinkingEnabled: false,
+  reasoningEffort: "high",
+  thinkingLevel: "high",
+  thinkingBudget: "",
+  webSearchEnabled: false,
+  verbosity: "",
+  reasoningSummary: "",
+};

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
+import CountLinkComponent from "../../components/CountLinkComponent";
 import {
   Activity,
   Zap,
@@ -383,34 +384,26 @@ export default function DashboardPage() {
           {
             key: "conversationCount",
             label: "Conversations",
-            render: (p) =>
-              p.conversationCount > 0 ? (
-                <Link
-                  href={`/admin/conversations?project=${encodeURIComponent(p.project)}`}
-                  className={styles.workflowLink}
-                >
-                  <MessageSquare size={12} />
-                  {p.conversationCount}
-                </Link>
-              ) : (
-                <span style={{ color: "var(--text-muted)" }}>0</span>
-              ),
+            render: (p) => (
+              <CountLinkComponent
+                count={p.conversationCount}
+                href={`/admin/conversations?project=${encodeURIComponent(p.project)}`}
+                icon={MessageSquare}
+                className={styles.workflowLink}
+              />
+            ),
           },
           {
             key: "workflowCount",
             label: "Workflows",
-            render: (p) =>
-              p.workflowCount > 0 ? (
-                <Link
-                  href={`/admin/workflows?project=${encodeURIComponent(p.project)}`}
-                  className={styles.workflowLink}
-                >
-                  <Workflow size={12} />
-                  {p.workflowCount}
-                </Link>
-              ) : (
-                <span style={{ color: "var(--text-muted)" }}>0</span>
-              ),
+            render: (p) => (
+              <CountLinkComponent
+                count={p.workflowCount}
+                href={`/admin/workflows?project=${encodeURIComponent(p.project)}`}
+                icon={Workflow}
+                className={styles.workflowLink}
+              />
+            ),
           },
         ]}
         data={projectStats}
@@ -489,34 +482,26 @@ export default function DashboardPage() {
           {
             key: "conversationCount",
             label: "Conversations",
-            render: (p) =>
-              p.conversationCount > 0 ? (
-                <Link
-                  href={`/admin/conversations?provider=${encodeURIComponent(p.provider)}`}
-                  className={styles.workflowLink}
-                >
-                  <MessageSquare size={12} />
-                  {p.conversationCount}
-                </Link>
-              ) : (
-                <span style={{ color: "var(--text-muted)" }}>0</span>
-              ),
+            render: (p) => (
+              <CountLinkComponent
+                count={p.conversationCount}
+                href={`/admin/conversations?provider=${encodeURIComponent(p.provider)}`}
+                icon={MessageSquare}
+                className={styles.workflowLink}
+              />
+            ),
           },
           {
             key: "workflowCount",
             label: "Workflows",
-            render: (p) =>
-              p.workflowCount > 0 ? (
-                <Link
-                  href={`/admin/workflows?provider=${encodeURIComponent(p.provider)}`}
-                  className={styles.workflowLink}
-                >
-                  <Workflow size={12} />
-                  {p.workflowCount}
-                </Link>
-              ) : (
-                <span style={{ color: "var(--text-muted)" }}>0</span>
-              ),
+            render: (p) => (
+              <CountLinkComponent
+                count={p.workflowCount}
+                href={`/admin/workflows?provider=${encodeURIComponent(p.provider)}`}
+                icon={Workflow}
+                className={styles.workflowLink}
+              />
+            ),
           },
         ]}
         data={providerData}
@@ -614,34 +599,26 @@ export default function DashboardPage() {
           {
             key: "conversationCount",
             label: "Conversations",
-            render: (m) =>
-              m.conversationCount > 0 ? (
-                <Link
-                  href={`/admin/conversations?model=${encodeURIComponent(m.model)}`}
-                  className={styles.workflowLink}
-                >
-                  <MessageSquare size={12} />
-                  {m.conversationCount}
-                </Link>
-              ) : (
-                <span style={{ color: "var(--text-muted)" }}>0</span>
-              ),
+            render: (m) => (
+              <CountLinkComponent
+                count={m.conversationCount}
+                href={`/admin/conversations?model=${encodeURIComponent(m.model)}`}
+                icon={MessageSquare}
+                className={styles.workflowLink}
+              />
+            ),
           },
           {
             key: "workflowCount",
             label: "Workflows",
-            render: (m) =>
-              m.workflowCount > 0 ? (
-                <Link
-                  href={`/admin/workflows?model=${encodeURIComponent(m.model)}`}
-                  className={styles.workflowLink}
-                >
-                  <Workflow size={12} />
-                  {m.workflowCount}
-                </Link>
-              ) : (
-                <span style={{ color: "var(--text-muted)" }}>0</span>
-              ),
+            render: (m) => (
+              <CountLinkComponent
+                count={m.workflowCount}
+                href={`/admin/workflows?model=${encodeURIComponent(m.model)}`}
+                icon={Workflow}
+                className={styles.workflowLink}
+              />
+            ),
           },
         ]}
         data={topModels}

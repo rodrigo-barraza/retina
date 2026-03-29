@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { getTotalInputTokens } from "../../../utils/utilities";
+import {
+  getUniqueModels,
+  getConversationCost,
+  getConversationTokenStats,
+  getUsedTools,
+} from "../../../utils/utilities";
 import { useSearchParams } from "next/navigation";
 import {
   Loader,
@@ -26,26 +31,10 @@ import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 
+import { SETTINGS_DEFAULTS } from "../../../constants";
 import styles from "./page.module.css";
 
 const POLL_INTERVAL = 5000; // 5s
-
-const SETTINGS_DEFAULTS = {
-  temperature: 1.0,
-  maxTokens: 2048,
-  topP: 1,
-  topK: 0,
-  frequencyPenalty: 0,
-  presencePenalty: 0,
-  stopSequences: "",
-  thinkingEnabled: false,
-  reasoningEffort: "high",
-  thinkingLevel: "high",
-  thinkingBudget: "",
-  webSearchEnabled: false,
-  verbosity: "",
-  reasoningSummary: "",
-};
 
 export default function ConversationsPage({ initialId = null }) {
   const { projectFilter, projectOptions, handleProjectChange } =
@@ -272,57 +261,25 @@ export default function ConversationsPage({ initialId = null }) {
     ? selectedConv.title || "Untitled Conversation"
     : "Select a conversation";
 
+  const msgs = useMemo(() => selectedConv?.messages || [], [selectedConv]);
+
   const uniqueModels = useMemo(
-    () => [
-      ...new Set(
-        (selectedConv?.messages || [])
-          .filter((m) => m.role === "assistant" && m.model)
-          .map((m) => m.model),
-      ),
-    ],
-    [selectedConv],
+    () => getUniqueModels(msgs),
+    [msgs],
   );
 
   const totalCost = useMemo(
-    () =>
-      (selectedConv?.messages || []).reduce(
-        (sum, m) => sum + (m.estimatedCost || 0),
-        0,
-      ),
-    [selectedConv],
+    () => getConversationCost(msgs),
+    [msgs],
   );
 
-  const { totalTokens, requestCount } = useMemo(() => {
-    let input = 0;
-    let output = 0;
-    let requests = 0;
-    for (const m of selectedConv?.messages || []) {
-      if (m.role !== "assistant" || !m.usage) continue;
-      requests++;
-      input += getTotalInputTokens(m.usage);
-      output += m.usage.outputTokens || 0;
-    }
-    return {
-      totalTokens: { input, output, total: input + output },
-      requestCount: requests,
-    };
-  }, [selectedConv]);
+  const { totalTokens, requestCount } = useMemo(
+    () => getConversationTokenStats(msgs),
+    [msgs],
+  );
 
   // Derive tools used across all messages with invocation counts
-  const usedTools = useMemo(() => {
-    const counts = new Map();
-    for (const m of selectedConv?.messages || []) {
-      if (m.role !== "assistant") continue;
-      if (m.thinking) counts.set("Thinking", (counts.get("Thinking") || 0) + 1);
-      if (m.toolCalls?.length > 0) {
-        counts.set("Function Calling", (counts.get("Function Calling") || 0) + 1);
-        for (const tc of m.toolCalls) {
-          if (tc.name) counts.set(tc.name, (counts.get(tc.name) || 0) + 1);
-        }
-      }
-    }
-    return [...counts.entries()].map(([name, count]) => ({ name, count }));
-  }, [selectedConv]);
+  const usedTools = useMemo(() => getUsedTools(msgs), [msgs]);
 
   const modalities = useMemo(
     () => getModalities(selectedConv?.messages || []),

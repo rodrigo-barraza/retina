@@ -10,13 +10,21 @@ import { getModalities } from "./HistoryPanel";
 import StorageService from "../services/StorageService";
 import {
   expandMessagesForFC,
-  sanitizeToolName,
+  buildToolSchemas,
+  buildToolSchemaMap,
 } from "../utils/FunctionCallingUtilities";
-import { buildFCSystemPrompt, getTotalInputTokens } from "../utils/utilities";
+import {
+  buildFCSystemPrompt,
+  getUniqueModels,
+  getConversationCost,
+  getConversationTokenStats,
+  getUsedTools,
+} from "../utils/utilities";
 import {
   SK_LAST_PROVIDER,
   SK_LAST_MODEL,
   SK_INFERENCE_MODE,
+  SETTINGS_DEFAULTS,
 } from "../constants";
 import { Send, Settings, Parentheses, SlidersHorizontal } from "lucide-react";
 import NavigationSidebarComponent from "../components/NavigationSidebarComponent";
@@ -29,6 +37,7 @@ import ThreePanelLayout from "../components/ThreePanelLayout";
 import TabBarComponent from "../components/TabBarComponent";
 import ModelPickerPopoverComponent from "../components/ModelPickerPopoverComponent";
 import ToolActivityPanelComponent from "../components/ToolActivityPanelComponent";
+import useToolToggles from "../hooks/useToolToggles";
 
 export default function HomePage({ initialConversationId = null }) {
   const router = useRouter();
@@ -47,23 +56,7 @@ export default function HomePage({ initialConversationId = null }) {
   const livePersistChainRef = useRef(Promise.resolve());
 
   const [settings, setSettings] = useState({
-    provider: "",
-    model: "",
-    systemPrompt: "You are a helpful AI assistant",
-    temperature: 1.0,
-    maxTokens: 2048,
-    topP: 1,
-    topK: 0,
-    frequencyPenalty: 0,
-    presencePenalty: 0,
-    stopSequences: "",
-    thinkingEnabled: false,
-    reasoningEffort: "high",
-    thinkingLevel: "high",
-    thinkingBudget: "",
-    webSearchEnabled: false,
-    verbosity: "",
-    reasoningSummary: "",
+    ...SETTINGS_DEFAULTS,
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -100,8 +93,9 @@ export default function HomePage({ initialConversationId = null }) {
     }
   }, [selectedModelSupportsFc, leftTab]);
   const [customTools, setCustomTools] = useState([]);
-  const [disabledBuiltIns, setDisabledBuiltIns] = useState(new Set());
   const [builtInTools, setBuiltInTools] = useState([]);
+  const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
+    useToolToggles(builtInTools);
   const [toolActivity, setToolActivity] = useState([]);
 
   const abortRef = useRef(null);
@@ -140,52 +134,22 @@ export default function HomePage({ initialConversationId = null }) {
   };
 
   const uniqueModels = useMemo(
-    () => [
-      ...new Set(
-        messages
-          .filter((m) => m.role === "assistant" && m.model)
-          .map((m) => m.model),
-      ),
-    ],
+    () => getUniqueModels(messages),
     [messages],
   );
 
   const totalCost = useMemo(
-    () => messages.reduce((sum, m) => sum + (m.estimatedCost || 0), 0),
+    () => getConversationCost(messages),
     [messages],
   );
 
-  const { totalTokens, requestCount } = useMemo(() => {
-    let input = 0;
-    let output = 0;
-    let requests = 0;
-    for (const m of messages) {
-      if (m.role !== "assistant" || !m.usage) continue;
-      requests++;
-      input += getTotalInputTokens(m.usage);
-      output += m.usage.outputTokens || 0;
-    }
-    return {
-      totalTokens: { input, output, total: input + output },
-      requestCount: requests,
-    };
-  }, [messages]);
+  const { totalTokens, requestCount } = useMemo(
+    () => getConversationTokenStats(messages),
+    [messages],
+  );
 
   // Derive tools used across all messages with invocation counts
-  const usedTools = useMemo(() => {
-    const counts = new Map();
-    for (const m of messages) {
-      if (m.role !== "assistant") continue;
-      if (m.thinking) counts.set("Thinking", (counts.get("Thinking") || 0) + 1);
-      if (m.toolCalls?.length > 0) {
-        counts.set("Function Calling", (counts.get("Function Calling") || 0) + 1);
-        for (const tc of m.toolCalls) {
-          if (tc.name) counts.set(tc.name, (counts.get(tc.name) || 0) + 1);
-        }
-      }
-    }
-    return [...counts.entries()].map(([name, count]) => ({ name, count }));
-  }, [messages]);
+  const usedTools = useMemo(() => getUsedTools(messages), [messages]);
 
   const modalities = useMemo(() => getModalities(messages), [messages]);
 
@@ -273,41 +237,16 @@ export default function HomePage({ initialConversationId = null }) {
 
   const FC_SYSTEM_PROMPT = buildFCSystemPrompt();
 
-  const allToolSchemas = useMemo(() => {
-    const builtIn = builtInTools.filter((t) => !disabledBuiltIns.has(t.name));
-    const custom = customTools
-      .filter((t) => t.enabled)
-      .map((t) => ({
-        name: sanitizeToolName(t.name),
-        description: t.description,
-        parameters: {
-          type: "object",
-          properties: Object.fromEntries(
-            (t.parameters || []).map((p) => [
-              p.name,
-              {
-                type: p.type || "string",
-                description: p.description || "",
-                ...(p.enum?.length ? { enum: p.enum } : {}),
-              },
-            ]),
-          ),
-          required: (t.parameters || [])
-            .filter((p) => p.required)
-            .map((p) => p.name),
-        },
-      }));
-    return [...builtIn, ...custom];
-  }, [customTools, disabledBuiltIns, builtInTools]);
+  const allToolSchemas = useMemo(
+    () => buildToolSchemas(builtInTools, disabledBuiltIns, customTools),
+    [customTools, disabledBuiltIns, builtInTools],
+  );
 
   // Schema lookup for ToolActivityPanel data source badges
-  const toolSchemaMap = useMemo(() => {
-    const map = new Map();
-    for (const t of builtInTools) {
-      map.set(t.name, t);
-    }
-    return map;
-  }, [builtInTools]);
+  const toolSchemaMap = useMemo(
+    () => buildToolSchemaMap(builtInTools),
+    [builtInTools],
+  );
 
   const loadCustomTools = useCallback(async () => {
     try {
@@ -330,32 +269,7 @@ export default function HomePage({ initialConversationId = null }) {
       .catch(console.error);
   }, []);
 
-  const handleToggleBuiltIn = useCallback((toolName) => {
-    setDisabledBuiltIns((prev) => {
-      const next = new Set(prev);
-      if (next.has(toolName)) next.delete(toolName);
-      else next.add(toolName);
-      return next;
-    });
-  }, []);
 
-  const handleToggleAllBuiltIn = useCallback(
-    (enableAll) => {
-      setDisabledBuiltIns((prev) => {
-        const next = new Set(prev);
-        const allSchemas = builtInTools;
-        for (const tool of allSchemas) {
-          if (enableAll) {
-            next.delete(tool.name);
-          } else {
-            next.add(tool.name);
-          }
-        }
-        return next;
-      });
-    },
-    [builtInTools],
-  );
 
   const handleToggleCustomTool = useCallback(
     async (tool) => {

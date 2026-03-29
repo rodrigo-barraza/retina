@@ -134,3 +134,51 @@ export function expandMessagesForFC(messages, { filterDeleted = true } = {}) {
     ];
   });
 }
+
+/**
+ * Build a merged array of tool schemas from built-in and custom tools.
+ * Shared between HomePage and ConsoleComponent.
+ *
+ * @param {Array}  builtInTools     — server-provided built-in tool schemas
+ * @param {Set}    disabledBuiltIns — names of disabled built-in tools
+ * @param {Array}  customTools      — user-defined custom tools
+ * @returns {Array} merged tool schema array
+ */
+export function buildToolSchemas(builtInTools, disabledBuiltIns, customTools) {
+  const builtIn = builtInTools.filter((t) => !disabledBuiltIns.has(t.name));
+  const custom = customTools
+    .filter((t) => t.enabled)
+    .map((t) => ({
+      name: sanitizeToolName(t.name),
+      description: t.description,
+      parameters: {
+        type: "object",
+        properties: Object.fromEntries(
+          (t.parameters || []).map((p) => [
+            p.name,
+            {
+              type: p.type || "string",
+              description: p.description || "",
+              ...(p.enum?.length ? { enum: p.enum } : {}),
+            },
+          ]),
+        ),
+        required: (t.parameters || [])
+          .filter((p) => p.required)
+          .map((p) => p.name),
+      },
+    }));
+  return [...builtIn, ...custom];
+}
+
+/**
+ * Build a name → schema Map from built-in tools.
+ * Used by ToolActivityPanelComponent for data source badges.
+ */
+export function buildToolSchemaMap(builtInTools) {
+  const map = new Map();
+  for (const t of builtInTools) {
+    map.set(t.name, t);
+  }
+  return map;
+}

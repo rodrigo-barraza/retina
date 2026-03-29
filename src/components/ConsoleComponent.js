@@ -16,13 +16,15 @@ import ToolActivityPanelComponent from "./ToolActivityPanelComponent.js";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import {
   expandMessagesForFC,
-  sanitizeToolName,
+  buildToolSchemas,
+  buildToolSchemaMap,
 } from "../utils/FunctionCallingUtilities.js";
 import { buildFCSystemPrompt } from "../utils/utilities.js";
-import { PROJECT_CONSOLE } from "../constants.js";
+import { PROJECT_CONSOLE, SETTINGS_DEFAULTS } from "../constants.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./ConsoleComponent.module.css";
 import ChatInputButton from "./ChatInputButton.js";
+import useToolToggles from "../hooks/useToolToggles.js";
 
 const SYSTEM_PROMPT = buildFCSystemPrompt();
 
@@ -42,25 +44,12 @@ export default function ConsoleComponent() {
   const [leftTab, setLeftTab] = useState("settings"); // "settings" | "tools"
   const [customTools, setCustomTools] = useState([]);
   const [builtInTools, setBuiltInTools] = useState([]);
-  const [disabledBuiltIns, setDisabledBuiltIns] = useState(() => new Set());
+  const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
+    useToolToggles(builtInTools);
   const [settings, setSettings] = useState({
-    provider: "google",
-    model: "gemini-3-flash-preview",
+    ...SETTINGS_DEFAULTS,
     systemPrompt: SYSTEM_PROMPT,
-    temperature: 1.0,
     maxTokens: 8192,
-    topP: 1,
-    topK: 0,
-    frequencyPenalty: 0,
-    presencePenalty: 0,
-    stopSequences: "",
-    thinkingEnabled: false,
-    reasoningEffort: "high",
-    thinkingLevel: "high",
-    thinkingBudget: "",
-    webSearchEnabled: false,
-    verbosity: "",
-    reasoningSummary: "",
   });
 
   const [pendingImages, setPendingImages] = useState([]);
@@ -184,42 +173,16 @@ export default function ConsoleComponent() {
   }, []);
 
   // Merge enabled built-in + enabled custom tool schemas
-  const allToolSchemas = useMemo(() => {
-    const builtIn = builtInTools.filter((t) => !disabledBuiltIns.has(t.name));
-
-    const custom = customTools
-      .filter((t) => t.enabled)
-      .map((t) => ({
-        name: sanitizeToolName(t.name),
-        description: t.description,
-        parameters: {
-          type: "object",
-          properties: Object.fromEntries(
-            (t.parameters || []).map((p) => [
-              p.name,
-              {
-                type: p.type || "string",
-                description: p.description || "",
-                ...(p.enum?.length ? { enum: p.enum } : {}),
-              },
-            ]),
-          ),
-          required: (t.parameters || [])
-            .filter((p) => p.required)
-            .map((p) => p.name),
-        },
-      }));
-    return [...builtIn, ...custom];
-  }, [customTools, builtInTools, disabledBuiltIns]);
+  const allToolSchemas = useMemo(
+    () => buildToolSchemas(builtInTools, disabledBuiltIns, customTools),
+    [customTools, builtInTools, disabledBuiltIns],
+  );
 
   // Schema lookup for ToolActivityPanel data source badges
-  const toolSchemaMap = useMemo(() => {
-    const map = new Map();
-    for (const t of builtInTools) {
-      map.set(t.name, t);
-    }
-    return map;
-  }, [builtInTools]);
+  const toolSchemaMap = useMemo(
+    () => buildToolSchemaMap(builtInTools),
+    [builtInTools],
+  );
 
   // Pick 5 random prompt suggestions — re-shuffles on new chat (client-only to avoid hydration mismatch)
   const [randomPrompts, setRandomPrompts] = useState([]);
@@ -573,32 +536,7 @@ export default function ConsoleComponent() {
   );
 
   // ── Left sidebar: tab bar + content ──────────────────────────
-  const handleToggleBuiltIn = useCallback((toolName) => {
-    setDisabledBuiltIns((prev) => {
-      const next = new Set(prev);
-      if (next.has(toolName)) next.delete(toolName);
-      else next.add(toolName);
-      return next;
-    });
-  }, []);
 
-  const handleToggleAllBuiltIn = useCallback(
-    (enableAll) => {
-      setDisabledBuiltIns((prev) => {
-        const next = new Set(prev);
-        const allSchemas = builtInTools;
-        for (const tool of allSchemas) {
-          if (enableAll) {
-            next.delete(tool.name);
-          } else {
-            next.add(tool.name);
-          }
-        }
-        return next;
-      });
-    },
-    [builtInTools],
-  );
 
   const leftPanel = (
     <>
