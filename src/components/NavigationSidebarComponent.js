@@ -37,7 +37,13 @@ function RainbowCanvas({ turbo = false }) {
 }
 
 const USER_NAV_ITEMS = [
-  { href: "/", label: "Conversations", icon: MessageSquare, exact: true },
+  {
+    href: "/",
+    label: "Conversations",
+    icon: MessageSquare,
+    exact: true,
+    alsoMatches: ["/conversations"],
+  },
   { href: "/workflows", label: "Workflows", icon: Workflow },
   { href: "/models", label: "Models", icon: Server },
   { href: "/media", label: "Media", icon: ImageIcon },
@@ -138,9 +144,13 @@ export default function NavigationSidebarComponent({
               <nav className={styles.mobilePopoverNav}>
                 {navItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive = item.exact
-                    ? pathname === item.href
-                    : pathname.startsWith(item.href);
+                  const isActive =
+                    (item.exact
+                      ? pathname === item.href
+                      : pathname.startsWith(item.href)) ||
+                    item.alsoMatches?.some((p) =>
+                      pathname.startsWith(p)
+                    );
 
                   return (
                     <Link
@@ -240,9 +250,13 @@ export default function NavigationSidebarComponent({
         <nav className={styles.nav}>
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = item.exact
-              ? pathname === item.href
-              : pathname.startsWith(item.href);
+            const isActive =
+              (item.exact
+                ? pathname === item.href
+                : pathname.startsWith(item.href)) ||
+              item.alsoMatches?.some((p) =>
+                pathname.startsWith(p)
+              );
 
             return (
               <Link
