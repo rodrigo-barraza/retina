@@ -346,10 +346,6 @@ export default function ConversationsPage({ initialId = null }) {
           onChange={handleProjectChange}
           placeholder="All Projects"
         />
-        <span className={styles.liveDot}>
-          <span className={styles.liveDotInner} />
-          Live
-        </span>
         <span className={styles.statPill}>
           {loading ? "..." : recentCount} recent
         </span>

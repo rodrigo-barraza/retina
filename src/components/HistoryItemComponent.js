@@ -1,25 +1,15 @@
 "use client";
 
 import {
-  Type,
-  Image,
-  Volume2,
-  Video,
-  FileText as DocIcon,
   Download,
   Copy,
   Star,
-  Parentheses,
-  Globe,
-  Code,
-  Brain,
   Trash2,
 } from "lucide-react";
-import TooltipComponent from "./TooltipComponent";
 import IconButtonComponent from "./IconButtonComponent";
+import ModalityIconsComponent from "./ModalityIconsComponent";
 import { DateTime } from "luxon";
 import styles from "./HistoryItemComponent.module.css";
-import { MODALITY_COLORS } from "./WorkflowNodeConstants";
 import { formatCost } from "../utils/utilities";
 
 /**
@@ -111,148 +101,7 @@ export default function HistoryItemComponent({
             {item.modelName.split("/").pop()}
           </span>
         )}
-        {/* Modality icons */}
-        {Object.keys(mod).length > 0 && (
-          <div className={styles.modalitiesRow}>
-            <div className={styles.modalities}>
-              {mod.textIn && (
-                <TooltipComponent label="Text input" position="top">
-                  <span
-                    className={styles.modalityIcon}
-                    style={{ color: MODALITY_COLORS.text }}
-                  >
-                    <Type size={11} />
-                  </span>
-                </TooltipComponent>
-              )}
-              {mod.imageIn && (
-                <TooltipComponent label="Image input" position="top">
-                  <span
-                    className={styles.modalityIcon}
-                    style={{ color: MODALITY_COLORS.image }}
-                  >
-                    <Image size={11} />
-                  </span>
-                </TooltipComponent>
-              )}
-              {mod.audioIn && (
-                <TooltipComponent label="Audio input" position="top">
-                  <span
-                    className={styles.modalityIcon}
-                    style={{ color: MODALITY_COLORS.audio }}
-                  >
-                    <Volume2 size={11} />
-                  </span>
-                </TooltipComponent>
-              )}
-              {mod.videoIn && (
-                <TooltipComponent label="Video input" position="top">
-                  <span
-                    className={styles.modalityIcon}
-                    style={{ color: MODALITY_COLORS.video }}
-                  >
-                    <Video size={11} />
-                  </span>
-                </TooltipComponent>
-              )}
-              {mod.docIn && (
-                <TooltipComponent label="Document input" position="top">
-                  <span
-                    className={styles.modalityIcon}
-                    style={{ color: MODALITY_COLORS.pdf }}
-                  >
-                    <DocIcon size={11} />
-                  </span>
-                </TooltipComponent>
-              )}
-              {(mod.textIn ||
-                mod.imageIn ||
-                mod.audioIn ||
-                mod.videoIn ||
-                mod.docIn) &&
-                (mod.textOut || mod.imageOut || mod.audioOut) && (
-                  <span className={styles.modalityArrow}>→</span>
-                )}
-              {mod.textOut && (
-                <TooltipComponent label="Text output" position="top">
-                  <span
-                    className={styles.modalityIcon}
-                    style={{ color: MODALITY_COLORS.text }}
-                  >
-                    <Type size={11} />
-                  </span>
-                </TooltipComponent>
-              )}
-              {mod.imageOut && (
-                <TooltipComponent label="Image output" position="top">
-                  <span
-                    className={styles.modalityIcon}
-                    style={{ color: MODALITY_COLORS.image }}
-                  >
-                    <Image size={11} />
-                  </span>
-                </TooltipComponent>
-              )}
-              {mod.audioOut && (
-                <TooltipComponent label="Audio output" position="top">
-                  <span
-                    className={styles.modalityIcon}
-                    style={{ color: MODALITY_COLORS.audio }}
-                  >
-                    <Volume2 size={11} />
-                  </span>
-                </TooltipComponent>
-              )}
-            </div>
-            {(mod.thinking ||
-              mod.webSearch ||
-              mod.codeExecution ||
-              mod.functionCalling) && (
-              <div className={styles.toolIcons}>
-                {mod.thinking && (
-                  <TooltipComponent label="Thinking" position="top">
-                    <span
-                      className={styles.modalityIcon}
-                      style={{ color: MODALITY_COLORS.thinking }}
-                    >
-                      <Brain size={11} />
-                    </span>
-                  </TooltipComponent>
-                )}
-                {mod.webSearch && (
-                  <TooltipComponent label="Web search" position="top">
-                    <span
-                      className={styles.modalityIcon}
-                      style={{ color: MODALITY_COLORS.webSearch }}
-                    >
-                      <Globe size={11} />
-                    </span>
-                  </TooltipComponent>
-                )}
-                {mod.codeExecution && (
-                  <TooltipComponent label="Code execution" position="top">
-                    <span
-                      className={styles.modalityIcon}
-                      style={{ color: MODALITY_COLORS.codeExecution }}
-                    >
-                      <Code size={11} />
-                    </span>
-                  </TooltipComponent>
-                )}
-                {mod.functionCalling && (
-                  <TooltipComponent label="Function calling" position="top">
-                    <span
-                      className={styles.modalityIcon}
-                      style={{ color: MODALITY_COLORS.functionCalling }}
-                    >
-                      <Parentheses size={11} />
-                    </span>
-                  </TooltipComponent>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        <ModalityIconsComponent modalities={mod} />
         {children}
       </div>
       {/* Actions */}

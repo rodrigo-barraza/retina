@@ -10,26 +10,6 @@
   height: calc(100dvh);
 }
 
-.liveDot {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 2px;
-  background: var(--success-subtle);
-  color: var(--success);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.liveDotInner {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--success);
-  animation: pulse 2s ease-in-out infinite;
-}
-
 /* Stat pills (inline header) */
 .statPill {
   display: inline-flex;

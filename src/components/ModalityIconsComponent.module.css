@@ -1,0 +1,53 @@
+/* ── ModalityIconsComponent ── */
+
+.modalitiesRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modalities {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolIcons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.modalityIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.modalityArrow {
+  font-size: 9px;
+  color: var(--text-secondary);
+  opacity: 0.4;
+  margin: 0 1px;
+}
+
+/* Badge variant (used inside SettingsPanel stat badges) */
+.badgeContainer {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.modalityDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 1;
+  }
+}
