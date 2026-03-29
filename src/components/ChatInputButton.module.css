@@ -13,7 +13,7 @@
   flex-shrink: 0;
 }
 
-.chatInputBtn:hover {
+.chatInputBtn:hover:not(:disabled) {
   color: var(--accent-color);
   background: var(--bg-tertiary);
 }
@@ -22,11 +22,58 @@
   color: var(--text-secondary);
   background: transparent;
   cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .chatInputBtn.active {
   color: var(--accent-color);
   background: var(--bg-tertiary);
+}
+
+/* ── Submit variant ── */
+.chatInputBtn.submit {
+  background: var(--accent-color);
+  color: white;
+  margin-left: auto;
+}
+
+.chatInputBtn.submit:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.chatInputBtn.submit:disabled {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
+.chatInputBtn.submitGenerating {
+  position: relative;
+  overflow: hidden;
+  background: transparent !important;
+  color: white !important;
+  border: none;
+  z-index: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.chatInputBtn.submitGenerating::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: var(--prism-conic);
+  animation: spin 2s linear infinite;
+  z-index: -1;
+}
+
+.chatInputBtn.submitGenerating:hover {
+  transform: scale(1.08);
+}
+
+.chatInputBtn.submitGenerating svg {
+  color: white !important;
 }
 
 /* Rotating modality icon */

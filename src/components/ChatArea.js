@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Send,
   ChevronDown,
   ChevronRight,
   Paperclip,
@@ -11,7 +10,6 @@ import {
   AlertCircle,
   X,
   Parentheses,
-  Square,
   Zap,
   Mic,
   MicOff,
@@ -207,6 +205,7 @@ export default function ChatArea({
   onSystemPromptClick,
   readOnly = false,
   newChatKey = 0,
+  conversationId = null,
   toolActivitySlot = null,
   functionCallingEnabled = false,
   toolCount = 0,
@@ -350,6 +349,9 @@ export default function ChatArea({
   // Stale = live model with messages but no active session (view-only)
   const liveSessionStale = isLiveModel && messages.length > 0 && !liveMicActive;
 
+  // All input buttons disabled when viewing a past / ended conversation
+  const inputDisabled = readOnly || liveSessionStale;
+
   // Clean up live session when model changes or unmounts
   useEffect(() => {
     return () => {
@@ -359,6 +361,21 @@ export default function ChatArea({
       }
     };
   }, [settings?.model]);
+
+  // Tear down live session when switching conversations
+  const prevConvIdRef = useRef(conversationId);
+  useEffect(() => {
+    const prevId = prevConvIdRef.current;
+    prevConvIdRef.current = conversationId;
+
+    // Only tear down when changing away from a conversation (not on mount)
+    if (prevId !== conversationId && liveSessionRef.current) {
+      liveSessionRef.current.disconnect();
+      liveSessionRef.current = null;
+      liveUserTranscriptRef.current = "";
+      liveAssistantTranscriptRef.current = "";
+    }
+  }, [conversationId]);
 
   const handleLiveMicToggle = async () => {
     if (liveMicActive) {
@@ -963,6 +980,7 @@ export default function ChatArea({
                 label="Tools"
                 isActive={showToolsBubble}
                 icon="wrench"
+                disabled={inputDisabled}
                 data-tools-btn
               />
             )}
@@ -981,6 +999,7 @@ export default function ChatArea({
                   label={imageOnly ? "Attach image" : "Attach file"}
                   icon="upload"
                   uploadTypes={nonTextTypes}
+                  disabled={inputDisabled}
                 />
               </>
             )}
@@ -989,6 +1008,7 @@ export default function ChatArea({
                 onClick={() => setShowDrawing(true)}
                 label="Create drawing"
                 icon="pencil"
+                disabled={inputDisabled}
               />
             )}
             {hasAudioInput && !isLiveModel && (
@@ -1003,6 +1023,7 @@ export default function ChatArea({
                 onClick={handleLiveMicToggle}
                 label={liveMicActive ? "Stop Live Mic" : "Start Live Mic"}
                 isActive={liveMicActive}
+                disabled={inputDisabled}
                 icon={
                   liveMicActive ? (
                     <MicOff size={18} className={styles.liveMicActive} />
@@ -1022,21 +1043,21 @@ export default function ChatArea({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={
-                  liveSessionStale
-                    ? "This live session has ended. Start a new conversation."
+                  inputDisabled
+                    ? "This conversation has ended. Start a new one."
                     : isTTSModel
                       ? "Enter text to convert to speech..."
                       : "Type a message..."
                 }
                 rows={1}
-                disabled={liveSessionStale}
+                disabled={inputDisabled}
               />
             )}
-            <button
-              type="submit"
-              className={isGenerating ? styles.submitGenerating : ""}
+            <ChatInputButton
+              variant="submit"
+              isGenerating={isGenerating}
               disabled={
-                liveSessionStale
+                inputDisabled
                   ? true
                   : isGenerating
                     ? false
@@ -1044,13 +1065,8 @@ export default function ChatArea({
                       ? pendingImages.length === 0
                       : !input.trim() && pendingImages.length === 0
               }
-            >
-              {isGenerating ? (
-                <Square size={14} fill="currentColor" />
-              ) : (
-                <Send size={18} />
-              )}
-            </button>
+              label={isGenerating ? "Stop" : "Send"}
+            />
           </div>
         </form>
         <div className={styles.hint}>

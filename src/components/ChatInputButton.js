@@ -9,6 +9,8 @@ import {
   Volume2,
   Video,
   FileText,
+  Send,
+  Square,
 } from "lucide-react";
 import TooltipComponent from "./TooltipComponent";
 import styles from "./ChatInputButton.module.css";
@@ -70,6 +72,12 @@ const ICON_MAP = {
   paperclip: Paperclip,
 };
 
+/**
+ * Unified input button for the ChatArea / ConsoleComponent input row.
+ *
+ * @param {"button"|"submit"} [variant="button"] — "submit" renders the accent-colored send/stop button.
+ * @param {boolean} [isGenerating] — When variant="submit", shows the stop icon with a conic-gradient spinner.
+ */
 export default function ChatInputButton({
   icon,
   uploadTypes,
@@ -79,13 +87,30 @@ export default function ChatInputButton({
   disabled = false,
   className = "",
   tooltipPosition = "top",
+  variant = "button",
+  isGenerating = false,
   ...props
 }) {
-  const btnClass =
-    `${styles.chatInputBtn} ${isActive ? styles.active : ""} ${className}`.trim();
+  const isSubmit = variant === "submit";
+
+  const classes = [
+    styles.chatInputBtn,
+    isActive ? styles.active : "",
+    isSubmit ? styles.submit : "",
+    isSubmit && isGenerating ? styles.submitGenerating : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   let IconElement = null;
-  if (icon === "upload" && uploadTypes) {
+  if (isSubmit) {
+    IconElement = isGenerating ? (
+      <Square size={14} fill="currentColor" />
+    ) : (
+      <Send size={18} />
+    );
+  } else if (icon === "upload" && uploadTypes) {
     IconElement = <RotatingUploadIcon types={uploadTypes} size={18} />;
   } else if (typeof icon === "string") {
     const Comp = ICON_MAP[icon];
@@ -94,18 +119,25 @@ export default function ChatInputButton({
     IconElement = icon;
   }
 
+  const button = (
+    <button
+      type={isSubmit ? "submit" : "button"}
+      className={classes}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      {...props}
+    >
+      {IconElement}
+    </button>
+  );
+
+  // Submit variant doesn't need a tooltip (the action is self-evident)
+  if (isSubmit) return button;
+
   return (
     <TooltipComponent label={label} position={tooltipPosition} trigger="hover">
-      <button
-        type="button"
-        className={btnClass}
-        onClick={onClick}
-        disabled={disabled}
-        aria-label={label}
-        {...props}
-      >
-        {IconElement}
-      </button>
+      {button}
     </TooltipComponent>
   );
 }

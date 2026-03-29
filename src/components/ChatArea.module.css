@@ -637,57 +637,6 @@
   box-shadow: none;
 }
 
-.inputRow button[type="submit"] {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--border-radius-sm);
-  background: var(--accent-color);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.inputRow button[type="submit"]:hover:not(:disabled) {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.inputRow button[type="submit"]:disabled {
-  background: var(--bg-primary);
-  color: var(--text-secondary);
-}
-
-.submitGenerating {
-  position: relative;
-  overflow: hidden;
-  background: transparent !important;
-  color: white !important;
-  border: none;
-  z-index: 0;
-  cursor: pointer;
-  transition: transform 0.15s ease;
-
-  &::before {
-    content: "";
-    position: absolute;
-    inset: -50%;
-    background: var(--prism-conic);
-    animation: spin 2s linear infinite;
-    z-index: -1;
-  }
-
-  &:hover {
-    transform: scale(1.08);
-  }
-
-  svg {
-    color: white !important;
-  }
-}
 
 .hint {
   max-width: 800px;

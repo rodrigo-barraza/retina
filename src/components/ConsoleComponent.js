@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Send, Square, Terminal, Paperclip, X, Zap } from "lucide-react";
+import { Terminal, Paperclip, X, Zap } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ThreePanelLayout from "./ThreePanelLayout.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
@@ -744,21 +744,16 @@ export default function ConsoleComponent() {
               placeholder="Ask about weather, events, commodities, trends..."
               rows={1}
             />
-            <button
-              type="submit"
-              className={isGenerating ? chatStyles.submitGenerating : ""}
+            <ChatInputButton
+              variant="submit"
+              isGenerating={isGenerating}
               disabled={
                 isGenerating
                   ? false
                   : !inputValue.trim() && pendingImages.length === 0
               }
-            >
-              {isGenerating ? (
-                <Square size={14} fill="currentColor" />
-              ) : (
-                <Send size={18} />
-              )}
-            </button>
+              label={isGenerating ? "Stop" : "Send"}
+            />
           </div>
         </form>
         <div className={chatStyles.hint}>

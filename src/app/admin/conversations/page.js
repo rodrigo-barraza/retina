@@ -412,19 +412,22 @@ export default function ConversationsPage({ initialId = null }) {
                     workflows={workflows}
                     conversationStats={
                       selectedConv?.messages?.length > 0
-                        ? {
-                            messageCount: selectedConv.messages.length,
-                            deletedCount:
-                              (selectedConv.messageCount || selectedConv.messages.length) -
-                              selectedConv.messages.length,
-                            requestCount,
-                            uniqueModels,
-                            totalTokens,
-                            totalCost,
-                            originalTotalCost: selectedConv.totalCost || 0,
-                            usedTools,
-                            modalities,
-                          }
+                        ? (() => {
+                            const displayMessages = prepareDisplayMessages(selectedConv.messages);
+                            return {
+                              messageCount: displayMessages.length,
+                              deletedCount:
+                                (selectedConv.messageCount || selectedConv.messages.length) -
+                                selectedConv.messages.length,
+                              requestCount,
+                              uniqueModels,
+                              totalTokens,
+                              totalCost,
+                              originalTotalCost: selectedConv.totalCost || 0,
+                              usedTools,
+                              modalities,
+                            };
+                          })()
                         : null
                     }
                   />

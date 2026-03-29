@@ -2020,6 +2020,7 @@ export default function HomePage({ initialConversationId = null }) {
           isGenerating={isGenerating}
           onStop={handleStop}
           newChatKey={newChatKey}
+          conversationId={activeId}
           onSend={handleSend}
           onDelete={handleDeleteMessage}
           onRestore={handleRestoreMessage}
