@@ -12,7 +12,7 @@ import {
   expandMessagesForFC,
   sanitizeToolName,
 } from "../utils/FunctionCallingUtilities";
-import { buildFCSystemPrompt } from "../utils/utilities";
+import { buildFCSystemPrompt, getTotalInputTokens } from "../utils/utilities";
 import {
   SK_LAST_PROVIDER,
   SK_LAST_MODEL,
@@ -162,10 +162,7 @@ export default function HomePage({ initialConversationId = null }) {
     for (const m of messages) {
       if (m.role !== "assistant" || !m.usage) continue;
       requests++;
-      input +=
-        (m.usage.inputTokens || 0) +
-        (m.usage.cacheReadInputTokens || 0) +
-        (m.usage.cacheCreationInputTokens || 0);
+      input += getTotalInputTokens(m.usage);
       output += m.usage.outputTokens || 0;
     }
     return {

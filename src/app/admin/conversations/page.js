@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { getTotalInputTokens } from "../../../utils/utilities";
 import { useSearchParams } from "next/navigation";
 import {
   Loader,
@@ -298,10 +299,7 @@ export default function ConversationsPage({ initialId = null }) {
     for (const m of selectedConv?.messages || []) {
       if (m.role !== "assistant" || !m.usage) continue;
       requests++;
-      input +=
-        (m.usage.inputTokens || 0) +
-        (m.usage.cacheReadInputTokens || 0) +
-        (m.usage.cacheCreationInputTokens || 0);
+      input += getTotalInputTokens(m.usage);
       output += m.usage.outputTokens || 0;
     }
     return {

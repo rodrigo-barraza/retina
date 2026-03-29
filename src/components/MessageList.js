@@ -27,7 +27,7 @@ import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
 import styles from "./MessageList.module.css";
 import { DateTime } from "luxon";
 import PrismService from "../services/PrismService";
-import { formatCost } from "../utils/utilities";
+import { formatCost, getTotalInputTokens } from "../utils/utilities";
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 
@@ -934,7 +934,7 @@ export default function MessageList({
                               const cacheWrite =
                                 msg.usage.cacheCreationInputTokens || 0;
                               const cached = cacheRead + cacheWrite;
-                              const totalIn = msg.usage.inputTokens + cached;
+                              const totalIn = getTotalInputTokens(msg.usage);
                               let inLabel;
                               if (cached) {
                                 const parts = [];

@@ -5,6 +5,20 @@ export function formatNumber(n) {
   return n.toLocaleString();
 }
 
+/**
+ * Get the total input token count from a usage object.
+ * Providers like Anthropic and Google split prompt tokens into
+ * new + cache_read + cache_write. This aggregates all three.
+ */
+export function getTotalInputTokens(usage) {
+  if (!usage) return 0;
+  return (
+    (usage.inputTokens || 0) +
+    (usage.cacheReadInputTokens || 0) +
+    (usage.cacheCreationInputTokens || 0)
+  );
+}
+
 export function formatCost(n) {
   if (n === null || n === undefined) return "$0.00";
   return `$${n.toFixed(5)}`;
