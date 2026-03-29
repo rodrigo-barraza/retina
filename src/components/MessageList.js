@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Zap,
   Undo2,
+  AlertTriangle,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import MarkdownContent from "./MarkdownContent";
@@ -290,7 +291,8 @@ export function prepareDisplayMessages(rawMessages) {
           !m.content?.trim() &&
           !m.toolCalls?.length &&
           !m.images?.length &&
-          !m.audio
+          !m.audio &&
+          !m.error
         ),
     )
     .map((m) => {
@@ -759,6 +761,14 @@ export default function MessageList({
                 ) : isStreaming ? (
                   <span className={styles.streamingCursor} />
                 ) : null}
+
+                {/* Error block */}
+                {msg.error && (
+                  <div className={styles.errorBlock}>
+                    <AlertTriangle size={14} className={styles.errorIcon} />
+                    <span>{msg.error}</span>
+                  </div>
+                )}
 
                 {/* User metadata */}
                 {msg.role === "user" && msg.content && (

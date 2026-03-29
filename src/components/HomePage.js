@@ -662,10 +662,16 @@ export default function HomePage({ initialConversationId = null }) {
         }
       } catch (error) {
         console.error(error);
-        setMessages((prev) => [
-          ...prev,
-          { role: "system", content: "Error: " + error.message },
-        ]);
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.role === "assistant") {
+            updated[updated.length - 1] = { ...last, error: error.message };
+          } else {
+            updated.push({ role: "assistant", content: "", error: error.message });
+          }
+          return updated;
+        });
       } finally {
         setIsGenerating(false);
       }
@@ -835,10 +841,16 @@ export default function HomePage({ initialConversationId = null }) {
         loadConversations();
       } catch (error) {
         console.error(error);
-        setMessages((prev) => [
-          ...prev,
-          { role: "system", content: "Error: " + error.message },
-        ]);
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.role === "assistant") {
+            updated[updated.length - 1] = { ...last, error: error.message };
+          } else {
+            updated.push({ role: "assistant", content: "", error: error.message });
+          }
+          return updated;
+        });
       } finally {
         setIsGenerating(false);
         abortRef.current = null;
@@ -1074,10 +1086,16 @@ export default function HomePage({ initialConversationId = null }) {
       });
     } catch (error) {
       console.error(error);
-      setMessages((prev) => [
-        ...prev,
-        { role: "system", content: "Error: " + error.message },
-      ]);
+      setMessages((prev) => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last?.role === "assistant") {
+          updated[updated.length - 1] = { ...last, error: error.message };
+        } else {
+          updated.push({ role: "assistant", content: "", error: error.message });
+        }
+        return updated;
+      });
     } finally {
       setIsGenerating(false);
       setIsGeneratingImage(false);
@@ -1197,10 +1215,16 @@ export default function HomePage({ initialConversationId = null }) {
         loadConversations();
       } catch (error) {
         console.error(error);
-        setMessages((prev) => [
-          ...prev,
-          { role: "system", content: "Error: " + error.message },
-        ]);
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.role === "assistant") {
+            updated[updated.length - 1] = { ...last, error: error.message };
+          } else {
+            updated.push({ role: "assistant", content: "", error: error.message });
+          }
+          return updated;
+        });
       } finally {
         setIsGenerating(false);
       }
@@ -1279,10 +1303,16 @@ export default function HomePage({ initialConversationId = null }) {
         loadConversations();
       } catch (error) {
         console.error(error);
-        setMessages((prev) => [
-          ...prev,
-          { role: "system", content: "Error: " + error.message },
-        ]);
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.role === "assistant") {
+            updated[updated.length - 1] = { ...last, error: error.message };
+          } else {
+            updated.push({ role: "assistant", content: "", error: error.message });
+          }
+          return updated;
+        });
       } finally {
         setIsGenerating(false);
       }
@@ -1453,10 +1483,16 @@ export default function HomePage({ initialConversationId = null }) {
         loadConversations();
       } catch (error) {
         console.error(error);
-        setMessages((prev) => [
-          ...prev,
-          { role: "system", content: "Error: " + error.message },
-        ]);
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.role === "assistant") {
+            updated[updated.length - 1] = { ...last, error: error.message };
+          } else {
+            updated.push({ role: "assistant", content: "", error: error.message });
+          }
+          return updated;
+        });
       } finally {
         setIsGenerating(false);
         abortRef.current = null;
@@ -1736,10 +1772,16 @@ export default function HomePage({ initialConversationId = null }) {
       });
     } catch (error) {
       console.error(error);
-      setMessages((prev) => [
-        ...prev,
-        { role: "system", content: "Error: " + error.message },
-      ]);
+      setMessages((prev) => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last?.role === "assistant") {
+          updated[updated.length - 1] = { ...last, error: error.message };
+        } else {
+          updated.push({ role: "assistant", content: "", error: error.message });
+        }
+        return updated;
+      });
     } finally {
       setIsGenerating(false);
       setIsGeneratingImage(false);

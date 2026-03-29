@@ -736,3 +736,31 @@
   border-radius: 4px;
   line-height: 1;
 }
+
+/* ── Error block ── */
+.errorBlock {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid color-mix(in srgb, var(--danger, #ef4444) 35%, var(--border-color));
+  background: color-mix(in srgb, var(--danger, #ef4444) 6%, var(--bg-primary));
+  font-size: 13px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--danger, #ef4444) 85%, var(--text-primary));
+  word-break: break-word;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.errorIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--danger, #ef4444);
+  animation: errorPulse 2s ease-in-out 3;
+}
+
+@keyframes errorPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
