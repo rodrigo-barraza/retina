@@ -58,6 +58,13 @@ export const getRequestsColumns = () => [
           outColor: MODALITY_COLORS.text,
           label: "Audio → Text",
         },
+        live: {
+          inIcon: Volume2,
+          inColor: MODALITY_COLORS.audio,
+          outIcon: Volume2,
+          outColor: MODALITY_COLORS.audio,
+          label: "Speech → Text + Audio",
+        },
         embed: {
           inIcon: Type,
           inColor: MODALITY_COLORS.text,
@@ -70,6 +77,10 @@ export const getRequestsColumns = () => [
       // Detect image-output models that go through the chat endpoint
       if ((!m || r.endpoint === "chat") && r.model && /image/i.test(r.model)) {
         m = map["chat/image-api"];
+      }
+      // Heuristic: detect legacy live records logged as "chat" before the endpoint fix
+      if ((!m || r.endpoint === "chat") && r.requestId?.startsWith("live-")) {
+        m = map["live"];
       }
       m = m || map["chat"];
       const InIcon = m.inIcon;

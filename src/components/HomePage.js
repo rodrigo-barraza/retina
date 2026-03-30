@@ -2039,6 +2039,9 @@ export default function HomePage({ initialConversationId = null }) {
           }}
           onLiveTurnComplete={(turnData) => {
             // Finalize messages: remove _liveStreaming flag, attach audio + usage
+            // IMPORTANT: The updater must be a pure function (no side effects).
+            // React StrictMode double-invokes updaters to detect impurity.
+            let capturedFinalized = null;
             setMessages((prev) => {
               const finalized = prev.map((m) => {
                 if (!m._liveStreaming) return m;
@@ -2087,56 +2090,59 @@ export default function HomePage({ initialConversationId = null }) {
                 return rest;
               });
 
-              // Persist to DB — use ref to avoid stale closure
-              let currentId = liveConvIdRef.current || activeId;
-              const { systemPrompt, ...modelSettings } = settings;
-
-              if (!currentId) {
-                // ID not yet assigned — generate one and assign it now
-                currentId = crypto.randomUUID();
-                liveConvIdRef.current = currentId;
-                setActiveId(currentId);
-                updateUrl(currentId);
-              }
-
-              if (!liveConvCreatedRef.current) {
-                // First persist — create the conversation via appendMessages (auto-creates doc)
-                const firstUserMsg = finalized.find((m) => m.role === "user");
-                const liveTitle =
-                  firstUserMsg?.content?.slice(0, 40) || "Live Conversation";
-                setTitle(liveTitle);
-
-                livePersistChainRef.current = livePersistChainRef.current
-                  .then(() =>
-                    PrismService.appendMessages(currentId, finalized, null, {
-                      title: liveTitle,
-                      systemPrompt,
-                      settings: modelSettings,
-                    }).then(() => {
-                      liveConvCreatedRef.current = true;
-                      loadConversations();
-                    }),
-                  )
-                  .catch((err) =>
-                    console.error("[Live] Failed to create conversation:", err),
-                  );
-              } else {
-                // Subsequent turns — doc exists, safe to PATCH
-                livePersistChainRef.current = livePersistChainRef.current
-                  .then(() =>
-                    PrismService.patchConversation(currentId, {
-                      messages: finalized,
-                      systemPrompt,
-                      settings: modelSettings,
-                    }).then(() => loadConversations()),
-                  )
-                  .catch((err) =>
-                    console.error("[Live] Failed to persist:", err),
-                  );
-              }
-
+              capturedFinalized = finalized;
               return finalized;
             });
+
+            // ── Persist to DB (outside updater — runs exactly once) ──
+            if (!capturedFinalized) return;
+
+            let currentId = liveConvIdRef.current || activeId;
+            const { systemPrompt, ...modelSettings } = settings;
+
+            if (!currentId) {
+              // ID not yet assigned — generate one and assign it now
+              currentId = crypto.randomUUID();
+              liveConvIdRef.current = currentId;
+              setActiveId(currentId);
+              updateUrl(currentId);
+            }
+
+            if (!liveConvCreatedRef.current) {
+              // First persist — create the conversation via appendMessages (auto-creates doc)
+              const firstUserMsg = capturedFinalized.find((m) => m.role === "user");
+              const liveTitle =
+                firstUserMsg?.content?.slice(0, 40) || "Live Conversation";
+              setTitle(liveTitle);
+
+              livePersistChainRef.current = livePersistChainRef.current
+                .then(() =>
+                  PrismService.appendMessages(currentId, capturedFinalized, null, {
+                    title: liveTitle,
+                    systemPrompt,
+                    settings: modelSettings,
+                  }).then(() => {
+                    liveConvCreatedRef.current = true;
+                    loadConversations();
+                  }),
+                )
+                .catch((err) =>
+                  console.error("[Live] Failed to create conversation:", err),
+                );
+            } else {
+              // Subsequent turns — doc exists, safe to PATCH
+              livePersistChainRef.current = livePersistChainRef.current
+                .then(() =>
+                  PrismService.patchConversation(currentId, {
+                    messages: capturedFinalized,
+                    systemPrompt,
+                    settings: modelSettings,
+                  }).then(() => loadConversations()),
+                )
+                .catch((err) =>
+                  console.error("[Live] Failed to persist:", err),
+                );
+            }
           }}
           onLiveUserAudioReady={(userAudioRef) => {
             // Eagerly attach the user's uploaded audio to their message

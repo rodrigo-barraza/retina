@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import IrisService from "../services/IrisService";
 import PrismService from "../services/PrismService";
+import MediaCardComponent from "./MediaCardComponent";
 import ComboboxFilter from "./ComboboxFilter";
 import ImagePreviewComponent from "./ImagePreviewComponent";
 import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
@@ -448,101 +449,18 @@ export default function MediaPageComponent({
         {!loading && viewMode === "grid" && (
           <div className={styles.mediaGrid}>
             {displayMedia.map((m, i) => {
-              const resolvedUrl = resolveUrl(m.url);
               const mediaKey = getMediaKey(m, i);
               const isFav = favoriteKeys.includes(mediaKey);
               return (
-                <div key={`${m.convId}-${i}`} className={styles.mediaCard}>
-                  <button
-                    className={`${styles.favBtn} ${isFav ? styles.favBtnActive : ""}`}
-                    onClick={() => toggleFavorite(mediaKey)}
-                    title={isFav ? "Remove from favorites" : "Add to favorites"}
-                  >
-                    <Star size={12} fill={isFav ? "currentColor" : "none"} />
-                  </button>
-                  <div className={styles.mediaPreview}>
-                    {m.mediaType === "image" && resolvedUrl ? (
-                      <img
-                        src={resolvedUrl}
-                        alt=""
-                        className={styles.mediaImage}
-                        style={{ cursor: "pointer" }}
-                        loading="lazy"
-                        onClick={() => setLightboxSrc(resolvedUrl)}
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.parentElement.classList.add(
-                            styles.mediaPlaceholder,
-                          );
-                          const icon = document.createElement("span");
-                          icon.textContent = "🖼";
-                          icon.style.fontSize = "32px";
-                          icon.style.opacity = "0.3";
-                          e.target.parentElement.appendChild(icon);
-                        }}
-                      />
-                    ) : m.mediaType === "video" && resolvedUrl ? (
-                      <video
-                        src={resolvedUrl}
-                        className={styles.mediaVideo}
-                        muted
-                        preload="metadata"
-                        onMouseEnter={(e) => e.target.play().catch(() => {})}
-                        onMouseLeave={(e) => {
-                          e.target.pause();
-                          e.target.currentTime = 0;
-                        }}
-                      />
-                    ) : m.mediaType === "audio" && resolvedUrl ? (
-                      <div
-                        className={styles.mediaAudioPreview}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <AudioPlayerRecorderComponent
-                          src={resolvedUrl}
-                          square
-                        />
-                      </div>
-                    ) : m.mediaType === "pdf" && resolvedUrl ? (
-                      <iframe
-                        src={resolvedUrl}
-                        className={styles.mediaPdfPreview}
-                        title="PDF preview"
-                      />
-                    ) : (
-                      <div className={styles.mediaPlaceholder}>
-                        <MediaTypeIcon type={m.mediaType} />
-                        <span>{m.mediaType}</span>
-                      </div>
-                    )}
-                    <OriginBadge
-                      origin={m.origin}
-                      className={styles.originBadge}
-                    />
-                  </div>
-                  <div className={styles.mediaInfo}>
-                    <Link
-                      href={`${convBasePath}/${m.convId}`}
-                      className={styles.convLink}
-                      title={m.convTitle}
-                    >
-                      <ExternalLink size={10} />
-                      <span>{m.convTitle}</span>
-                    </Link>
-                    <div className={styles.mediaMeta}>
-                      {m.model && (
-                        <span className={styles.modelTag}>
-                          {m.model.split("/").pop()}
-                        </span>
-                      )}
-                      {m.timestamp && (
-                        <span className={styles.time}>
-                          {new Date(m.timestamp).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <MediaCardComponent
+                  key={`${m.convId}-${i}`}
+                  media={m}
+                  convBasePath={convBasePath}
+                  showFavorite
+                  isFavorite={isFav}
+                  onFavorite={() => toggleFavorite(mediaKey)}
+                  onImageClick={(url) => setLightboxSrc(url)}
+                />
               );
             })}
           </div>

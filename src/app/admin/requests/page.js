@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Download, MessageSquare, GitBranch, FileText } from "lucide-react";
+import { Download, MessageSquare, GitBranch } from "lucide-react";
 import { useRouter } from "next/navigation";
 import HistoryItemComponent from "../../../components/HistoryItemComponent";
 import IrisService from "../../../services/IrisService";
-import PrismService from "../../../services/PrismService";
 import {
   formatNumber,
   formatCost,
@@ -30,6 +29,7 @@ import {
 import BadgeComponent from "../../../components/BadgeComponent";
 import ButtonComponent from "../../../components/ButtonComponent";
 import DetailDrawerComponent from "../../../components/DetailDrawerComponent";
+import MediaCardComponent from "../../../components/MediaCardComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
@@ -37,10 +37,12 @@ import { LS_DATE_RANGE } from "../../../constants";
 import { getRequestsColumns } from "../requestsColumns";
 
 function extractMediaAssets(obj) {
-  const assets = new Set();
-  const search = (node) => {
+  const seen = new Set();
+  const assets = [];
+  const search = (node, origin) => {
     if (!node) return;
     if (typeof node === "string") {
+      if (seen.has(node)) return;
       if (
         node.startsWith("minio://") ||
         node.startsWith("data:image/") ||
@@ -48,7 +50,8 @@ function extractMediaAssets(obj) {
         node.startsWith("data:video/") ||
         node.startsWith("data:application/pdf")
       ) {
-        assets.add(node);
+        seen.add(node);
+        assets.push({ url: node, origin });
       } else if (node.startsWith("http://") || node.startsWith("https://")) {
         const ext = node.split("?")[0].split(".").pop()?.toLowerCase();
         if (
@@ -56,18 +59,35 @@ function extractMediaAssets(obj) {
             ext
           )
         ) {
-          assets.add(node);
+          seen.add(node);
+          assets.push({ url: node, origin });
         }
       }
     } else if (Array.isArray(node)) {
-      node.forEach(search);
+      node.forEach((n) => search(n, origin));
     } else if (typeof node === "object") {
-      Object.values(node).forEach(search);
+      Object.values(node).forEach((n) => search(n, origin));
     }
   };
-  search(obj?.requestPayload);
-  search(obj?.responsePayload);
-  return Array.from(assets);
+  search(obj?.requestPayload, "user");
+  search(obj?.responsePayload, "ai");
+  return assets;
+}
+
+function getMediaTypeFromRef(ref) {
+  if (!ref) return "image";
+  const isData = ref.startsWith("data:");
+  if (isData) {
+    if (ref.startsWith("data:audio")) return "audio";
+    if (ref.startsWith("data:video")) return "video";
+    if (ref.startsWith("data:application/pdf")) return "pdf";
+    return "image";
+  }
+  const ext = ref.split("?")[0].split(".").pop()?.toLowerCase();
+  if (["mp3", "wav", "ogg", "webm"].includes(ext)) return "audio";
+  if (["mp4", "avi", "mov"].includes(ext)) return "video";
+  if (ext === "pdf") return "pdf";
+  return "image";
 }
 
 export default function RequestsPage() {
@@ -264,6 +284,7 @@ export default function RequestsPage() {
               { value: "/chat", label: "/chat" },
               { value: "/audio", label: "/audio" },
               { value: "/embed", label: "/embed" },
+              { value: "live", label: "Live" },
             ]}
           />
         </FilterGroupComponent>
@@ -575,66 +596,19 @@ export default function RequestsPage() {
                 <div className={styles.detailSection}>
                   <div className={styles.detailSectionTitle}>Media Assets</div>
                   <div className={styles.mediaGrid}>
-                    {mediaAssets.map((ref, idx) => {
-                      const src = PrismService.getFileUrl(ref);
-                      const isData = ref.startsWith("data:");
-                      const ext = ref.split("?")[0].split(".").pop()?.toLowerCase();
-                      const isAudio = isData
-                        ? ref.startsWith("data:audio")
-                        : /\.(mp3|wav|ogg|webm)$/i.test(ref.split("?")[0]);
-                      const isVideo = isData
-                        ? ref.startsWith("data:video")
-                        : /\.(mp4|avi|mov)$/i.test(ref.split("?")[0]);
-                      const isPdf = isData
-                        ? ref.startsWith("data:application/pdf")
-                        : ext === "pdf";
-
-                      if (isAudio) {
-                        return (
-                          <audio
-                            key={idx}
-                            src={src}
-                            controls
-                            className={styles.audioPreview}
-                          />
-                        );
-                      }
-                      if (isVideo) {
-                        return (
-                          <a key={idx} href={src} target="_blank" rel="noopener noreferrer">
-                            <video
-                              src={src}
-                              controls
-                              className={styles.videoPreview}
-                            />
-                          </a>
-                        );
-                      }
-                      if (isPdf) {
-                        return (
-                          <a
-                            key={idx}
-                            href={src}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.pdfPreview}
-                          >
-                            <FileText size={24} />
-                            <span>PDF</span>
-                          </a>
-                        );
-                      }
-                      return (
-                        <a key={idx} href={src} target="_blank" rel="noopener noreferrer">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={src}
-                            alt="Asset preview"
-                            className={styles.imagePreview}
-                          />
-                        </a>
-                      );
-                    })}
+                    {mediaAssets.map((asset, idx) => (
+                      <MediaCardComponent
+                        key={idx}
+                        media={{
+                          url: asset.url,
+                          mediaType: getMediaTypeFromRef(asset.url),
+                          origin: asset.origin,
+                        }}
+                        compact
+                        showInfo={false}
+                        showOrigin
+                      />
+                    ))}
                   </div>
                 </div>
               );
