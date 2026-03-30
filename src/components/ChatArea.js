@@ -1060,6 +1060,23 @@ export default function ChatArea({
                 }
               />
             )}
+            {!isTranscriptionModel && (
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  inputDisabled
+                    ? "This conversation has ended. Start a new one."
+                    : isTTSModel
+                      ? "Enter text to convert to speech..."
+                      : "Type a message..."
+                }
+                rows={1}
+                disabled={inputDisabled}
+              />
+            )}
             {isLiveModel && (
               <ChatInputButton
                 onClick={handleLiveMicToggle}
@@ -1076,23 +1093,6 @@ export default function ChatArea({
                 className={
                   liveMicActive ? styles.liveMicBtn : styles.liveMicReady
                 }
-              />
-            )}
-            {!isTranscriptionModel && (
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={
-                  inputDisabled
-                    ? "This conversation has ended. Start a new one."
-                    : isTTSModel
-                      ? "Enter text to convert to speech..."
-                      : "Type a message..."
-                }
-                rows={1}
-                disabled={inputDisabled}
               />
             )}
             <ChatInputButton
