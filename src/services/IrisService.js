@@ -169,6 +169,16 @@ export default class IrisService {
     return fetchJSON(`/workflows/${id}`);
   }
 
+  // ── Sessions ──────────────────────────────────────────────
+  static async getSessions(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return fetchJSON(`/sessions${query ? `?${query}` : ""}`);
+  }
+
+  static async getSession(id) {
+    return fetchJSON(`/sessions/${id}`);
+  }
+
   // ── Media ─────────────────────────────────────────────────
   static async getMedia(params = {}) {
     const query = new URLSearchParams(params).toString();

@@ -22,6 +22,7 @@ import {
   ChevronsRight,
   Menu,
   X,
+  FolderOpen,
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import SpinningCatComponent from "./SpinningCatComponent";
@@ -60,6 +61,7 @@ const ADMIN_NAV_ITEMS = [
     showBadge: true,
   },
   { href: "/admin/workflows", label: "Workflows", icon: GitBranch },
+  { href: "/admin/sessions", label: "Sessions", icon: FolderOpen },
   { href: "/admin/providers", label: "Providers", icon: Layers },
   { href: "/admin/media", label: "Media", icon: ImageIcon },
   { href: "/admin/text", label: "Text", icon: Type },
