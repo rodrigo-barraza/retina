@@ -174,13 +174,6 @@ const COLUMNS = [
     render: (c) => formatCost(c.totalCost),
   },
   {
-    key: "createdAt",
-    label: "Created",
-    sortable: true,
-    align: "right",
-    render: (c) => formatDateTime(c.createdAt),
-  },
-  {
     key: "duration",
     label: "Duration",
     sortable: false,
@@ -204,6 +197,13 @@ const COLUMNS = [
       const remMins = mins % 60;
       return remMins > 0 ? `${hrs}h ${remMins}m` : `${hrs}h`;
     },
+  },
+  {
+    key: "createdAt",
+    label: "Created",
+    sortable: true,
+    align: "right",
+    render: (c) => formatDateTime(c.createdAt),
   },
 ];
 

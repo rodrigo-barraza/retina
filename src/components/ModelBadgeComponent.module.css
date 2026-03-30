@@ -22,5 +22,5 @@
 .modelName {
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 160px;
+  max-width: 200px;
 }
