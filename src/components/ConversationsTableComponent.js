@@ -174,14 +174,35 @@ const COLUMNS = [
     render: (c) => formatCost(c.totalCost),
   },
   {
-    key: "updatedAt",
-    label: "Updated",
+    key: "createdAt",
+    label: "Created",
     sortable: true,
     align: "right",
+    render: (c) => formatDateTime(c.createdAt),
+  },
+  {
+    key: "duration",
+    label: "Duration",
+    sortable: false,
+    align: "right",
+    sortValue: (c) => {
+      if (!c.createdAt || !c.updatedAt) return 0;
+      return new Date(c.updatedAt) - new Date(c.createdAt);
+    },
     render: (c) => {
-      const ts = c.updatedAt || c.createdAt;
-      if (!ts) return "—";
-      return formatDateTime(ts);
+      if (!c.createdAt || !c.updatedAt) {
+        return <span style={{ color: "var(--text-muted)" }}>—</span>;
+      }
+      const ms = new Date(c.updatedAt) - new Date(c.createdAt);
+      if (ms < 1000) return "<1s";
+      const secs = Math.round(ms / 1000);
+      if (secs < 60) return `${secs}s`;
+      const mins = Math.floor(secs / 60);
+      const rem = secs % 60;
+      if (mins < 60) return rem > 0 ? `${mins}m ${rem}s` : `${mins}m`;
+      const hrs = Math.floor(mins / 60);
+      const remMins = mins % 60;
+      return remMins > 0 ? `${hrs}h ${remMins}m` : `${hrs}h`;
     },
   },
 ];
