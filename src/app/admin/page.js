@@ -15,6 +15,10 @@ import {
   FolderOpen,
   Hash,
   TrendingUp,
+  Box,
+  Layers,
+  Server,
+  ScrollText,
 } from "lucide-react";
 import IrisService from "../../services/IrisService";
 import PrismService from "../../services/PrismService";
@@ -275,6 +279,45 @@ export default function DashboardPage() {
 
       <ErrorMessage message={error} />
 
+      {/* ── Resource Navigation ── */}
+      <div className={styles.resourceNav}>
+        <Link href="/admin/requests" className={styles.resourceCard}>
+          <ScrollText size={18} className={styles.resourceIcon} />
+          <span className={styles.resourceCount}>
+            {loading ? "—" : formatNumber(stats?.totalRequests)}
+          </span>
+          <span className={styles.resourceLabel}>Requests</span>
+        </Link>
+        <Link href="/admin/sessions" className={styles.resourceCard}>
+          <FolderOpen size={18} className={styles.resourceIcon} />
+          <span className={styles.resourceCount}>
+            {loading ? "—" : formatNumber(stats?.sessionCount)}
+          </span>
+          <span className={styles.resourceLabel}>Sessions</span>
+        </Link>
+        <Link href="/admin/providers" className={styles.resourceCard}>
+          <Layers size={18} className={styles.resourceIcon} />
+          <span className={styles.resourceCount}>
+            {loading ? "—" : formatNumber(providerData.length)}
+          </span>
+          <span className={styles.resourceLabel}>Providers</span>
+        </Link>
+        <Link href="/admin/models" className={styles.resourceCard}>
+          <Server size={18} className={styles.resourceIcon} />
+          <span className={styles.resourceCount}>
+            {loading ? "—" : formatNumber(modelStats.length)}
+          </span>
+          <span className={styles.resourceLabel}>Models</span>
+        </Link>
+        <Link href="#" className={styles.resourceCard} onClick={(e) => { e.preventDefault(); document.getElementById('projects-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+          <Box size={18} className={styles.resourceIcon} />
+          <span className={styles.resourceCount}>
+            {loading ? "—" : formatNumber(projectStats.length)}
+          </span>
+          <span className={styles.resourceLabel}>Projects</span>
+        </Link>
+      </div>
+
       {/* Stats Row */}
       <div className={styles.statsGrid}>
         <StatsCard
@@ -386,6 +429,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Projects ── */}
+      <div id="projects-table">
       <SortableTableComponent
         title="Projects"
         maxHeight={420}
@@ -493,6 +537,7 @@ export default function DashboardPage() {
         getRowKey={(p, i) => p.project || i}
         emptyText={loading ? "Loading..." : "No projects yet"}
       />
+      </div>
 
       {/* ── Providers ── */}
       <SortableTableComponent
@@ -829,6 +874,21 @@ export default function DashboardPage() {
             render: (s) => s.createdAt
               ? DateTime.fromISO(s.createdAt).toRelative()
               : "—",
+          },
+          {
+            key: "duration",
+            label: "Duration",
+            align: "right",
+            render: (s) => {
+              if (!s.startedAt || !s.finishedAt) return "—";
+              const ms = new Date(s.finishedAt) - new Date(s.startedAt);
+              if (ms < 1000) return "<1s";
+              const secs = Math.round(ms / 1000);
+              if (secs < 60) return `${secs}s`;
+              const mins = Math.floor(secs / 60);
+              const rem = secs % 60;
+              return rem > 0 ? `${mins}m ${rem}s` : `${mins}m`;
+            },
           },
         ]}
         data={recentSessions}

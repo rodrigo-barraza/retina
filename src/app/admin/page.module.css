@@ -5,6 +5,92 @@
   animation: fadeIn var(--transition-normal) ease-out;
 }
 
+/* ── Resource Navigation Strip ── */
+.resourceNav {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.resourceCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform 0.18s cubic-bezier(.4,0,.2,1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.resourceCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.03) 50%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.resourceCard:hover {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 1px var(--accent-color), 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  color: var(--text-primary);
+}
+
+.resourceCard:hover::before {
+  opacity: 1;
+}
+
+.resourceCard:active {
+  transform: translateY(0);
+}
+
+.resourceIcon {
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.resourceCard:hover .resourceIcon {
+  color: var(--accent-color);
+}
+
+.resourceCount {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.resourceLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.resourceCard:hover .resourceLabel {
+  color: var(--text-secondary);
+}
+
 .pageTitle {
   font-size: 26px;
   font-weight: 700;
@@ -106,6 +192,10 @@
 
 /* Responsive */
 @media (max-width: 1200px) {
+  .resourceNav {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
   .statsGrid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -118,6 +208,10 @@
 }
 
 @media (max-width: 767px) {
+  .resourceNav {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .timeToolbar {
     flex-direction: column;
     align-items: flex-start;

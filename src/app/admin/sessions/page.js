@@ -9,6 +9,7 @@ import {
   Cpu,
   Hash,
   Zap,
+  Clock,
 } from "lucide-react";
 import IrisService from "../../../services/IrisService";
 import PaginationComponent from "../../../components/PaginationComponent";
@@ -132,9 +133,24 @@ export default function SessionsPage() {
         {sessions.map((session) => {
           const isExpanded = expandedIds.has(session.id);
           const convos = session.conversations || [];
-          const ts = session.createdAt
+          const createdTs = session.createdAt
             ? DateTime.fromISO(session.createdAt).toRelative()
-            : "";
+            : null;
+          // Duration from first to last request
+          let duration = null;
+          if (session.startedAt && session.finishedAt) {
+            const ms = new Date(session.finishedAt) - new Date(session.startedAt);
+            if (ms < 1000) duration = "<1s";
+            else {
+              const secs = Math.round(ms / 1000);
+              if (secs < 60) duration = `${secs}s`;
+              else {
+                const mins = Math.floor(secs / 60);
+                const rem = secs % 60;
+                duration = rem > 0 ? `${mins}m ${rem}s` : `${mins}m`;
+              }
+            }
+          }
           const mergedModalities = mergeModalities(convos);
           const mergedProviders = mergeProviders(convos);
           const totalTokens =
@@ -154,7 +170,18 @@ export default function SessionsPage() {
                   <span className={styles.sessionId}>
                     {session.id.slice(0, 8)}
                   </span>
-                  <span className={styles.sessionTimestamp}>{ts}</span>
+
+                  {createdTs && (
+                    <span className={styles.sessionTimestamp}>
+                      <Clock size={10} style={{ opacity: 0.5 }} />
+                      {createdTs}
+                    </span>
+                  )}
+                  {duration && (
+                    <span className={styles.statBadge} title="Session duration">
+                      {duration}
+                    </span>
+                  )}
                 </div>
                 <div className={styles.sessionHeaderRight}>
                   <ProjectBadgeComponent project={session.project} />
