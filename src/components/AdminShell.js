@@ -16,13 +16,16 @@ function AdminShellInner({ children }) {
 
   // Track conversations by ID → messageCount to detect both new convos and updates
   const knownConvsRef = useRef(null); // null = not initialized
-  const isOnConversationsRef = useRef(pathname === "/admin/conversations");
+  const isOnConversationsRef = useRef(
+    pathname.startsWith("/admin/conversations"),
+  );
 
   // Keep ref in sync with pathname
   useEffect(() => {
-    isOnConversationsRef.current = pathname === "/admin/conversations";
-    if (pathname === "/admin/conversations") {
-      // Clear badge when navigating to conversations
+    const onConvs = pathname.startsWith("/admin/conversations");
+    isOnConversationsRef.current = onConvs;
+    if (onConvs) {
+      // Clear badge when navigating to conversations (any sub-route)
       setNewCount(0);
     }
   }, [pathname]);
@@ -92,7 +95,7 @@ function AdminShellInner({ children }) {
   }, []);
 
   const handleNavClick = useCallback((href) => {
-    if (href === "/admin/conversations") {
+    if (href.startsWith("/admin/conversations")) {
       setNewCount(0);
     }
   }, []);
