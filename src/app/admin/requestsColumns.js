@@ -6,13 +6,14 @@ import {
   formatCost,
   formatLatency,
   formatTokensPerSec,
+  formatDateTime,
 } from "../../utils/utilities";
 
 export const getRequestsColumns = () => [
   {
     key: "timestamp",
     label: "Time",
-    render: (r) => (r.timestamp ? new Date(r.timestamp).toLocaleString() : "-"),
+    render: (r) => formatDateTime(r.timestamp),
   },
   { key: "project", label: "Project" },
   {

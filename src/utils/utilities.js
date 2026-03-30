@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 export function formatNumber(n) {
   if (n === null || n === undefined) return "0";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -29,6 +31,23 @@ export function formatLatency(ms) {
   if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
   return `${Math.round(ms)}ms`;
 }
+
+/**
+ * Format an ISO timestamp as a compact human-readable datetime.
+ * Shows "Mar 30, 3:32 PM" for current year, "Mar 30, 2025, 3:32 PM" otherwise.
+ * Returns "—" for null/undefined values.
+ */
+export function formatDateTime(isoString) {
+  if (!isoString) return "—";
+  const dt = DateTime.fromISO(isoString);
+  if (!dt.isValid) return "—";
+  const now = DateTime.now();
+  if (dt.year === now.year) {
+    return dt.toFormat("MMM d, h:mm:ss a");
+  }
+  return dt.toFormat("MMM d, yyyy, h:mm:ss a");
+}
+
 
 /**
  * Convert a snake_case function name to a human-readable title.

@@ -5,16 +5,15 @@ import { MessageSquare } from "lucide-react";
 import SortableTableComponent from "./SortableTableComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
 import ToolIconComponent from "./ToolIconComponent";
-import TooltipComponent from "./TooltipComponent";
+import ModelBadgeComponent from "./ModelBadgeComponent";
 import BadgeComponent from "./BadgeComponent";
 import {
   formatNumber,
   formatCost,
   formatLatency,
   formatTokensPerSec,
+  formatDateTime,
 } from "../utils/utilities";
-import { DateTime } from "luxon";
-import styles from "./ConversationsTableComponent.module.css";
 
 /**
  * ConversationsTableComponent — reusable admin table for displaying
@@ -78,29 +77,7 @@ const COLUMNS = [
     key: "models",
     label: "Model(s)",
     sortable: false,
-    render: (c) => {
-      const models = c.models || [];
-      if (models.length === 0) {
-        return <span style={{ color: "var(--text-muted)" }}>—</span>;
-      }
-      if (models.length === 1) {
-        return (
-          <span className={styles.modelName} title={models[0]}>
-            {models[0]}
-          </span>
-        );
-      }
-      return (
-        <TooltipComponent
-          label={models.join(", ")}
-          position="top"
-        >
-          <span className={styles.modelName}>
-            {models.length} models
-          </span>
-        </TooltipComponent>
-      );
-    },
+    render: (c) => <ModelBadgeComponent models={c.models} />,
   },
   {
     key: "providers",
@@ -204,7 +181,7 @@ const COLUMNS = [
     render: (c) => {
       const ts = c.updatedAt || c.createdAt;
       if (!ts) return "—";
-      return DateTime.fromISO(ts).toRelative();
+      return formatDateTime(ts);
     },
   },
 ];

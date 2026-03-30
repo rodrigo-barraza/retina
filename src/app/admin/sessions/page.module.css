@@ -4,48 +4,14 @@
   width: 100%;
   min-height: 0;
   flex: 1;
+  gap: 16px;
 }
 
-/* ── Session list ────────────────────────────────────── */
-.sessionList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.sessionCard {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  overflow: hidden;
-  transition: border-color 0.2s ease;
-}
-
-.sessionCard:hover {
-  border-color: var(--accent-color);
-}
-
-.sessionHeader {
-  display: flex;
+/* ── Session ID cell ─────────────────────────────────── */
+.sessionIdCell {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  cursor: pointer;
-  user-select: none;
-  gap: 12px;
-  transition: background 0.15s ease;
-}
-
-.sessionHeader:hover {
-  background: var(--bg-tertiary);
-}
-
-.sessionHeaderLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 1;
+  gap: 6px;
 }
 
 .sessionIcon {
@@ -54,107 +20,39 @@
   opacity: 0.7;
 }
 
-.sessionId {
-  font-size: 12px;
+.sessionIdText {
   font-family: var(--font-mono, monospace);
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
-}
-
-.sessionTimestamp {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-.sessionHeaderRight {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 2px;
   font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
 }
 
-.badgeConversations {
-  background: var(--accent-subtle);
-  color: var(--accent-color);
-}
-
-/* ── Provider badges ─────────────────────────────────── */
-.providerBadges {
-  display: inline-flex;
-  gap: 4px;
-}
-
-.providerBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 6px;
-  border-radius: 2px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--info);
-  background: var(--info-subtle);
-  white-space: nowrap;
-}
-
-/* ── Stat badges (tokens, requests, models) ──────────── */
-.statBadge {
+/* ── Inline stat cells ───────────────────────────────── */
+.countCell {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.2px;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
-.statBadge svg {
-  flex-shrink: 0;
-  opacity: 0.6;
-}
-
-.chevron {
-  color: var(--text-muted);
-  transition: transform 0.2s ease;
+.countCell svg {
+  opacity: 0.5;
   flex-shrink: 0;
 }
 
-.chevronOpen {
-  transform: rotate(180deg);
+.durationCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-/* ── Expanded conversations table ────────────────────── */
-.conversationList {
-  border-top: 1px solid var(--border-color);
-  padding: 4px 8px 8px;
+.durationCell svg {
+  opacity: 0.5;
+  flex-shrink: 0;
 }
+
 
 /* ── Loading / empty states ──────────────────────────── */
 .loading {

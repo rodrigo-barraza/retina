@@ -28,6 +28,7 @@ import {
   formatLatency,
   formatTokensPerSec,
   buildDateRangeParams,
+  formatDateTime,
 } from "../../utils/utilities";
 import StatsCard from "../../components/StatsCard";
 import DatePickerComponent from "../../components/DatePickerComponent";
@@ -46,7 +47,7 @@ import useProjectFilter from "../../hooks/useProjectFilter";
 import styles from "./page.module.css";
 import { LS_DATE_RANGE } from "../../constants";
 import { getRequestsColumns } from "./requestsColumns";
-import { DateTime } from "luxon";
+
 
 const PROVIDER_COLORS = [
   "#6366f1",
@@ -871,9 +872,7 @@ export default function DashboardPage() {
             key: "createdAt",
             label: "Created",
             align: "right",
-            render: (s) => s.createdAt
-              ? DateTime.fromISO(s.createdAt).toRelative()
-              : "—",
+            render: (s) => formatDateTime(s.createdAt),
           },
           {
             key: "duration",

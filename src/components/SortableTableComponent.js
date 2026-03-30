@@ -15,6 +15,7 @@ import styles from "./SortableTableComponent.module.css";
  * @param {Array} props.data — Array of row objects
  * @param {Function} [props.getRowKey] — (row, i) => unique key
  * @param {Function} [props.getSubRows] — (row) => array of sub-row objects
+ * @param {Function} [props.renderExpandedContent] — (row) => ReactNode — full-width panel beneath expanded row
  * @param {Function} [props.onRowClick] — (row) => void
  * @param {string} [props.emptyText] — Text to show when data is empty
  * @param {string} [props.sortKey] — External sort key (for server sorting)
@@ -27,6 +28,7 @@ export default function SortableTableComponent({
   data = [],
   getRowKey,
   getSubRows,
+  renderExpandedContent,
   onRowClick,
   emptyText = "No data",
   sortKey: externalSortKey,
@@ -173,6 +175,7 @@ export default function SortableTableComponent({
   };
 
   const hasSubRows = !!getSubRows;
+  const hasExpandedContent = !!renderExpandedContent;
 
   return (
     <div className={styles.container}>
@@ -225,7 +228,7 @@ export default function SortableTableComponent({
                 const key = getRowKey ? getRowKey(row, ri) : ri;
                 const subRows = hasSubRows ? getSubRows(row) : [];
                 const isExpanded = expanded.has(key);
-                const isExpandable = subRows && subRows.length > 0;
+                const isExpandable = (subRows && subRows.length > 0) || hasExpandedContent;
                 const clickable = !!onRowClick || isExpandable;
                 const isActive = activeRowKey != null && key === activeRowKey;
                 const isHighlighted =
@@ -292,7 +295,15 @@ export default function SortableTableComponent({
                         );
                       })}
                     </tr>
+                    {isExpanded && hasExpandedContent && (
+                      <tr className={styles.expandedContentRow}>
+                        <td colSpan={columns.length} className={styles.expandedContentCell}>
+                          {renderExpandedContent(row)}
+                        </td>
+                      </tr>
+                    )}
                     {isExpanded &&
+                      !hasExpandedContent &&
                       subRows.map((sub, si) => (
                         <tr key={`${key}-sub-${si}`} className={styles.subRow}>
                           {columns.map((col, _ci) => {

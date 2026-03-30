@@ -1,29 +1,29 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   FolderOpen,
   MessageSquare,
-  ChevronDown,
   Loader,
-  Cpu,
-  Hash,
   Zap,
   Clock,
 } from "lucide-react";
 import IrisService from "../../../services/IrisService";
 import PaginationComponent from "../../../components/PaginationComponent";
+import SortableTableComponent from "../../../components/SortableTableComponent";
 import ConversationsTableComponent from "../../../components/ConversationsTableComponent";
 import ProjectBadgeComponent from "../../../components/ProjectBadgeComponent";
 import UserBadgeComponent from "../../../components/UserBadgeComponent";
 import CostBadgeComponent from "../../../components/CostBadgeComponent";
 import ModalityIconComponent from "../../../components/ModalityIconComponent";
+import ModelBadgeComponent from "../../../components/ModelBadgeComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
-import { formatNumber } from "../../../utils/utilities";
-import { DateTime } from "luxon";
+import { formatNumber, formatDateTime } from "../../../utils/utilities";
+
 import styles from "./page.module.css";
 
 const PAGE_SIZE = 30;
+const POLL_INTERVAL = 1000; // 1s
 
 /** Merge modalities from all conversations into a single object */
 function mergeModalities(conversations) {
@@ -37,23 +37,153 @@ function mergeModalities(conversations) {
   return Object.keys(merged).length > 0 ? merged : null;
 }
 
-/** Collect unique providers from all conversations */
-function mergeProviders(conversations) {
-  const set = new Set();
-  for (const c of conversations) {
-    const p = c.providers;
-    if (Array.isArray(p)) p.forEach((v) => set.add(v));
-    else if (p) set.add(p);
-  }
-  return [...set];
+/** Format session duration from startedAt/finishedAt */
+function formatDuration(session) {
+  if (!session.startedAt || !session.finishedAt) return null;
+  const ms = new Date(session.finishedAt) - new Date(session.startedAt);
+  if (ms < 1000) return "<1s";
+  const secs = Math.round(ms / 1000);
+  if (secs < 60) return `${secs}s`;
+  const mins = Math.floor(secs / 60);
+  const rem = secs % 60;
+  return rem > 0 ? `${mins}m ${rem}s` : `${mins}m`;
 }
+
+const SESSION_COLUMNS = [
+  {
+    key: "id",
+    label: "Session",
+    sortable: false,
+    render: (s) => (
+      <span className={styles.sessionIdCell}>
+        <FolderOpen size={12} className={styles.sessionIcon} />
+        <span className={styles.sessionIdText}>{s.id.slice(0, 8)}</span>
+      </span>
+    ),
+  },
+  {
+    key: "project",
+    label: "Project",
+    sortable: false,
+    render: (s) => <ProjectBadgeComponent project={s.project} />,
+  },
+  {
+    key: "username",
+    label: "User",
+    sortable: false,
+    render: (s) => <UserBadgeComponent username={s.username} />,
+  },
+  {
+    key: "modalities",
+    label: "Modalities",
+    sortable: false,
+    render: (s) => {
+      const merged = mergeModalities(s.conversations || []);
+      if (!merged) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+      return <ModalityIconComponent modalities={merged} size={12} />;
+    },
+  },
+  {
+    key: "models",
+    label: "Models",
+    sortable: false,
+    render: (s) => <ModelBadgeComponent models={s.models} />,
+  },
+  {
+    key: "conversationCount",
+    label: "Convos",
+    sortable: true,
+    align: "right",
+    render: (s) => {
+      const count = s.conversationCount || (s.conversations || []).length || 0;
+      return (
+        <span className={styles.countCell}>
+          <MessageSquare size={10} />
+          {count}
+        </span>
+      );
+    },
+  },
+  {
+    key: "requestCount",
+    label: "Requests",
+    sortable: true,
+    align: "right",
+    render: (s) =>
+      (s.requestCount || 0) > 0 ? (
+        <span className={styles.countCell}>
+          <Zap size={10} />
+          {s.requestCount}
+        </span>
+      ) : (
+        <span style={{ color: "var(--text-muted)" }}>—</span>
+      ),
+  },
+  {
+    key: "totalInputTokens",
+    label: "In Tokens",
+    sortable: true,
+    align: "right",
+    render: (s) =>
+      (s.totalInputTokens || 0) > 0 ? (
+        formatNumber(s.totalInputTokens)
+      ) : (
+        <span style={{ color: "var(--text-muted)" }}>—</span>
+      ),
+  },
+  {
+    key: "totalOutputTokens",
+    label: "Out Tokens",
+    sortable: true,
+    align: "right",
+    render: (s) =>
+      (s.totalOutputTokens || 0) > 0 ? (
+        formatNumber(s.totalOutputTokens)
+      ) : (
+        <span style={{ color: "var(--text-muted)" }}>—</span>
+      ),
+  },
+  {
+    key: "totalCost",
+    label: "Cost",
+    sortable: true,
+    align: "right",
+    render: (s) => <CostBadgeComponent cost={s.totalCost} />,
+  },
+  {
+    key: "duration",
+    label: "Duration",
+    sortable: false,
+    align: "right",
+    render: (s) => {
+      const dur = formatDuration(s);
+      if (!dur) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+      return (
+        <span className={styles.durationCell}>
+          <Clock size={10} />
+          {dur}
+        </span>
+      );
+    },
+  },
+  {
+    key: "createdAt",
+    label: "Created",
+    sortable: true,
+    align: "right",
+    render: (s) => {
+      return formatDateTime(s.createdAt);
+    },
+  },
+];
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [expandedIds, setExpandedIds] = useState(new Set());
+  const intervalRef = useRef(null);
+  const initialLoadDone = useRef(false);
 
   const loadSessions = useCallback(async () => {
     try {
@@ -68,23 +198,20 @@ export default function SessionsPage() {
     } catch (err) {
       console.error("Failed to load sessions:", err);
     } finally {
-      setLoading(false);
+      if (!initialLoadDone.current) {
+        initialLoadDone.current = true;
+        setLoading(false);
+      }
     }
   }, [page]);
 
   useEffect(() => {
+    initialLoadDone.current = false;
     setLoading(true);
     loadSessions();
+    intervalRef.current = setInterval(loadSessions, POLL_INTERVAL);
+    return () => clearInterval(intervalRef.current);
   }, [loadSessions]);
-
-  const toggleExpand = (id) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -129,145 +256,19 @@ export default function SessionsPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.sessionList}>
-        {sessions.map((session) => {
-          const isExpanded = expandedIds.has(session.id);
-          const convos = session.conversations || [];
-          const createdTs = session.createdAt
-            ? DateTime.fromISO(session.createdAt).toRelative()
-            : null;
-          // Duration from first to last request
-          let duration = null;
-          if (session.startedAt && session.finishedAt) {
-            const ms = new Date(session.finishedAt) - new Date(session.startedAt);
-            if (ms < 1000) duration = "<1s";
-            else {
-              const secs = Math.round(ms / 1000);
-              if (secs < 60) duration = `${secs}s`;
-              else {
-                const mins = Math.floor(secs / 60);
-                const rem = secs % 60;
-                duration = rem > 0 ? `${mins}m ${rem}s` : `${mins}m`;
-              }
-            }
-          }
-          const mergedModalities = mergeModalities(convos);
-          const mergedProviders = mergeProviders(convos);
-          const totalTokens =
-            (session.totalInputTokens || 0) +
-            (session.totalOutputTokens || 0);
-          const models = session.models || [];
-
-          return (
-            <div key={session.id} className={styles.sessionCard}>
-              {/* Clickable header */}
-              <div
-                className={styles.sessionHeader}
-                onClick={() => toggleExpand(session.id)}
-              >
-                <div className={styles.sessionHeaderLeft}>
-                  <FolderOpen size={16} className={styles.sessionIcon} />
-                  <span className={styles.sessionId}>
-                    {session.id.slice(0, 8)}
-                  </span>
-
-                  {createdTs && (
-                    <span className={styles.sessionTimestamp}>
-                      <Clock size={10} style={{ opacity: 0.5 }} />
-                      {createdTs}
-                    </span>
-                  )}
-                  {duration && (
-                    <span className={styles.statBadge} title="Session duration">
-                      {duration}
-                    </span>
-                  )}
-                </div>
-                <div className={styles.sessionHeaderRight}>
-                  <ProjectBadgeComponent project={session.project} />
-                  <UserBadgeComponent username={session.username} />
-
-                  {mergedModalities && (
-                    <ModalityIconComponent
-                      modalities={mergedModalities}
-                      size={12}
-                    />
-                  )}
-
-                  {mergedProviders.length > 0 && (
-                    <span className={styles.providerBadges}>
-                      {mergedProviders.map((p) => (
-                        <span key={p} className={styles.providerBadge}>
-                          {p}
-                        </span>
-                      ))}
-                    </span>
-                  )}
-
-                  {/* Stats badges */}
-                  <span
-                    className={`${styles.badge} ${styles.badgeConversations}`}
-                  >
-                    <MessageSquare size={10} />
-                    {session.conversationCount || convos.length || 0}
-                  </span>
-
-                  {(session.requestCount || 0) > 0 && (
-                    <span className={styles.statBadge}>
-                      <Zap size={10} />
-                      {session.requestCount} req
-                    </span>
-                  )}
-
-                  {models.length > 0 && (
-                    <span className={styles.statBadge}>
-                      <Cpu size={10} />
-                      {models.length === 1
-                        ? models[0]
-                        : `${models.length} models`}
-                    </span>
-                  )}
-
-                  {totalTokens > 0 && (
-                    <>
-                      <span className={styles.statBadge}>
-                        <Hash size={10} />
-                        {formatNumber(session.totalInputTokens)} in
-                      </span>
-                      <span className={styles.statBadge}>
-                        <Hash size={10} />
-                        {formatNumber(session.totalOutputTokens)} out
-                      </span>
-                      <span className={styles.statBadge}>
-                        <Hash size={10} />
-                        {formatNumber(totalTokens)} total
-                      </span>
-                    </>
-                  )}
-
-                  <CostBadgeComponent cost={session.totalCost} />
-
-                  <ChevronDown
-                    size={14}
-                    className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ""}`}
-                  />
-                </div>
-              </div>
-
-              {/* Expanded: show conversations table */}
-              {isExpanded && (
-                <div className={styles.conversationList}>
-                  <ConversationsTableComponent
-                    conversations={convos}
-                    emptyText="No conversations linked"
-                    compact
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <SortableTableComponent
+        columns={SESSION_COLUMNS}
+        data={sessions}
+        getRowKey={(s) => s.id}
+        renderExpandedContent={(session) => (
+          <ConversationsTableComponent
+            conversations={session.conversations || []}
+            emptyText="No conversations linked"
+            compact
+          />
+        )}
+        emptyText="No sessions"
+      />
 
       {/* Pagination */}
       <PaginationComponent
