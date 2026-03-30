@@ -9,15 +9,18 @@ import styles from "./ModelBadgeComponent.module.css";
  * @param {string[]} models — array of model name strings
  * @param {string} [className]
  */
-export default function ModelBadgeComponent({ models = [], className = "" }) {
+export default function ModelBadgeComponent({ models = [], className = "", mini = false }) {
   if (!models || models.length === 0) {
     return <span style={{ color: "var(--text-muted)" }}>—</span>;
   }
 
+  const iconSize = mini ? 8 : 10;
+  const cls = `${styles.badge} ${mini ? styles.mini : ""} ${className}`;
+
   if (models.length === 1) {
     return (
-      <span className={`${styles.badge} ${className}`} title={models[0]}>
-        <Cpu size={10} />
+      <span className={cls} title={models[0]}>
+        <Cpu size={iconSize} />
         <span className={styles.modelName}>{models[0]}</span>
       </span>
     );
@@ -25,8 +28,8 @@ export default function ModelBadgeComponent({ models = [], className = "" }) {
 
   return (
     <TooltipComponent label={models.join(", ")} position="top">
-      <span className={`${styles.badge} ${className}`}>
-        <Cpu size={10} />
+      <span className={cls}>
+        <Cpu size={iconSize} />
         {models.length} models
       </span>
     </TooltipComponent>

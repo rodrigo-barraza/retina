@@ -11,11 +11,12 @@ export default function BadgeComponent({
   variant = "info",
   children,
   className = "",
+  mini = false,
   ...rest
 }) {
   return (
     <span
-      className={`${styles.badge} ${styles[variant] || ""} ${className}`}
+      className={`${styles.badge} ${styles[variant] || ""} ${mini ? styles.mini : ""} ${className}`}
       {...rest}
     >
       {children}

@@ -41,6 +41,7 @@ export default function SortableTableComponent({
   onRowMouseEnter,
   onRowMouseLeave,
   getRowClassName,
+  mini = false,
 }) {
   const [internalSort, setInternalSort] = useState({ key: null, dir: "desc" });
   const sort = onSort
@@ -178,7 +179,7 @@ export default function SortableTableComponent({
   const hasExpandedContent = !!renderExpandedContent;
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${mini ? styles.mini : ""}`}>
       {title && <h2 className={styles.title}>{title}</h2>}
 
       {sorted.length === 0 ? (

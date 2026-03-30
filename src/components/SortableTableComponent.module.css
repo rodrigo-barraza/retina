@@ -253,6 +253,35 @@
   color: var(--text-secondary);
 }
 
+/* ── Mini mode (nested tables) ──────────────────────── */
+
+.mini .table {
+  font-size: 8px;
+}
+
+.mini .th {
+  font-size: 7px;
+  padding: 4px 8px;
+  letter-spacing: 0.4px;
+}
+
+.mini .td,
+.mini .tdName {
+  padding: 4px 8px;
+  font-size: 8px;
+}
+
+.mini .expandIcon {
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+}
+
+.mini .empty {
+  padding: 12px;
+  font-size: 8px;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .th,

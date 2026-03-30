@@ -13,11 +13,12 @@ export default function CostBadgeComponent({
   cost,
   showIcon = true,
   className = "",
+  mini = false,
 }) {
   if (!cost || cost <= 0) return null;
   return (
-    <span className={`${styles.badge} ${className}`}>
-      {showIcon && <Coins size={10} />}
+    <span className={`${styles.badge} ${mini ? styles.mini : ""} ${className}`}>
+      {showIcon && <Coins size={mini ? 8 : 10} />}
       {formatCost(cost)}
     </span>
   );

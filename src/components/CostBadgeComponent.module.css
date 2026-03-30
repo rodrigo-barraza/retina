@@ -16,3 +16,11 @@
   flex-shrink: 0;
   opacity: 0.9;
 }
+
+/* ── Mini ─────────────────────────────────────────── */
+
+.mini {
+  font-size: 8px;
+  padding: 1px 4px;
+  gap: 2px;
+}

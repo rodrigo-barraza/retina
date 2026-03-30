@@ -6,10 +6,10 @@ import SortableTableComponent from "./SortableTableComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
 import ToolIconComponent from "./ToolIconComponent";
 import ModelBadgeComponent from "./ModelBadgeComponent";
+import CostBadgeComponent from "./CostBadgeComponent";
 import BadgeComponent from "./BadgeComponent";
 import {
   formatNumber,
-  formatCost,
   formatLatency,
   formatTokensPerSec,
   formatDateTime,
@@ -29,14 +29,14 @@ import {
  * @param {string} [props.maxHeight] — CSS max-height for scrollable tables
  */
 
-const COLUMNS = [
+const buildColumns = (mini) => [
   {
     key: "title",
     label: "Conversation",
     sortable: false,
     render: (c) => (
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-        <MessageSquare size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
+      <span style={{ display: "inline-flex", alignItems: "center", gap: mini ? 4 : 6 }}>
+        <MessageSquare size={mini ? 9 : 12} style={{ opacity: 0.5, flexShrink: 0 }} />
         {c.title || "Untitled"}
       </span>
     ),
@@ -47,7 +47,7 @@ const COLUMNS = [
     sortable: false,
     render: (c) =>
       c.project ? (
-        <BadgeComponent variant="info">{c.project}</BadgeComponent>
+        <BadgeComponent variant="info" mini={mini}>{c.project}</BadgeComponent>
       ) : (
         <span style={{ color: "var(--text-muted)" }}>—</span>
       ),
@@ -58,7 +58,7 @@ const COLUMNS = [
     sortable: false,
     render: (c) =>
       c.username && c.username !== "unknown" ? (
-        <BadgeComponent variant="provider">{c.username}</BadgeComponent>
+        <BadgeComponent variant="provider" mini={mini}>{c.username}</BadgeComponent>
       ) : (
         <span style={{ color: "var(--text-muted)" }}>—</span>
       ),
@@ -70,14 +70,14 @@ const COLUMNS = [
     render: (c) => {
       if (!c.modalities)
         return <span style={{ color: "var(--text-muted)" }}>—</span>;
-      return <ModalityIconComponent modalities={c.modalities} size={13} />;
+      return <ModalityIconComponent modalities={c.modalities} size={mini ? 9 : 13} />;
     },
   },
   {
     key: "models",
     label: "Model(s)",
     sortable: false,
-    render: (c) => <ModelBadgeComponent models={c.models} />,
+    render: (c) => <ModelBadgeComponent models={c.models} mini={mini} />,
   },
   {
     key: "providers",
@@ -92,9 +92,9 @@ const COLUMNS = [
       }
       const list = Array.isArray(c.providers) ? c.providers : [c.providers];
       return (
-        <span style={{ display: "inline-flex", gap: 4 }}>
+        <span style={{ display: "inline-flex", gap: mini ? 2 : 4 }}>
           {list.map((p) => (
-            <BadgeComponent key={p} variant="endpoint">
+            <BadgeComponent key={p} variant="endpoint" mini={mini}>
               {p}
             </BadgeComponent>
           ))}
@@ -107,7 +107,7 @@ const COLUMNS = [
     label: "Tools",
     sortable: false,
     align: "left",
-    render: (c) => <ToolIconComponent toolNames={c.toolNames} />,
+    render: (c) => <ToolIconComponent toolNames={c.toolNames} size={mini ? 10 : undefined} />,
   },
   {
     key: "inputTokens",
@@ -171,7 +171,7 @@ const COLUMNS = [
     label: "Cost",
     sortable: true,
     align: "right",
-    render: (c) => formatCost(c.totalCost),
+    render: (c) => <CostBadgeComponent cost={c.totalCost} mini={mini} />,
   },
   {
     key: "duration",
@@ -214,13 +214,15 @@ export default function ConversationsTableComponent({
   sortDir,
   onSort,
   compact = false,
+  mini = false,
   maxHeight,
 }) {
   const router = useRouter();
+  const columns = buildColumns(mini);
 
   return (
     <SortableTableComponent
-      columns={COLUMNS}
+      columns={columns}
       data={conversations}
       sortKey={sortKey}
       sortDir={sortDir}
@@ -229,6 +231,7 @@ export default function ConversationsTableComponent({
       onRowClick={(c) => router.push(`/admin/conversations/${c.id}`)}
       emptyText={emptyText}
       maxHeight={maxHeight || (compact ? "300px" : undefined)}
+      mini={mini}
     />
   );
 }

@@ -24,3 +24,15 @@
   text-overflow: ellipsis;
   max-width: 200px;
 }
+
+/* ── Mini ─────────────────────────────────────────── */
+
+.mini {
+  font-size: 7px;
+  padding: 1px 4px;
+  gap: 2px;
+}
+
+.mini .modelName {
+  max-width: 120px;
+}

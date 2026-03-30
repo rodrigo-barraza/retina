@@ -265,6 +265,7 @@ export default function SessionsPage() {
             conversations={session.conversations || []}
             emptyText="No conversations linked"
             compact
+            mini
           />
         )}
         emptyText="No sessions"
