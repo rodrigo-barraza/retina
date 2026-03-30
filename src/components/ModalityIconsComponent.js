@@ -49,14 +49,11 @@ const TOOL_MODALITIES = [
  *   modalities  — object with boolean keys (textIn, imageIn, textOut, etc.)
  *   size        — icon size in px (default 11)
  *   className   — extra root class name
- *   variant     — "default" | "badge" — badge wraps everything in a single
- *                 inline-flex container (used in SettingsPanel stat badges)
  */
 export default function ModalityIconsComponent({
   modalities,
   size = 11,
   className,
-  variant = "default",
 }) {
   if (!modalities || !Object.values(modalities).some(Boolean)) return null;
 
@@ -71,41 +68,31 @@ export default function ModalityIconsComponent({
 
   const renderIcon = (def) => (
     <TooltipComponent key={def.key} label={def.label} position="top">
-      <span
-        className={variant === "badge" ? styles.modalityDot : styles.modalityIcon}
-        style={{ color: def.color }}
-      >
+      <span className={styles.modalityIcon} style={{ color: def.color }}>
         <def.icon size={size} />
       </span>
     </TooltipComponent>
   );
 
-  if (variant === "badge") {
-    return (
-      <span className={`${styles.badgeContainer} ${className || ""}`}>
+  return (
+    <div className={`${styles.modalitiesRow} ${className || ""}`}>
+      <span className={styles.badge}>
         {activeInputs.map(renderIcon)}
         {hasInputs && hasOutputs && (
           <span className={styles.modalityArrow}>→</span>
         )}
         {activeOutputs.map(renderIcon)}
       </span>
-    );
-  }
-
-  return (
-    <div className={`${styles.modalitiesRow} ${className || ""}`}>
-      <div className={styles.modalities}>
-        {activeInputs.map(renderIcon)}
-        {hasInputs && hasOutputs && (
-          <span className={styles.modalityArrow}>→</span>
-        )}
-        {activeOutputs.map(renderIcon)}
-      </div>
-      {hasTools && (
-        <div className={styles.toolIcons}>
-          {activeTools.map(renderIcon)}
-        </div>
-      )}
+      {hasTools &&
+        activeTools.map((def) => (
+          <span
+            key={def.key}
+            className={styles.badge}
+            style={{ color: def.color, borderColor: `color-mix(in srgb, ${def.color} 30%, transparent)` }}
+          >
+            <def.icon size={size} />
+          </span>
+        ))}
     </div>
   );
 }

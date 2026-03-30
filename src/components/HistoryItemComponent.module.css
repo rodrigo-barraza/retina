@@ -122,39 +122,7 @@
   color: rgb(245, 158, 11);
 }
 
-/* ── Modality Icons ── */
-.modalitiesRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modalities {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.toolIcons {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.modalityIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  opacity: 0.6;
-}
-
-.modalityArrow {
-  font-size: 9px;
-  color: var(--text-secondary);
-  opacity: 0.4;
-  margin: 0 1px;
-}
+/* Modality styles live in ModalityIconsComponent.module.css */
 
 /* ── Actions ── */
 .actions {

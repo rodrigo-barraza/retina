@@ -16,6 +16,8 @@ import {
   Undo2,
   AlertTriangle,
   Wrench,
+  User,
+  Bot,
 } from "lucide-react";
 import { TOOL_ICON_MAP, TOOL_COLORS } from "./WorkflowNodeConstants";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
@@ -705,7 +707,7 @@ export default function MessageList({
                 <div
                   className={`${styles.avatar}${msg.role === "assistant" && isGenerating && i === messages.length - 1 ? ` ${styles.prismAvatar}` : ""}${msg.deleted ? ` ${styles.deletedAvatar}` : ""}`}
                 >
-                  {msg.role === "user" ? "U" : msg.role === "system" ? "S" : "AI"}
+                  {msg.role === "user" ? <User size={16} /> : msg.role === "system" ? "S" : <Bot size={16} />}
                 </div>
               )}
               <div className={styles.content}>

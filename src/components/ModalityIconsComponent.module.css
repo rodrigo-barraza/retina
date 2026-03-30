@@ -3,19 +3,34 @@
 .modalitiesRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-
-.modalities {
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
 }
 
-.toolIcons {
-  display: flex;
+.badge {
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.badge:hover {
+  border-color: color-mix(in srgb, var(--accent-color) 40%, transparent);
+  color: var(--text-primary);
+}
+
+.badge svg {
+  flex-shrink: 0;
+  opacity: 0.6;
 }
 
 .modalityIcon {
@@ -31,23 +46,4 @@
   color: var(--text-secondary);
   opacity: 0.4;
   margin: 0 1px;
-}
-
-/* Badge variant (used inside SettingsPanel stat badges) */
-.badgeContainer {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.modalityDot {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.7;
-  transition: opacity 0.15s;
-
-  &:hover {
-    opacity: 1;
-  }
 }

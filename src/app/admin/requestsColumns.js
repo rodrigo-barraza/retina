@@ -28,7 +28,6 @@ export const getRequestsColumns = () => [
         <ModalityIconsComponent
           modalities={r.modalities}
           size={13}
-          variant="badge"
         />
       );
     },

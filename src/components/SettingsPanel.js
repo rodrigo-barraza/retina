@@ -259,12 +259,9 @@ export default function SettingsPanel({
               {/* Modality icons: input → output */}
               {conversationStats.modalities &&
                 Object.values(conversationStats.modalities).some(Boolean) && (
-                  <span className={styles.statBadge}>
-                    <ModalityIconsComponent
-                      modalities={conversationStats.modalities}
-                      variant="badge"
-                    />
-                  </span>
+                  <ModalityIconsComponent
+                    modalities={conversationStats.modalities}
+                  />
                 )}
             </div>
           </div>
