@@ -30,6 +30,8 @@ import ModelPickerPopoverComponent from "../../../components/ModelPickerPopoverC
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
+import ProjectBadgeComponent from "../../../components/ProjectBadgeComponent";
+import UserBadgeComponent from "../../../components/UserBadgeComponent";
 
 import { SETTINGS_DEFAULTS } from "../../../constants";
 import styles from "./page.module.css";
@@ -415,13 +417,8 @@ export default function ConversationsPage({ initialId = null }) {
           headerMeta={
             selectedConv && (
               <div className={styles.headerMeta}>
-                <span className={styles.metaBadge}>{selectedConv.project}</span>
-                {selectedConv.username &&
-                  selectedConv.username !== "unknown" && (
-                    <span className={styles.userBadge}>
-                      {selectedConv.username}
-                    </span>
-                  )}
+                <ProjectBadgeComponent project={selectedConv.project} />
+                <UserBadgeComponent username={selectedConv.username} />
                 {selectedConv.isGenerating && (
                   <span className={styles.generatingBadge}>
                     <Loader size={12} className={styles.spinning} />

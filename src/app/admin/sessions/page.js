@@ -1,46 +1,47 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
   FolderOpen,
   MessageSquare,
   ChevronDown,
   Loader,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import IrisService from "../../../services/IrisService";
+import PaginationComponent from "../../../components/PaginationComponent";
+import ConversationsTableComponent from "../../../components/ConversationsTableComponent";
+import ProjectBadgeComponent from "../../../components/ProjectBadgeComponent";
+import UserBadgeComponent from "../../../components/UserBadgeComponent";
+import CostBadgeComponent from "../../../components/CostBadgeComponent";
+import ModalityIconsComponent from "../../../components/ModalityIconsComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
+import { DateTime } from "luxon";
 import styles from "./page.module.css";
 
-function formatCost(cost) {
-  if (!cost || cost === 0) return "$0.00";
-  if (cost < 0.01) return `$${cost.toFixed(4)}`;
-  return `$${cost.toFixed(2)}`;
-}
-
-function formatTime(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now - d;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
-  const diffD = Math.floor(diffH / 24);
-  if (diffD < 7) return `${diffD}d ago`;
-  return d.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 const PAGE_SIZE = 30;
+
+/** Merge modalities from all conversations into a single object */
+function mergeModalities(conversations) {
+  const merged = {};
+  for (const c of conversations) {
+    if (!c.modalities) continue;
+    for (const [key, val] of Object.entries(c.modalities)) {
+      if (val) merged[key] = true;
+    }
+  }
+  return Object.keys(merged).length > 0 ? merged : null;
+}
+
+/** Collect unique providers from all conversations */
+function mergeProviders(conversations) {
+  const set = new Set();
+  for (const c of conversations) {
+    const p = c.providers;
+    if (Array.isArray(p)) p.forEach((v) => set.add(v));
+    else if (p) set.add(p);
+  }
+  return [...set];
+}
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState([]);
@@ -127,6 +128,11 @@ export default function SessionsPage() {
         {sessions.map((session) => {
           const isExpanded = expandedIds.has(session.id);
           const convos = session.conversations || [];
+          const ts = session.createdAt
+            ? DateTime.fromISO(session.createdAt).toRelative()
+            : "";
+          const mergedModalities = mergeModalities(convos);
+          const mergedProviders = mergeProviders(convos);
 
           return (
             <div key={session.id} className={styles.sessionCard}>
@@ -140,22 +146,38 @@ export default function SessionsPage() {
                   <span className={styles.sessionId}>
                     {session.id.slice(0, 8)}
                   </span>
-                  <span className={styles.sessionTimestamp}>
-                    {formatTime(session.createdAt)}
-                  </span>
+                  <span className={styles.sessionTimestamp}>{ts}</span>
                 </div>
                 <div className={styles.sessionHeaderRight}>
+                  <ProjectBadgeComponent project={session.project} />
+                  <UserBadgeComponent username={session.username} />
+
+                  {mergedModalities && (
+                    <ModalityIconsComponent
+                      modalities={mergedModalities}
+                      size={12}
+                    />
+                  )}
+
+                  {mergedProviders.length > 0 && (
+                    <span className={styles.providerBadges}>
+                      {mergedProviders.map((p) => (
+                        <span key={p} className={styles.providerBadge}>
+                          {p}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+
                   <span
                     className={`${styles.badge} ${styles.badgeConversations}`}
                   >
                     <MessageSquare size={10} />
                     {session.conversationCount || convos.length || 0}
                   </span>
-                  {(session.totalCost || 0) > 0 && (
-                    <span className={`${styles.badge} ${styles.badgeCost}`}>
-                      {formatCost(session.totalCost)}
-                    </span>
-                  )}
+
+                  <CostBadgeComponent cost={session.totalCost} />
+
                   <ChevronDown
                     size={14}
                     className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ""}`}
@@ -163,54 +185,14 @@ export default function SessionsPage() {
                 </div>
               </div>
 
-              {/* Expanded: show conversations */}
-              {isExpanded && convos.length > 0 && (
+              {/* Expanded: show conversations table */}
+              {isExpanded && (
                 <div className={styles.conversationList}>
-                  {convos.map((conv) => (
-                    <Link
-                      key={conv.id}
-                      href={`/admin/conversations/${conv.id}`}
-                      className={styles.conversationRow}
-                    >
-                      <MessageSquare
-                        size={13}
-                        className={styles.convIcon}
-                      />
-                      <span className={styles.convTitle}>
-                        {conv.title || "Untitled"}
-                      </span>
-                      <div className={styles.convMeta}>
-                        {conv.project && (
-                          <span className={styles.convProject}>
-                            {conv.project}
-                          </span>
-                        )}
-                        {(conv.totalCost || 0) > 0 && (
-                          <span className={styles.convCost}>
-                            {formatCost(conv.totalCost)}
-                          </span>
-                        )}
-                        <span className={styles.convTime}>
-                          {formatTime(conv.updatedAt || conv.createdAt)}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-
-              {isExpanded && convos.length === 0 && (
-                <div className={styles.conversationList}>
-                  <div
-                    style={{
-                      padding: "12px",
-                      textAlign: "center",
-                      color: "var(--text-muted)",
-                      fontSize: 12,
-                    }}
-                  >
-                    No conversations linked
-                  </div>
+                  <ConversationsTableComponent
+                    conversations={convos}
+                    emptyText="No conversations linked"
+                    compact
+                  />
                 </div>
               )}
             </div>
@@ -219,29 +201,13 @@ export default function SessionsPage() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            className={styles.paginationBtn}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-          >
-            <ChevronLeft size={14} />
-            Prev
-          </button>
-          <span>
-            Page {page} of {totalPages}
-          </span>
-          <button
-            className={styles.paginationBtn}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page >= totalPages}
-          >
-            Next
-            <ChevronRight size={14} />
-          </button>
-        </div>
-      )}
+      <PaginationComponent
+        page={page}
+        totalPages={totalPages}
+        totalItems={total}
+        onPageChange={setPage}
+        limit={PAGE_SIZE}
+      />
     </div>
   );
 }

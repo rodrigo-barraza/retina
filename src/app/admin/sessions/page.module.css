@@ -73,8 +73,10 @@
 .sessionHeaderRight {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .badge {
@@ -93,9 +95,24 @@
   color: var(--accent-color);
 }
 
-.badgeCost {
-  background: rgba(16, 185, 129, 0.1);
-  color: rgb(16, 185, 129);
+/* ── Provider badges ─────────────────────────────────── */
+.providerBadges {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.providerBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--info);
+  background: var(--info-subtle);
+  white-space: nowrap;
 }
 
 .chevron {
@@ -108,74 +125,10 @@
   transform: rotate(180deg);
 }
 
-/* ── Expanded conversation list ──────────────────────── */
+/* ── Expanded conversations table ────────────────────── */
 .conversationList {
   border-top: 1px solid var(--border-color);
-  padding: 8px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.conversationRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 4px;
-  transition: background 0.15s ease;
-  cursor: pointer;
-  text-decoration: none;
-  color: inherit;
-}
-
-.conversationRow:hover {
-  background: var(--bg-tertiary);
-}
-
-.convIcon {
-  flex-shrink: 0;
-  color: var(--text-muted);
-  opacity: 0.6;
-}
-
-.convTitle {
-  flex: 1;
-  font-size: 13px;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-
-.convMeta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.convProject {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 2px;
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-}
-
-.convCost {
-  font-size: 11px;
-  color: rgb(16, 185, 129);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.convTime {
-  font-size: 11px;
-  color: var(--text-muted);
-  white-space: nowrap;
+  padding: 4px 8px 8px;
 }
 
 /* ── Loading / empty states ──────────────────────────── */
@@ -207,39 +160,4 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-/* ── Pagination ──────────────────────────────────────── */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 16px 0;
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.paginationBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-card);
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: 12px;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.paginationBtn:hover:not(:disabled) {
-  border-color: var(--accent-color);
-  background: var(--bg-tertiary);
-}
-
-.paginationBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
