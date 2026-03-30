@@ -1,12 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Wrench } from "lucide-react";
 import SortableTableComponent from "./SortableTableComponent";
 import ModalityIconsComponent from "./ModalityIconsComponent";
+import TooltipComponent from "./TooltipComponent";
 import BadgeComponent from "./BadgeComponent";
-import { formatCost } from "../utils/utilities";
+import {
+  formatNumber,
+  formatCost,
+  formatLatency,
+  formatTokensPerSec,
+} from "../utils/utilities";
+import { TOOL_ICON_MAP, TOOL_COLORS } from "./WorkflowNodeConstants";
 import { DateTime } from "luxon";
+import styles from "./ConversationsTableComponent.module.css";
 
 /**
  * ConversationsTableComponent — reusable admin table for displaying
@@ -22,6 +30,39 @@ import { DateTime } from "luxon";
  * @param {string} [props.maxHeight] — CSS max-height for scrollable tables
  */
 
+function renderToolPills(toolNames) {
+  if (!toolNames || toolNames.length === 0) {
+    return <span style={{ color: "var(--text-muted)" }}>—</span>;
+  }
+
+  const resolved = new Map();
+  for (const raw of toolNames) {
+    if (TOOL_ICON_MAP[raw]) {
+      if (!resolved.has(raw)) resolved.set(raw, TOOL_ICON_MAP[raw]);
+    } else {
+      const fallbackIcon = TOOL_ICON_MAP["Function Calling"] || Wrench;
+      if (!resolved.has("Function Calling")) {
+        resolved.set("Function Calling", fallbackIcon);
+      }
+    }
+  }
+
+  return (
+    <span className={styles.toolPills}>
+      {[...resolved.entries()].map(([label, Icon]) => (
+        <TooltipComponent key={label} label={label} position="top">
+          <span className={styles.toolPill}>
+            <Icon
+              size={12}
+              style={{ color: TOOL_COLORS[label] || "#f97316" }}
+            />
+          </span>
+        </TooltipComponent>
+      ))}
+    </span>
+  );
+}
+
 const COLUMNS = [
   {
     key: "title",
@@ -29,10 +70,7 @@ const COLUMNS = [
     sortable: false,
     render: (c) => (
       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-        <MessageSquare
-          size={12}
-          style={{ opacity: 0.5, flexShrink: 0 }}
-        />
+        <MessageSquare size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
         {c.title || "Untitled"}
       </span>
     ),
@@ -64,8 +102,37 @@ const COLUMNS = [
     label: "Modalities",
     sortable: false,
     render: (c) => {
-      if (!c.modalities) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+      if (!c.modalities)
+        return <span style={{ color: "var(--text-muted)" }}>—</span>;
       return <ModalityIconsComponent modalities={c.modalities} size={13} />;
+    },
+  },
+  {
+    key: "models",
+    label: "Model(s)",
+    sortable: false,
+    render: (c) => {
+      const models = c.models || [];
+      if (models.length === 0) {
+        return <span style={{ color: "var(--text-muted)" }}>—</span>;
+      }
+      if (models.length === 1) {
+        return (
+          <span className={styles.modelName} title={models[0]}>
+            {models[0]}
+          </span>
+        );
+      }
+      return (
+        <TooltipComponent
+          label={models.join(", ")}
+          position="top"
+        >
+          <span className={styles.modelName}>
+            {models.length} models
+          </span>
+        </TooltipComponent>
+      );
     },
   },
   {
@@ -90,6 +157,70 @@ const COLUMNS = [
         </span>
       );
     },
+  },
+  {
+    key: "toolNames",
+    label: "Tools",
+    sortable: false,
+    align: "left",
+    render: (c) => renderToolPills(c.toolNames),
+  },
+  {
+    key: "inputTokens",
+    label: "In Tokens",
+    sortable: true,
+    align: "right",
+    render: (c) =>
+      c.inputTokens > 0 ? (
+        formatNumber(c.inputTokens)
+      ) : (
+        <span style={{ color: "var(--text-muted)" }}>—</span>
+      ),
+  },
+  {
+    key: "outputTokens",
+    label: "Out Tokens",
+    sortable: true,
+    align: "right",
+    render: (c) =>
+      c.outputTokens > 0 ? (
+        formatNumber(c.outputTokens)
+      ) : (
+        <span style={{ color: "var(--text-muted)" }}>—</span>
+      ),
+  },
+  {
+    key: "totalTokens",
+    label: "Tokens",
+    sortable: false,
+    align: "right",
+    render: (c) => {
+      const total = (c.inputTokens || 0) + (c.outputTokens || 0);
+      return total > 0 ? (
+        formatNumber(total)
+      ) : (
+        <span style={{ color: "var(--text-muted)" }}>—</span>
+      );
+    },
+  },
+  {
+    key: "avgTokensPerSec",
+    label: "Tok/s",
+    sortable: true,
+    align: "right",
+    render: (c) => formatTokensPerSec(c.avgTokensPerSec),
+  },
+  {
+    key: "totalLatency",
+    label: "Latency",
+    sortable: true,
+    align: "right",
+    render: (c) =>
+      c.totalLatency > 0 ? (
+        formatLatency(c.totalLatency)
+      ) : (
+        <span style={{ color: "var(--text-muted)" }}>—</span>
+      ),
   },
   {
     key: "totalCost",

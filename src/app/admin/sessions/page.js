@@ -6,6 +6,9 @@ import {
   MessageSquare,
   ChevronDown,
   Loader,
+  Cpu,
+  Hash,
+  Zap,
 } from "lucide-react";
 import IrisService from "../../../services/IrisService";
 import PaginationComponent from "../../../components/PaginationComponent";
@@ -15,6 +18,7 @@ import UserBadgeComponent from "../../../components/UserBadgeComponent";
 import CostBadgeComponent from "../../../components/CostBadgeComponent";
 import ModalityIconsComponent from "../../../components/ModalityIconsComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
+import { formatNumber } from "../../../utils/utilities";
 import { DateTime } from "luxon";
 import styles from "./page.module.css";
 
@@ -133,6 +137,10 @@ export default function SessionsPage() {
             : "";
           const mergedModalities = mergeModalities(convos);
           const mergedProviders = mergeProviders(convos);
+          const totalTokens =
+            (session.totalInputTokens || 0) +
+            (session.totalOutputTokens || 0);
+          const models = session.models || [];
 
           return (
             <div key={session.id} className={styles.sessionCard}>
@@ -169,12 +177,46 @@ export default function SessionsPage() {
                     </span>
                   )}
 
+                  {/* Stats badges */}
                   <span
                     className={`${styles.badge} ${styles.badgeConversations}`}
                   >
                     <MessageSquare size={10} />
                     {session.conversationCount || convos.length || 0}
                   </span>
+
+                  {(session.requestCount || 0) > 0 && (
+                    <span className={styles.statBadge}>
+                      <Zap size={10} />
+                      {session.requestCount} req
+                    </span>
+                  )}
+
+                  {models.length > 0 && (
+                    <span className={styles.statBadge}>
+                      <Cpu size={10} />
+                      {models.length === 1
+                        ? models[0]
+                        : `${models.length} models`}
+                    </span>
+                  )}
+
+                  {totalTokens > 0 && (
+                    <>
+                      <span className={styles.statBadge}>
+                        <Hash size={10} />
+                        {formatNumber(session.totalInputTokens)} in
+                      </span>
+                      <span className={styles.statBadge}>
+                        <Hash size={10} />
+                        {formatNumber(session.totalOutputTokens)} out
+                      </span>
+                      <span className={styles.statBadge}>
+                        <Hash size={10} />
+                        {formatNumber(totalTokens)} total
+                      </span>
+                    </>
+                  )}
 
                   <CostBadgeComponent cost={session.totalCost} />
 
