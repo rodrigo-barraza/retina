@@ -189,6 +189,7 @@ export default class LiveSessionService {
 
   sendText(text) {
     if (this.ws?.readyState === WebSocket.OPEN) {
+      this.stopAudioPlayback();
       this.ws.send(JSON.stringify({ type: "text", text }));
     }
   }

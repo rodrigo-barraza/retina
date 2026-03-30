@@ -1,12 +1,6 @@
-import {
-  Type,
-  Image as ImageIcon,
-  Volume2,
-  Hash,
-  ArrowRight,
-  Wrench,
-} from "lucide-react";
-import { MODALITY_COLORS, TOOL_ICON_MAP, TOOL_COLORS } from "../../components/WorkflowNodeConstants";
+import { Wrench } from "lucide-react";
+import { TOOL_ICON_MAP, TOOL_COLORS } from "../../components/WorkflowNodeConstants";
+import ModalityIconsComponent from "../../components/ModalityIconsComponent";
 import TooltipComponent from "../../components/TooltipComponent";
 import BadgeComponent from "../../components/BadgeComponent";
 import {
@@ -29,89 +23,13 @@ export const getRequestsColumns = () => [
     label: "Modality",
     sortable: false,
     render: (r) => {
-      const map = {
-        chat: {
-          inIcon: Type,
-          inColor: MODALITY_COLORS.text,
-          outIcon: Type,
-          outColor: MODALITY_COLORS.text,
-          label: "Text → Text",
-        },
-        "chat/image-api": {
-          inIcon: Type,
-          inColor: MODALITY_COLORS.text,
-          outIcon: ImageIcon,
-          outColor: MODALITY_COLORS.image,
-          label: "Text → Image",
-        },
-        "text-to-audio": {
-          inIcon: Type,
-          inColor: MODALITY_COLORS.text,
-          outIcon: Volume2,
-          outColor: MODALITY_COLORS.audio,
-          label: "Text → Audio",
-        },
-        "audio-to-text": {
-          inIcon: Volume2,
-          inColor: MODALITY_COLORS.audio,
-          outIcon: Type,
-          outColor: MODALITY_COLORS.text,
-          label: "Audio → Text",
-        },
-        live: {
-          inIcon: Volume2,
-          inColor: MODALITY_COLORS.audio,
-          outIcon: Type,
-          outColor: MODALITY_COLORS.text,
-          outIcon2: Volume2,
-          outColor2: MODALITY_COLORS.audio,
-          label: "Speech → Text + Audio",
-        },
-        embed: {
-          inIcon: Type,
-          inColor: MODALITY_COLORS.text,
-          outIcon: Hash,
-          outColor: MODALITY_COLORS.embedding,
-          label: "Text → Embedding",
-        },
-      };
-      let m = map[r.endpoint];
-      // Detect image-output models that go through the chat endpoint
-      if ((!m || r.endpoint === "chat") && r.model && /image/i.test(r.model)) {
-        m = map["chat/image-api"];
-      }
-      // Heuristic: detect legacy live records logged as "chat" before the endpoint fix
-      if ((!m || r.endpoint === "chat") && r.requestId?.startsWith("live-")) {
-        m = map["live"];
-      }
-      m = m || map["chat"];
-      const InIcon = m.inIcon;
-      const OutIcon = m.outIcon;
-      const outParts = m.label.split(" → ")[1]?.split(" + ") || [m.label.split(" → ")[1]];
+      if (!r.modalities) return <span style={{ color: "var(--text-muted)" }}>—</span>;
       return (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-          <TooltipComponent label={m.label.split(" → ")[0]} position="top">
-            <InIcon size={13} style={{ color: m.inColor }} />
-          </TooltipComponent>
-          <ArrowRight
-            size={10}
-            style={{ color: "var(--text-muted)", opacity: 0.5 }}
-          />
-          <TooltipComponent label={outParts[0]} position="top">
-            <OutIcon size={13} style={{ color: m.outColor }} />
-          </TooltipComponent>
-          {m.outIcon2 && (() => {
-            const OutIcon2 = m.outIcon2;
-            return (
-              <>
-                <span style={{ color: "var(--text-muted)", opacity: 0.4, fontSize: 10, lineHeight: 1 }}>+</span>
-                <TooltipComponent label={outParts[1] || ""} position="top">
-                  <OutIcon2 size={13} style={{ color: m.outColor2 }} />
-                </TooltipComponent>
-              </>
-            );
-          })()}
-        </span>
+        <ModalityIconsComponent
+          modalities={r.modalities}
+          size={13}
+          variant="badge"
+        />
       );
     },
   },
