@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Zap } from "lucide-react";
 import SortableTableComponent from "./SortableTableComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
 import ToolIconComponent from "./ToolIconComponent";
 import ModelBadgeComponent from "./ModelBadgeComponent";
 import CostBadgeComponent from "./CostBadgeComponent";
 import BadgeComponent from "./BadgeComponent";
+import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
 import {
   formatNumber,
   formatLatency,
@@ -83,24 +84,7 @@ const buildColumns = (mini) => [
     key: "providers",
     label: "Providers",
     sortable: false,
-    render: (c) => {
-      if (
-        !c.providers ||
-        (Array.isArray(c.providers) && c.providers.length === 0)
-      ) {
-        return <span style={{ color: "var(--text-muted)" }}>—</span>;
-      }
-      const list = Array.isArray(c.providers) ? c.providers : [c.providers];
-      return (
-        <span style={{ display: "inline-flex", gap: mini ? 2 : 4 }}>
-          {list.map((p) => (
-            <BadgeComponent key={p} variant="endpoint" mini={mini}>
-              {p}
-            </BadgeComponent>
-          ))}
-        </span>
-      );
-    },
+    render: (c) => <ProvidersBadgeComponent providers={c.providers} mini={mini} />,
   },
   {
     key: "toolNames",
@@ -108,6 +92,21 @@ const buildColumns = (mini) => [
     sortable: false,
     align: "left",
     render: (c) => <ToolIconComponent toolNames={c.toolNames} size={mini ? 10 : undefined} />,
+  },
+  {
+    key: "requestCount",
+    label: "Requests",
+    sortable: true,
+    align: "right",
+    render: (c) =>
+      (c.requestCount || 0) > 0 ? (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums" }}>
+          <Zap size={mini ? 8 : 10} style={{ opacity: 0.5, flexShrink: 0 }} />
+          {c.requestCount}
+        </span>
+      ) : (
+        <span style={{ color: "var(--text-muted)" }}>—</span>
+      ),
   },
   {
     key: "inputTokens",

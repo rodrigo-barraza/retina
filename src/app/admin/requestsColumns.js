@@ -1,5 +1,6 @@
 import ModalityIconComponent from "../../components/ModalityIconComponent";
 import ToolIconComponent from "../../components/ToolIconComponent";
+import ProvidersBadgeComponent from "../../components/ProvidersBadgeComponent";
 import BadgeComponent from "../../components/BadgeComponent";
 import {
   formatNumber,
@@ -41,7 +42,7 @@ export const getRequestsColumns = () => [
     key: "provider",
     label: "Provider",
     render: (r) => (
-      <BadgeComponent variant="provider">{r.provider || "-"}</BadgeComponent>
+      <ProvidersBadgeComponent providers={r.provider ? [r.provider] : []} />
     ),
   },
   { key: "model", label: "Model" },

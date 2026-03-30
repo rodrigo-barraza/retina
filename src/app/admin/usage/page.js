@@ -22,6 +22,7 @@ import DatePickerComponent from "../../../components/DatePickerComponent";
 import PageHeaderComponent from "../../../components/PageHeaderComponent";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import BadgeComponent from "../../../components/BadgeComponent";
+import ProvidersBadgeComponent from "../../../components/ProvidersBadgeComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
@@ -132,7 +133,7 @@ export default function UsagePage() {
       label: "Project",
       align: "left",
       renderSub: (row) => (
-        <BadgeComponent variant="provider">{row.provider}</BadgeComponent>
+        <ProvidersBadgeComponent providers={row.provider ? [row.provider] : []} />
       ),
     },
     {
@@ -269,6 +270,9 @@ export default function UsagePage() {
       key: "provider",
       label: "Provider",
       align: "left",
+      render: (row) => (
+        <ProvidersBadgeComponent providers={row.provider ? [row.provider] : []} />
+      ),
     },
     { key: "totalRequests", label: "Requests", align: "right", render: requestsRender },
     { key: "totalInputTokens", label: "Tokens In", align: "right", render: tokensInRender },
@@ -305,7 +309,7 @@ export default function UsagePage() {
       key: "provider",
       label: "Provider",
       render: (row) => (
-        <BadgeComponent variant="provider">{row.provider}</BadgeComponent>
+        <ProvidersBadgeComponent providers={row.provider ? [row.provider] : []} />
       ),
     },
     { key: "totalRequests", label: "Requests", align: "right", render: requestsRender },

@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import CountLinkComponent from "../../components/CountLinkComponent";
 import {
-  Activity,
   Zap,
   DollarSign,
   Clock,
@@ -13,7 +12,6 @@ import {
   Workflow,
   MessageSquare,
   FolderOpen,
-  Hash,
   TrendingUp,
   Box,
   Layers,
@@ -36,8 +34,10 @@ import TimelineChartComponent from "../../components/TimelineChartComponent";
 import DistributionChartComponent from "../../components/DistributionChartComponent";
 import ProportionBarComponent from "../../components/ProportionBarComponent";
 import SortableTableComponent from "../../components/SortableTableComponent";
+import ConversationsTableComponent from "../../components/ConversationsTableComponent";
 import ToolIconComponent from "../../components/ToolIconComponent";
 import CostBadgeComponent from "../../components/CostBadgeComponent";
+import ProvidersBadgeComponent from "../../components/ProvidersBadgeComponent";
 import ProjectBadgeComponent from "../../components/ProjectBadgeComponent";
 import UserBadgeComponent from "../../components/UserBadgeComponent";
 import SelectDropdown from "../../components/SelectDropdown";
@@ -72,6 +72,7 @@ export default function DashboardPage() {
   const [timeline, setTimeline] = useState([]);
   const [recentRequests, setRecentRequests] = useState([]);
   const [recentSessions, setRecentSessions] = useState([]);
+  const [recentConversations, setRecentConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -96,7 +97,7 @@ export default function DashboardPage() {
       const filterParams = { ...dateParams };
       if (projectFilter) filterParams.project = projectFilter;
 
-      const [statsData, projects, models, timelineData, requestsData, sessionsData, prismConfig] =
+      const [statsData, projects, models, timelineData, requestsData, sessionsData, conversationsData, prismConfig] =
         await Promise.all([
           IrisService.getStats(filterParams),
           IrisService.getProjectStats(filterParams),
@@ -113,6 +114,13 @@ export default function DashboardPage() {
             limit: 5,
             sort: "createdAt",
             order: "desc",
+          }),
+          IrisService.getConversations({
+            page: 1,
+            limit: 10,
+            sort: "updatedAt",
+            order: "desc",
+            ...filterParams,
           }),
           PrismService.getConfig().catch(() => null),
         ]);
@@ -136,6 +144,7 @@ export default function DashboardPage() {
       setTimeline(timelineData.data || timelineData);
       setRecentRequests(requestsData.data || []);
       setRecentSessions(sessionsData.data || []);
+      setRecentConversations(conversationsData.data || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -282,19 +291,12 @@ export default function DashboardPage() {
 
       {/* ── Resource Navigation ── */}
       <div className={styles.resourceNav}>
-        <Link href="/admin/requests" className={styles.resourceCard}>
-          <ScrollText size={18} className={styles.resourceIcon} />
+        <Link href="#" className={styles.resourceCard} onClick={(e) => { e.preventDefault(); document.getElementById('projects-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+          <Box size={18} className={styles.resourceIcon} />
           <span className={styles.resourceCount}>
-            {loading ? "—" : formatNumber(stats?.totalRequests)}
+            {loading ? "—" : formatNumber(projectStats.length)}
           </span>
-          <span className={styles.resourceLabel}>Requests</span>
-        </Link>
-        <Link href="/admin/sessions" className={styles.resourceCard}>
-          <FolderOpen size={18} className={styles.resourceIcon} />
-          <span className={styles.resourceCount}>
-            {loading ? "—" : formatNumber(stats?.sessionCount)}
-          </span>
-          <span className={styles.resourceLabel}>Sessions</span>
+          <span className={styles.resourceLabel}>Projects</span>
         </Link>
         <Link href="/admin/providers" className={styles.resourceCard}>
           <Layers size={18} className={styles.resourceIcon} />
@@ -310,27 +312,31 @@ export default function DashboardPage() {
           </span>
           <span className={styles.resourceLabel}>Models</span>
         </Link>
-        <Link href="#" className={styles.resourceCard} onClick={(e) => { e.preventDefault(); document.getElementById('projects-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
-          <Box size={18} className={styles.resourceIcon} />
+        <Link href="/admin/sessions" className={styles.resourceCard}>
+          <FolderOpen size={18} className={styles.resourceIcon} />
           <span className={styles.resourceCount}>
-            {loading ? "—" : formatNumber(projectStats.length)}
+            {loading ? "—" : formatNumber(stats?.sessionCount)}
           </span>
-          <span className={styles.resourceLabel}>Projects</span>
+          <span className={styles.resourceLabel}>Sessions</span>
+        </Link>
+        <Link href="/admin/conversations" className={styles.resourceCard}>
+          <MessageSquare size={18} className={styles.resourceIcon} />
+          <span className={styles.resourceCount}>
+            {loading ? "—" : formatNumber(stats?.conversationCount)}
+          </span>
+          <span className={styles.resourceLabel}>Conversations</span>
+        </Link>
+        <Link href="/admin/requests" className={styles.resourceCard}>
+          <ScrollText size={18} className={styles.resourceIcon} />
+          <span className={styles.resourceCount}>
+            {loading ? "—" : formatNumber(stats?.totalRequests)}
+          </span>
+          <span className={styles.resourceLabel}>Requests</span>
         </Link>
       </div>
 
       {/* Stats Row */}
       <div className={styles.statsGrid}>
-        <StatsCard
-          label="Total Requests"
-          value={loading ? "..." : formatNumber(stats?.totalRequests)}
-          subtitle={
-            dateRange.from || dateRange.to ? "Custom range" : "All time"
-          }
-          icon={Activity}
-          variant="accent"
-          loading={loading}
-        />
         <StatsCard
           label="Total Tokens"
           value={
@@ -381,27 +387,11 @@ export default function DashboardPage() {
           loading={loading}
         />
         <StatsCard
-          label="Sessions"
-          value={loading ? "..." : formatNumber(stats?.sessionCount)}
-          subtitle={loading ? "" : `${formatNumber(stats?.conversationCount)} conversations`}
-          icon={FolderOpen}
-          variant="accent"
-          loading={loading}
-        />
-        <StatsCard
           label="Avg Cost / Request"
           value={loading ? "..." : formatCost(avgCostPerRequest)}
           subtitle="Per-request average"
           icon={TrendingUp}
           variant="info"
-          loading={loading}
-        />
-        <StatsCard
-          label="Models Used"
-          value={loading ? "..." : formatNumber(modelStats.length)}
-          subtitle={loading ? "" : `${providerData.length} providers`}
-          icon={Hash}
-          variant="warning"
           loading={loading}
         />
       </div>
@@ -690,7 +680,7 @@ export default function DashboardPage() {
             key: "provider",
             label: "Provider",
             render: (m) => (
-              <span className={styles.badgeProvider}>{m.provider}</span>
+              <ProvidersBadgeComponent providers={m.provider ? [m.provider] : []} />
             ),
           },
           {
@@ -894,6 +884,21 @@ export default function DashboardPage() {
         getRowKey={(s, i) => s.id || i}
         emptyText={loading ? "Loading..." : "No sessions yet"}
       />
+
+      {/* ── Recent Conversations ── */}
+      <div className={styles.sectionBlock}>
+        <h2 className={styles.sectionTitle}>
+          <span>Recent Conversations</span>
+          <Link href="/admin/conversations" className={styles.sectionAction}>
+            View all →
+          </Link>
+        </h2>
+        <ConversationsTableComponent
+          conversations={recentConversations}
+          emptyText={loading ? "Loading..." : "No conversations yet"}
+          compact
+        />
+      </div>
 
       {/* ── Recent Requests ── */}
       <SortableTableComponent

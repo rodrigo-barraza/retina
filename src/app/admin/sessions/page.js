@@ -17,8 +17,10 @@ import UserBadgeComponent from "../../../components/UserBadgeComponent";
 import CostBadgeComponent from "../../../components/CostBadgeComponent";
 import ModalityIconComponent from "../../../components/ModalityIconComponent";
 import ModelBadgeComponent from "../../../components/ModelBadgeComponent";
+import ProvidersBadgeComponent from "../../../components/ProvidersBadgeComponent";
+import ToolIconComponent from "../../../components/ToolIconComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
-import { formatNumber, formatDateTime } from "../../../utils/utilities";
+import { formatNumber, formatDateTime, formatLatency, formatTokensPerSec } from "../../../utils/utilities";
 
 import styles from "./page.module.css";
 
@@ -90,6 +92,19 @@ const SESSION_COLUMNS = [
     render: (s) => <ModelBadgeComponent models={s.models} />,
   },
   {
+    key: "providers",
+    label: "Providers",
+    sortable: false,
+    render: (s) => <ProvidersBadgeComponent providers={s.providers} />,
+  },
+  {
+    key: "toolNames",
+    label: "Tools",
+    sortable: false,
+    align: "left",
+    render: (s) => <ToolIconComponent toolNames={s.toolNames} />,
+  },
+  {
     key: "conversationCount",
     label: "Convos",
     sortable: true,
@@ -139,6 +154,25 @@ const SESSION_COLUMNS = [
     render: (s) =>
       (s.totalOutputTokens || 0) > 0 ? (
         formatNumber(s.totalOutputTokens)
+      ) : (
+        <span style={{ color: "var(--text-muted)" }}>—</span>
+      ),
+  },
+  {
+    key: "avgTokensPerSec",
+    label: "Tok/s",
+    sortable: true,
+    align: "right",
+    render: (s) => formatTokensPerSec(s.avgTokensPerSec),
+  },
+  {
+    key: "totalLatency",
+    label: "Latency",
+    sortable: true,
+    align: "right",
+    render: (s) =>
+      s.totalLatency > 0 ? (
+        formatLatency(s.totalLatency)
       ) : (
         <span style={{ color: "var(--text-muted)" }}>—</span>
       ),
