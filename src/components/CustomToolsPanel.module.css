@@ -120,18 +120,6 @@
     color-mix(in srgb, var(--accent-color) 50%, var(--border-color));
 }
 
-.builtInBadge {
-  display: inline-flex;
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
-  color: var(--accent-color);
-}
-
 .offlineCard {
   border-left-color: #ef4444;
   opacity: 0.45;
@@ -176,6 +164,16 @@
 .dataSourceBadge[data-type="static"] {
   background: color-mix(in srgb, #a855f7 14%, transparent);
   color: #a855f7;
+}
+
+.dataSourceBadge[data-type="compute"] {
+  background: color-mix(in srgb, #10b981 14%, transparent);
+  color: #10b981;
+}
+
+.dataSourceBadge[data-type="realtime"] {
+  background: color-mix(in srgb, #f43f5e 14%, transparent);
+  color: #f43f5e;
 }
 
 .intervalInline {

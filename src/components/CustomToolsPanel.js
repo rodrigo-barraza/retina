@@ -32,6 +32,10 @@ import {
   Bus,
   Wrench,
   Layers,
+  Terminal,
+  Radio,
+  Ship,
+  Fuel,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ButtonComponent from "./ButtonComponent.js";
@@ -57,12 +61,16 @@ const DATA_SOURCE_ICONS = {
   cached: Database,
   onDemand: Zap,
   static: HardDrive,
+  compute: Terminal,
+  realtime: Radio,
 };
 
 const DATA_SOURCE_LABELS = {
   cached: "Cached",
   onDemand: "On-Demand",
   static: "Static",
+  compute: "Compute",
+  realtime: "Realtime",
 };
 
 const DOMAIN_ICONS = {
@@ -77,6 +85,8 @@ const DOMAIN_ICONS = {
   Health: Heart,
   Transit: Bus,
   Utilities: Wrench,
+  Maritime: Ship,
+  Energy: Fuel,
   Other: Layers,
 };
 
@@ -92,6 +102,8 @@ const DOMAIN_ORDER = [
   "Health",
   "Transit",
   "Utilities",
+  "Maritime",
+  "Energy",
   "Other",
 ];
 
@@ -1103,11 +1115,7 @@ export default function CustomToolsPanel({
                                   </span>
                                 )}
                               </span>
-                            ) : (
-                              <span className={styles.builtInBadge}>
-                                Built-in
-                              </span>
-                            )}
+                            ) : null}
                             {paramCount > 0 && <span>{paramCount} params</span>}
                           </span>
                         </div>
@@ -1139,7 +1147,11 @@ export default function CustomToolsPanel({
                                     ? "Background Polled"
                                     : tool.dataSource.type === "onDemand"
                                       ? "Fetched On Request"
-                                      : "In-Memory Dataset"}
+                                      : tool.dataSource.type === "compute"
+                                        ? "Local Compute"
+                                        : tool.dataSource.type === "realtime"
+                                          ? "Live Stream"
+                                          : "In-Memory Dataset"}
                                 </span>
                               </div>
                               {tool.dataSource.provider &&
@@ -1160,6 +1172,12 @@ export default function CustomToolsPanel({
                                 <div className={styles.dataSourceRow}>
                                   <HardDrive size={11} />
                                   <span>{tool.dataSource.dataset}</span>
+                                </div>
+                              )}
+                              {tool.dataSource.runtime && (
+                                <div className={styles.dataSourceRow}>
+                                  <Terminal size={11} />
+                                  <span>{tool.dataSource.runtime}</span>
                                 </div>
                               )}
                               {tool.dataSource.intervalSeconds && (
