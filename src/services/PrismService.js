@@ -453,7 +453,7 @@ export default class PrismService {
    * @returns {Promise<{ text, usage?, estimatedCost?, totalTime? }>}
    */
   static async transcribeAudio(payload) {
-    return PrismService._request("/chat?stream=false", { body: payload });
+    return PrismService._request("/audio-to-text", { body: payload });
   }
 
   // ---------------------------------------------------------------------------
