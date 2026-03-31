@@ -95,6 +95,7 @@ export default function DashboardPage() {
             limit: 5,
             sort: "createdAt",
             order: "desc",
+            ...filterParams,
           }),
           IrisService.getConversations({
             page: 1,

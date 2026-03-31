@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Download, MessageSquare, GitBranch, FolderOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import HistoryItemComponent from "../../../components/HistoryItemComponent";
@@ -12,7 +12,7 @@ import {
   buildDateRangeParams,
 } from "../../../utils/utilities";
 
-import SortableTableComponent from "../../../components/SortableTableComponent";
+import RequestsTableComponent from "../../../components/RequestsTableComponent";
 import PaginationComponent from "../../../components/PaginationComponent";
 
 
@@ -34,7 +34,7 @@ import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
 
-import { getRequestsColumns } from "../requestsColumns";
+
 
 function extractMediaAssets(obj) {
   const seen = new Set();
@@ -187,10 +187,13 @@ export default function RequestsPage() {
     setPage(1);
   }
 
-  const columns = useMemo(() => getRequestsColumns(), []);
+
 
   const exportCSV = useCallback(() => {
-    const headers = columns.map((c) => c.label).join(",");
+    const headers = [
+      "Timestamp", "Project", "Endpoint", "Provider", "Model",
+      "In Tokens", "Out Tokens", "Cost", "Tok/s", "Latency", "Status",
+    ].join(",");
     const rows = requests.map((r) =>
       [
         r.timestamp || "",
@@ -214,7 +217,7 @@ export default function RequestsPage() {
     a.download = `iris-requests-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [columns, requests]);
+  }, [requests]);
 
   const totalPages = Math.ceil(total / LIMIT);
 
@@ -314,12 +317,12 @@ export default function RequestsPage() {
 
       {/* Table */}
       <div className={styles.tableWrapper}>
-        <SortableTableComponent
-          columns={columns}
-          data={requests}
+        <RequestsTableComponent
+          requests={requests}
           sortKey={sort}
           sortDir={order}
           onSort={handleSort}
+          maxHeight={null}
           onRowMouseEnter={(row) => {
             if (row.conversationId) setHoveredConversationId(row.conversationId);
           }}
@@ -331,7 +334,6 @@ export default function RequestsPage() {
           }
           onRowClick={async (req) => {
             setSelectedRequest(req);
-            // Fetch full detail (includes payloads)
             try {
               const full = await IrisService.getRequest(req.requestId);
               setSelectedRequest(full);
@@ -339,7 +341,6 @@ export default function RequestsPage() {
               /* keep partial data */
             }
           }}
-          getRowKey={(req, i) => req.requestId || i}
           emptyText={loading ? "Loading..." : "No requests found"}
         />
 

@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { FolderOpen, Loader } from "lucide-react";
 import IrisService from "../../../services/IrisService";
+import { buildDateRangeParams } from "../../../utils/utilities";
 import PaginationComponent from "../../../components/PaginationComponent";
 import SessionsTableComponent from "../../../components/SessionsTableComponent";
+import SelectDropdown from "../../../components/SelectDropdown";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
+import useProjectFilter from "../../../hooks/useProjectFilter";
 
 import styles from "./page.module.css";
 
@@ -13,6 +16,9 @@ const PAGE_SIZE = 30;
 const POLL_INTERVAL = 1000; // 1s
 
 export default function SessionsPage() {
+  const { projectFilter, projectOptions, handleProjectChange } =
+    useProjectFilter();
+  const { setControls, dateRange } = useAdminHeader();
   const [sessions, setSessions] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -20,14 +26,23 @@ export default function SessionsPage() {
   const intervalRef = useRef(null);
   const initialLoadDone = useRef(false);
 
+  const dateParams = useMemo(
+    () => buildDateRangeParams(dateRange),
+    [dateRange],
+  );
+
   const loadSessions = useCallback(async () => {
     try {
-      const data = await IrisService.getSessions({
+      const params = {
         page,
         limit: PAGE_SIZE,
         sort: "createdAt",
         order: "desc",
-      });
+        ...dateParams,
+      };
+      if (projectFilter) params.project = projectFilter;
+
+      const data = await IrisService.getSessions(params);
       setSessions(data.data || []);
       setTotal(data.total || 0);
     } catch (err) {
@@ -38,7 +53,7 @@ export default function SessionsPage() {
         setLoading(false);
       }
     }
-  }, [page]);
+  }, [page, dateParams, projectFilter]);
 
   useEffect(() => {
     initialLoadDone.current = false;
@@ -50,15 +65,22 @@ export default function SessionsPage() {
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
-  const { setControls } = useAdminHeader();
-
+  // Inject controls into AdminShell header
   useEffect(() => {
     setControls(
-      <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-        {total} sessions
-      </span>,
+      <>
+        <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+          {total} sessions
+        </span>
+        <SelectDropdown
+          value={projectFilter || ""}
+          options={projectOptions}
+          onChange={handleProjectChange}
+          placeholder="All Projects"
+        />
+      </>,
     );
-  }, [setControls, total]);
+  }, [setControls, total, projectFilter, projectOptions, handleProjectChange]);
 
   useEffect(() => {
     return () => setControls(null);

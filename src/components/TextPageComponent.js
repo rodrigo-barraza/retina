@@ -34,7 +34,7 @@ const ORIGIN_FILTERS = [
   { key: "ai", label: "Responses", icon: Sparkles },
 ];
 
-export default function TextPageComponent({ mode = "user" }) {
+export default function TextPageComponent({ mode = "user", dateRange: externalDateRange }) {
   const isAdmin = mode === "admin";
   const convBasePath = isAdmin ? "/admin/conversations" : "/conversations";
 
@@ -50,7 +50,8 @@ export default function TextPageComponent({ mode = "user" }) {
   const [models, setModels] = useState([]);
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState("raw");
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  const [internalDateRange, setInternalDateRange] = useState({ from: "", to: "" });
+  const dateRange = externalDateRange ?? internalDateRange;
   const [favoriteKeys, setFavoriteKeys] = useState([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const PAGE_SIZE = 30;
@@ -184,15 +185,17 @@ export default function TextPageComponent({ mode = "user" }) {
             allLabel="All Models"
           />
 
-          <DatePickerComponent
-            from={dateRange.from}
-            to={dateRange.to}
-            onChange={(v) => {
-              setDateRange(v);
-              setPage(1);
-            }}
-            storageKey={LS_DATE_RANGE}
-          />
+          {!externalDateRange && (
+            <DatePickerComponent
+              from={dateRange.from}
+              to={dateRange.to}
+              onChange={(v) => {
+                setInternalDateRange(v);
+                setPage(1);
+              }}
+              storageKey={LS_DATE_RANGE}
+            />
+          )}
 
           <ViewModeToggleComponent
             mode={viewMode}

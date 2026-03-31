@@ -10,12 +10,13 @@ import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { useToast } from "../../../components/ToastComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
-import { copyToClipboard } from "../../../utils/utilities";
+import { copyToClipboard, buildDateRangeParams } from "../../../utils/utilities";
 import styles from "./page.module.css";
 
 export default function AdminWorkflowsPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
+  const { setControls, dateRange } = useAdminHeader();
   const searchParams = useSearchParams();
   const initialId = searchParams.get("id") || null;
   const providerFilter = searchParams.get("provider") || null;
@@ -38,6 +39,7 @@ export default function AdminWorkflowsPage() {
         limit: 200,
         sort: "createdAt",
         order: "desc",
+        ...buildDateRangeParams(dateRange),
       };
       if (projectFilter) params.project = projectFilter;
       if (providerFilter) params.provider = providerFilter;
@@ -54,7 +56,7 @@ export default function AdminWorkflowsPage() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectFilter, providerFilter, modelFilter]);
+  }, [projectFilter, providerFilter, modelFilter, dateRange]);
 
   useEffect(() => {
     loadWorkflows();
@@ -150,7 +152,6 @@ export default function AdminWorkflowsPage() {
     }
   }, []);
 
-  const { setControls } = useAdminHeader();
 
   // Inject controls into AdminShell header
   useEffect(() => {

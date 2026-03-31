@@ -90,6 +90,7 @@ function OriginBadge({ origin, className }) {
 export default function MediaPageComponent({
   mode = "user",
   project: externalProject,
+  dateRange: externalDateRange,
 }) {
   const isAdmin = mode === "admin";
   const convBasePath = isAdmin ? "/admin/conversations" : "/conversations";
@@ -113,7 +114,8 @@ export default function MediaPageComponent({
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [lightboxSrc, setLightboxSrc] = useState(null);
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  const [internalDateRange, setInternalDateRange] = useState({ from: "", to: "" });
+  const dateRange = externalDateRange ?? internalDateRange;
   const [favoriteKeys, setFavoriteKeys] = useState([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const PAGE_SIZE = 60;
@@ -423,15 +425,17 @@ export default function MediaPageComponent({
             allLabel="All Models"
           />
 
-          <DatePickerComponent
-            from={dateRange.from}
-            to={dateRange.to}
-            onChange={(v) => {
-              setDateRange(v);
-              setPage(1);
-            }}
-            storageKey={LS_DATE_RANGE}
-          />
+          {!externalDateRange && (
+            <DatePickerComponent
+              from={dateRange.from}
+              to={dateRange.to}
+              onChange={(v) => {
+                setInternalDateRange(v);
+                setPage(1);
+              }}
+              storageKey={LS_DATE_RANGE}
+            />
+          )}
 
           <ViewModeToggleComponent
             mode={viewMode}

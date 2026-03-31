@@ -1,6 +1,7 @@
 import ModalityIconComponent from "../../components/ModalityIconComponent";
 import ToolIconComponent from "../../components/ToolIconComponent";
 import ProvidersBadgeComponent from "../../components/ProvidersBadgeComponent";
+import ModelBadgeComponent from "../../components/ModelBadgeComponent";
 import BadgeComponent from "../../components/BadgeComponent";
 import CostBadgeComponent from "../../components/CostBadgeComponent";
 import {
@@ -45,7 +46,11 @@ export const getRequestsColumns = () => [
       <ProvidersBadgeComponent providers={r.provider ? [r.provider] : []} />
     ),
   },
-  { key: "model", label: "Model" },
+  {
+    key: "model",
+    label: "Model",
+    render: (r) => <ModelBadgeComponent models={r.model ? [r.model] : []} />,
+  },
   {
     key: "toolsUsed",
     label: "Tools",

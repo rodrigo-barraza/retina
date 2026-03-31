@@ -6,6 +6,7 @@ import {
   getConversationCost,
   getConversationTokenStats,
   getUsedTools,
+  buildDateRangeParams,
 } from "../../../utils/utilities";
 import { useSearchParams } from "next/navigation";
 import {
@@ -44,6 +45,7 @@ export default function ConversationsPage({ initialId = null }) {
   const searchParams = useSearchParams();
   const providerFilter = searchParams.get("provider") || null;
   const modelFilter = searchParams.get("model") || null;
+  const { setControls, dateRange } = useAdminHeader();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -88,6 +90,7 @@ export default function ConversationsPage({ initialId = null }) {
         limit: 200,
         sort: "updatedAt",
         order: "desc",
+        ...buildDateRangeParams(dateRange),
       };
       if (projectFilter) params.project = projectFilter;
       if (providerFilter) params.provider = providerFilter;
@@ -140,7 +143,7 @@ export default function ConversationsPage({ initialId = null }) {
       setError(err.message);
       setLoading((prev) => (prev ? false : prev));
     }
-  }, [projectFilter, providerFilter, modelFilter]);
+  }, [projectFilter, providerFilter, modelFilter, dateRange]);
 
   // Initial stats fetch + SSE subscription for real-time updates
   useEffect(() => {
@@ -292,8 +295,6 @@ export default function ConversationsPage({ initialId = null }) {
     () => ({ ...SETTINGS_DEFAULTS, ...(selectedConv?.settings || {}) }),
     [selectedConv],
   );
-
-  const { setControls } = useAdminHeader();
 
   // Inject controls into AdminShell header
   useEffect(() => {

@@ -9,7 +9,7 @@ import MediaPageComponent from "../../../components/MediaPageComponent";
 export default function AdminMediaPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
-  const { setControls } = useAdminHeader();
+  const { setControls, dateRange } = useAdminHeader();
 
   useEffect(() => {
     setControls(
@@ -26,5 +26,5 @@ export default function AdminMediaPage() {
     return () => setControls(null);
   }, [setControls]);
 
-  return <MediaPageComponent mode="admin" project={projectFilter} />;
+  return <MediaPageComponent mode="admin" project={projectFilter} dateRange={dateRange} />;
 }
