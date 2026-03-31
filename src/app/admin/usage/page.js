@@ -18,7 +18,7 @@ import {
 import StatsCard from "../../../components/StatsCard";
 import SelectDropdown from "../../../components/SelectDropdown";
 import SortableTable from "../../../components/SortableTableComponent";
-import DatePickerComponent from "../../../components/DatePickerComponent";
+
 import PageHeaderComponent from "../../../components/PageHeaderComponent";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import BadgeComponent from "../../../components/BadgeComponent";
@@ -27,7 +27,7 @@ import ProvidersBadgeComponent from "../../../components/ProvidersBadgeComponent
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
-import { LS_DATE_RANGE } from "../../../constants";
+
 
 const ENDPOINT_LABELS = {
   chat: "Chat",
@@ -77,7 +77,6 @@ export default function UsagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [projectBreakdown, setProjectBreakdown] = useState("provider");
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
 
   const loadCosts = useCallback(async () => {
     try {
@@ -99,8 +98,7 @@ export default function UsagePage() {
     loadCosts();
   }, [loadCosts]);
 
-  // Inject controls into AdminShell header
-  const { setControls } = useAdminHeader();
+  const { setControls, dateRange } = useAdminHeader();
 
   useEffect(() => {
     setControls(
@@ -323,15 +321,7 @@ export default function UsagePage() {
         subtitle="Cost breakdown across all projects, providers, and modalities"
       />
 
-      {/* Date Filter */}
-      <div className={styles.dateFilter}>
-        <DatePickerComponent
-          from={dateRange.from}
-          to={dateRange.to}
-          onChange={setDateRange}
-          storageKey={LS_DATE_RANGE}
-        />
-      </div>
+
 
       {/* Stats Row */}
       <div className={styles.statsGrid}>

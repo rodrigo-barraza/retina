@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import IrisService from "../services/IrisService";
 
 import NavigationSidebarComponent from "./NavigationSidebarComponent";
+import DatePickerComponent from "./DatePickerComponent";
 import { AdminHeaderProvider, useAdminHeader } from "./AdminHeaderContext";
 import styles from "./AdminShell.module.css";
 
@@ -100,7 +101,7 @@ function AdminShellInner({ children }) {
     }
   }, []);
 
-  const { controls } = useAdminHeader();
+  const { controls, dateRange, setDateRange } = useAdminHeader();
 
   // Derive page title from pathname (first segment only)
   const pageTitle = (() => {
@@ -122,6 +123,13 @@ function AdminShellInner({ children }) {
       <div className={styles.mainArea}>
         <header className={styles.header}>
           <h1 className={styles.headerTitle}>{pageTitle}</h1>
+          <div className={styles.headerDatePicker}>
+            <DatePickerComponent
+              from={dateRange.from}
+              to={dateRange.to}
+              onChange={setDateRange}
+            />
+          </div>
           {controls && <div className={styles.headerControls}>{controls}</div>}
         </header>
         <div className={styles.main}>{children}</div>

@@ -45,6 +45,10 @@
   flex-shrink: 0;
 }
 
+.headerDatePicker {
+  flex-shrink: 0;
+}
+
 .themeToggle {
   display: flex;
   align-items: center;

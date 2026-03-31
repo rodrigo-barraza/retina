@@ -1,21 +1,55 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { LS_DATE_RANGE } from "../constants";
 
 const AdminHeaderContext = createContext({
   controls: null,
   setControls: () => {},
+  dateRange: { from: "", to: "" },
+  setDateRange: () => {},
 });
+
+function getInitialDateRange() {
+  try {
+    const stored = typeof window !== "undefined" ? localStorage.getItem(LS_DATE_RANGE) : null;
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.from || parsed.to) return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return { from: "", to: "" };
+}
 
 export function AdminHeaderProvider({ children }) {
   const [controls, setControlsState] = useState(null);
+  const [dateRange, setDateRangeState] = useState(getInitialDateRange);
+
+  // Persist to localStorage on change
+  useEffect(() => {
+    try {
+      if (dateRange.from || dateRange.to) {
+        localStorage.setItem(LS_DATE_RANGE, JSON.stringify(dateRange));
+      } else {
+        localStorage.removeItem(LS_DATE_RANGE);
+      }
+    } catch {
+      // ignore
+    }
+  }, [dateRange]);
 
   const setControls = useCallback((node) => {
     setControlsState(node);
   }, []);
 
+  const setDateRange = useCallback((val) => {
+    setDateRangeState(val);
+  }, []);
+
   return (
-    <AdminHeaderContext.Provider value={{ controls, setControls }}>
+    <AdminHeaderContext.Provider value={{ controls, setControls, dateRange, setDateRange }}>
       {children}
     </AdminHeaderContext.Provider>
   );

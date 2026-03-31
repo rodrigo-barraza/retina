@@ -28,7 +28,7 @@ import {
   buildDateRangeParams,
 } from "../../utils/utilities";
 import StatsCard from "../../components/StatsCard";
-import DatePickerComponent from "../../components/DatePickerComponent";
+
 import TimelineChartComponent from "../../components/TimelineChartComponent";
 import DistributionChartComponent from "../../components/DistributionChartComponent";
 import ProportionBarComponent from "../../components/ProportionBarComponent";
@@ -44,7 +44,7 @@ import { ErrorMessage } from "../../components/StateMessageComponent";
 import { useAdminHeader } from "../../components/AdminHeaderContext";
 import useProjectFilter from "../../hooks/useProjectFilter";
 import styles from "./page.module.css";
-import { LS_DATE_RANGE } from "../../constants";
+
 import { getRequestsColumns } from "./requestsColumns";
 
 
@@ -62,7 +62,7 @@ const PROVIDER_COLORS = [
 export default function DashboardPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
-  const { setControls } = useAdminHeader();
+  const { setControls, dateRange } = useAdminHeader();
   const [stats, setStats] = useState(null);
   const [projectStats, setProjectStats] = useState([]);
   const [modelStats, setModelStats] = useState([]);
@@ -75,8 +75,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Date range
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+
 
   const dateParams = useMemo(
     () => buildDateRangeParams(dateRange),
@@ -276,15 +275,6 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      {/* ── Date Range Toolbar ── */}
-      <div className={styles.timeToolbar}>
-        <DatePickerComponent
-          from={dateRange.from}
-          to={dateRange.to}
-          onChange={setDateRange}
-          storageKey={LS_DATE_RANGE}
-        />
-      </div>
 
       <ErrorMessage message={error} />
 
@@ -466,15 +456,18 @@ export default function DashboardPage() {
             key: "totalCost",
             label: "Cost",
             align: "right",
+            render: (p) => <CostBadgeComponent cost={p.totalCost} />,
+          },
+          {
+            key: "costShare",
+            label: "Cost %",
+            sortValue: (p) => p.totalCost,
             render: (p) => (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <CostBadgeComponent cost={p.totalCost} />
-                <ProportionBarComponent
-                  value={p.totalCost}
-                  total={totalProjectCost}
-                  color="var(--warning)"
-                />
-              </span>
+              <ProportionBarComponent
+                value={p.totalCost}
+                total={totalProjectCost}
+                color="var(--warning)"
+              />
             ),
           },
           {
@@ -591,15 +584,18 @@ export default function DashboardPage() {
           {
             key: "totalCost",
             label: "Cost",
+            render: (p) => <CostBadgeComponent cost={p.totalCost} />,
+          },
+          {
+            key: "costShare",
+            label: "Cost %",
+            sortValue: (p) => p.totalCost,
             render: (p) => (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <CostBadgeComponent cost={p.totalCost} />
-                <ProportionBarComponent
-                  value={p.totalCost}
-                  total={totalProviderCost}
-                  color="var(--warning)"
-                />
-              </span>
+              <ProportionBarComponent
+                value={p.totalCost}
+                total={totalProviderCost}
+                color="var(--warning)"
+              />
             ),
           },
           {
@@ -717,15 +713,18 @@ export default function DashboardPage() {
             key: "totalCost",
             label: "Cost",
             align: "right",
+            render: (m) => <CostBadgeComponent cost={m.totalCost} />,
+          },
+          {
+            key: "costShare",
+            label: "Cost %",
+            sortValue: (m) => m.totalCost,
             render: (m) => (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <CostBadgeComponent cost={m.totalCost} />
-                <ProportionBarComponent
-                  value={m.totalCost}
-                  total={totalModelCost}
-                  color="var(--warning)"
-                />
-              </span>
+              <ProportionBarComponent
+                value={m.totalCost}
+                total={totalModelCost}
+                color="var(--warning)"
+              />
             ),
           },
           {

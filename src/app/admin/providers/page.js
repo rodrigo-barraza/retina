@@ -4,12 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import IrisService from "../../../services/IrisService";
 import SortableTableComponent from "../../../components/SortableTableComponent";
 import PageHeaderComponent from "../../../components/PageHeaderComponent";
-import DatePickerComponent from "../../../components/DatePickerComponent";
+
 import SelectDropdown from "../../../components/SelectDropdown";
-import {
-  FilterBarComponent,
-  FilterGroupComponent,
-} from "../../../components/FilterBarComponent";
 import {
   LoadingMessage,
   ErrorMessage,
@@ -24,7 +20,7 @@ import {
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
-import { LS_DATE_RANGE } from "../../../constants";
+
 
 const PROVIDER_COLORS = [
   "#6366f1",
@@ -44,7 +40,7 @@ export default function ProvidersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedProvider, setExpandedProvider] = useState(null);
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+
 
   useEffect(() => {
     async function load() {
@@ -145,8 +141,7 @@ export default function ProvidersPage() {
     [],
   );
 
-  // Inject controls into AdminShell header
-  const { setControls } = useAdminHeader();
+  const { setControls, dateRange } = useAdminHeader();
 
   useEffect(() => {
     setControls(
@@ -173,16 +168,7 @@ export default function ProvidersPage() {
         subtitle={`${providers.length} providers \u00B7 ${modelStats.length} models`}
       />
 
-      <FilterBarComponent>
-        <FilterGroupComponent label="Date">
-          <DatePickerComponent
-            from={dateRange.from}
-            to={dateRange.to}
-            onChange={setDateRange}
-            storageKey={LS_DATE_RANGE}
-          />
-        </FilterGroupComponent>
-      </FilterBarComponent>
+
 
       {loading && <LoadingMessage message="Loading provider data..." />}
 

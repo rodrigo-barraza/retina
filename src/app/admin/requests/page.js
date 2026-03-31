@@ -14,7 +14,7 @@ import {
 
 import SortableTableComponent from "../../../components/SortableTableComponent";
 import PaginationComponent from "../../../components/PaginationComponent";
-import DatePickerComponent from "../../../components/DatePickerComponent";
+
 
 import SelectDropdown from "../../../components/SelectDropdown";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
@@ -33,7 +33,7 @@ import MediaCardComponent from "../../../components/MediaCardComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
-import { LS_DATE_RANGE } from "../../../constants";
+
 import { getRequestsColumns } from "../requestsColumns";
 
 function extractMediaAssets(obj) {
@@ -110,7 +110,7 @@ export default function RequestsPage() {
     endpoint: "",
     success: "",
   });
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+
   const [hoveredConversationId, setHoveredConversationId] = useState(null);
 
   const LIMIT = 50;
@@ -183,7 +183,6 @@ export default function RequestsPage() {
       endpoint: "",
       success: "",
     });
-    setDateRange({ from: "", to: "" });
     setPage(1);
   }
 
@@ -218,7 +217,7 @@ export default function RequestsPage() {
 
   const totalPages = Math.ceil(total / LIMIT);
 
-  const { setControls } = useAdminHeader();
+  const { setControls, dateRange } = useAdminHeader();
 
   // Inject controls into AdminShell header
   useEffect(() => {
@@ -300,17 +299,7 @@ export default function RequestsPage() {
             ]}
           />
         </FilterGroupComponent>
-        <FilterGroupComponent label="Date">
-          <DatePickerComponent
-            from={dateRange.from}
-            to={dateRange.to}
-            onChange={(v) => {
-              setDateRange(v);
-              setPage(1);
-            }}
-            storageKey={LS_DATE_RANGE}
-          />
-        </FilterGroupComponent>
+
         <FilterClearButton onClick={clearFilters} />
         <ButtonComponent
           variant="secondary"
