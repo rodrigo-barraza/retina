@@ -6,6 +6,8 @@ import { LS_DATE_RANGE } from "../constants";
 const AdminHeaderContext = createContext({
   controls: null,
   setControls: () => {},
+  titleBadge: null,
+  setTitleBadge: () => {},
   dateRange: { from: "", to: "" },
   setDateRange: () => {},
 });
@@ -25,6 +27,7 @@ function getInitialDateRange() {
 
 export function AdminHeaderProvider({ children }) {
   const [controls, setControlsState] = useState(null);
+  const [titleBadge, setTitleBadgeState] = useState(null);
   const [dateRange, setDateRangeState] = useState(getInitialDateRange);
 
   // Persist to localStorage on change
@@ -44,12 +47,16 @@ export function AdminHeaderProvider({ children }) {
     setControlsState(node);
   }, []);
 
+  const setTitleBadge = useCallback((val) => {
+    setTitleBadgeState(val);
+  }, []);
+
   const setDateRange = useCallback((val) => {
     setDateRangeState(val);
   }, []);
 
   return (
-    <AdminHeaderContext.Provider value={{ controls, setControls, dateRange, setDateRange }}>
+    <AdminHeaderContext.Provider value={{ controls, setControls, titleBadge, setTitleBadge, dateRange, setDateRange }}>
       {children}
     </AdminHeaderContext.Provider>
   );

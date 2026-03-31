@@ -72,8 +72,6 @@ export default function DashboardPage() {
 
   const loadDashboard = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
 
       const filterParams = { ...dateParams };
       if (projectFilter) filterParams.project = projectFilter;
@@ -135,6 +133,17 @@ export default function DashboardPage() {
   }, [dateParams, timelineHours, projectFilter]);
 
   useEffect(() => {
+    // Immediately enter loading state and clear stale data when filters change
+    setLoading(true);
+    setError(null);
+    setStats(null);
+    setProjectStats([]);
+    setModelStats([]);
+    setTimeline([]);
+    setRecentRequests([]);
+    setRecentSessions([]);
+    setRecentConversations([]);
+
     loadDashboard();
     const interval = setInterval(loadDashboard, 60000);
     return () => clearInterval(interval);
@@ -443,19 +452,26 @@ export default function DashboardPage() {
       />
 
       {/* ── Recent Conversations ── */}
-      <div className={styles.sectionBlock}>
-        <h2 className={styles.sectionTitle}>
-          <span>Recent Conversations</span>
-          <Link href="/admin/conversations" className={styles.sectionAction}>
-            View all →
-          </Link>
-        </h2>
-        <ConversationsTableComponent
-          conversations={recentConversations}
-          emptyText={loading ? "Loading..." : "No conversations yet"}
-          compact
-        />
-      </div>
+      <ConversationsTableComponent
+        conversations={recentConversations}
+        title={
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+            }}
+          >
+            Conversations
+            <Link href="/admin/conversations" className={styles.sectionAction}>
+              View all →
+            </Link>
+          </span>
+        }
+        emptyText={loading ? "Loading..." : "No conversations yet"}
+        compact
+      />
 
       {/* ── Recent Requests ── */}
       <RequestsTableComponent

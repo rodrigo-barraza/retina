@@ -36,7 +36,7 @@ const PROVIDER_COLORS = [
 export default function ProvidersPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
-  const { setControls, dateRange } = useAdminHeader();
+  const { setControls, setTitleBadge, dateRange } = useAdminHeader();
   const [modelStats, setModelStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,9 +44,13 @@ export default function ProvidersPage() {
 
 
   useEffect(() => {
+    // Immediately enter loading state and clear stale data when filters change
+    setLoading(true);
+    setError(null);
+    setModelStats([]);
+
     async function load() {
       try {
-        setLoading(true);
         const params = {};
         if (projectFilter) params.project = projectFilter;
         Object.assign(params, buildDateRangeParams(dateRange));
@@ -159,8 +163,16 @@ export default function ProvidersPage() {
   }, [setControls, projectFilter, projectOptions, handleProjectChange, error]);
 
   useEffect(() => {
-    return () => setControls(null);
-  }, [setControls]);
+    return () => {
+      setControls(null);
+      setTitleBadge(null);
+    };
+  }, [setControls, setTitleBadge]);
+
+  // Set title badge with provider count
+  useEffect(() => {
+    setTitleBadge(providers.length);
+  }, [setTitleBadge, providers.length]);
 
   return (
     <div className={styles.page}>

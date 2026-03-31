@@ -49,7 +49,7 @@ function flattenConfigModels(config) {
   return [...modelsMap.values()];
 }
 
-export default function ModelsPageComponent({ mode = "user" }) {
+export default function ModelsPageComponent({ mode = "user", onCountChange }) {
   const isAdmin = mode === "admin";
   const [allModels, setAllModels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,6 +105,11 @@ export default function ModelsPageComponent({ mode = "user" }) {
     const interval = setInterval(fetchModels, 15000);
     return () => clearInterval(interval);
   }, [fetchModels]);
+
+  // Report count to parent
+  useEffect(() => {
+    onCountChange?.(allModels.length);
+  }, [onCountChange, allModels.length]);
 
   const handleToggleFavorite = async (key) => {
     if (favoriteKeys.includes(key)) {

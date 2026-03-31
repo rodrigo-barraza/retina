@@ -9,7 +9,7 @@ import MediaPageComponent from "../../../components/MediaPageComponent";
 export default function AdminMediaPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
-  const { setControls, dateRange } = useAdminHeader();
+  const { setControls, setTitleBadge, dateRange } = useAdminHeader();
 
   useEffect(() => {
     setControls(
@@ -23,8 +23,11 @@ export default function AdminMediaPage() {
   }, [setControls, projectFilter, projectOptions, handleProjectChange]);
 
   useEffect(() => {
-    return () => setControls(null);
-  }, [setControls]);
+    return () => {
+      setControls(null);
+      setTitleBadge(null);
+    };
+  }, [setControls, setTitleBadge]);
 
-  return <MediaPageComponent mode="admin" project={projectFilter} dateRange={dateRange} />;
+  return <MediaPageComponent mode="admin" project={projectFilter} dateRange={dateRange} onCountChange={setTitleBadge} />;
 }

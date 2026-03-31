@@ -245,12 +245,14 @@
   color: var(--text-primary);
 }
 
-/* Empty state */
-.empty {
-  padding: 24px;
+/* Empty state — rendered as a full-width <td> inside the table */
+.emptyRow {
+  padding: 32px 14px;
   text-align: center;
-  font-size: 10px;
-  color: var(--text-secondary);
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  font-style: italic;
 }
 
 /* ── Mini mode (nested tables) ──────────────────────── */
@@ -277,9 +279,9 @@
   margin-right: 4px;
 }
 
-.mini .empty {
+.mini .emptyRow {
   padding: 12px;
-  font-size: 8px;
+  font-size: 9px;
 }
 
 /* Responsive */

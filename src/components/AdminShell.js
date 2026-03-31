@@ -101,7 +101,7 @@ function AdminShellInner({ children }) {
     }
   }, []);
 
-  const { controls, dateRange, setDateRange } = useAdminHeader();
+  const { controls, titleBadge, dateRange, setDateRange } = useAdminHeader();
 
   // Derive page title from pathname (first segment only)
   const pageTitle = (() => {
@@ -122,7 +122,12 @@ function AdminShellInner({ children }) {
       />
       <div className={styles.mainArea}>
         <header className={styles.header}>
-          <h1 className={styles.headerTitle}>{pageTitle}</h1>
+          <h1 className={styles.headerTitle}>
+            {pageTitle}
+            {titleBadge != null && (
+              <span className={styles.titleCount}>: {titleBadge}</span>
+            )}
+          </h1>
           <div className={styles.headerDatePicker}>
             <DatePickerComponent
               from={dateRange.from}

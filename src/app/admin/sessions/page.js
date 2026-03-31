@@ -18,7 +18,7 @@ const POLL_INTERVAL = 1000; // 1s
 export default function SessionsPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
-  const { setControls, dateRange } = useAdminHeader();
+  const { setControls, setTitleBadge, dateRange } = useAdminHeader();
   const [sessions, setSessions] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -56,8 +56,12 @@ export default function SessionsPage() {
   }, [page, dateParams, projectFilter]);
 
   useEffect(() => {
+    // Immediately enter loading state and clear stale data when filters change
     initialLoadDone.current = false;
     setLoading(true);
+    setSessions([]);
+    setTotal(0);
+
     loadSessions();
     intervalRef.current = setInterval(loadSessions, POLL_INTERVAL);
     return () => clearInterval(intervalRef.current);
@@ -69,9 +73,6 @@ export default function SessionsPage() {
   useEffect(() => {
     setControls(
       <>
-        <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-          {total} sessions
-        </span>
         <SelectDropdown
           value={projectFilter || ""}
           options={projectOptions}
@@ -83,8 +84,16 @@ export default function SessionsPage() {
   }, [setControls, total, projectFilter, projectOptions, handleProjectChange]);
 
   useEffect(() => {
-    return () => setControls(null);
-  }, [setControls]);
+    return () => {
+      setControls(null);
+      setTitleBadge(null);
+    };
+  }, [setControls, setTitleBadge]);
+
+  // Set title badge with total count
+  useEffect(() => {
+    setTitleBadge(total);
+  }, [setTitleBadge, total]);
 
   if (loading) {
     return (

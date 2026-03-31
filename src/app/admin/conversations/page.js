@@ -45,9 +45,9 @@ export default function ConversationsPage({ initialId = null }) {
   const searchParams = useSearchParams();
   const providerFilter = searchParams.get("provider") || null;
   const modelFilter = searchParams.get("model") || null;
-  const { setControls, dateRange } = useAdminHeader();
+  const { setControls, setTitleBadge, dateRange } = useAdminHeader();
   const [conversations, setConversations] = useState([]);
-  const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState(null);
   const [selectedId, setSelectedId] = useState(initialId);
   const [selectedConv, setSelectedConv] = useState(null);
@@ -56,7 +56,7 @@ export default function ConversationsPage({ initialId = null }) {
 
   const [newIds, setNewIds] = useState(new Set());
   const [generatingCount, setGeneratingCount] = useState(0);
-  const [recentCount, setRecentCount] = useState(0);
+
   const [workflows, setWorkflows] = useState([]);
   const [leftTab, setLeftTab] = useState("settings");
 
@@ -138,10 +138,8 @@ export default function ConversationsPage({ initialId = null }) {
       }
 
       setError((prev) => (prev !== null ? null : prev));
-      setLoading((prev) => (prev ? false : prev));
     } catch (err) {
       setError(err.message);
-      setLoading((prev) => (prev ? false : prev));
     }
   }, [projectFilter, providerFilter, modelFilter, dateRange]);
 
@@ -151,7 +149,6 @@ export default function ConversationsPage({ initialId = null }) {
     IrisService.getConversationStats(projectFilter)
       .then((data) => {
         setGeneratingCount(data.generatingCount || 0);
-        setRecentCount(data.recentCount || 0);
       })
       .catch(() => {
         /* SSE will handle it */
@@ -160,7 +157,6 @@ export default function ConversationsPage({ initialId = null }) {
     // SSE for continuous real-time updates
     const es = IrisService.subscribeConversationStats((data) => {
       setGeneratingCount(data.generatingCount || 0);
-      setRecentCount(data.recentCount || 0);
     }, projectFilter);
     return () => es.close();
   }, [projectFilter]);
@@ -199,8 +195,13 @@ export default function ConversationsPage({ initialId = null }) {
 
   // Polling — conversation list only
   useEffect(() => {
+    // Immediately clear stale data and reset tracking when filters change
     knownIdsRef.current = null;
     autoSelectedRef.current = false;
+    lastFingerprintRef.current = "";
+    setConversations([]);
+    setFingerprint("");
+
     loadConversations();
     intervalRef.current = setInterval(loadConversations, POLL_INTERVAL);
     return () => clearInterval(intervalRef.current);
@@ -306,9 +307,6 @@ export default function ConversationsPage({ initialId = null }) {
           onChange={handleProjectChange}
           placeholder="All Projects"
         />
-        <span className={styles.statPill}>
-          {loading ? "..." : recentCount} recent
-        </span>
         {generatingCount > 0 && (
           <span className={`${styles.statPill} ${styles.statPillGenerating}`}>
             <Loader size={10} className={styles.spinning} />
@@ -323,8 +321,6 @@ export default function ConversationsPage({ initialId = null }) {
     projectFilter,
     projectOptions,
     handleProjectChange,
-    loading,
-    recentCount,
     generatingCount,
     generatingDisplay,
     error,
@@ -332,8 +328,16 @@ export default function ConversationsPage({ initialId = null }) {
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => setControls(null);
-  }, [setControls]);
+    return () => {
+      setControls(null);
+      setTitleBadge(null);
+    };
+  }, [setControls, setTitleBadge]);
+
+  // Set title badge with conversations count
+  useEffect(() => {
+    setTitleBadge(conversations.length);
+  }, [setTitleBadge, conversations.length]);
 
   return (
     <div className={styles.page}>

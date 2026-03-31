@@ -38,6 +38,10 @@
   white-space: nowrap;
 }
 
+.titleCount {
+  color: var(--text-muted);
+}
+
 .headerControls {
   display: flex;
   align-items: center;

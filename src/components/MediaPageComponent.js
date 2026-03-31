@@ -91,6 +91,7 @@ export default function MediaPageComponent({
   mode = "user",
   project: externalProject,
   dateRange: externalDateRange,
+  onCountChange,
 }) {
   const isAdmin = mode === "admin";
   const convBasePath = isAdmin ? "/admin/conversations" : "/conversations";
@@ -164,6 +165,11 @@ export default function MediaPageComponent({
   useEffect(() => {
     loadMedia();
   }, [loadMedia]);
+
+  // Report count to parent
+  useEffect(() => {
+    onCountChange?.(total);
+  }, [onCountChange, total]);
 
   useEffect(() => {
     PrismService.getFavorites("media")

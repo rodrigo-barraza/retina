@@ -215,6 +215,7 @@ export default function ConversationsTableComponent({
   compact = false,
   mini = false,
   maxHeight,
+  title,
 }) {
   const router = useRouter();
   const columns = buildColumns(mini);
@@ -231,6 +232,7 @@ export default function ConversationsTableComponent({
       emptyText={emptyText}
       maxHeight={maxHeight || (compact ? "300px" : undefined)}
       mini={mini}
+      title={title}
     />
   );
 }

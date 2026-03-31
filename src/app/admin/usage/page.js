@@ -73,7 +73,7 @@ function mergeByModality(rows) {
 export default function UsagePage() {
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
-  const { setControls, dateRange } = useAdminHeader();
+  const { setControls, setTitleBadge, dateRange } = useAdminHeader();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -81,8 +81,6 @@ export default function UsagePage() {
 
   const loadCosts = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
       const params = {};
       if (projectFilter) params.project = projectFilter;
       Object.assign(params, buildDateRangeParams(dateRange));
@@ -96,6 +94,11 @@ export default function UsagePage() {
   }, [dateRange, projectFilter]);
 
   useEffect(() => {
+    // Immediately enter loading state and clear stale data when filters change
+    setLoading(true);
+    setError(null);
+    setData(null);
+
     loadCosts();
   }, [loadCosts]);
 
@@ -116,8 +119,18 @@ export default function UsagePage() {
   }, [setControls, projectFilter, projectOptions, handleProjectChange, error]);
 
   useEffect(() => {
-    return () => setControls(null);
-  }, [setControls]);
+    return () => {
+      setControls(null);
+      setTitleBadge(null);
+    };
+  }, [setControls, setTitleBadge]);
+
+  // Set title badge with total request count
+  useEffect(() => {
+    if (data?.totals?.totalRequests != null) {
+      setTitleBadge(formatNumber(data.totals.totalRequests));
+    }
+  }, [setTitleBadge, data]);
 
   const totals = data?.totals || {};
 

@@ -34,7 +34,7 @@ const ORIGIN_FILTERS = [
   { key: "ai", label: "Responses", icon: Sparkles },
 ];
 
-export default function TextPageComponent({ mode = "user", dateRange: externalDateRange }) {
+export default function TextPageComponent({ mode = "user", dateRange: externalDateRange, onCountChange }) {
   const isAdmin = mode === "admin";
   const convBasePath = isAdmin ? "/admin/conversations" : "/conversations";
 
@@ -82,6 +82,11 @@ export default function TextPageComponent({ mode = "user", dateRange: externalDa
   useEffect(() => {
     loadText();
   }, [loadText]);
+
+  // Report count to parent
+  useEffect(() => {
+    onCountChange?.(total);
+  }, [onCountChange, total]);
 
   useEffect(() => {
     PrismService.getFavorites("text")

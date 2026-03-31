@@ -94,7 +94,7 @@ export default function RequestsPage() {
   const router = useRouter();
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
-  const { setControls, dateRange } = useAdminHeader();
+  const { setControls, setTitleBadge, dateRange } = useAdminHeader();
   const [requests, setRequests] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -118,8 +118,6 @@ export default function RequestsPage() {
 
   const loadRequests = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
 
       const params = { page, limit: LIMIT, sort, order };
       if (projectFilter) params.project = projectFilter;
@@ -139,6 +137,12 @@ export default function RequestsPage() {
   }, [page, sort, order, filters, dateRange, projectFilter]);
 
   useEffect(() => {
+    // Immediately enter loading state and clear stale data when filters change
+    setLoading(true);
+    setError(null);
+    setRequests([]);
+    setTotal(0);
+
     loadRequests();
   }, [loadRequests]);
 
@@ -252,8 +256,16 @@ export default function RequestsPage() {
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => setControls(null);
-  }, [setControls]);
+    return () => {
+      setControls(null);
+      setTitleBadge(null);
+    };
+  }, [setControls, setTitleBadge]);
+
+  // Set title badge with total count
+  useEffect(() => {
+    setTitleBadge(formatNumber(total));
+  }, [setTitleBadge, total]);
 
   return (
     <div className={styles.page}>

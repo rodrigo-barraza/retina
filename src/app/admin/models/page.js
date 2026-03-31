@@ -9,7 +9,7 @@ import ModelsPageComponent from "../../../components/ModelsPageComponent";
 export default function AdminModelsPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
-  const { setControls } = useAdminHeader();
+  const { setControls, setTitleBadge } = useAdminHeader();
 
   useEffect(() => {
     setControls(
@@ -23,8 +23,11 @@ export default function AdminModelsPage() {
   }, [setControls, projectFilter, projectOptions, handleProjectChange]);
 
   useEffect(() => {
-    return () => setControls(null);
-  }, [setControls]);
+    return () => {
+      setControls(null);
+      setTitleBadge(null);
+    };
+  }, [setControls, setTitleBadge]);
 
-  return <ModelsPageComponent mode="admin" project={projectFilter} />;
+  return <ModelsPageComponent mode="admin" project={projectFilter} onCountChange={setTitleBadge} />;
 }

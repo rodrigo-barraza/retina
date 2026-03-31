@@ -16,7 +16,7 @@ import styles from "./page.module.css";
 export default function AdminWorkflowsPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
     useProjectFilter();
-  const { setControls, dateRange } = useAdminHeader();
+  const { setControls, setTitleBadge, dateRange } = useAdminHeader();
   const searchParams = useSearchParams();
   const initialId = searchParams.get("id") || null;
   const providerFilter = searchParams.get("provider") || null;
@@ -32,8 +32,6 @@ export default function AdminWorkflowsPage() {
 
   const loadWorkflows = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
       const params = {
         page: 1,
         limit: 200,
@@ -59,6 +57,11 @@ export default function AdminWorkflowsPage() {
   }, [projectFilter, providerFilter, modelFilter, dateRange]);
 
   useEffect(() => {
+    // Immediately enter loading state and clear stale data when filters change
+    setLoading(true);
+    setError(null);
+    setWorkflows([]);
+
     loadWorkflows();
   }, [loadWorkflows]);
 
@@ -182,8 +185,16 @@ export default function AdminWorkflowsPage() {
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => setControls(null);
-  }, [setControls]);
+    return () => {
+      setControls(null);
+      setTitleBadge(null);
+    };
+  }, [setControls, setTitleBadge]);
+
+  // Set title badge with workflows count
+  useEffect(() => {
+    setTitleBadge(workflows.length);
+  }, [setTitleBadge, workflows.length]);
 
   return (
     <div className={styles.page}>

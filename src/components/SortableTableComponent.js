@@ -182,50 +182,54 @@ export default function SortableTableComponent({
     <div className={`${styles.container} ${mini ? styles.mini : ""}`}>
       {title && <h2 className={styles.title}>{title}</h2>}
 
-      {sorted.length === 0 ? (
-        <div className={styles.empty}>{emptyText}</div>
-      ) : (
-        <div
-          ref={scrollRef}
-          className={styles.tableScroll}
-          style={maxHeight ? { maxHeight, overflowY: "auto" } : undefined}
-          data-table-scroll
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-        >
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                {columns.map((col, _ci) => {
-                  const isSortable = col.sortable !== false;
-                  const isActive = sort.key === col.key;
-                  const thClasses = [
-                    styles.th,
-                    isSortable ? styles.thSortable : "",
-                    isActive ? styles.thActive : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ");
+      <div
+        ref={scrollRef}
+        className={styles.tableScroll}
+        style={maxHeight ? { maxHeight, overflowY: "auto" } : undefined}
+        data-table-scroll
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              {columns.map((col, _ci) => {
+                const isSortable = col.sortable !== false;
+                const isActive = sort.key === col.key;
+                const thClasses = [
+                  styles.th,
+                  isSortable ? styles.thSortable : "",
+                  isActive ? styles.thActive : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
 
-                  return (
-                    <th
-                      key={col.key}
-                      className={thClasses}
-                      style={{ textAlign: col.align || "left" }}
-                      onClick={
-                        isSortable ? () => handleSort(col.key) : undefined
-                      }
-                    >
-                      {col.label} {isSortable && <SortIcon colKey={col.key} />}
-                    </th>
-                  );
-                })}
+                return (
+                  <th
+                    key={col.key}
+                    className={thClasses}
+                    style={{ textAlign: col.align || "left" }}
+                    onClick={
+                      isSortable ? () => handleSort(col.key) : undefined
+                    }
+                  >
+                    {col.label} {isSortable && <SortIcon colKey={col.key} />}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className={styles.emptyRow}>
+                  {emptyText}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {sorted.map((row, ri) => {
+            ) : (
+              sorted.map((row, ri) => {
                 const key = getRowKey ? getRowKey(row, ri) : ri;
                 const subRows = hasSubRows ? getSubRows(row) : [];
                 const isExpanded = expanded.has(key);
@@ -329,11 +333,11 @@ export default function SortableTableComponent({
                       ))}
                   </Fragment>
                 );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
