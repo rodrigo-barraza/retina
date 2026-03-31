@@ -2,21 +2,19 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
-import CountLinkComponent from "../../components/CountLinkComponent";
 import {
   Zap,
   DollarSign,
   Clock,
   CheckCircle,
   AlertCircle,
-  Workflow,
-  MessageSquare,
-  FolderOpen,
   TrendingUp,
   Box,
   Layers,
   Server,
   ScrollText,
+  FolderOpen,
+  MessageSquare,
 } from "lucide-react";
 import IrisService from "../../services/IrisService";
 import PrismService from "../../services/PrismService";
@@ -31,33 +29,18 @@ import StatsCard from "../../components/StatsCard";
 
 import TimelineChartComponent from "../../components/TimelineChartComponent";
 import DistributionChartComponent from "../../components/DistributionChartComponent";
-import ProportionBarComponent from "../../components/ProportionBarComponent";
-import SortableTableComponent from "../../components/SortableTableComponent";
+import ProjectsTableComponent from "../../components/ProjectsTableComponent";
+import ProvidersTableComponent from "../../components/ProvidersTableComponent";
+import ModelsTableComponent from "../../components/ModelsTableComponent";
+import RequestsTableComponent from "../../components/RequestsTableComponent";
 import ConversationsTableComponent from "../../components/ConversationsTableComponent";
 import SessionsTableComponent from "../../components/SessionsTableComponent";
-import ToolIconComponent from "../../components/ToolIconComponent";
-import ProvidersBadgeComponent from "../../components/ProvidersBadgeComponent";
-import CostBadgeComponent from "../../components/CostBadgeComponent";
 
 import SelectDropdown from "../../components/SelectDropdown";
 import { ErrorMessage } from "../../components/StateMessageComponent";
 import { useAdminHeader } from "../../components/AdminHeaderContext";
 import useProjectFilter from "../../hooks/useProjectFilter";
 import styles from "./page.module.css";
-
-import { getRequestsColumns } from "./requestsColumns";
-
-
-const PROVIDER_COLORS = [
-  "#6366f1",
-  "#a855f7",
-  "#ec4899",
-  "#f59e0b",
-  "#10b981",
-  "#3b82f6",
-  "#ef4444",
-  "#06b6d4",
-];
 
 export default function DashboardPage() {
   const { projectFilter, projectOptions, handleProjectChange } =
@@ -410,371 +393,28 @@ export default function DashboardPage() {
 
       {/* ── Projects ── */}
       <div id="projects-table">
-      <SortableTableComponent
-        title="Projects"
-        maxHeight={420}
-        columns={[
-          { key: "project", label: "Project" },
-          {
-            key: "totalRequests",
-            label: "Requests",
-            align: "right",
-            render: (p) => formatNumber(p.totalRequests),
-          },
-          {
-            key: "usage",
-            label: "Usage",
-            sortValue: (p) => p.totalRequests,
-            render: (p) => (
-              <ProportionBarComponent
-                value={p.totalRequests}
-                total={totalProjectRequests}
-              />
-            ),
-          },
-          { key: "providerCount", label: "Providers", align: "right" },
-          { key: "modelCount", label: "Models", align: "right" },
-          {
-            key: "totalInputTokens",
-            label: "Tokens In",
-            align: "right",
-            render: (p) => formatNumber(p.totalInputTokens),
-          },
-          {
-            key: "totalOutputTokens",
-            label: "Tokens Out",
-            align: "right",
-            render: (p) => formatNumber(p.totalOutputTokens),
-          },
-          {
-            key: "avgTokensPerSec",
-            label: "Tok/s",
-            align: "right",
-            render: (p) => formatTokensPerSec(p.avgTokensPerSec),
-          },
-          {
-            key: "totalCost",
-            label: "Cost",
-            align: "right",
-            render: (p) => <CostBadgeComponent cost={p.totalCost} />,
-          },
-          {
-            key: "costShare",
-            label: "Cost %",
-            sortValue: (p) => p.totalCost,
-            render: (p) => (
-              <ProportionBarComponent
-                value={p.totalCost}
-                total={totalProjectCost}
-                color="var(--warning)"
-              />
-            ),
-          },
-          {
-            key: "avgLatency",
-            label: "Avg Latency",
-            align: "right",
-            render: (p) => formatLatency(p.avgLatency),
-          },
-          {
-            key: "sessionCount",
-            label: "Sessions",
-            align: "right",
-            render: (p) => (
-              <CountLinkComponent
-                count={p.sessionCount}
-                href={`/admin/sessions?project=${encodeURIComponent(p.project)}`}
-                icon={FolderOpen}
-                className={styles.workflowLink}
-              />
-            ),
-          },
-          {
-            key: "conversationCount",
-            label: "Conversations",
-            align: "right",
-            render: (p) => (
-              <CountLinkComponent
-                count={p.conversationCount}
-                href={`/admin/conversations?project=${encodeURIComponent(p.project)}`}
-                icon={MessageSquare}
-                className={styles.workflowLink}
-              />
-            ),
-          },
-          {
-            key: "workflowCount",
-            label: "Workflows",
-            align: "right",
-            render: (p) => (
-              <CountLinkComponent
-                count={p.workflowCount}
-                href={`/admin/workflows?project=${encodeURIComponent(p.project)}`}
-                icon={Workflow}
-                className={styles.workflowLink}
-              />
-            ),
-          },
-        ]}
-        data={projectStats}
-        getRowKey={(p, i) => p.project || i}
-        emptyText={loading ? "Loading..." : "No projects yet"}
-      />
+        <ProjectsTableComponent
+          projects={projectStats}
+          totalRequests={totalProjectRequests}
+          totalCost={totalProjectCost}
+          emptyText={loading ? "Loading..." : "No projects yet"}
+        />
       </div>
 
       {/* ── Providers ── */}
-      <SortableTableComponent
-        title="Providers"
-        maxHeight={420}
-        columns={[
-          {
-            key: "provider",
-            label: "Provider",
-            render: (p, i) => (
-              <span
-                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-              >
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    flexShrink: 0,
-                    background: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
-                  }}
-                />
-                {p.provider}
-              </span>
-            ),
-          },
-          {
-            key: "totalRequests",
-            label: "Requests",
-            align: "right",
-            render: (p) => formatNumber(p.totalRequests),
-          },
-          {
-            key: "usage",
-            label: "Usage",
-            sortValue: (p) => p.totalRequests,
-            render: (p, i) => (
-              <ProportionBarComponent
-                value={p.totalRequests}
-                total={totalProviderRequests}
-                color={PROVIDER_COLORS[i % PROVIDER_COLORS.length]}
-              />
-            ),
-          },
-          { key: "modelCount", label: "Models", align: "right" },
-          {
-            key: "totalInputTokens",
-            label: "Tokens In",
-            render: (p) => formatNumber(p.totalInputTokens),
-          },
-          {
-            key: "totalOutputTokens",
-            label: "Tokens Out",
-            render: (p) => formatNumber(p.totalOutputTokens),
-          },
-          {
-            key: "avgTokensPerSec",
-            label: "Tok/s",
-            render: (p) => formatTokensPerSec(p.avgTokensPerSec),
-          },
-          {
-            key: "totalCost",
-            label: "Cost",
-            render: (p) => <CostBadgeComponent cost={p.totalCost} />,
-          },
-          {
-            key: "costShare",
-            label: "Cost %",
-            sortValue: (p) => p.totalCost,
-            render: (p) => (
-              <ProportionBarComponent
-                value={p.totalCost}
-                total={totalProviderCost}
-                color="var(--warning)"
-              />
-            ),
-          },
-          {
-            key: "avgLatency",
-            label: "Avg Latency",
-            render: (p) => formatLatency(p.avgLatency),
-          },
-          {
-            key: "sessionCount",
-            label: "Sessions",
-            align: "right",
-            render: (p) => (
-              <CountLinkComponent
-                count={p.sessionCount}
-                href={`/admin/sessions?provider=${encodeURIComponent(p.provider)}`}
-                icon={FolderOpen}
-                className={styles.workflowLink}
-              />
-            ),
-          },
-          {
-            key: "conversationCount",
-            label: "Conversations",
-            align: "right",
-            render: (p) => (
-              <CountLinkComponent
-                count={p.conversationCount}
-                href={`/admin/conversations?provider=${encodeURIComponent(p.provider)}`}
-                icon={MessageSquare}
-                className={styles.workflowLink}
-              />
-            ),
-          },
-          {
-            key: "workflowCount",
-            label: "Workflows",
-            align: "right",
-            render: (p) => (
-              <CountLinkComponent
-                count={p.workflowCount}
-                href={`/admin/workflows?provider=${encodeURIComponent(p.provider)}`}
-                icon={Workflow}
-                className={styles.workflowLink}
-              />
-            ),
-          },
-        ]}
-        data={providerData}
-        getRowKey={(p) => p.provider}
+      <ProvidersTableComponent
+        providers={providerData}
+        totalRequests={totalProviderRequests}
+        totalCost={totalProviderCost}
         emptyText={loading ? "Loading..." : "No data yet"}
       />
 
       {/* ── Models ── */}
-      <SortableTableComponent
-        title="Models"
-        maxHeight={420}
-        columns={[
-          { key: "model", label: "Model" },
-          {
-            key: "totalRequests",
-            label: "Requests",
-            align: "right",
-            render: (m) => formatNumber(m.totalRequests),
-          },
-          {
-            key: "usage",
-            label: "Usage",
-            sortValue: (m) => m.totalRequests,
-            render: (m) => (
-              <ProportionBarComponent
-                value={m.totalRequests}
-                total={totalModelRequests}
-              />
-            ),
-          },
-          {
-            key: "provider",
-            label: "Provider",
-            render: (m) => (
-              <ProvidersBadgeComponent providers={m.provider ? [m.provider] : []} />
-            ),
-          },
-          {
-            key: "toolsUsed",
-            label: "Tools",
-            align: "left",
-            sortable: false,
-            render: (m) => {
-              const tools = configModels[`${m.provider}:${m.model}`];
-              if (!tools?.length) {
-                return <span style={{ color: "var(--text-muted)" }}>—</span>;
-              }
-              return <ToolIconComponent toolNames={tools} />;
-            },
-          },
-          {
-            key: "totalInputTokens",
-            label: "Tokens In",
-            align: "right",
-            render: (m) => formatNumber(m.totalInputTokens),
-          },
-          {
-            key: "totalOutputTokens",
-            label: "Tokens Out",
-            align: "right",
-            render: (m) => formatNumber(m.totalOutputTokens),
-          },
-          {
-            key: "avgTokensPerSec",
-            label: "Tok/s",
-            align: "right",
-            render: (m) => formatTokensPerSec(m.avgTokensPerSec),
-          },
-          {
-            key: "totalCost",
-            label: "Cost",
-            align: "right",
-            render: (m) => <CostBadgeComponent cost={m.totalCost} />,
-          },
-          {
-            key: "costShare",
-            label: "Cost %",
-            sortValue: (m) => m.totalCost,
-            render: (m) => (
-              <ProportionBarComponent
-                value={m.totalCost}
-                total={totalModelCost}
-                color="var(--warning)"
-              />
-            ),
-          },
-          {
-            key: "avgLatency",
-            label: "Avg Latency",
-            align: "right",
-            render: (m) => formatLatency(m.avgLatency),
-          },
-          {
-            key: "sessionCount",
-            label: "Sessions",
-            align: "right",
-            render: (m) => (
-              <CountLinkComponent
-                count={m.sessionCount}
-                href={`/admin/sessions?model=${encodeURIComponent(m.model)}`}
-                icon={FolderOpen}
-                className={styles.workflowLink}
-              />
-            ),
-          },
-          {
-            key: "conversationCount",
-            label: "Conversations",
-            align: "right",
-            render: (m) => (
-              <CountLinkComponent
-                count={m.conversationCount}
-                href={`/admin/conversations?model=${encodeURIComponent(m.model)}`}
-                icon={MessageSquare}
-                className={styles.workflowLink}
-              />
-            ),
-          },
-          {
-            key: "workflowCount",
-            label: "Workflows",
-            align: "right",
-            render: (m) => (
-              <CountLinkComponent
-                count={m.workflowCount}
-                href={`/admin/workflows?model=${encodeURIComponent(m.model)}`}
-                icon={Workflow}
-                className={styles.workflowLink}
-              />
-            ),
-          },
-        ]}
-        data={topModels}
-        getRowKey={(m, i) => `${m.provider}-${m.model}-${i}`}
+      <ModelsTableComponent
+        models={topModels}
+        configModels={configModels}
+        totalRequests={totalModelRequests}
+        totalCost={totalModelCost}
         emptyText={loading ? "Loading..." : "No data yet"}
       />
 
@@ -817,8 +457,8 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Recent Requests ── */}
-      <SortableTableComponent
-        maxHeight={420}
+      <RequestsTableComponent
+        requests={recentRequests}
         title={
           <span
             style={{
@@ -834,9 +474,6 @@ export default function DashboardPage() {
             </Link>
           </span>
         }
-        columns={getRequestsColumns()}
-        data={recentRequests}
-        getRowKey={(r, i) => r.requestId || i}
         emptyText={loading ? "Loading..." : "No requests yet"}
       />
     </div>

@@ -13,7 +13,7 @@ import {
 export const getRequestsColumns = () => [
   {
     key: "timestamp",
-    label: "Time",
+    label: "Created",
     render: (r) => formatDateTime(r.timestamp),
   },
   { key: "project", label: "Project" },

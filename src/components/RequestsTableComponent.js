@@ -1,0 +1,61 @@
+import SortableTableComponent from "./SortableTableComponent";
+import { getRequestsColumns } from "../app/admin/requestsColumns";
+
+/**
+ * RequestsTableComponent — reusable admin table for displaying request logs.
+ *
+ * @param {Object}   props
+ * @param {Array}    props.requests      - Array of request objects
+ * @param {string}   [props.emptyText]   - Text shown when no data
+ * @param {boolean}  [props.compact]     - Reduced column set
+ * @param {boolean}  [props.mini]        - Mini density mode
+ * @param {string}   [props.title]       - Optional table title
+ * @param {number}   [props.maxHeight]   - Optional max height for scrollable body
+ * @param {string}   [props.sortKey]     - Current sort key (for server-side sorting)
+ * @param {string}   [props.sortDir]     - Current sort direction
+ * @param {Function} [props.onSort]      - (key, dir) => void
+ * @param {Function} [props.onRowClick]  - (request) => void
+ */
+export default function RequestsTableComponent({
+  requests = [],
+  emptyText = "No requests yet",
+  compact = false,
+  mini = false,
+  title,
+  maxHeight = 420,
+  sortKey,
+  sortDir,
+  onSort,
+  onRowClick,
+}) {
+  const allColumns = getRequestsColumns();
+
+  const COMPACT_KEYS = [
+    "timestamp",
+    "project",
+    "provider",
+    "model",
+    "estimatedCost",
+    "totalTime",
+    "success",
+  ];
+  const columns = compact
+    ? allColumns.filter((c) => COMPACT_KEYS.includes(c.key))
+    : allColumns;
+
+  return (
+    <SortableTableComponent
+      title={title}
+      maxHeight={maxHeight}
+      columns={columns}
+      data={requests}
+      sortKey={sortKey}
+      sortDir={sortDir}
+      onSort={onSort}
+      onRowClick={onRowClick}
+      getRowKey={(r, i) => r.requestId || i}
+      emptyText={emptyText}
+      mini={mini}
+    />
+  );
+}
