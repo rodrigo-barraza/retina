@@ -569,6 +569,7 @@ export default function ConsoleComponent() {
         <CustomToolsPanel
           tools={customTools}
           onToolsChange={loadCustomTools}
+          project={PROJECT_CONSOLE}
           builtInTools={builtInTools}
           disabledBuiltIns={disabledBuiltIns}
           onToggleBuiltIn={handleToggleBuiltIn}

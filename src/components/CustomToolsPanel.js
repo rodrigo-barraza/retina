@@ -40,7 +40,7 @@ import SearchInputComponent from "./SearchInputComponent.js";
 import { renderToolName } from "../utils/utilities";
 import styles from "./CustomToolsPanel.module.css";
 
-const PROJECT = "retina-console";
+
 
 /** Format seconds into a human-readable polling interval */
 function formatInterval(seconds) {
@@ -128,6 +128,7 @@ const EMPTY_TOOL = {
 export default function CustomToolsPanel({
   tools,
   onToolsChange,
+  project,
   builtInTools = [],
   disabledBuiltIns = new Set(),
   onToggleBuiltIn,
@@ -190,7 +191,7 @@ export default function CustomToolsPanel({
     try {
       const payload = {
         ...editingTool,
-        project: PROJECT,
+        ...(project ? { project } : {}),
         parameters: editingTool.parameters
           .map((p) => ({
             name: p.name,
@@ -226,7 +227,7 @@ export default function CustomToolsPanel({
     } finally {
       setSaving(false);
     }
-  }, [editingTool, isNew, onToolsChange]);
+  }, [editingTool, isNew, onToolsChange, project]);
 
   const handleDelete = useCallback((id) => {
     setConfirmingDeleteId(id);
