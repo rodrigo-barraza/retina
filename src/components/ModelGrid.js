@@ -30,9 +30,6 @@ import {
 import { formatFileSize, formatContextTokens } from "../utils/utilities";
 import styles from "./ModelGrid.module.css";
 
-function formatBytes(bytes) {
-  return formatFileSize(bytes);
-}
 
 /**
  * Parse a size display string like "7.5 GB", "500 MB", "120 KB" back to bytes.
@@ -49,9 +46,6 @@ function parseSize(str) {
   return 0;
 }
 
-function formatContextLength(tokens) {
-  return formatContextTokens(tokens);
-}
 
 const ARENA_COLUMNS = [
   { key: "arena_text", dataKey: "text", label: "Text" },
@@ -118,7 +112,7 @@ function normalizeModel(model) {
     key: model.key || model.name,
     name,
     provider: model.provider || "lm-studio",
-    size: model.size || formatBytes(model.size_bytes) || null,
+    size: model.size || formatFileSize(model.size_bytes) || null,
     params: model.params || model.params_string || null,
     contextLength: model.contextLength || model.max_context_length || null,
     quantization,
@@ -435,7 +429,7 @@ export default function ModelGrid({
         align: "right",
         render: (row) =>
           row._model.contextLength
-            ? formatContextLength(row._model.contextLength)
+            ? formatContextTokens(row._model.contextLength)
             : "—",
       });
     }
