@@ -157,6 +157,7 @@ export default function DashboardPage() {
         options={projectOptions}
         onChange={handleProjectChange}
         placeholder="All Projects"
+        icon={<Box size={15} />}
       />,
     );
   }, [setControls, projectFilter, projectOptions, handleProjectChange]);

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { LS_DATE_RANGE } from "../constants";
 
 const AdminHeaderContext = createContext({
@@ -12,23 +13,35 @@ const AdminHeaderContext = createContext({
   setDateRange: () => {},
 });
 
-function getInitialDateRange() {
-  try {
-    const stored = typeof window !== "undefined" ? localStorage.getItem(LS_DATE_RANGE) : null;
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed.from || parsed.to) return parsed;
-    }
-  } catch {
-    // ignore
-  }
-  return { from: "", to: "" };
-}
-
 export function AdminHeaderProvider({ children }) {
+  const pathname = usePathname();
   const [controls, setControlsState] = useState(null);
   const [titleBadge, setTitleBadgeState] = useState(null);
-  const [dateRange, setDateRangeState] = useState(getInitialDateRange);
+  const [dateRange, setDateRangeState] = useState({ from: "", to: "" });
+
+  // Hydrate dateRange from localStorage after mount to avoid SSR mismatch
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LS_DATE_RANGE);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.from || parsed.to) setDateRangeState(parsed);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  // Render-phase derived state: clear stale controls and badge on route change.
+  // React re-renders this provider immediately (before rendering children) when
+  // own state is set during render, so the new page never sees the old page's
+  // controls or badge — eliminating the cross-page flicker entirely.
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    if (controls !== null) setControlsState(null);
+    if (titleBadge !== null) setTitleBadgeState(null);
+  }
 
   // Persist to localStorage on change
   useEffect(() => {
