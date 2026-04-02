@@ -11,11 +11,11 @@ import styles from "./ProportionBarComponent.module.css";
  *   total    — the total to compute percentage against
  *   color    — fill color (defaults to accent)
  */
-export default function ProportionBarComponent({ value = 0, total = 1, color }) {
+export default function ProportionBarComponent({ value = 0, total = 1, color, mini = false }) {
   const pct = total > 0 ? (value / total) * 100 : 0;
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${mini ? styles.mini : ""}`}>
       <div className={styles.track}>
         <div
           className={styles.fill}

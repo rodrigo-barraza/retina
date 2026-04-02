@@ -30,3 +30,24 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+/* Mini variant for nested / compact tables */
+.mini {
+  gap: 5px;
+  min-width: 72px;
+}
+
+.mini .track {
+  max-width: 64px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.mini .fill {
+  border-radius: 2px;
+}
+
+.mini .label {
+  font-size: 10px;
+  min-width: 34px;
+}

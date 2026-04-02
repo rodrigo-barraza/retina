@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { MessageSquare, Zap } from "lucide-react";
 import SortableTableComponent from "./SortableTableComponent";
@@ -7,6 +8,7 @@ import ModalityIconComponent from "./ModalityIconComponent";
 import ToolIconComponent from "./ToolIconComponent";
 import ModelBadgeComponent from "./ModelBadgeComponent";
 import CostBadgeComponent from "./CostBadgeComponent";
+import ProportionBarComponent from "./ProportionBarComponent";
 import BadgeComponent from "./BadgeComponent";
 import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
 import {
@@ -30,7 +32,12 @@ import {
  * @param {string} [props.maxHeight] — CSS max-height for scrollable tables
  */
 
-const buildColumns = (mini) => [
+const getDurationMs = (c) => {
+  if (!c.createdAt || !c.updatedAt) return 0;
+  return Math.max(0, new Date(c.updatedAt) - new Date(c.createdAt));
+};
+
+const buildColumns = (mini, totalCost, totalDuration) => [
   {
     key: "title",
     label: "Conversation",
@@ -173,19 +180,30 @@ const buildColumns = (mini) => [
     render: (c) => <CostBadgeComponent cost={c.totalCost} mini={mini} />,
   },
   {
+    key: "costShare",
+    label: "Cost %",
+    sortable: true,
+    sortValue: (c) => c.totalCost,
+    render: (c) => (
+      <ProportionBarComponent
+        value={c.totalCost}
+        total={totalCost}
+        color="var(--warning)"
+        mini={mini}
+      />
+    ),
+  },
+  {
     key: "duration",
     label: "Duration",
     sortable: false,
     align: "right",
-    sortValue: (c) => {
-      if (!c.createdAt || !c.updatedAt) return 0;
-      return new Date(c.updatedAt) - new Date(c.createdAt);
-    },
+    sortValue: (c) => getDurationMs(c),
     render: (c) => {
-      if (!c.createdAt || !c.updatedAt) {
+      const ms = getDurationMs(c);
+      if (ms === 0) {
         return <span style={{ color: "var(--text-muted)" }}>—</span>;
       }
-      const ms = new Date(c.updatedAt) - new Date(c.createdAt);
       if (ms < 1000) return "<1s";
       const secs = Math.round(ms / 1000);
       if (secs < 60) return `${secs}s`;
@@ -196,6 +214,20 @@ const buildColumns = (mini) => [
       const remMins = mins % 60;
       return remMins > 0 ? `${hrs}h ${remMins}m` : `${hrs}h`;
     },
+  },
+  {
+    key: "durationShare",
+    label: "Duration %",
+    sortable: true,
+    sortValue: (c) => getDurationMs(c),
+    render: (c) => (
+      <ProportionBarComponent
+        value={getDurationMs(c)}
+        total={totalDuration}
+        color="var(--accent-color)"
+        mini={mini}
+      />
+    ),
   },
   {
     key: "createdAt",
@@ -219,7 +251,21 @@ export default function ConversationsTableComponent({
   sessionId = null,
 }) {
   const router = useRouter();
-  const columns = buildColumns(mini);
+
+  const totalCost = useMemo(
+    () => conversations.reduce((sum, c) => sum + (c.totalCost || 0), 0) || 1,
+    [conversations],
+  );
+
+  const totalDuration = useMemo(
+    () => conversations.reduce((sum, c) => sum + getDurationMs(c), 0) || 1,
+    [conversations],
+  );
+
+  const columns = useMemo(
+    () => buildColumns(mini, totalCost, totalDuration),
+    [mini, totalCost, totalDuration],
+  );
 
   return (
     <SortableTableComponent
