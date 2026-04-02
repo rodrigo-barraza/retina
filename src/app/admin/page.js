@@ -231,16 +231,15 @@ export default function DashboardPage() {
   const totalProjectCost =
     projectStats.reduce((s, x) => s + (x.totalCost || 0), 0) || 1;
 
-  // Recharts-friendly timeline data — add display label
+  // Recharts-friendly timeline data — convert UTC keys to local timezone labels
   const chartData = useMemo(() => {
     return timeline.map((t) => {
       let label = "";
       let tickLabel = "";
       if (t.hour) {
         if (t.hour.length <= 10) {
-          // Daily bin: "2026-03-21"
-          const [y, m, d] = t.hour.split("-").map(Number);
-          const date = new Date(y, m - 1, d);
+          // Daily bin: "2026-03-21" → parse as UTC midnight
+          const date = new Date(t.hour + "T00:00:00Z");
           label = date.toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -248,15 +247,21 @@ export default function DashboardPage() {
           tickLabel = label;
         } else if (t.hour.includes(":")) {
           // 10-minute bin: "2026-03-21T14:10" or "2026-03-21T14:0"
-          const timePart = t.hour.slice(11); // "14:10" or "14:0"
-          const [hh, mm] = timePart.split(":");
-          const paddedMM = (mm || "0").padStart(2, "0");
-          label = `${hh}:${paddedMM}`;
-          // Only show tick label on hour marks (minute = 0)
-          tickLabel = paddedMM === "00" ? `${hh}h` : "";
+          // Pad minute part and parse as UTC
+          const timePart = t.hour.slice(11);
+          const [, mm] = timePart.split(":");
+          const paddedKey = t.hour.slice(0, 14) + (mm || "0").padStart(2, "0");
+          const date = new Date(paddedKey + ":00Z"); // "2026-03-21T14:10:00Z"
+          const localHH = String(date.getHours()).padStart(2, "0");
+          const localMM = String(date.getMinutes()).padStart(2, "0");
+          label = `${localHH}:${localMM}`;
+          // Only show tick label on local hour marks
+          tickLabel = localMM === "00" ? `${localHH}h` : "";
         } else {
-          // Hourly bin: "2026-03-21T14"
-          label = t.hour.slice(11) + "h";
+          // Hourly bin: "2026-03-21T14" → parse as UTC
+          const date = new Date(t.hour + ":00:00Z");
+          const localHH = String(date.getHours()).padStart(2, "0");
+          label = `${localHH}h`;
           tickLabel = label;
         }
       }

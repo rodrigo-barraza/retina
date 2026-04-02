@@ -23,11 +23,9 @@ import SortableTableComponent from "./SortableTableComponent";
 import ToolIconComponent from "./ToolIconComponent";
 import TooltipComponent from "./TooltipComponent";
 import SearchInputComponent from "./SearchInputComponent";
-import {
-  FilterBarComponent,
-  FilterIconButtonGroupComponent,
-} from "./FilterBarComponent";
-import { formatFileSize, formatContextTokens } from "../utils/utilities";
+import { FilterBarComponent, FilterIconButtonGroupComponent } from "./FilterBarComponent";
+import ProportionBarComponent from "./ProportionBarComponent";
+import { formatFileSize, formatContextTokens, formatNumber } from "../utils/utilities";
 import styles from "./ModelGrid.module.css";
 
 
@@ -183,6 +181,7 @@ function buildRow(rawModel, favorites = []) {
     output: rawModel.pricing?.outputPerMillion ?? Infinity,
     favorite: favorites.includes(favKey) ? 1 : 0,
     tools: rawModel.tools?.length || 0,
+    requests: rawModel.usageCount || 0,
   };
   // Arena columns
   for (const col of ARENA_COLUMNS) {
@@ -322,6 +321,7 @@ export default function ModelGrid({
     (m) => m.inputTypes?.length > 0 || m.outputTypes?.length > 0,
   );
   const hasTools = filtered.some((m) => m.tools?.length > 0);
+  const hasUsage = filtered.some((m) => m.usageCount > 0);
   const hasActions = !!renderActions;
 
   const arenaCols = ARENA_COLUMNS.filter((col) =>
@@ -392,6 +392,31 @@ export default function ModelGrid({
         label: "Year",
         align: "right",
         render: (row) => row._raw.year || "—",
+      });
+    }
+
+    if (hasUsage) {
+      const usageTotal = filtered.reduce((s, m) => s + (m.usageCount || 0), 0) || 1;
+      cols.push({
+        key: "requests",
+        label: "Requests",
+        align: "right",
+        sortValue: (row) => row._raw.usageCount || 0,
+        render: (row) => {
+          const count = row._raw.usageCount || 0;
+          return count > 0 ? formatNumber(count) : "—";
+        },
+      });
+      cols.push({
+        key: "usagePct",
+        label: "Usage %",
+        sortValue: (row) => row._raw.usageCount || 0,
+        render: (row) => (
+          <ProportionBarComponent
+            value={row._raw.usageCount || 0}
+            total={usageTotal}
+          />
+        ),
       });
     }
 
@@ -525,7 +550,9 @@ export default function ModelGrid({
   }, [
     onToggleFavorite,
     favorites,
+    filtered,
     hasYear,
+    hasUsage,
     hasModalities,
     hasTools,
     hasContext,

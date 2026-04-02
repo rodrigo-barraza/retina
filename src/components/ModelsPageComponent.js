@@ -63,9 +63,11 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
       setError(null);
       const lmService = isAdmin ? IrisService : PrismService;
       const configService = isAdmin ? IrisService : PrismService;
-      const [config, lmData] = await Promise.all([
+      const statsService = isAdmin ? IrisService : PrismService;
+      const [config, lmData, modelStats] = await Promise.all([
         configService.getConfig().catch(() => null),
         lmService.getLmStudioModels().catch(() => ({ models: [] })),
+        statsService.getModelStats().catch(() => []),
       ]);
 
       const flat = flattenConfigModels(config);
@@ -73,19 +75,32 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
       const lmApiModels = (lmData.models || []).filter((m) => m.type === "llm");
       const lmApiMap = new Map(lmApiModels.map((m) => [m.key, m]));
 
+      // Build usage map: "provider:model" → totalRequests
+      const usageMap = new Map();
+      let grandTotal = 0;
+      for (const s of modelStats) {
+        const key = `${s.provider}:${s.model}`;
+        usageMap.set(key, (usageMap.get(key) || 0) + s.totalRequests);
+        grandTotal += s.totalRequests;
+      }
+
       const merged = flat.map((m) => {
+        const usageKey = `${m.provider}:${m.name}`;
+        const usageCount = usageMap.get(usageKey) || 0;
+        let result = { ...m, usageCount, usageTotal: grandTotal };
+
         if (m.provider === "lm-studio") {
           const apiModel = lmApiMap.get(m.name);
           if (apiModel) {
-            return {
-              ...m,
+            result = {
+              ...result,
               loaded_instances: apiModel.loaded_instances,
               loaded: apiModel.loaded_instances?.length > 0,
               key: apiModel.key,
             };
           }
         }
-        return m;
+        return result;
       });
 
       setAllModels(merged);

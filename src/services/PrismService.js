@@ -78,6 +78,18 @@ export default class PrismService {
 
 
   // ---------------------------------------------------------------------------
+  // Stats
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Fetch per-model usage stats for the current user.
+   * @returns {Promise<Array<{ model, provider, totalRequests }>>}
+   */
+  static async getModelStats() {
+    return PrismService._request("/stats/models", { method: "GET" });
+  }
+
+  // ---------------------------------------------------------------------------
   // Conversations
   // ---------------------------------------------------------------------------
 
