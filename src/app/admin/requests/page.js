@@ -29,6 +29,7 @@ import BadgeComponent from "../../../components/BadgeComponent";
 import CostBadgeComponent from "../../../components/CostBadgeComponent";
 import ButtonComponent from "../../../components/ButtonComponent";
 import DetailDrawerComponent from "../../../components/DetailDrawerComponent";
+import MessageList, { prepareDisplayMessages } from "../../../components/MessageList";
 import MediaCardComponent from "../../../components/MediaCardComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
@@ -647,6 +648,72 @@ export default function RequestsPage() {
                         showOrigin
                       />
                     ))}
+                  </div>
+                </div>
+              );
+            })()}
+            {(() => {
+              // Reconstruct chat messages from request/response payloads
+              const req = selectedRequest;
+              const reqPayload = req?.requestPayload;
+              const resPayload = req?.responsePayload;
+              if (!reqPayload?.messages?.length) return null;
+
+              // Start with the prompt messages from the request
+              const chatMessages = [...reqPayload.messages];
+
+              // Append the assistant response
+              if (resPayload) {
+                const assistantMsg = {
+                  role: "assistant",
+                  content: "",
+                  model: req.model,
+                  provider: req.provider,
+                };
+
+                // Handle different response formats
+                if (resPayload.content) {
+                  assistantMsg.content = resPayload.content;
+                } else if (resPayload.candidates?.[0]?.content?.parts) {
+                  // Google format
+                  assistantMsg.content = resPayload.candidates[0].content.parts
+                    .map((p) => p.text || "")
+                    .join("");
+                } else if (resPayload.choices?.[0]?.message?.content) {
+                  // OpenAI format
+                  assistantMsg.content = resPayload.choices[0].message.content;
+                } else if (typeof resPayload === "string") {
+                  assistantMsg.content = resPayload;
+                }
+
+                // Extract tool calls if present
+                const toolCalls =
+                  resPayload.choices?.[0]?.message?.tool_calls ||
+                  resPayload.toolCalls;
+                if (toolCalls?.length) {
+                  assistantMsg.toolCalls = toolCalls.map((tc) => ({
+                    id: tc.id,
+                    name: tc.function?.name || tc.name,
+                    args:
+                      typeof tc.function?.arguments === "string"
+                        ? JSON.parse(tc.function.arguments)
+                        : tc.function?.arguments || tc.args || {},
+                  }));
+                }
+
+                if (assistantMsg.content || assistantMsg.toolCalls?.length) {
+                  chatMessages.push(assistantMsg);
+                }
+              }
+
+              const displayMessages = prepareDisplayMessages(chatMessages);
+              if (!displayMessages.length) return null;
+
+              return (
+                <div className={styles.detailSection}>
+                  <div className={styles.detailSectionTitle}>Chat Preview</div>
+                  <div className={styles.chatPreview}>
+                    <MessageList messages={displayMessages} readOnly />
                   </div>
                 </div>
               );
