@@ -22,6 +22,7 @@ import {
   Menu,
   X,
   FolderOpen,
+  FlaskConical,
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import SpinningCatComponent from "./SpinningCatComponent";
@@ -48,6 +49,10 @@ const USER_NAV_ITEMS = [
   { href: "/models", label: "Models", icon: Server },
   { href: "/media", label: "Media", icon: ImageIcon },
   { href: "/text", label: "Text", icon: Type },
+];
+
+const USER_EXPERIMENT_ITEMS = [
+  { href: "/synthesis", label: "Synthesis", icon: FlaskConical },
 ];
 
 const ADMIN_NAV_ITEMS = [
@@ -172,6 +177,33 @@ export default function NavigationSidebarComponent({
                     </Link>
                   );
                 })}
+
+                {/* Experiments divider (mobile — user mode only) */}
+                {!isAdmin && USER_EXPERIMENT_ITEMS.length > 0 && (
+                  <>
+                    <div className={styles.navDivider}>
+                      <span>Experiments</span>
+                    </div>
+                    {USER_EXPERIMENT_ITEMS.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = pathname.startsWith(item.href);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={`${styles.navLink} ${isActive ? styles.active : ""}`}
+                          onClick={() => {
+                            onNavClick?.(item.href);
+                            setMobileOpen(false);
+                          }}
+                        >
+                          <Icon className={styles.navIcon} />
+                          <span className={styles.navLabel}>{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </>
+                )}
               </nav>
 
               {/* Footer actions */}
@@ -275,6 +307,30 @@ export default function NavigationSidebarComponent({
               </Link>
             );
           })}
+
+          {/* Experiments divider (desktop — user mode only) */}
+          {!isAdmin && USER_EXPERIMENT_ITEMS.length > 0 && (
+            <>
+              <div className={styles.navDivider}>
+                <span>Experiments</span>
+              </div>
+              {USER_EXPERIMENT_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`${styles.navLink} ${isActive ? styles.active : ""}`}
+                    onClick={() => onNavClick?.(item.href)}
+                  >
+                    <Icon className={styles.navIcon} />
+                    <span className={styles.navLabel}>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         {/* Footer */}

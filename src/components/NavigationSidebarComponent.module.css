@@ -187,6 +187,32 @@
   text-overflow: ellipsis;
 }
 
+/* ── Nav Divider ── */
+
+.navDivider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 4px;
+  margin-top: 4px;
+
+  & > span {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  &::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+  }
+}
+
 /* ── Badge ── */
 
 .badge {
