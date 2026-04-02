@@ -124,6 +124,7 @@ export default function SynthesisComponent() {
   const abortRef = useRef(null);
   const abortedRef = useRef(false);
   const messagesEndRef = useRef(null);
+  const [conversationId, setConversationId] = useState(null);
 
   // ── Load config ───────────────────────────────────────────────
   useEffect(() => {
@@ -223,12 +224,44 @@ export default function SynthesisComponent() {
     setGenerationProgress("");
     abortedRef.current = false;
 
+    // Create a new conversation for this synthesis run
+    const convId = crypto.randomUUID();
+    setConversationId(convId);
+
     // Start with seed messages as the conversation so far
     const conversation = seedMessages
       .filter((m) => m.content.trim())
       .map((m) => ({ role: m.role, content: m.content }));
 
     setGeneratedMessages([...conversation]);
+
+    // If we have seed messages, append them to the conversation first
+    if (conversation.length > 0) {
+      try {
+        await PrismService.appendMessages(convId, conversation, undefined, {
+          title: `Synthesis: ${systemPrompt.slice(0, 60)}`,
+          systemPrompt,
+          settings: {
+            provider: settings.provider,
+            model: settings.model,
+            temperature: settings.temperature,
+          },
+        });
+      } catch {
+        // Non-critical — conversation just won't have seed messages persisted
+      }
+    }
+
+    // Conversation metadata for Prism persistence
+    const convMeta = {
+      title: `Synthesis: ${systemPrompt.slice(0, 60)}`,
+      systemPrompt,
+      settings: {
+        provider: settings.provider,
+        model: settings.model,
+        temperature: settings.temperature,
+      },
+    };
 
     // targetTurns = total user/assistant pairs; each turn = 2 messages
     const totalMessages = targetTurns * 2;
@@ -260,6 +293,8 @@ export default function SynthesisComponent() {
               setGenerationProgress(partial);
             },
             abortRef,
+            convId,
+            convMeta,
           );
 
           if (abortedRef.current) break;
@@ -275,15 +310,17 @@ export default function SynthesisComponent() {
             userPersona,
           );
 
+          const simulatorHistory = conversation.length > 0
+            ? conversation.map((m) => ({
+                role: m.role === "user" ? "assistant" : "user",
+                content: m.content,
+              }))
+            : [{ role: "user", content: "Start the conversation. Send the first message as the user." }];
+
           const userContent = await streamTurn(
             settings,
             userSystemPrompt,
-            // Present the conversation to the user-simulator:
-            // swap roles so the model takes the "user" perspective
-            conversation.map((m) => ({
-              role: m.role === "user" ? "assistant" : "user",
-              content: m.content,
-            })),
+            simulatorHistory,
             (partial) => {
               setGeneratedMessages([
                 ...conversation,
@@ -296,7 +333,14 @@ export default function SynthesisComponent() {
 
           if (abortedRef.current) break;
 
-          conversation.push({ role: "user", content: userContent });
+          // Append the generated user message to the conversation in Prism
+          const userMsg = { role: "user", content: userContent };
+          conversation.push(userMsg);
+          try {
+            await PrismService.appendMessages(convId, [userMsg]);
+          } catch {
+            // Non-critical
+          }
           setGeneratedMessages([...conversation]);
           setGenerationProgress("");
           nextRole = "assistant";
@@ -321,6 +365,8 @@ export default function SynthesisComponent() {
             setGenerationProgress(partial);
           },
           abortRef,
+          convId,
+          convMeta,
         );
 
         if (!abortedRef.current) {
@@ -374,6 +420,7 @@ export default function SynthesisComponent() {
     setTargetTurns(DEFAULT_TURNS);
     setCategory("Chat");
     setGenerationProgress("");
+    setConversationId(null);
     setLeftTab("config");
   }, []);
 
@@ -717,6 +764,15 @@ export default function SynthesisComponent() {
                     {generatedMessages.length} messages
                   </span>
                 )}
+                {conversationId && !isGenerating && (
+                  <a
+                    href={`/conversations/${conversationId}`}
+                    className={styles.convLink}
+                    title="View persisted conversation"
+                  >
+                    View
+                  </a>
+                )}
                 {isGenerating && (
                   <span className={styles.streamingBadge}>
                     <span className={styles.streamingDot} />
@@ -804,22 +860,31 @@ export default function SynthesisComponent() {
 /**
  * Stream a single chat turn and return the collected text.
  * Each turn is a real /chat call — the model genuinely responds to the context.
+ * When conversationId is provided, the messages are persisted to that conversation.
  */
-function streamTurn(settings, turnSystemPrompt, history, onPartial, abortRef) {
+function streamTurn(settings, turnSystemPrompt, history, onPartial, abortRef, conversationId, conversationMeta) {
   return new Promise((resolve, reject) => {
     let collected = "";
 
+    const payload = {
+      provider: settings.provider,
+      model: settings.model,
+      messages: [
+        { role: "system", content: turnSystemPrompt },
+        ...history,
+      ],
+      temperature: settings.temperature,
+      maxTokens: settings.maxTokens,
+    };
+
+    // Attach conversation ID for persistence when available
+    if (conversationId) {
+      payload.conversationId = conversationId;
+      if (conversationMeta) payload.conversationMeta = conversationMeta;
+    }
+
     const cancel = PrismService.streamText(
-      {
-        provider: settings.provider,
-        model: settings.model,
-        messages: [
-          { role: "system", content: turnSystemPrompt },
-          ...history,
-        ],
-        temperature: settings.temperature,
-        maxTokens: settings.maxTokens,
-      },
+      payload,
       {
         onChunk: (content) => {
           collected += content;
