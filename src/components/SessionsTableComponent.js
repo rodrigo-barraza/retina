@@ -13,7 +13,7 @@ import ModalityIconComponent from "./ModalityIconComponent";
 import ModelBadgeComponent from "./ModelBadgeComponent";
 import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
 import ToolIconComponent from "./ToolIconComponent";
-import { formatNumber, formatDateTime, formatLatency, formatTokensPerSec } from "../utils/utilities";
+import { formatTokenCount, formatDateTime, formatLatency, formatTokensPerSec } from "../utils/utilities";
 
 import styles from "./SessionsTableComponent.module.css";
 
@@ -133,27 +133,41 @@ const SESSION_COLUMNS = [
   },
   {
     key: "totalInputTokens",
-    label: "In Tokens",
+    label: "Tokens In",
     sortable: true,
     align: "right",
     render: (s) =>
       (s.totalInputTokens || 0) > 0 ? (
-        formatNumber(s.totalInputTokens)
+        formatTokenCount(s.totalInputTokens)
       ) : (
         <span style={{ color: "var(--text-muted)" }}>—</span>
       ),
   },
   {
     key: "totalOutputTokens",
-    label: "Out Tokens",
+    label: "Tokens Out",
     sortable: true,
     align: "right",
     render: (s) =>
       (s.totalOutputTokens || 0) > 0 ? (
-        formatNumber(s.totalOutputTokens)
+        formatTokenCount(s.totalOutputTokens)
       ) : (
         <span style={{ color: "var(--text-muted)" }}>—</span>
       ),
+  },
+  {
+    key: "totalTokens",
+    label: "Tokens",
+    sortable: false,
+    align: "right",
+    render: (s) => {
+      const total = (s.totalInputTokens || 0) + (s.totalOutputTokens || 0);
+      return total > 0 ? (
+        formatTokenCount(total)
+      ) : (
+        <span style={{ color: "var(--text-muted)" }}>—</span>
+      );
+    },
   },
   {
     key: "avgTokensPerSec",

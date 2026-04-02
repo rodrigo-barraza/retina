@@ -196,7 +196,7 @@ export default function RequestsPage() {
   const exportCSV = useCallback(() => {
     const headers = [
       "Timestamp", "Project", "Endpoint", "Provider", "Model",
-      "In Tokens", "Out Tokens", "Cost", "Tok/s", "Latency", "Status",
+      "Tokens In", "Tokens Out", "Cost", "Tok/s", "Latency", "Status",
     ].join(",");
     const rows = requests.map((r) =>
       [

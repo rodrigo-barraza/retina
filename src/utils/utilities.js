@@ -8,6 +8,16 @@ export function formatNumber(n) {
 }
 
 /**
+ * Format a token count as full value with thousands separators.
+ * Unlike formatNumber, this never abbreviates to K/M.
+ * e.g. 1234567 → "1,234,567"
+ */
+export function formatTokenCount(n) {
+  if (n === null || n === undefined || n === 0) return "0";
+  return Number(n).toLocaleString();
+}
+
+/**
  * Get the total input token count from a usage object.
  * Providers like Anthropic and Google split prompt tokens into
  * new + cache_read + cache_write. This aggregates all three.

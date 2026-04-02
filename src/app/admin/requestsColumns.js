@@ -5,7 +5,7 @@ import ModelBadgeComponent from "../../components/ModelBadgeComponent";
 import BadgeComponent from "../../components/BadgeComponent";
 import CostBadgeComponent from "../../components/CostBadgeComponent";
 import {
-  formatNumber,
+  formatTokenCount,
   formatLatency,
   formatTokensPerSec,
   formatDateTime,
@@ -65,21 +65,21 @@ export const getRequestsColumns = () => [
   },
   {
     key: "inputTokens",
-    label: "In Tokens",
-    render: (r) => formatNumber(r.inputTokens),
+    label: "Tokens In",
+    render: (r) => formatTokenCount(r.inputTokens),
     align: "right",
   },
   {
     key: "outputTokens",
-    label: "Out Tokens",
-    render: (r) => formatNumber(r.outputTokens),
+    label: "Tokens Out",
+    render: (r) => formatTokenCount(r.outputTokens),
     align: "right",
   },
   {
     key: "totalTokens",
     label: "Tokens",
     sortable: false,
-    render: (r) => formatNumber((r.inputTokens || 0) + (r.outputTokens || 0)),
+    render: (r) => formatTokenCount((r.inputTokens || 0) + (r.outputTokens || 0)),
     align: "right",
   },
   {

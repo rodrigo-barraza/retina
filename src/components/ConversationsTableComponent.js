@@ -12,7 +12,7 @@ import ProportionBarComponent from "./ProportionBarComponent";
 import BadgeComponent from "./BadgeComponent";
 import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
 import {
-  formatNumber,
+  formatTokenCount,
   formatLatency,
   formatTokensPerSec,
   formatDateTime,
@@ -117,24 +117,24 @@ const buildColumns = (mini, totalCost, totalDuration) => [
   },
   {
     key: "inputTokens",
-    label: "In Tokens",
+    label: "Tokens In",
     sortable: true,
     align: "right",
     render: (c) =>
       c.inputTokens > 0 ? (
-        formatNumber(c.inputTokens)
+        formatTokenCount(c.inputTokens)
       ) : (
         <span style={{ color: "var(--text-muted)" }}>—</span>
       ),
   },
   {
     key: "outputTokens",
-    label: "Out Tokens",
+    label: "Tokens Out",
     sortable: true,
     align: "right",
     render: (c) =>
       c.outputTokens > 0 ? (
-        formatNumber(c.outputTokens)
+        formatTokenCount(c.outputTokens)
       ) : (
         <span style={{ color: "var(--text-muted)" }}>—</span>
       ),
@@ -147,7 +147,7 @@ const buildColumns = (mini, totalCost, totalDuration) => [
     render: (c) => {
       const total = (c.inputTokens || 0) + (c.outputTokens || 0);
       return total > 0 ? (
-        formatNumber(total)
+        formatTokenCount(total)
       ) : (
         <span style={{ color: "var(--text-muted)" }}>—</span>
       );
