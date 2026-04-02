@@ -68,6 +68,15 @@ export default class PrismService {
   }
 
   /**
+   * Fetch local/self-hosted provider models (LM Studio, vLLM, Ollama).
+   * Returns { models: { [provider]: [...] } } to merge into the main config.
+   * @returns {Promise<{ models: object }>}
+   */
+  static async getLocalConfig() {
+    return PrismService._request("/config-local", { method: "GET" });
+  }
+
+  /**
    * Fetch all built-in tool schemas from Prism.
    * @returns {Promise<Array>}
    */

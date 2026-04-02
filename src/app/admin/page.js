@@ -119,6 +119,25 @@ export default function DashboardPage() {
           }
         }
         setConfigModels(lookup);
+
+        // Progressive loading: merge local provider models when they arrive
+        if (prismConfig.localProviders?.length > 0) {
+          PrismService.getLocalConfig()
+            .then(({ models: localModels }) => {
+              if (!localModels || Object.keys(localModels).length === 0) return;
+              setConfigModels((prev) => {
+                const updated = { ...prev };
+                for (const [provider, providerModels] of Object.entries(localModels)) {
+                  for (const m of providerModels) {
+                    const key = `${provider}:${m.name}`;
+                    if (m.tools?.length) updated[key] = m.tools;
+                  }
+                }
+                return updated;
+              });
+            })
+            .catch(() => {});
+        }
       }
 
       setTimeline(timelineData.data || timelineData);

@@ -177,6 +177,35 @@ export default function WorkflowsPage({ initialWorkflowId }) {
       .then((cfg) => {
         setConfig(cfg);
         setAllModels(flattenConfigModels(cfg));
+
+        // Progressive loading: merge local provider models when they arrive
+        if (cfg.localProviders?.length > 0) {
+          PrismService.getLocalConfig()
+            .then(({ models }) => {
+              if (!models || Object.keys(models).length === 0) return;
+              setConfig((prev) => {
+                const updated = { ...prev };
+                const textToText = { ...updated.textToText };
+                const existingModels = { ...textToText.models };
+                for (const [provider, providerModels] of Object.entries(models)) {
+                  const existing = existingModels[provider] || [];
+                  const existingKeys = new Set(existing.map((m) => m.name));
+                  const merged = [...existing];
+                  for (const m of providerModels) {
+                    if (!existingKeys.has(m.name)) merged.push(m);
+                  }
+                  existingModels[provider] = merged;
+                }
+                textToText.models = existingModels;
+                updated.textToText = textToText;
+                const updatedCfg = updated;
+                // Re-flatten models with local providers included
+                setAllModels(flattenConfigModels(updatedCfg));
+                return updatedCfg;
+              });
+            })
+            .catch(() => {});
+        }
       })
       .catch(console.error);
 
