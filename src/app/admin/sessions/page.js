@@ -25,6 +25,7 @@ export default function SessionsPage() {
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef(null);
   const initialLoadDone = useRef(false);
+  const fetchGenRef = useRef(0);
 
   const dateParams = useMemo(
     () => buildDateRangeParams(dateRange),
@@ -32,6 +33,7 @@ export default function SessionsPage() {
   );
 
   const loadSessions = useCallback(async () => {
+    const gen = fetchGenRef.current;
     try {
       const params = {
         page,
@@ -43,11 +45,15 @@ export default function SessionsPage() {
       if (projectFilter) params.project = projectFilter;
 
       const data = await IrisService.getSessions(params);
+      // Discard stale responses from previous filter/page generations
+      if (gen !== fetchGenRef.current) return;
       setSessions(data.data || []);
       setTotal(data.total || 0);
     } catch (err) {
+      if (gen !== fetchGenRef.current) return;
       console.error("Failed to load sessions:", err);
     } finally {
+      if (gen !== fetchGenRef.current) return;
       if (!initialLoadDone.current) {
         initialLoadDone.current = true;
         setLoading(false);
@@ -56,11 +62,10 @@ export default function SessionsPage() {
   }, [page, dateParams, projectFilter]);
 
   useEffect(() => {
-    // Immediately enter loading state and clear stale data when filters change
+    // Bump generation to invalidate any in-flight requests from previous effect
+    fetchGenRef.current += 1;
     initialLoadDone.current = false;
     setLoading(true);
-    setSessions([]);
-    setTotal(0);
 
     loadSessions();
     intervalRef.current = setInterval(loadSessions, POLL_INTERVAL);
