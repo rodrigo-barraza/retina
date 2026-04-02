@@ -77,6 +77,64 @@ export default class PrismService {
   }
 
   /**
+   * Merge local provider models into an existing config object (immutable).
+   * Returns a new config with local models merged into textToText.models.
+   * @param {object} config - The base config from getConfig()
+   * @param {object} localModels - { [provider]: [...models] } from getLocalConfig()
+   * @returns {object} Updated config
+   */
+  static mergeLocalModels(config, localModels) {
+    if (!config || !localModels || Object.keys(localModels).length === 0) {
+      return config;
+    }
+    const updated = { ...config };
+    const textToText = { ...updated.textToText };
+    const existingModels = { ...textToText.models };
+    for (const [provider, providerModels] of Object.entries(localModels)) {
+      const existing = existingModels[provider] || [];
+      const existingKeys = new Set(existing.map((m) => m.name));
+      const merged = [...existing];
+      for (const m of providerModels) {
+        if (!existingKeys.has(m.name)) merged.push(m);
+      }
+      existingModels[provider] = merged;
+    }
+    textToText.models = existingModels;
+    updated.textToText = textToText;
+    return updated;
+  }
+
+  /**
+   * Progressive config loading: fetches cloud config immediately, then
+   * lazily fetches local provider models and calls onLocalMerge with the
+   * updated config when they arrive.
+   *
+   * @param {object} options
+   * @param {Function} options.onConfig - Called immediately with cloud-only config
+   * @param {Function} options.onLocalMerge - Called when local models arrive, with merged config
+   * @param {typeof PrismService} [options.service] - Service to use (PrismService or IrisService)
+   * @returns {Promise<object>} The initial cloud config
+   */
+  static async getConfigWithLocalModels({ onConfig, onLocalMerge, service } = {}) {
+    const svc = service || PrismService;
+    const config = await svc.getConfig();
+
+    if (onConfig) onConfig(config);
+
+    // Fire-and-forget local model fetch
+    if (config?.localProviders?.length > 0) {
+      svc.getLocalConfig()
+        .then(({ models }) => {
+          const merged = PrismService.mergeLocalModels(config, models);
+          if (merged !== config && onLocalMerge) onLocalMerge(merged);
+        })
+        .catch(() => {}); // Local providers are optional
+    }
+
+    return config;
+  }
+
+  /**
    * Fetch all built-in tool schemas from Prism.
    * @returns {Promise<Array>}
    */

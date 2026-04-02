@@ -58,77 +58,101 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
   const [toastElement, showToast] = useToast(4000);
   const [favoriteKeys, setFavoriteKeys] = useState([]);
 
+  // Helper: merge config + LM data + stats into the allModels array
+  const buildMergedModels = useCallback((config, lmData, modelStats) => {
+    const flat = flattenConfigModels(config);
+    const lmApiModels = (lmData?.models || []).filter((m) => m.type === "llm");
+    const lmApiMap = new Map(lmApiModels.map((m) => [m.key, m]));
+
+    // Build usage map: "provider:model" → stats object
+    const usageMap = new Map();
+    let grandTotal = 0;
+    for (const s of modelStats) {
+      const key = `${s.provider}:${s.model}`;
+      const existing = usageMap.get(key);
+      if (existing) {
+        existing.totalRequests += s.totalRequests;
+        existing.totalInputTokens += s.totalInputTokens || 0;
+        existing.totalOutputTokens += s.totalOutputTokens || 0;
+      } else {
+        usageMap.set(key, {
+          totalRequests: s.totalRequests,
+          totalInputTokens: s.totalInputTokens || 0,
+          totalOutputTokens: s.totalOutputTokens || 0,
+        });
+      }
+      grandTotal += s.totalRequests;
+    }
+
+    return flat.map((m) => {
+      const usageKey = `${m.provider}:${m.name}`;
+      const stats = usageMap.get(usageKey) || { totalRequests: 0, totalInputTokens: 0, totalOutputTokens: 0 };
+      const usageCount = stats.totalRequests;
+      let result = {
+        ...m,
+        usageCount,
+        usageTotal: grandTotal,
+        totalInputTokens: stats.totalInputTokens,
+        totalOutputTokens: stats.totalOutputTokens,
+      };
+
+      if (m.provider === "lm-studio") {
+        const apiModel = lmApiMap.get(m.name);
+        if (apiModel) {
+          result = {
+            ...result,
+            loaded_instances: apiModel.loaded_instances,
+            loaded: apiModel.loaded_instances?.length > 0,
+            key: apiModel.key,
+          };
+        }
+      }
+      return result;
+    });
+  }, []);
+
   const fetchModels = useCallback(async () => {
     try {
       setError(null);
-      const lmService = isAdmin ? IrisService : PrismService;
       const configService = isAdmin ? IrisService : PrismService;
       const statsService = isAdmin ? IrisService : PrismService;
-      const [config, lmData, modelStats] = await Promise.all([
+
+      // Phase 1: cloud config + stats — resolves instantly
+      const [config, modelStats] = await Promise.all([
         configService.getConfig().catch(() => null),
-        lmService.getLmStudioModels().catch(() => ({ models: [] })),
         statsService.getModelStats().catch(() => []),
       ]);
 
-      const flat = flattenConfigModels(config);
+      // Show cloud models immediately
+      const cloudModels = buildMergedModels(config, { models: [] }, modelStats);
+      setAllModels(cloudModels);
+      setLoading(false);
 
-      const lmApiModels = (lmData.models || []).filter((m) => m.type === "llm");
-      const lmApiMap = new Map(lmApiModels.map((m) => [m.key, m]));
+      // Phase 2: progressive — merge local provider models + LM Studio API data
+      const localService = isAdmin ? IrisService : PrismService;
+      const lmService = isAdmin ? IrisService : PrismService;
 
-      // Build usage map: "provider:model" → stats object
-      const usageMap = new Map();
-      let grandTotal = 0;
-      for (const s of modelStats) {
-        const key = `${s.provider}:${s.model}`;
-        const existing = usageMap.get(key);
-        if (existing) {
-          existing.totalRequests += s.totalRequests;
-          existing.totalInputTokens += s.totalInputTokens || 0;
-          existing.totalOutputTokens += s.totalOutputTokens || 0;
-        } else {
-          usageMap.set(key, {
-            totalRequests: s.totalRequests,
-            totalInputTokens: s.totalInputTokens || 0,
-            totalOutputTokens: s.totalOutputTokens || 0,
-          });
-        }
-        grandTotal += s.totalRequests;
-      }
+      // Fire both in parallel, each with their own error handling
+      const [localResult, lmData] = await Promise.all([
+        config?.localProviders?.length > 0
+          ? localService.getLocalConfig().catch(() => ({ models: {} }))
+          : { models: {} },
+        lmService.getLmStudioModels().catch(() => ({ models: [] })),
+      ]);
 
-      const merged = flat.map((m) => {
-        const usageKey = `${m.provider}:${m.name}`;
-        const stats = usageMap.get(usageKey) || { totalRequests: 0, totalInputTokens: 0, totalOutputTokens: 0 };
-        const usageCount = stats.totalRequests;
-        let result = {
-          ...m,
-          usageCount,
-          usageTotal: grandTotal,
-          totalInputTokens: stats.totalInputTokens,
-          totalOutputTokens: stats.totalOutputTokens,
-        };
+      // Merge local models into config using shared utility
+      const mergedConfig = PrismService.mergeLocalModels(config, localResult?.models);
 
-        if (m.provider === "lm-studio") {
-          const apiModel = lmApiMap.get(m.name);
-          if (apiModel) {
-            result = {
-              ...result,
-              loaded_instances: apiModel.loaded_instances,
-              loaded: apiModel.loaded_instances?.length > 0,
-              key: apiModel.key,
-            };
-          }
-        }
-        return result;
-      });
-
-      setAllModels(merged);
+      // Rebuild with local models + LM Studio API data
+      const fullModels = buildMergedModels(mergedConfig, lmData, modelStats);
+      setAllModels(fullModels);
     } catch (err) {
       setError(err.message);
       setAllModels([]);
     } finally {
       setLoading(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, buildMergedModels]);
 
   useEffect(() => {
     fetchModels();

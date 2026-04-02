@@ -252,8 +252,8 @@ export default function HomePage({ initialConversationId = null }) {
   }, [activeId]);
 
   useEffect(() => {
-    PrismService.getConfig()
-      .then((cfg) => {
+    PrismService.getConfigWithLocalModels({
+      onConfig: (cfg) => {
         setConfig(cfg);
 
         // Try to restore last-used provider/model from localStorage
@@ -286,35 +286,9 @@ export default function HomePage({ initialConversationId = null }) {
           model: mod,
           temperature: temp,
         }));
-
-        // Progressive loading: fetch local provider models (LM Studio, vLLM, Ollama)
-        // and merge into config state when they arrive, without blocking the UI.
-        if (cfg.localProviders?.length > 0) {
-          PrismService.getLocalConfig()
-            .then(({ models }) => {
-              if (!models || Object.keys(models).length === 0) return;
-              setConfig((prev) => {
-                const updated = { ...prev };
-                const textToText = { ...updated.textToText };
-                const existingModels = { ...textToText.models };
-                for (const [provider, providerModels] of Object.entries(models)) {
-                  const existing = existingModels[provider] || [];
-                  const existingKeys = new Set(existing.map((m) => m.name));
-                  const merged = [...existing];
-                  for (const m of providerModels) {
-                    if (!existingKeys.has(m.name)) merged.push(m);
-                  }
-                  existingModels[provider] = merged;
-                }
-                textToText.models = existingModels;
-                updated.textToText = textToText;
-                return updated;
-              });
-            })
-            .catch(() => {}); // Silently ignore — local providers are optional
-        }
-      })
-      .catch(console.error);
+      },
+      onLocalMerge: (merged) => setConfig(merged),
+    }).catch(console.error);
 
     // Load history
     loadConversations();

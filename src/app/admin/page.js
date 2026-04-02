@@ -111,30 +111,24 @@ export default function DashboardPage() {
 
       // Build model→tools lookup from Prism config
       if (prismConfig?.textToText?.models) {
-        const lookup = {};
-        for (const [provider, models] of Object.entries(prismConfig.textToText.models)) {
-          for (const m of models) {
-            const key = `${provider}:${m.name}`;
-            if (m.tools?.length) lookup[key] = m.tools;
+        const buildLookup = (cfg) => {
+          const lookup = {};
+          for (const [provider, models] of Object.entries(cfg.textToText?.models || {})) {
+            for (const m of models) {
+              const key = `${provider}:${m.name}`;
+              if (m.tools?.length) lookup[key] = m.tools;
+            }
           }
-        }
-        setConfigModels(lookup);
+          return lookup;
+        };
+        setConfigModels(buildLookup(prismConfig));
 
-        // Progressive loading: merge local provider models when they arrive
+        // Progressive loading: merge local provider model tools when they arrive
         if (prismConfig.localProviders?.length > 0) {
           PrismService.getLocalConfig()
-            .then(({ models: localModels }) => {
-              if (!localModels || Object.keys(localModels).length === 0) return;
-              setConfigModels((prev) => {
-                const updated = { ...prev };
-                for (const [provider, providerModels] of Object.entries(localModels)) {
-                  for (const m of providerModels) {
-                    const key = `${provider}:${m.name}`;
-                    if (m.tools?.length) updated[key] = m.tools;
-                  }
-                }
-                return updated;
-              });
+            .then(({ models }) => {
+              const merged = PrismService.mergeLocalModels(prismConfig, models);
+              if (merged !== prismConfig) setConfigModels(buildLookup(merged));
             })
             .catch(() => {});
         }
