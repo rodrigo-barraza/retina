@@ -75,19 +75,37 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
       const lmApiModels = (lmData.models || []).filter((m) => m.type === "llm");
       const lmApiMap = new Map(lmApiModels.map((m) => [m.key, m]));
 
-      // Build usage map: "provider:model" → totalRequests
+      // Build usage map: "provider:model" → stats object
       const usageMap = new Map();
       let grandTotal = 0;
       for (const s of modelStats) {
         const key = `${s.provider}:${s.model}`;
-        usageMap.set(key, (usageMap.get(key) || 0) + s.totalRequests);
+        const existing = usageMap.get(key);
+        if (existing) {
+          existing.totalRequests += s.totalRequests;
+          existing.totalInputTokens += s.totalInputTokens || 0;
+          existing.totalOutputTokens += s.totalOutputTokens || 0;
+        } else {
+          usageMap.set(key, {
+            totalRequests: s.totalRequests,
+            totalInputTokens: s.totalInputTokens || 0,
+            totalOutputTokens: s.totalOutputTokens || 0,
+          });
+        }
         grandTotal += s.totalRequests;
       }
 
       const merged = flat.map((m) => {
         const usageKey = `${m.provider}:${m.name}`;
-        const usageCount = usageMap.get(usageKey) || 0;
-        let result = { ...m, usageCount, usageTotal: grandTotal };
+        const stats = usageMap.get(usageKey) || { totalRequests: 0, totalInputTokens: 0, totalOutputTokens: 0 };
+        const usageCount = stats.totalRequests;
+        let result = {
+          ...m,
+          usageCount,
+          usageTotal: grandTotal,
+          totalInputTokens: stats.totalInputTokens,
+          totalOutputTokens: stats.totalOutputTokens,
+        };
 
         if (m.provider === "lm-studio") {
           const apiModel = lmApiMap.get(m.name);

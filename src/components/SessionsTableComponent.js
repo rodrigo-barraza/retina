@@ -158,7 +158,7 @@ const SESSION_COLUMNS = [
   {
     key: "totalTokens",
     label: "Tokens",
-    sortable: false,
+    sortValue: (s) => (s.totalInputTokens || 0) + (s.totalOutputTokens || 0),
     align: "right",
     render: (s) => {
       const total = (s.totalInputTokens || 0) + (s.totalOutputTokens || 0);

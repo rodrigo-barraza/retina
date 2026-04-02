@@ -10,7 +10,7 @@ import CountLinkComponent from "./CountLinkComponent";
 import CostBadgeComponent from "./CostBadgeComponent";
 import ProportionBarComponent from "./ProportionBarComponent";
 import {
-  formatNumber,
+  formatTokenCount,
   formatLatency,
   formatTokensPerSec,
 } from "../utils/utilities";
@@ -67,7 +67,7 @@ export default function ProvidersTableComponent({
       key: "totalRequests",
       label: "Requests",
       align: "right",
-      render: (p) => formatNumber(p.totalRequests),
+      render: (p) => p.totalRequests?.toLocaleString() || "0",
     },
     {
       key: "usage",
@@ -92,12 +92,21 @@ export default function ProvidersTableComponent({
     {
       key: "totalInputTokens",
       label: "Tokens In",
-      render: (p) => formatNumber(p.totalInputTokens),
+      render: (p) => formatTokenCount(p.totalInputTokens),
     },
     {
       key: "totalOutputTokens",
       label: "Tokens Out",
-      render: (p) => formatNumber(p.totalOutputTokens),
+      render: (p) => formatTokenCount(p.totalOutputTokens),
+    },
+    {
+      key: "totalTokens",
+      label: "Tokens",
+      sortValue: (p) => (p.totalInputTokens || 0) + (p.totalOutputTokens || 0),
+      render: (p) => {
+        const total = (p.totalInputTokens || 0) + (p.totalOutputTokens || 0);
+        return total > 0 ? formatTokenCount(total) : "0";
+      },
     },
     {
       key: "avgTokensPerSec",

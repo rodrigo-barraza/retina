@@ -142,7 +142,7 @@ const buildColumns = (mini, totalCost, totalDuration) => [
   {
     key: "totalTokens",
     label: "Tokens",
-    sortable: false,
+    sortValue: (c) => (c.inputTokens || 0) + (c.outputTokens || 0),
     align: "right",
     render: (c) => {
       const total = (c.inputTokens || 0) + (c.outputTokens || 0);

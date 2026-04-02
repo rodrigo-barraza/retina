@@ -78,20 +78,20 @@ export const getRequestsColumns = () => [
   {
     key: "totalTokens",
     label: "Tokens",
-    sortable: false,
+    sortValue: (r) => (r.inputTokens || 0) + (r.outputTokens || 0),
     render: (r) => formatTokenCount((r.inputTokens || 0) + (r.outputTokens || 0)),
-    align: "right",
-  },
-  {
-    key: "estimatedCost",
-    label: "Cost",
-    render: (r) => <CostBadgeComponent cost={r.estimatedCost} />,
     align: "right",
   },
   {
     key: "tokensPerSec",
     label: "Tok/s",
     render: (r) => formatTokensPerSec(r.tokensPerSec),
+    align: "right",
+  },
+  {
+    key: "estimatedCost",
+    label: "Cost",
+    render: (r) => <CostBadgeComponent cost={r.estimatedCost} />,
     align: "right",
   },
   {

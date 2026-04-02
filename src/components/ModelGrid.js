@@ -25,7 +25,7 @@ import TooltipComponent from "./TooltipComponent";
 import SearchInputComponent from "./SearchInputComponent";
 import { FilterBarComponent, FilterIconButtonGroupComponent } from "./FilterBarComponent";
 import ProportionBarComponent from "./ProportionBarComponent";
-import { formatFileSize, formatContextTokens, formatNumber } from "../utils/utilities";
+import { formatFileSize, formatContextTokens, formatNumber, formatTokenCount } from "../utils/utilities";
 import styles from "./ModelGrid.module.css";
 
 
@@ -182,6 +182,8 @@ function buildRow(rawModel, favorites = []) {
     favorite: favorites.includes(favKey) ? 1 : 0,
     tools: rawModel.tools?.length || 0,
     requests: rawModel.usageCount || 0,
+    totalInputTokens: rawModel.totalInputTokens || 0,
+    totalOutputTokens: rawModel.totalOutputTokens || 0,
   };
   // Arena columns
   for (const col of ARENA_COLUMNS) {
@@ -322,6 +324,7 @@ export default function ModelGrid({
   );
   const hasTools = filtered.some((m) => m.tools?.length > 0);
   const hasUsage = filtered.some((m) => m.usageCount > 0);
+  const hasTokens = filtered.some((m) => (m.totalInputTokens || 0) + (m.totalOutputTokens || 0) > 0);
   const hasActions = !!renderActions;
 
   const arenaCols = ARENA_COLUMNS.filter((col) =>
@@ -417,6 +420,37 @@ export default function ModelGrid({
             total={usageTotal}
           />
         ),
+      });
+    }
+
+    if (hasTokens) {
+      cols.push({
+        key: "totalInputTokens",
+        label: "Tokens In",
+        align: "right",
+        render: (row) => {
+          const v = row._raw.totalInputTokens || 0;
+          return v > 0 ? formatTokenCount(v) : "—";
+        },
+      });
+      cols.push({
+        key: "totalOutputTokens",
+        label: "Tokens Out",
+        align: "right",
+        render: (row) => {
+          const v = row._raw.totalOutputTokens || 0;
+          return v > 0 ? formatTokenCount(v) : "—";
+        },
+      });
+      cols.push({
+        key: "totalTokens",
+        label: "Tokens",
+        align: "right",
+        sortValue: (row) => (row._raw.totalInputTokens || 0) + (row._raw.totalOutputTokens || 0),
+        render: (row) => {
+          const total = (row._raw.totalInputTokens || 0) + (row._raw.totalOutputTokens || 0);
+          return total > 0 ? formatTokenCount(total) : "—";
+        },
       });
     }
 
@@ -553,6 +587,7 @@ export default function ModelGrid({
     filtered,
     hasYear,
     hasUsage,
+    hasTokens,
     hasModalities,
     hasTools,
     hasContext,

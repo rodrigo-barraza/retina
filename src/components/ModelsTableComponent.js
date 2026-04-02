@@ -11,7 +11,7 @@ import CostBadgeComponent from "./CostBadgeComponent";
 import ProportionBarComponent from "./ProportionBarComponent";
 import ToolIconComponent from "./ToolIconComponent";
 import {
-  formatNumber,
+  formatTokenCount,
   formatLatency,
   formatTokensPerSec,
 } from "../utils/utilities";
@@ -57,7 +57,7 @@ export default function ModelsTableComponent({
       key: "totalRequests",
       label: "Requests",
       align: "right",
-      render: (m) => formatNumber(m.totalRequests),
+      render: (m) => m.totalRequests?.toLocaleString() || "0",
     },
     {
       key: "usage",
@@ -96,13 +96,23 @@ export default function ModelsTableComponent({
       key: "totalInputTokens",
       label: "Tokens In",
       align: "right",
-      render: (m) => formatNumber(m.totalInputTokens),
+      render: (m) => formatTokenCount(m.totalInputTokens),
     },
     {
       key: "totalOutputTokens",
       label: "Tokens Out",
       align: "right",
-      render: (m) => formatNumber(m.totalOutputTokens),
+      render: (m) => formatTokenCount(m.totalOutputTokens),
+    },
+    {
+      key: "totalTokens",
+      label: "Tokens",
+      align: "right",
+      sortValue: (m) => (m.totalInputTokens || 0) + (m.totalOutputTokens || 0),
+      render: (m) => {
+        const total = (m.totalInputTokens || 0) + (m.totalOutputTokens || 0);
+        return total > 0 ? formatTokenCount(total) : "0";
+      },
     },
     {
       key: "avgTokensPerSec",
