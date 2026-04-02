@@ -220,6 +220,7 @@ export default function ChatArea({
   onLiveUserAudioReady,
   onLiveToolExecution,
   onInitializeLiveConversation,
+  streamingOutputs,
 }) {
   const [showToolsBubble, setShowToolsBubble] = useState(false);
   const toolsBubbleRef = useRef(null);
@@ -840,6 +841,7 @@ export default function ChatArea({
           onRerun={onRerun}
           onImageClick={(url) => setLightboxSrc(url)}
           onDocClick={(url) => setDocViewerSrc(url)}
+          streamingOutputs={streamingOutputs}
         />
 
         {isGenerating &&

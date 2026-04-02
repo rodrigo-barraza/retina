@@ -18,6 +18,7 @@ import {
   Wrench,
   User,
   Bot,
+  Terminal,
 } from "lucide-react";
 import { TOOL_ICON_MAP, TOOL_COLORS } from "./WorkflowNodeConstants";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
@@ -30,6 +31,20 @@ import styles from "./MessageList.module.css";
 import { DateTime } from "luxon";
 import PrismService from "../services/PrismService";
 import { formatCost, getTotalInputTokens } from "../utils/utilities";
+import toolPanelStyles from "./ToolActivityPanelComponent.module.css";
+
+// Tools that support real-time output streaming
+const STREAMABLE_TOOL_NAMES = new Set([
+  "execute_shell",
+  "execute_python",
+  "execute_javascript",
+]);
+
+const TOOL_LANGUAGE = {
+  execute_shell: "bash",
+  execute_python: "python",
+  execute_javascript: "javascript",
+};
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 
@@ -286,7 +301,70 @@ function ToolCallResultBlock({ result }) {
   );
 }
 
-function ToolCallsBlock({ toolCalls }) {
+// ── Inline Terminal Output (reuses ToolActivityPanelComponent styles) ───
+
+const PROMPT_PREFIXES = {
+  bash: "$ ",
+  python: ">>> ",
+  javascript: "> ",
+};
+
+const CONTINUATION_PREFIXES = {
+  python: "... ",
+  javascript: ".. ",
+};
+
+const DEFAULT_CWD = {
+  bash: "/tmp",
+  python: "python3",
+  javascript: "node",
+};
+
+function formatInputPrompt(input, language, cwd) {
+  if (!input) return "";
+  const prompt = PROMPT_PREFIXES[language] || "$ ";
+  const contPrompt = CONTINUATION_PREFIXES[language] || "  ";
+  const lines = input.split("\n");
+  const resolvedCwd = cwd || DEFAULT_CWD[language] || "";
+  const pathPrefix = resolvedCwd ? `${resolvedCwd} ` : "";
+
+  return lines
+    .map((line, i) => `${i === 0 ? pathPrefix + prompt : contPrompt}${line}`)
+    .join("\n");
+}
+
+function InlineTerminalOutput({ output, language, isStreaming, input, cwd }) {
+  const preRef = useRef(null);
+
+  useEffect(() => {
+    if (preRef.current) {
+      preRef.current.scrollTop = preRef.current.scrollHeight;
+    }
+  }, [output]);
+
+  if (!output && !input) return null;
+
+  const formattedInput = formatInputPrompt(input, language, cwd);
+
+  return (
+    <div className={toolPanelStyles.terminalContainer}>
+      <div className={toolPanelStyles.terminalHeader}>
+        <Terminal size={10} />
+        <span>{language || "output"}</span>
+        {isStreaming && <span className={toolPanelStyles.terminalLive}>● live</span>}
+      </div>
+      <pre ref={preRef} className={toolPanelStyles.terminalBody}>
+        {formattedInput && (
+          <span className={toolPanelStyles.terminalInput}>{formattedInput}{"\n"}</span>
+        )}
+        {output}
+        {isStreaming && <span className={toolPanelStyles.terminalCursor}>▊</span>}
+      </pre>
+    </div>
+  );
+}
+
+function ToolCallsBlock({ toolCalls, streamingOutputs }) {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   if (!toolCalls || toolCalls.length === 0) return null;
 
@@ -355,6 +433,23 @@ function ToolCallsBlock({ toolCalls }) {
                 )}
 
                 <ToolCallResultBlock result={tc.result} />
+
+                {/* Inline terminal for compute tools */}
+                {STREAMABLE_TOOL_NAMES.has(tc.name) && (() => {
+                  const output = streamingOutputs?.get(tc.id);
+                  const input = tc.args?.command || tc.args?.code || null;
+                  const cwd = tc.args?.cwd || null;
+                  if (!output && !input) return null;
+                  return (
+                    <InlineTerminalOutput
+                      output={output || ""}
+                      language={TOOL_LANGUAGE[tc.name]}
+                      isStreaming={!tc.result}
+                      input={input}
+                      cwd={cwd}
+                    />
+                  );
+                })()}
               </div>
             );
           })}
@@ -607,11 +702,13 @@ function EditableUserMessage({
  * @param {Function} [props.onRerun]       - (index) => void
  * @param {Function} [props.onImageClick]  - (resolvedUrl) => void
  * @param {Function} [props.onDocClick]    - (resolvedUrl) => void
+ * @param {Map}      [props.streamingOutputs] - toolCallId → accumulated output string
  */
 export default function MessageList({
   messages = [],
   readOnly = false,
   isGenerating = false,
+  streamingOutputs,
 
   onDelete,
   onRestore,
@@ -797,7 +894,7 @@ export default function MessageList({
 
                 {/* Tool calls indicator */}
                 {msg.toolCalls && msg.toolCalls.length > 0 && (
-                  <ToolCallsBlock toolCalls={msg.toolCalls} />
+                  <ToolCallsBlock toolCalls={msg.toolCalls} streamingOutputs={streamingOutputs} />
                 )}
 
                 {/* Images / media */}

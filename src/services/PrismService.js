@@ -314,6 +314,7 @@ export default class PrismService {
       onWebSearchResult,
       onToolCall,
       onToolExecution,
+      onToolOutput,
       onStatus,
       onDone,
       onError,
@@ -383,6 +384,8 @@ export default class PrismService {
                 });
               } else if (data.type === "tool_execution" && onToolExecution) {
                 onToolExecution(data);
+              } else if (data.type === "tool_output" && onToolOutput) {
+                onToolOutput(data);
               } else if (data.type === "status" && onStatus) {
                 onStatus(data.message);
               } else if (data.type === "done" && onDone) {

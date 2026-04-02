@@ -97,6 +97,20 @@ export default function HomePage({ initialConversationId = null }) {
   const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
     useToolToggles(builtInTools);
   const [toolActivity, setToolActivity] = useState([]);
+  const [streamingOutputs, setStreamingOutputs] = useState(new Map());
+
+  // Reusable callback for tool_output SSE events
+  const handleToolOutput = useCallback((data) => {
+    if (data.event === "stdout" || data.event === "stderr") {
+      setStreamingOutputs((prev) => {
+        const updated = new Map(prev);
+        const key = data.toolCallId || data.name;
+        const existing = updated.get(key) || "";
+        updated.set(key, existing + (data.data || ""));
+        return updated;
+      });
+    }
+  }, []);
 
   const abortRef = useRef(null);
   const audioPlayerRef = useRef(null);
@@ -370,6 +384,7 @@ export default function HomePage({ initialConversationId = null }) {
     setOriginalMessageCount(0);
     setOriginalTotalCost(0);
     setToolActivity([]);
+    setStreamingOutputs(new Map());
     skipSystemPromptSave.current = true;
     setSettings((s) => ({
       ...s,
@@ -638,6 +653,7 @@ export default function HomePage({ initialConversationId = null }) {
     setMessages(newMessages);
     setIsGenerating(true);
     setToolActivity([]);
+    setStreamingOutputs(new Map());
 
     // ── Function Calling rerun branch ────────────────────────────
     if (settings.functionCallingEnabled) {
@@ -762,6 +778,7 @@ export default function HomePage({ initialConversationId = null }) {
                 return updated;
               });
             },
+            onToolOutput: handleToolOutput,
             onDone: (data) => {
               setMessages((prev) => {
                 const updated = [...prev];
@@ -1274,6 +1291,7 @@ export default function HomePage({ initialConversationId = null }) {
     setMessages(newMessages);
     setIsGenerating(true);
     setToolActivity([]);
+    setStreamingOutputs(new Map());
 
     // ── Function Calling branch ──────────────────────────────
     if (settings.functionCallingEnabled) {
@@ -1408,6 +1426,7 @@ export default function HomePage({ initialConversationId = null }) {
                 return updated;
               });
             },
+            onToolOutput: handleToolOutput,
             onDone: (data) => {
               setMessages((prev) => {
                 const updated = [...prev];
@@ -1685,6 +1704,7 @@ export default function HomePage({ initialConversationId = null }) {
               return updated;
             });
           },
+          onToolOutput: handleToolOutput,
           onDone: async (data) => {
             setMessages((prev) => {
               const prevAssistant = prev[prev.length - 1];
@@ -1986,11 +2006,13 @@ export default function HomePage({ initialConversationId = null }) {
           onFcCardHover={(hovering) =>
             setHoveredLink(hovering ? "fc-card" : null)
           }
+          streamingOutputs={streamingOutputs}
           toolActivitySlot={
             settings.functionCallingEnabled && toolActivity.length > 0 ? (
               <ToolActivityPanelComponent
                 activities={toolActivity}
                 toolSchemaMap={toolSchemaMap}
+                streamingOutputs={streamingOutputs}
               />
             ) : null
           }

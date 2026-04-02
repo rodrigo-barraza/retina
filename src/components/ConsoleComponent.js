@@ -30,6 +30,7 @@ export default function ConsoleComponent() {
   const [inputValue, setInputValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [toolActivity, setToolActivity] = useState([]);
+  const [streamingOutputs, setStreamingOutputs] = useState(new Map());
   const [conversationId, setConversationId] = useState(() =>
     crypto.randomUUID(),
   );
@@ -383,6 +384,18 @@ export default function ConsoleComponent() {
               return updated;
             });
           },
+          onToolOutput: (data) => {
+            // Append streaming stdout/stderr chunks per toolCallId
+            if (data.event === "stdout" || data.event === "stderr") {
+              setStreamingOutputs((prev) => {
+                const updated = new Map(prev);
+                const key = data.toolCallId || data.name;
+                const existing = updated.get(key) || "";
+                updated.set(key, existing + (data.data || ""));
+                return updated;
+              });
+            }
+          },
           onDone: () => resolve(),
           onError: (err) => reject(err),
         });
@@ -418,6 +431,7 @@ export default function ConsoleComponent() {
       setPendingImages([]);
       setIsGenerating(true);
       setToolActivity([]);
+      setStreamingOutputs(new Map());
 
       // Auto-generate title from first message
       let resolvedTitle = title;
@@ -610,6 +624,7 @@ export default function ConsoleComponent() {
             (m) => m.role === "user" || m.role === "assistant",
           )}
           isGenerating={isGenerating}
+          streamingOutputs={streamingOutputs}
         />
 
         <div ref={endRef} />
@@ -619,6 +634,7 @@ export default function ConsoleComponent() {
       <ToolActivityPanelComponent
         activities={toolActivity}
         toolSchemaMap={toolSchemaMap}
+        streamingOutputs={streamingOutputs}
       />
 
       {/* Input area — same as ChatArea */}
