@@ -1,20 +1,15 @@
-import {
-  FolderOpen,
-  MessageSquare,
-  Workflow,
-} from "lucide-react";
 import SortableTableComponent from "./SortableTableComponent";
-import ModelBadgeComponent from "./ModelBadgeComponent";
-import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
-import CountLinkComponent from "./CountLinkComponent";
-import CostBadgeComponent from "./CostBadgeComponent";
-import ProportionBarComponent from "./ProportionBarComponent";
-import ToolIconComponent from "./ToolIconComponent";
 import {
-  formatTokenCount,
-  formatLatency,
-  formatTokensPerSec,
-} from "../utils/utilities";
+  modelColumn,
+  requestsColumn,
+  usageColumn,
+  providerColumn,
+  toolsColumn,
+  tokenColumns,
+  costColumns,
+  latencyColumn,
+  countLinkColumns,
+} from "../utils/tableColumns";
 
 /**
  * ModelsTableComponent — reusable admin table for displaying model-level
@@ -48,138 +43,15 @@ export default function ModelsTableComponent({
     models.reduce((s, m) => s + (m.totalCost || 0), 0)) || 1;
 
   const allColumns = [
-    {
-      key: "model",
-      label: "Model",
-      render: (m) => <ModelBadgeComponent models={m.model ? [m.model] : []} />,
-    },
-    {
-      key: "totalRequests",
-      label: "Requests",
-      align: "right",
-      render: (m) => m.totalRequests?.toLocaleString() || "0",
-    },
-    {
-      key: "usage",
-      label: "Usage",
-      sortValue: (m) => m.totalRequests,
-      render: (m) => (
-        <ProportionBarComponent
-          value={m.totalRequests}
-          total={totalRequests}
-        />
-      ),
-    },
-    {
-      key: "provider",
-      label: "Provider",
-      render: (m) => (
-        <ProvidersBadgeComponent
-          providers={m.provider ? [m.provider] : []}
-        />
-      ),
-    },
-    {
-      key: "toolsUsed",
-      label: "Tools",
-      align: "left",
-      sortable: false,
-      render: (m) => {
-        const tools = configModels[`${m.provider}:${m.model}`];
-        if (!tools?.length) {
-          return <span style={{ color: "var(--text-muted)" }}>—</span>;
-        }
-        return <ToolIconComponent toolNames={tools} />;
-      },
-    },
-    {
-      key: "totalInputTokens",
-      label: "Tokens In",
-      align: "right",
-      render: (m) => formatTokenCount(m.totalInputTokens),
-    },
-    {
-      key: "totalOutputTokens",
-      label: "Tokens Out",
-      align: "right",
-      render: (m) => formatTokenCount(m.totalOutputTokens),
-    },
-    {
-      key: "totalTokens",
-      label: "Tokens",
-      align: "right",
-      sortValue: (m) => (m.totalInputTokens || 0) + (m.totalOutputTokens || 0),
-      render: (m) => {
-        const total = (m.totalInputTokens || 0) + (m.totalOutputTokens || 0);
-        return total > 0 ? formatTokenCount(total) : "0";
-      },
-    },
-    {
-      key: "avgTokensPerSec",
-      label: "Tok/s",
-      align: "right",
-      render: (m) => formatTokensPerSec(m.avgTokensPerSec),
-    },
-    {
-      key: "totalCost",
-      label: "Cost",
-      align: "right",
-      render: (m) => <CostBadgeComponent cost={m.totalCost} />,
-    },
-    {
-      key: "costShare",
-      label: "Cost %",
-      sortValue: (m) => m.totalCost,
-      render: (m) => (
-        <ProportionBarComponent
-          value={m.totalCost}
-          total={totalCost}
-          color="var(--warning)"
-        />
-      ),
-    },
-    {
-      key: "avgLatency",
-      label: "Avg Latency",
-      align: "right",
-      render: (m) => formatLatency(m.avgLatency),
-    },
-    {
-      key: "sessionCount",
-      label: "Sessions",
-      align: "right",
-      render: (m) => (
-        <CountLinkComponent
-          count={m.sessionCount}
-          href={`/admin/sessions?model=${encodeURIComponent(m.model)}`}
-          icon={FolderOpen}
-        />
-      ),
-    },
-    {
-      key: "conversationCount",
-      label: "Conversations",
-      align: "right",
-      render: (m) => (
-        <CountLinkComponent
-          count={m.conversationCount}
-          href={`/admin/conversations?model=${encodeURIComponent(m.model)}`}
-          icon={MessageSquare}
-        />
-      ),
-    },
-    {
-      key: "workflowCount",
-      label: "Workflows",
-      align: "right",
-      render: (m) => (
-        <CountLinkComponent
-          count={m.workflowCount}
-          href={`/admin/workflows?model=${encodeURIComponent(m.model)}`}
-          icon={Workflow}
-        />
-      ),
-    },
+    modelColumn(),
+    requestsColumn(),
+    usageColumn(totalRequests),
+    providerColumn(),
+    toolsColumn({ configModels }),
+    ...tokenColumns(),
+    ...costColumns(totalCost),
+    latencyColumn(),
+    ...countLinkColumns("model", (row) => row.model),
   ];
 
   const COMPACT_KEYS = [

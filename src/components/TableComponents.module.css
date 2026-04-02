@@ -1,0 +1,82 @@
+/* ── Shared TableComponent Styles ──────────────────────── */
+
+/* Empty / null value placeholder — replaces all inline style={{ color: "var(--text-muted)" }} */
+.emptyDash {
+  color: var(--text-muted);
+}
+
+/* Inline stat cell (requests, conversations count, etc.) */
+.countCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+
+  & svg {
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+}
+
+/* Duration cell */
+.durationCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  & svg {
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+}
+
+/* ── Session ID cell ─────────────────────────────────── */
+
+.sessionIdCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &:hover .sessionIdText {
+    color: var(--accent-color);
+  }
+}
+
+.sessionIcon {
+  flex-shrink: 0;
+  color: var(--accent-color);
+  opacity: 0.7;
+}
+
+.sessionIdText {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
+/* ── Conversation title cell ─────────────────────────── */
+
+.conversationTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  & svg {
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+}
+
+.conversationTitleMini {
+  gap: 4px;
+}

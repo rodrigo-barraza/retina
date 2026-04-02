@@ -1,30 +1,15 @@
-import {
-  FolderOpen,
-  MessageSquare,
-  Workflow,
-} from "lucide-react";
 import SortableTableComponent from "./SortableTableComponent";
-import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
-import ModelBadgeComponent from "./ModelBadgeComponent";
-import CountLinkComponent from "./CountLinkComponent";
-import CostBadgeComponent from "./CostBadgeComponent";
 import ProportionBarComponent from "./ProportionBarComponent";
 import {
-  formatTokenCount,
-  formatLatency,
-  formatTokensPerSec,
-} from "../utils/utilities";
-
-const PROVIDER_COLORS = [
-  "#6366f1",
-  "#a855f7",
-  "#ec4899",
-  "#f59e0b",
-  "#10b981",
-  "#3b82f6",
-  "#ef4444",
-  "#06b6d4",
-];
+  providerColumn,
+  requestsColumn,
+  modelCountColumn,
+  tokenColumns,
+  costColumns,
+  latencyColumn,
+  countLinkColumns,
+  PROVIDER_COLORS,
+} from "../utils/tableColumns";
 
 /**
  * ProvidersTableComponent — reusable admin table for displaying provider-level
@@ -56,19 +41,8 @@ export default function ProvidersTableComponent({
     providers.reduce((s, p) => s + (p.totalCost || 0), 0)) || 1;
 
   const allColumns = [
-    {
-      key: "provider",
-      label: "Provider",
-      render: (p) => (
-        <ProvidersBadgeComponent providers={p.provider ? [p.provider] : []} />
-      ),
-    },
-    {
-      key: "totalRequests",
-      label: "Requests",
-      align: "right",
-      render: (p) => p.totalRequests?.toLocaleString() || "0",
-    },
+    providerColumn(),
+    requestsColumn(),
     {
       key: "usage",
       label: "Usage",
@@ -81,96 +55,11 @@ export default function ProvidersTableComponent({
         />
       ),
     },
-    {
-      key: "modelCount",
-      label: "Models",
-      sortValue: (p) => (p.models?.length || p.modelCount || 0),
-      render: (p) => (
-        <ModelBadgeComponent models={p.models || []} />
-      ),
-    },
-    {
-      key: "totalInputTokens",
-      label: "Tokens In",
-      render: (p) => formatTokenCount(p.totalInputTokens),
-    },
-    {
-      key: "totalOutputTokens",
-      label: "Tokens Out",
-      render: (p) => formatTokenCount(p.totalOutputTokens),
-    },
-    {
-      key: "totalTokens",
-      label: "Tokens",
-      sortValue: (p) => (p.totalInputTokens || 0) + (p.totalOutputTokens || 0),
-      render: (p) => {
-        const total = (p.totalInputTokens || 0) + (p.totalOutputTokens || 0);
-        return total > 0 ? formatTokenCount(total) : "0";
-      },
-    },
-    {
-      key: "avgTokensPerSec",
-      label: "Tok/s",
-      render: (p) => formatTokensPerSec(p.avgTokensPerSec),
-    },
-    {
-      key: "totalCost",
-      label: "Cost",
-      render: (p) => <CostBadgeComponent cost={p.totalCost} />,
-    },
-    {
-      key: "costShare",
-      label: "Cost %",
-      sortValue: (p) => p.totalCost,
-      render: (p) => (
-        <ProportionBarComponent
-          value={p.totalCost}
-          total={totalCost}
-          color="var(--warning)"
-        />
-      ),
-    },
-    {
-      key: "avgLatency",
-      label: "Avg Latency",
-      render: (p) => formatLatency(p.avgLatency),
-    },
-    {
-      key: "sessionCount",
-      label: "Sessions",
-      align: "right",
-      render: (p) => (
-        <CountLinkComponent
-          count={p.sessionCount}
-          href={`/admin/sessions?provider=${encodeURIComponent(p.provider)}`}
-          icon={FolderOpen}
-        />
-      ),
-    },
-    {
-      key: "conversationCount",
-      label: "Conversations",
-      align: "right",
-      render: (p) => (
-        <CountLinkComponent
-          count={p.conversationCount}
-          href={`/admin/conversations?provider=${encodeURIComponent(p.provider)}`}
-          icon={MessageSquare}
-        />
-      ),
-    },
-    {
-      key: "workflowCount",
-      label: "Workflows",
-      align: "right",
-      render: (p) => (
-        <CountLinkComponent
-          count={p.workflowCount}
-          href={`/admin/workflows?provider=${encodeURIComponent(p.provider)}`}
-          icon={Workflow}
-        />
-      ),
-    },
+    modelCountColumn(),
+    ...tokenColumns(),
+    ...costColumns(totalCost),
+    latencyColumn(),
+    ...countLinkColumns("provider", (row) => row.provider),
   ];
 
   const COMPACT_KEYS = [

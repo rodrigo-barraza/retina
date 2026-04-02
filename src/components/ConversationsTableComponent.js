@@ -2,21 +2,24 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { MessageSquare, Zap } from "lucide-react";
 import SortableTableComponent from "./SortableTableComponent";
-import ModalityIconComponent from "./ModalityIconComponent";
-import ToolIconComponent from "./ToolIconComponent";
-import ModelBadgeComponent from "./ModelBadgeComponent";
-import CostBadgeComponent from "./CostBadgeComponent";
-import ProportionBarComponent from "./ProportionBarComponent";
-import BadgeComponent from "./BadgeComponent";
-import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
 import {
-  formatTokenCount,
-  formatLatency,
-  formatTokensPerSec,
-  formatDateTime,
-} from "../utils/utilities";
+  conversationTitleColumn,
+  projectBadgeColumn,
+  userBadgeColumn,
+  modalitiesColumn,
+  modelsListColumn,
+  providersListColumn,
+  toolsColumn,
+  requestCountColumn,
+  tokenColumns,
+  costColumns,
+  latencyColumn,
+  durationColumn,
+  durationShareColumn,
+  createdAtColumn,
+  getDurationMs,
+} from "../utils/tableColumns";
 
 /**
  * ConversationsTableComponent — reusable admin table for displaying
@@ -29,215 +32,9 @@ import {
  * @param {string} [props.sortDir] — Current sort direction
  * @param {Function} [props.onSort] — (key, dir) => void (server-side sort)
  * @param {boolean} [props.compact] — Slightly reduced padding
+ * @param {boolean} [props.mini] — Mini density mode
  * @param {string} [props.maxHeight] — CSS max-height for scrollable tables
  */
-
-const getDurationMs = (c) => {
-  if (!c.createdAt || !c.updatedAt) return 0;
-  return Math.max(0, new Date(c.updatedAt) - new Date(c.createdAt));
-};
-
-const buildColumns = (mini, totalCost, totalDuration) => [
-  {
-    key: "title",
-    label: "Conversation",
-    sortable: false,
-    render: (c) => (
-      <span style={{ display: "inline-flex", alignItems: "center", gap: mini ? 4 : 6 }}>
-        <MessageSquare size={mini ? 9 : 12} style={{ opacity: 0.5, flexShrink: 0 }} />
-        {c.title || "Untitled"}
-      </span>
-    ),
-  },
-  {
-    key: "project",
-    label: "Project",
-    sortable: false,
-    render: (c) =>
-      c.project ? (
-        <BadgeComponent variant="info" mini={mini}>{c.project}</BadgeComponent>
-      ) : (
-        <span style={{ color: "var(--text-muted)" }}>—</span>
-      ),
-  },
-  {
-    key: "username",
-    label: "User",
-    sortable: false,
-    render: (c) =>
-      c.username && c.username !== "unknown" ? (
-        <BadgeComponent variant="provider" mini={mini}>{c.username}</BadgeComponent>
-      ) : (
-        <span style={{ color: "var(--text-muted)" }}>—</span>
-      ),
-  },
-  {
-    key: "modalities",
-    label: "Modalities",
-    sortable: false,
-    render: (c) => {
-      if (!c.modalities)
-        return <span style={{ color: "var(--text-muted)" }}>—</span>;
-      return <ModalityIconComponent modalities={c.modalities} size={mini ? 9 : 13} />;
-    },
-  },
-  {
-    key: "models",
-    label: "Model(s)",
-    sortable: false,
-    render: (c) => <ModelBadgeComponent models={c.models} mini={mini} />,
-  },
-  {
-    key: "providers",
-    label: "Providers",
-    sortable: false,
-    render: (c) => <ProvidersBadgeComponent providers={c.providers} mini={mini} />,
-  },
-  {
-    key: "toolNames",
-    label: "Tools",
-    sortable: false,
-    align: "left",
-    render: (c) => <ToolIconComponent toolNames={c.toolNames} size={mini ? 10 : undefined} />,
-  },
-  {
-    key: "requestCount",
-    label: "Requests",
-    sortable: true,
-    align: "right",
-    render: (c) =>
-      (c.requestCount || 0) > 0 ? (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums" }}>
-          <Zap size={mini ? 8 : 10} style={{ opacity: 0.5, flexShrink: 0 }} />
-          {c.requestCount}
-        </span>
-      ) : (
-        <span style={{ color: "var(--text-muted)" }}>—</span>
-      ),
-  },
-  {
-    key: "inputTokens",
-    label: "Tokens In",
-    sortable: true,
-    align: "right",
-    render: (c) =>
-      c.inputTokens > 0 ? (
-        formatTokenCount(c.inputTokens)
-      ) : (
-        <span style={{ color: "var(--text-muted)" }}>—</span>
-      ),
-  },
-  {
-    key: "outputTokens",
-    label: "Tokens Out",
-    sortable: true,
-    align: "right",
-    render: (c) =>
-      c.outputTokens > 0 ? (
-        formatTokenCount(c.outputTokens)
-      ) : (
-        <span style={{ color: "var(--text-muted)" }}>—</span>
-      ),
-  },
-  {
-    key: "totalTokens",
-    label: "Tokens",
-    sortValue: (c) => (c.inputTokens || 0) + (c.outputTokens || 0),
-    align: "right",
-    render: (c) => {
-      const total = (c.inputTokens || 0) + (c.outputTokens || 0);
-      return total > 0 ? (
-        formatTokenCount(total)
-      ) : (
-        <span style={{ color: "var(--text-muted)" }}>—</span>
-      );
-    },
-  },
-  {
-    key: "avgTokensPerSec",
-    label: "Tok/s",
-    sortable: true,
-    align: "right",
-    render: (c) => formatTokensPerSec(c.avgTokensPerSec),
-  },
-  {
-    key: "totalLatency",
-    label: "Latency",
-    sortable: true,
-    align: "right",
-    render: (c) =>
-      c.totalLatency > 0 ? (
-        formatLatency(c.totalLatency)
-      ) : (
-        <span style={{ color: "var(--text-muted)" }}>—</span>
-      ),
-  },
-  {
-    key: "totalCost",
-    label: "Cost",
-    sortable: true,
-    align: "right",
-    render: (c) => <CostBadgeComponent cost={c.totalCost} mini={mini} />,
-  },
-  {
-    key: "costShare",
-    label: "Cost %",
-    sortable: true,
-    sortValue: (c) => c.totalCost,
-    render: (c) => (
-      <ProportionBarComponent
-        value={c.totalCost}
-        total={totalCost}
-        color="var(--warning)"
-        mini={mini}
-      />
-    ),
-  },
-  {
-    key: "duration",
-    label: "Duration",
-    sortable: false,
-    align: "right",
-    sortValue: (c) => getDurationMs(c),
-    render: (c) => {
-      const ms = getDurationMs(c);
-      if (ms === 0) {
-        return <span style={{ color: "var(--text-muted)" }}>—</span>;
-      }
-      if (ms < 1000) return "<1s";
-      const secs = Math.round(ms / 1000);
-      if (secs < 60) return `${secs}s`;
-      const mins = Math.floor(secs / 60);
-      const rem = secs % 60;
-      if (mins < 60) return rem > 0 ? `${mins}m ${rem}s` : `${mins}m`;
-      const hrs = Math.floor(mins / 60);
-      const remMins = mins % 60;
-      return remMins > 0 ? `${hrs}h ${remMins}m` : `${hrs}h`;
-    },
-  },
-  {
-    key: "durationShare",
-    label: "Duration %",
-    sortable: true,
-    sortValue: (c) => getDurationMs(c),
-    render: (c) => (
-      <ProportionBarComponent
-        value={getDurationMs(c)}
-        total={totalDuration}
-        color="var(--accent-color)"
-        mini={mini}
-      />
-    ),
-  },
-  {
-    key: "createdAt",
-    label: "Created",
-    sortable: true,
-    align: "right",
-    render: (c) => formatDateTime(c.createdAt),
-  },
-];
-
 export default function ConversationsTableComponent({
   conversations = [],
   emptyText = "No conversations",
@@ -262,10 +59,22 @@ export default function ConversationsTableComponent({
     [conversations],
   );
 
-  const columns = useMemo(
-    () => buildColumns(mini, totalCost, totalDuration),
-    [mini, totalCost, totalDuration],
-  );
+  const columns = useMemo(() => [
+    conversationTitleColumn({ mini }),
+    projectBadgeColumn({ mini }),
+    userBadgeColumn({ mini }),
+    modalitiesColumn({ mini }),
+    modelsListColumn({ mini }),
+    providersListColumn({ mini }),
+    toolsColumn({ mini }),
+    requestCountColumn(),
+    ...tokenColumns({ inputKey: "inputTokens", outputKey: "outputTokens", showDash: true }),
+    ...costColumns(totalCost, { mini }),
+    latencyColumn("totalLatency", "Latency"),
+    durationColumn({ useDurationMs: true }),
+    durationShareColumn(totalDuration, { mini }),
+    createdAtColumn(),
+  ], [mini, totalCost, totalDuration]);
 
   return (
     <SortableTableComponent
