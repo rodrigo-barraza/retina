@@ -1,0 +1,230 @@
+/* ── SearchFilterComponent — Searchable filter with badge output ── */
+/* Visually consistent with FilterDropdownComponent */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Trigger (matches FilterDropdownComponent.dropdownTrigger) ── */
+.container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  height: var(--input-height);
+  padding: 0 10px;
+  background: var(--select-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  white-space: nowrap;
+  cursor: text;
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+}
+
+.triggerOpen {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.triggerIcon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+
+.input {
+  flex: 1;
+  min-width: 60px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: var(--input-height);
+
+  &::placeholder {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+}
+
+.chevron {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  margin-left: 4px;
+  transition: transform 0.2s;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown Menu (matches FilterDropdownComponent.dropdownMenu) ── */
+.menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  min-width: 160px;
+  max-height: 240px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md, 6px);
+  box-shadow: var(--shadow-lg, 0 12px 40px rgba(0, 0, 0, 0.25));
+  padding: 4px 0;
+  animation: searchFilterSlideIn 0.15s ease-out;
+}
+
+@keyframes searchFilterSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuItem:hover {
+  background: var(--accent-subtle, var(--bg-tertiary));
+  color: var(--text-primary);
+}
+
+.menuItemActive {
+  color: var(--text-primary);
+  background: var(--accent-subtle, var(--accent-glow));
+}
+
+.menuItemActive:hover {
+  background: var(--accent-subtle, var(--accent-glow));
+}
+
+.menuCheck {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--accent-color);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.noResults {
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ── Scrollbar ── */
+.menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.menu::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* ── Badge (matches FilterDropdownComponent badges) ── */
+.badgeList {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 5px;
+  height: 22px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--badge-color, var(--text-secondary));
+  background: var(--badge-bg, var(--bg-tertiary));
+  border: 1px solid var(--badge-border, var(--border-color));
+  border-radius: var(--border-radius-sm, 4px);
+  white-space: nowrap;
+  user-select: none;
+  cursor: default;
+  animation: searchFilterBadgeFadeIn 0.2s ease-out;
+}
+
+@keyframes searchFilterBadgeFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.badgeLabel {
+  line-height: 1;
+}
+
+.badgeRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  margin-left: 1px;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.12s ease;
+}
+
+.badgeRemove:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.08);
+}

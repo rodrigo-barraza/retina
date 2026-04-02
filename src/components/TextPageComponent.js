@@ -14,7 +14,7 @@ import Link from "next/link";
 import IrisService from "../services/IrisService";
 import PrismService from "../services/PrismService";
 import MarkdownContent from "./MarkdownContent";
-import ComboboxFilter from "./ComboboxFilter";
+import SearchFilterComponent from "./SearchFilterComponent";
 import PaginationComponent from "./PaginationComponent";
 import PageHeaderComponent from "./PageHeaderComponent";
 import SearchInputComponent from "./SearchInputComponent";
@@ -165,7 +165,7 @@ export default function TextPageComponent({ mode = "user", dateRange: externalDa
             dateStorageKey={!externalDateRange ? LS_DATE_RANGE : undefined}
           />
 
-          <ComboboxFilter
+          <SearchFilterComponent
             options={providers}
             value={provider}
             onChange={(v) => {
@@ -177,7 +177,7 @@ export default function TextPageComponent({ mode = "user", dateRange: externalDa
             allLabel="All Providers"
           />
 
-          <ComboboxFilter
+          <SearchFilterComponent
             options={
               provider
                 ? models.filter((m) => m.startsWith(provider + "/"))

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Image as ImageIcon,
   Music,
@@ -18,7 +18,7 @@ import Link from "next/link";
 import IrisService from "../services/IrisService";
 import PrismService from "../services/PrismService";
 import MediaCardComponent from "./MediaCardComponent";
-import ComboboxFilter from "./ComboboxFilter";
+import SearchFilterComponent from "./SearchFilterComponent";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import ImagePreviewComponent from "./ImagePreviewComponent";
 import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
@@ -122,6 +122,7 @@ export default function MediaPageComponent({
   const [favoriteKeys, setFavoriteKeys] = useState([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const PAGE_SIZE = 60;
+  const searchTimerRef = useRef(null);
 
   const loadMedia = useCallback(async () => {
     try {
@@ -327,10 +328,13 @@ export default function MediaPageComponent({
             value={searchInput}
             onChange={(v) => {
               setSearchInput(v);
-              setSearch(v);
-              setPage(1);
+              clearTimeout(searchTimerRef.current);
+              searchTimerRef.current = setTimeout(() => {
+                setSearch(v);
+                setPage(1);
+              }, 300);
             }}
-            placeholder="Search media…"
+            placeholder="Search titles & conversations…"
             className={styles.searchWrapper}
           />
 
@@ -419,7 +423,7 @@ export default function MediaPageComponent({
           />
 
           {isAdmin && externalProject === undefined && (
-            <ComboboxFilter
+            <SearchFilterComponent
               options={projects}
               value={project}
               onChange={(v) => {
@@ -432,7 +436,7 @@ export default function MediaPageComponent({
           )}
 
           {isAdmin && (
-            <ComboboxFilter
+            <SearchFilterComponent
               options={usernames}
               value={username}
               onChange={(v) => {
@@ -441,6 +445,7 @@ export default function MediaPageComponent({
               }}
               placeholder="All Users"
               allLabel="All Users"
+              icon={User}
             />
           )}
 
