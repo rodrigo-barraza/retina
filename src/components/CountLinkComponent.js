@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import styles from "./TableComponents.module.css";
 
 /**
  * CountLinkComponent — renders a count as a navigable link with an icon,
@@ -10,7 +11,7 @@ import Link from "next/link";
  * @param {number}    count     — the numeric value to display
  * @param {string}    href      — navigation target
  * @param {Component} icon      — lucide-react icon component
- * @param {string}    className — CSS class for the link
+ * @param {string}    className — CSS class for the link (override)
  */
 export default function CountLinkComponent({
   count,
@@ -19,13 +20,14 @@ export default function CountLinkComponent({
   className,
 }) {
   if (!count || count <= 0) {
-    return <span style={{ color: "var(--text-muted)" }}>0</span>;
+    return <span className={styles.countLinkZero}>0</span>;
   }
 
   return (
-    <Link href={href} className={className}>
+    <Link href={href} className={className || styles.countLink}>
       <Icon size={12} />
       {count}
     </Link>
   );
 }
+

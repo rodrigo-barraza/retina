@@ -28,17 +28,19 @@
   table-layout: auto;
 }
 
+/* ── Header ───────────────────────────────────────── */
+
 .th {
-  padding: 10px 14px;
+  padding: 6px 14px;
   text-align: left;
   font-size: 9px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-tertiary);
   position: sticky;
   top: 0;
   z-index: 2;
@@ -50,7 +52,7 @@
     position: sticky;
     left: 0;
     z-index: 3;
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.15);
   }
 }
 
@@ -74,6 +76,8 @@
   opacity: 0.7;
 }
 
+/* ── Rows ─────────────────────────────────────────── */
+
 .tr {
   transition: all 0.12s ease;
 
@@ -86,41 +90,43 @@
   }
 
   &:hover td {
-    background: rgba(99, 102, 241, 0.04);
+    background: rgba(99, 102, 241, 0.06);
   }
 
   &:hover td:first-child {
-    background: rgba(99, 102, 241, 0.08);
+    background: rgba(99, 102, 241, 0.10);
     box-shadow: inset 2px 0 0 var(--accent-color);
   }
 }
 
 /* Currently selected / active row */
 .activeRow td {
-  background: rgba(99, 102, 241, 0.06);
+  background: rgba(99, 102, 241, 0.08);
 }
 
 .activeRow td:first-child {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(99, 102, 241, 0.12);
   box-shadow: inset 2px 0 0 var(--accent-color);
 }
 
 /* Keyboard-highlighted row */
 .highlightedRow td {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(99, 102, 241, 0.12);
 }
 
 .highlightedRow td:first-child {
-  background: rgba(99, 102, 241, 0.14);
+  background: rgba(99, 102, 241, 0.16);
   box-shadow: inset 2px 0 0 var(--accent-color);
 }
 
+/* ── Cells ────────────────────────────────────────── */
+
 .td {
-  padding: 10px 14px;
+  padding: 2px 14px;
   text-align: left;
   color: var(--text-secondary);
   white-space: nowrap;
-  background: var(--bg-secondary);
+  background: transparent;
   transition:
     background 0.15s ease,
     color 0.15s ease;
@@ -128,14 +134,13 @@
 
 /* Sorted-column highlight for data cells */
 .tdSorted {
-  background: rgba(99, 102, 241, 0.04);
+  background: rgba(99, 102, 241, 0.05);
   color: var(--text-primary);
 }
 
 /* Primary name column — sticky on horizontal scroll */
 .tdName {
   width: 1%;
-  padding: 10px 14px;
   text-align: left;
   white-space: nowrap;
   background: var(--bg-primary);
@@ -144,13 +149,28 @@
   position: sticky;
   left: 0;
   z-index: 1;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Highlight cost column */
 .tdHighlight {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+/* ── Row alternation (zebra rows) ──────────────────── */
+
+.tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tr:nth-child(even) .tdName {
+  background: color-mix(in srgb, var(--bg-primary) 96%, var(--text-primary));
+}
+
+/* Sorted-column highlight preserved on even rows */
+.tr:nth-child(even) .tdSorted {
+  background: rgba(99, 102, 241, 0.06);
 }
 
 /* Badge for provider / modality */
@@ -198,7 +218,7 @@
 }
 
 /* Full-width expanded content panel (accordion table) */
-.expandedContentRow td {
+.expandedContentRow > td {
   padding: 0;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-color);
@@ -257,26 +277,19 @@
   text-align: center;
   font-size: 11px;
   color: var(--text-muted);
-  background: var(--bg-secondary);
+  background: transparent;
   font-style: italic;
 }
 
 /* ── Mini mode (nested tables) ──────────────────────── */
 
-.mini .table {
-  font-size: 8px;
-}
-
 .mini .th {
-  font-size: 7px;
-  padding: 4px 8px;
-  letter-spacing: 0.4px;
+  padding: 4px 6px;
 }
 
 .mini .td,
 .mini .tdName {
-  padding: 4px 8px;
-  font-size: 8px;
+  padding: 4px 6px;
 }
 
 .mini .expandIcon {
@@ -287,7 +300,6 @@
 
 .mini .emptyRow {
   padding: 12px;
-  font-size: 9px;
 }
 
 /* Responsive */

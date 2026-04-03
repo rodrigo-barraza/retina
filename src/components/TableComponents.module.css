@@ -5,6 +5,36 @@
   color: var(--text-muted);
 }
 
+/* ── CountLink (Sessions / Conversations / Workflows) ── */
+
+.countLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.15s ease;
+
+  & svg {
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    color: var(--accent-color);
+  }
+
+  &:hover svg {
+    opacity: 0.8;
+  }
+}
+
+.countLinkZero {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Inline stat cell (requests, conversations count, etc.) */
 .countCell {
   display: inline-flex;
