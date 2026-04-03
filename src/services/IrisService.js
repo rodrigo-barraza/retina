@@ -135,6 +135,31 @@ export default class IrisService {
     return es;
   }
 
+  /**
+   * Subscribe to real-time collection change events via SSE.
+   * Powered by MongoDB Change Streams on the backend.
+   * @param {object} callbacks
+   * @param {Function} callbacks.onChange - ({ collection, operationType, id, timestamp }) => void
+   * @param {Function} [callbacks.onStatus] - ({ changeStreams: boolean }) => void
+   * @returns {EventSource} — call .close() to unsubscribe
+   */
+  static subscribeCollectionChanges({ onChange, onStatus }) {
+    const es = new EventSource(`${API_BASE}/admin/changes/stream`);
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "status" && onStatus) {
+          onStatus(data);
+        } else if (data.type === "change" && onChange) {
+          onChange(data);
+        }
+      } catch {
+        /* ignore parse errors */
+      }
+    };
+    return es;
+  }
+
   // ── Health ────────────────────────────────────────────────
   static async getHealth() {
     return fetchJSON("/health");

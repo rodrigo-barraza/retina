@@ -41,13 +41,11 @@ function AdminShellInner({ children }) {
     return () => es.close();
   }, []);
 
+  // ── Change Stream SSE: detect new conversations in real time ────
+  // Falls back to polling if Change Streams aren't available.
   useEffect(() => {
-    async function poll() {
+    async function fetchConversations() {
       try {
-        const health = await IrisService.getHealth();
-        setSystemStatus(health.mongo || "connected");
-
-        // Fetch recent conversations to detect new ones and updates
         const data = await IrisService.getConversations({
           page: 1,
           limit: 50,
@@ -55,46 +53,74 @@ function AdminShellInner({ children }) {
           order: "desc",
         });
         const list = data.data || [];
-
-        // Build a map of id → messageCount
         const currentMap = new Map();
         for (const c of list) {
           currentMap.set(c.id, c.messages?.length || c.messageCount || 0);
         }
 
         if (knownConvsRef.current === null) {
-          // First load — snapshot current state
           knownConvsRef.current = currentMap;
         } else if (!isOnConversationsRef.current) {
-          // Only count changes when NOT on the conversations page
           let changes = 0;
           for (const [id, msgCount] of currentMap) {
             const known = knownConvsRef.current.get(id);
             if (known === undefined) {
-              // Brand new conversation
               changes++;
             } else if (msgCount > known) {
-              // Existing conversation got new messages
               changes++;
             }
           }
           if (changes > 0) {
             setNewCount((prev) => prev + changes);
           }
-          // Update known state
           knownConvsRef.current = currentMap;
         } else {
-          // On conversations page — keep known in sync but don't count
           knownConvsRef.current = currentMap;
         }
+      } catch {
+        // ignore
+      }
+    }
+
+    async function fetchHealth() {
+      try {
+        const health = await IrisService.getHealth();
+        setSystemStatus(health.mongo || "connected");
       } catch {
         setSystemStatus("disconnected");
       }
     }
 
-    poll();
-    const interval = setInterval(poll, 5000); // 5s
-    return () => clearInterval(interval);
+    // Initial loads
+    fetchConversations();
+    fetchHealth();
+
+    // Health check on a long interval (doesn't need real-time)
+    const healthInterval = setInterval(fetchHealth, 30000);
+
+    // Subscribe to change stream SSE
+    let pollInterval = null;
+    const es = IrisService.subscribeCollectionChanges({
+      onStatus: (data) => {
+        if (!data.changeStreams) {
+          // No Change Streams — fall back to polling
+          if (!pollInterval) {
+            pollInterval = setInterval(fetchConversations, 5000);
+          }
+        }
+      },
+      onChange: (event) => {
+        if (event.collection === "conversations") {
+          fetchConversations();
+        }
+      },
+    });
+
+    return () => {
+      es.close();
+      clearInterval(healthInterval);
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, []);
 
   const handleNavClick = useCallback((href) => {

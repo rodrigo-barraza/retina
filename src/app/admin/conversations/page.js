@@ -65,7 +65,6 @@ export default function ConversationsPage({ initialId = null, sessionId = null }
   const lastFingerprintRef = useRef("");
   const autoSelectedRef = useRef(!!initialId);
   const viewerBodyRef = useRef(null);
-  const intervalRef = useRef(null);
 
   // Sync the session parameter into the admin header context
   useEffect(() => {
@@ -213,7 +212,7 @@ export default function ConversationsPage({ initialId = null, sessionId = null }
     };
   }, [selectedId, fingerprint]);
 
-  // Polling — conversation list only
+  // Conversation list — SSE-driven with polling fallback
   useEffect(() => {
     // Immediately clear stale data and reset tracking when filters change
     knownIdsRef.current = null;
@@ -225,8 +224,29 @@ export default function ConversationsPage({ initialId = null, sessionId = null }
     setFingerprint("");
 
     loadConversations();
-    intervalRef.current = setInterval(loadConversations, POLL_INTERVAL);
-    return () => clearInterval(intervalRef.current);
+
+    // Subscribe to change stream SSE for real-time updates
+    let pollInterval = null;
+    const es = IrisService.subscribeCollectionChanges({
+      onStatus: (data) => {
+        if (!data.changeStreams) {
+          // No Change Streams — fall back to polling
+          if (!pollInterval) {
+            pollInterval = setInterval(loadConversations, POLL_INTERVAL);
+          }
+        }
+      },
+      onChange: (event) => {
+        if (event.collection === "conversations") {
+          loadConversations();
+        }
+      },
+    });
+
+    return () => {
+      es.close();
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, [loadConversations]);
 
   // Fetch workflows for the selected conversation

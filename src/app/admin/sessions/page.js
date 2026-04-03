@@ -23,7 +23,6 @@ export default function SessionsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const intervalRef = useRef(null);
   const initialLoadDone = useRef(false);
   const fetchGenRef = useRef(0);
 
@@ -68,8 +67,29 @@ export default function SessionsPage() {
     setLoading(true);
 
     loadSessions();
-    intervalRef.current = setInterval(loadSessions, POLL_INTERVAL);
-    return () => clearInterval(intervalRef.current);
+
+    // Subscribe to change stream SSE for real-time updates
+    let pollInterval = null;
+    const es = IrisService.subscribeCollectionChanges({
+      onStatus: (data) => {
+        if (!data.changeStreams) {
+          // No Change Streams — fall back to polling
+          if (!pollInterval) {
+            pollInterval = setInterval(loadSessions, POLL_INTERVAL);
+          }
+        }
+      },
+      onChange: (event) => {
+        if (event.collection === "sessions") {
+          loadSessions();
+        }
+      },
+    });
+
+    return () => {
+      es.close();
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, [loadSessions]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
