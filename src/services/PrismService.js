@@ -701,12 +701,17 @@ export default class PrismService {
   }
 
   /**
-   * Load a model into LM Studio.
+   * Load a model into LM Studio with optional configuration.
    * @param {string} model - model key to load
+   * @param {object} [options] - load config { contextLength, flashAttention, offloadKvCache }
    * @returns {Promise<object>}
    */
-  static async loadLmStudioModel(model) {
-    return PrismService._request("/lm-studio/load", { body: { model } });
+  static async loadLmStudioModel(model, options = {}) {
+    const body = { model };
+    if (options.contextLength != null) body.context_length = options.contextLength;
+    if (options.flashAttention != null) body.flash_attention = options.flashAttention;
+    if (options.offloadKvCache != null) body.offload_kv_cache_to_gpu = options.offloadKvCache;
+    return PrismService._request("/lm-studio/load", { body });
   }
 
   /**
@@ -717,6 +722,18 @@ export default class PrismService {
   static async unloadLmStudioModel(instanceId) {
     return PrismService._request("/lm-studio/unload", {
       body: { instance_id: instanceId },
+    });
+  }
+
+  /**
+   * Estimate VRAM usage for an LM Studio model.
+   * @param {string} model — model key/path
+   * @param {object} config — { contextLength, gpuLayers, flashAttention, offloadKvCache }
+   * @returns {Promise<{ gpuGiB: number, totalGiB: number, archParams: object, totalLayers: number }>}
+   */
+  static async estimateLmStudioMemory(model, config = {}) {
+    return PrismService._request("/lm-studio/estimate", {
+      body: { model, ...config },
     });
   }
 }

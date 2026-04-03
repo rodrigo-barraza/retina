@@ -5,6 +5,7 @@ import { Loader2, Power, PowerOff, RefreshCw } from "lucide-react";
 import IrisService from "../services/IrisService";
 import PrismService from "../services/PrismService";
 import ModelGrid from "./ModelGrid";
+import ModelLoadConfigPanel from "./ModelLoadConfigPanel";
 import PageHeaderComponent from "./PageHeaderComponent";
 import { ErrorMessage } from "./StateMessageComponent";
 import { useToast } from "./ToastComponent";
@@ -57,6 +58,7 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
   const [actionInProgress, setActionInProgress] = useState(null);
   const [toastElement, showToast] = useToast(4000);
   const [favoriteKeys, setFavoriteKeys] = useState([]);
+  const [loadConfigModel, setLoadConfigModel] = useState(null);
 
   // Helper: merge config + LM data + stats into the allModels array
   const buildMergedModels = useCallback((config, lmData, modelStats) => {
@@ -104,6 +106,13 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
             loaded_instances: apiModel.loaded_instances,
             loaded: apiModel.loaded_instances?.length > 0,
             key: apiModel.key,
+            // Preserve raw API fields for ModelLoadConfigPanel
+            max_context_length: apiModel.max_context_length,
+            size_bytes: apiModel.size_bytes,
+            params_string: apiModel.params_string,
+            architecture: apiModel.architecture,
+            archParams: apiModel.archParams,
+            display_name: apiModel.display_name || result.display_name,
           };
         }
       }
@@ -182,11 +191,24 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
     }
   };
 
-  const handleLoad = async (modelKey) => {
+  // Open the config panel instead of loading immediately
+  const handleLoad = (modelKey) => {
+    // Find the raw LM Studio API model data for this key
+    const rawModel = allModels.find(
+      (m) => m.provider === "lm-studio" && (m.key === modelKey || m.name === modelKey),
+    );
+    if (rawModel) {
+      setLoadConfigModel(rawModel);
+    }
+  };
+
+  // Called from the config panel with load options
+  const handleConfigLoad = async (modelKey, options) => {
     setActionInProgress({ id: modelKey, type: "load" });
+    setLoadConfigModel(null);
     try {
       const lmService = isAdmin ? IrisService : PrismService;
-      await lmService.loadLmStudioModel(modelKey);
+      await lmService.loadLmStudioModel(modelKey, options);
       showToast(`Loaded ${modelKey}`, "success");
       await fetchModels();
     } catch (err) {
@@ -323,6 +345,16 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
           />
         )}
       </div>
+
+      {loadConfigModel && (
+        <ModelLoadConfigPanel
+          model={loadConfigModel}
+          onLoad={handleConfigLoad}
+          onClose={() => setLoadConfigModel(null)}
+          service={isAdmin ? IrisService : PrismService}
+          loading={!!actionInProgress}
+        />
+      )}
     </>
   );
 }

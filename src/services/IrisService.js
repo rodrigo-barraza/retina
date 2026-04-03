@@ -159,10 +159,14 @@ export default class IrisService {
     return fetchJSON("/lm-studio/models");
   }
 
-  static async loadLmStudioModel(model) {
+  static async loadLmStudioModel(model, options = {}) {
+    const body = { model };
+    if (options.contextLength != null) body.context_length = options.contextLength;
+    if (options.flashAttention != null) body.flash_attention = options.flashAttention;
+    if (options.offloadKvCache != null) body.offload_kv_cache_to_gpu = options.offloadKvCache;
     return fetchJSON("/lm-studio/load", {
       method: "POST",
-      body: JSON.stringify({ model }),
+      body: JSON.stringify(body),
     });
   }
 
@@ -170,6 +174,13 @@ export default class IrisService {
     return fetchJSON("/lm-studio/unload", {
       method: "POST",
       body: JSON.stringify({ instance_id: instanceId }),
+    });
+  }
+
+  static async estimateLmStudioMemory(model, config = {}) {
+    return fetchJSON("/lm-studio/estimate", {
+      method: "POST",
+      body: JSON.stringify({ model, ...config }),
     });
   }
 
