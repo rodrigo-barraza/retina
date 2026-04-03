@@ -57,6 +57,7 @@ export default function ConversationsPage({ initialId = null, sessionId = null }
 
   const [newIds, setNewIds] = useState(new Set());
   const [generatingCount, setGeneratingCount] = useState(0);
+  const [changeStreamsActive, setChangeStreamsActive] = useState(false);
 
   const [workflows, setWorkflows] = useState([]);
   const [leftTab, setLeftTab] = useState("settings");
@@ -180,37 +181,61 @@ export default function ConversationsPage({ initialId = null, sessionId = null }
     return () => es.close();
   }, [projectFilter]);
 
-  // Re-fetch selected conversation periodically via conversation list fingerprint
+  // Live conversation detail — re-fetch when Change Streams detect updates
   const fingerprintRef = useRef("");
   const [fingerprint, setFingerprint] = useState("");
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
 
+  // Refresh the selected conversation detail
+  const refreshSelectedConv = useCallback(async (id) => {
+    if (!id) return;
+    try {
+      const full = await IrisService.getConversation(id);
+      setSelectedConv((prev) => {
+        const oldMsgs = prev?.messages || [];
+        const newMsgs = full?.messages || [];
+        if (oldMsgs.length !== newMsgs.length) return full;
+        const oldLast = oldMsgs[oldMsgs.length - 1];
+        const newLast = newMsgs[newMsgs.length - 1];
+        if (oldLast?.content?.length !== newLast?.content?.length) return full;
+        // Also refresh if isGenerating changed
+        if (prev?.isGenerating !== full?.isGenerating) return full;
+        return prev;
+      });
+    } catch (err) {
+      console.error("Failed to refresh selected conversation:", err);
+    }
+  }, []);
+
+  // Change Stream-driven: instant detail refresh when selected conv is updated
   useEffect(() => {
+    if (!changeStreamsActive) return;
+
+    const onEvent = (event) => {
+      if (
+        event.collection === "conversations" &&
+        selectedIdRef.current &&
+        event.id === selectedIdRef.current
+      ) {
+        refreshSelectedConv(selectedIdRef.current);
+      }
+    };
+
+    const es = IrisService.subscribeCollectionChanges({
+      onChange: onEvent,
+    });
+
+    return () => es.close();
+  }, [changeStreamsActive, refreshSelectedConv]);
+
+  // Fallback: fingerprint-based refresh (when list changes detected new data)
+  useEffect(() => {
+    if (changeStreamsActive) return; // Change Streams handle this
     if (!selectedId || fingerprint === fingerprintRef.current) return;
     fingerprintRef.current = fingerprint;
-    let cancelled = false;
-    (async () => {
-      try {
-        const full = await IrisService.getConversation(selectedId);
-        if (!cancelled) {
-          setSelectedConv((prev) => {
-            const oldMsgs = prev?.messages || [];
-            const newMsgs = full?.messages || [];
-            if (oldMsgs.length !== newMsgs.length) return full;
-            const oldLast = oldMsgs[oldMsgs.length - 1];
-            const newLast = newMsgs[newMsgs.length - 1];
-            if (oldLast?.content?.length !== newLast?.content?.length)
-              return full;
-            return prev;
-          });
-        }
-      } catch (err) {
-        console.error("Failed to refresh selected conversation:", err);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedId, fingerprint]);
+    refreshSelectedConv(selectedId);
+  }, [selectedId, fingerprint, changeStreamsActive, refreshSelectedConv]);
 
   // Conversation list — SSE-driven with polling fallback
   useEffect(() => {
@@ -229,6 +254,7 @@ export default function ConversationsPage({ initialId = null, sessionId = null }
     let pollInterval = null;
     const es = IrisService.subscribeCollectionChanges({
       onStatus: (data) => {
+        setChangeStreamsActive(!!data.changeStreams);
         if (!data.changeStreams) {
           // No Change Streams — fall back to polling
           if (!pollInterval) {
