@@ -190,17 +190,16 @@ function AdminShellInner({ children }) {
 
     async function fetchMedia() {
       try {
-        const data = await IrisService.getMedia({ limit: 50 });
-        const list = data.data || data.media || [];
-        const count = list.length;
+        const data = await IrisService.getMedia({ limit: 1 });
+        const total = data.total || 0;
 
         if (knownMediaRef.current === null) {
-          knownMediaRef.current = count;
-        } else if (!isOnMediaRef.current && count > knownMediaRef.current) {
-          setNewMediaCount((prev) => prev + (count - knownMediaRef.current));
-          knownMediaRef.current = count;
+          knownMediaRef.current = total;
+        } else if (!isOnMediaRef.current && total > knownMediaRef.current) {
+          setNewMediaCount((prev) => prev + (total - knownMediaRef.current));
+          knownMediaRef.current = total;
         } else {
-          knownMediaRef.current = count;
+          knownMediaRef.current = total;
         }
       } catch {
         // ignore
@@ -209,17 +208,16 @@ function AdminShellInner({ children }) {
 
     async function fetchText() {
       try {
-        const data = await IrisService.getText({ limit: 50 });
-        const list = data.data || data.text || [];
-        const count = list.length;
+        const data = await IrisService.getText({ limit: 1 });
+        const total = data.total || 0;
 
         if (knownTextRef.current === null) {
-          knownTextRef.current = count;
-        } else if (!isOnTextRef.current && count > knownTextRef.current) {
-          setNewTextCount((prev) => prev + (count - knownTextRef.current));
-          knownTextRef.current = count;
+          knownTextRef.current = total;
+        } else if (!isOnTextRef.current && total > knownTextRef.current) {
+          setNewTextCount((prev) => prev + (total - knownTextRef.current));
+          knownTextRef.current = total;
         } else {
-          knownTextRef.current = count;
+          knownTextRef.current = total;
         }
       } catch {
         // ignore

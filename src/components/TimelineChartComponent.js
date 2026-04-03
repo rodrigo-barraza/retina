@@ -172,17 +172,17 @@ export default function TimelineChartComponent({
     [tab],
   );
 
-  // Detect if we have sub-hour data (10-min bins) where we need sparse labels
-  const has10MinBins = useMemo(() => {
+  // Detect if we have sub-hourly data where we need sparse tick labels
+  const hasSubHourBins = useMemo(() => {
     if (!data.length) return false;
     return data[0]?.hour?.includes(":") ?? false;
   }, [data]);
 
-  // For 10-min and hourly data we draw vertical grid lines at every data point
+  // For sub-daily data we draw vertical grid lines at every data point
   const needsVerticalGrid = useMemo(() => {
     if (!data.length) return false;
     const h = data[0]?.hour || "";
-    return h.length > 10; // hourly or 10-min (not daily)
+    return h.length > 10; // any sub-daily granularity
   }, [data]);
 
   // Custom tick renderer that pulls tickLabel from data
@@ -225,10 +225,10 @@ export default function TimelineChartComponent({
               )}
               <XAxis
                 dataKey="label"
-                tick={has10MinBins ? renderTick : { fill: "#5a6078", fontSize: 11 }}
+                tick={hasSubHourBins ? renderTick : { fill: "#5a6078", fontSize: 11 }}
                 axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
                 tickLine={false}
-                interval={has10MinBins ? 0 : "preserveStartEnd"}
+                interval={hasSubHourBins ? 0 : "preserveStartEnd"}
               />
               <YAxis
                 tick={{ fill: "#5a6078", fontSize: 11 }}

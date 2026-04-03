@@ -278,32 +278,45 @@ export default function DashboardPage() {
       let label = "";
       let tickLabel = "";
       if (t.hour) {
-        if (t.hour.length <= 10) {
-          // Daily bin: "2026-03-21" → parse as UTC midnight
-          const date = new Date(t.hour + "T00:00:00Z");
-          label = date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          });
+        const key = t.hour;
+        if (key.length <= 10) {
+          // Daily bin: "2026-03-21"
+          const date = new Date(key + "T00:00:00Z");
+          label = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
           tickLabel = label;
-        } else if (t.hour.includes(":")) {
-          // 10-minute bin: "2026-03-21T14:10" or "2026-03-21T14:0"
-          // Pad minute part and parse as UTC
-          const timePart = t.hour.slice(11);
-          const [, mm] = timePart.split(":");
-          const paddedKey = t.hour.slice(0, 14) + (mm || "0").padStart(2, "0");
-          const date = new Date(paddedKey + ":00Z"); // "2026-03-21T14:10:00Z"
-          const localHH = String(date.getHours()).padStart(2, "0");
-          const localMM = String(date.getMinutes()).padStart(2, "0");
-          label = `${localHH}:${localMM}`;
-          // Only show tick label on local hour marks
-          tickLabel = localMM === "00" ? `${localHH}h` : "";
         } else {
-          // Hourly bin: "2026-03-21T14" → parse as UTC
-          const date = new Date(t.hour + ":00:00Z");
-          const localHH = String(date.getHours()).padStart(2, "0");
-          label = `${localHH}h`;
-          tickLabel = label;
+          // All sub-day bins: parse as UTC
+          // Key formats: "2026-04-02T22:05:31" (1s/30s), "2026-04-02T22:05" (1min/30min/10min), "2026-04-02T14" (hour)
+          const timePart = key.slice(11); // "22:05:31", "22:05", "14:0", "14"
+          const colonCount = (timePart.match(/:/g) || []).length;
+
+          if (colonCount >= 2) {
+            // Has seconds: 1s or 30s bins — "22:05:31"
+            const [hh, mm, ss] = timePart.split(":").map((s) => s.padStart(2, "0"));
+            const date = new Date(`${key.slice(0, 10)}T${hh}:${mm}:${ss}Z`);
+            const lH = String(date.getHours()).padStart(2, "0");
+            const lM = String(date.getMinutes()).padStart(2, "0");
+            const lS = String(date.getSeconds()).padStart(2, "0");
+            label = `${lH}:${lM}:${lS}`;
+            // Tick label every minute mark
+            tickLabel = lS === "00" ? `${lH}:${lM}` : "";
+          } else if (colonCount === 1) {
+            // Has minutes: 1min, 30min, or 10min bins — "22:05", "14:0"
+            const [, mm] = timePart.split(":");
+            const paddedKey = key.slice(0, 14) + (mm || "0").padStart(2, "0");
+            const date = new Date(paddedKey + ":00Z");
+            const lH = String(date.getHours()).padStart(2, "0");
+            const lM = String(date.getMinutes()).padStart(2, "0");
+            label = `${lH}:${lM}`;
+            // Tick on hour marks or every 30min
+            tickLabel = lM === "00" ? `${lH}h` : lM === "30" ? `${lH}:30` : "";
+          } else {
+            // Hourly bin: "14"
+            const date = new Date(key + ":00:00Z");
+            const lH = String(date.getHours()).padStart(2, "0");
+            label = `${lH}h`;
+            tickLabel = label;
+          }
         }
       }
       return { ...t, label, tickLabel };
