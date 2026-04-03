@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Plus,
   Play,
@@ -14,6 +14,9 @@ import {
   ChevronLeft,
   History,
   X,
+  Check,
+  DollarSign,
+  Cpu,
 } from "lucide-react";
 import PrismService from "../services/PrismService";
 import PageHeaderComponent from "./PageHeaderComponent";
@@ -22,6 +25,9 @@ import BadgeComponent from "./BadgeComponent";
 import EmptyStateComponent from "./EmptyStateComponent";
 import FormGroupComponent from "./FormGroupComponent";
 import ModalOverlayComponent from "./ModalOverlayComponent";
+import ModelGrid from "./ModelGrid";
+import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import { formatContextTokens } from "../utils/utilities";
 import styles from "./BenchmarkPageComponent.module.css";
 
 const MATCH_MODES = [
@@ -42,6 +48,24 @@ const INITIAL_FORM = {
   tags: "",
 };
 
+/**
+ * Flatten all conversation models from the Prism config into a single array,
+ * tagged with their provider. Filters to text-output conversation models only.
+ */
+function flattenConversationModels(config) {
+  if (!config) return [];
+  const providers = config.textToText?.models || {};
+  const results = [];
+  for (const [provider, models] of Object.entries(providers)) {
+    for (const m of models) {
+      if (m.listed === false) continue;
+      if (m.outputTypes && !m.outputTypes.includes("text")) continue;
+      results.push({ ...m, provider });
+    }
+  }
+  return results;
+}
+
 export default function BenchmarkPageComponent() {
   // ── State ──────────────────────────────────────────────────
   const [benchmarks, setBenchmarks] = useState([]);
@@ -55,9 +79,12 @@ export default function BenchmarkPageComponent() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
-  const [availableModels, setAvailableModels] = useState([]);
-  const [selectedModels, setSelectedModels] = useState(new Set());
-  const [showModelSelector, setShowModelSelector] = useState(false);
+
+  // Model selection
+  const [allModels, setAllModels] = useState([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [selectedModelKeys, setSelectedModelKeys] = useState(new Set());
+  const [showModelPicker, setShowModelPicker] = useState(false);
 
   // ── Load benchmarks ────────────────────────────────────────
   const loadBenchmarks = useCallback(async () => {
@@ -75,15 +102,40 @@ export default function BenchmarkPageComponent() {
     loadBenchmarks();
   }, [loadBenchmarks]);
 
-  // ── Load models for selector ───────────────────────────────
+  // ── Load all conversation models (cloud + local) ───────────
   const loadModels = useCallback(async () => {
+    if (allModels.length > 0) return; // Already loaded
+    setModelsLoading(true);
     try {
-      const { models } = await PrismService.getBenchmarkModels();
-      setAvailableModels(models || []);
+      // Phase 1: Cloud config
+      const config = await PrismService.getConfig();
+      const cloudModels = flattenConversationModels(config);
+      setAllModels(cloudModels);
+
+      // Phase 2: Local models (fire-and-forget, non-blocking)
+      if (config?.localProviders?.length > 0) {
+        PrismService.getLocalConfig()
+          .then(({ models: localModels }) => {
+            const merged = PrismService.mergeLocalModels(config, localModels);
+            setAllModels(flattenConversationModels(merged));
+          })
+          .catch(() => {}); // Local providers are optional
+      }
     } catch (err) {
-      console.error("Failed to load benchmark models:", err);
+      console.error("Failed to load models:", err);
+    } finally {
+      setModelsLoading(false);
     }
-  }, []);
+  }, [allModels.length]);
+
+  // ── Selected model objects (derived) ───────────────────────
+  const selectedModels = useMemo(
+    () =>
+      allModels.filter((m) =>
+        selectedModelKeys.has(`${m.provider}:${m.name}`),
+      ),
+    [allModels, selectedModelKeys],
+  );
 
   // ── Select a benchmark → load detail + latest run ──────────
   const selectBenchmark = useCallback(async (benchmark) => {
@@ -117,24 +169,21 @@ export default function BenchmarkPageComponent() {
     setShowModal(true);
   }, []);
 
-  const openEdit = useCallback(
-    (e, benchmark) => {
-      e.stopPropagation();
-      setEditingId(benchmark.id);
-      setForm({
-        name: benchmark.name,
-        prompt: benchmark.prompt,
-        systemPrompt: benchmark.systemPrompt || "",
-        expectedValue: benchmark.expectedValue,
-        matchMode: benchmark.matchMode || "contains",
-        temperature: benchmark.temperature ?? 0,
-        maxTokens: benchmark.maxTokens ?? 256,
-        tags: (benchmark.tags || []).join(", "),
-      });
-      setShowModal(true);
-    },
-    [],
-  );
+  const openEdit = useCallback((e, benchmark) => {
+    e.stopPropagation();
+    setEditingId(benchmark.id);
+    setForm({
+      name: benchmark.name,
+      prompt: benchmark.prompt,
+      systemPrompt: benchmark.systemPrompt || "",
+      expectedValue: benchmark.expectedValue,
+      matchMode: benchmark.matchMode || "contains",
+      temperature: benchmark.temperature ?? 0,
+      maxTokens: benchmark.maxTokens ?? 256,
+      tags: (benchmark.tags || []).join(", "),
+    });
+    setShowModal(true);
+  }, []);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -161,7 +210,6 @@ export default function BenchmarkPageComponent() {
       setForm(INITIAL_FORM);
       await loadBenchmarks();
 
-      // Refresh selected benchmark if editing
       if (editingId && selectedBenchmark?.id === editingId) {
         const detail = await PrismService.getBenchmark(editingId);
         setSelectedBenchmark(detail);
@@ -199,30 +247,25 @@ export default function BenchmarkPageComponent() {
 
     try {
       const models =
-        selectedModels.size > 0
-          ? availableModels.filter((m) =>
-              selectedModels.has(`${m.provider}:${m.model}`),
-            )
+        selectedModels.length > 0
+          ? selectedModels.map((m) => ({ provider: m.provider, model: m.name }))
           : undefined;
 
       const run = await PrismService.runBenchmark(selectedBenchmark.id, models);
       setLatestRun(run);
       setActiveRunId(run.id);
 
-      // Refresh run history
       const { runs } = await PrismService.getBenchmarkRuns(
         selectedBenchmark.id,
       );
       setRunHistory(runs || []);
-
-      // Refresh benchmarks list to update summary badges
       await loadBenchmarks();
     } catch (err) {
       console.error("Failed to run benchmark:", err);
     } finally {
       setRunning(false);
     }
-  }, [selectedBenchmark, selectedModels, availableModels, loadBenchmarks]);
+  }, [selectedBenchmark, selectedModels, loadBenchmarks]);
 
   // ── View a past run ────────────────────────────────────────
   const viewRun = useCallback((run) => {
@@ -230,9 +273,10 @@ export default function BenchmarkPageComponent() {
     setActiveRunId(run.id);
   }, []);
 
-  // ── Toggle model selection ─────────────────────────────────
-  const toggleModel = useCallback((key) => {
-    setSelectedModels((prev) => {
+  // ── Toggle model in selection ──────────────────────────────
+  const handleModelSelect = useCallback((rawModel) => {
+    const key = `${rawModel.provider}:${rawModel.name}`;
+    setSelectedModelKeys((prev) => {
       const next = new Set(prev);
       if (next.has(key)) {
         next.delete(key);
@@ -243,21 +287,72 @@ export default function BenchmarkPageComponent() {
     });
   }, []);
 
-  const selectAllModels = useCallback(() => {
-    setSelectedModels(
-      new Set(availableModels.map((m) => `${m.provider}:${m.model}`)),
-    );
-  }, [availableModels]);
-
-  const clearModelSelection = useCallback(() => {
-    setSelectedModels(new Set());
+  const removeModel = useCallback((key) => {
+    setSelectedModelKeys((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
   }, []);
 
-  // ── Open model selector (lazy-load models) ─────────────────
-  const openModelSelector = useCallback(() => {
-    if (availableModels.length === 0) loadModels();
-    setShowModelSelector((v) => !v);
-  }, [availableModels, loadModels]);
+  const clearModelSelection = useCallback(() => {
+    setSelectedModelKeys(new Set());
+  }, []);
+
+  // ── Open model picker (lazy-load) ──────────────────────────
+  const toggleModelPicker = useCallback(() => {
+    if (allModels.length === 0) loadModels();
+    setShowModelPicker((v) => !v);
+  }, [allModels.length, loadModels]);
+
+  // ── Render helpers ─────────────────────────────────────────
+
+  /** Render a selected model card with benchmark-relevant info */
+  function SelectedModelCard({ model }) {
+    const key = `${model.provider}:${model.name}`;
+    const label = model.display_name || model.label || model.name;
+    const ctx = model.contextLength || model.max_context_length;
+    const hasInput = model.pricing?.inputPerMillion != null;
+    const hasOutput = model.pricing?.outputPerMillion != null;
+
+    return (
+      <div className={styles.selectedCard}>
+        <div className={styles.selectedCardHeader}>
+          <ProviderLogo provider={model.provider} size={16} />
+          <span className={styles.selectedCardName}>{label}</span>
+          <button
+            className={styles.selectedCardRemove}
+            onClick={() => removeModel(key)}
+            title="Remove"
+          >
+            <X size={12} />
+          </button>
+        </div>
+        <div className={styles.selectedCardMeta}>
+          <span className={styles.selectedCardProvider}>
+            {PROVIDER_LABELS[model.provider] || model.provider}
+          </span>
+          {ctx && (
+            <span className={styles.selectedCardStat}>
+              <Cpu size={10} />
+              {formatContextTokens(ctx)}
+            </span>
+          )}
+          {hasInput && (
+            <span className={styles.selectedCardStat}>
+              <DollarSign size={10} />
+              ${model.pricing.inputPerMillion}/{hasOutput ? model.pricing.outputPerMillion : "—"}
+            </span>
+          )}
+          {model.tools?.length > 0 && (
+            <span className={styles.selectedCardStat}>
+              {model.tools.length} tools
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // ── Render: Detail View ────────────────────────────────────
   if (selectedBenchmark) {
@@ -275,7 +370,7 @@ export default function BenchmarkPageComponent() {
             onClick={() => {
               setSelectedBenchmark(null);
               setLatestRun(null);
-              setShowModelSelector(false);
+              setShowModelPicker(false);
             }}
           >
             Back
@@ -318,18 +413,27 @@ export default function BenchmarkPageComponent() {
                 loading={running}
                 disabled={running}
               >
-                {selectedModels.size > 0
-                  ? `Run (${selectedModels.size} models)`
+                {selectedModels.length > 0
+                  ? `Run (${selectedModels.length} models)`
                   : "Run All Models"}
               </ButtonComponent>
               <ButtonComponent
                 variant="secondary"
                 size="sm"
                 icon={Target}
-                onClick={openModelSelector}
+                onClick={toggleModelPicker}
               >
-                Select Models
+                {showModelPicker ? "Hide Model Picker" : "Select Models"}
               </ButtonComponent>
+              {selectedModels.length > 0 && (
+                <ButtonComponent
+                  variant="ghost"
+                  size="xs"
+                  onClick={clearModelSelection}
+                >
+                  Clear Selection
+                </ButtonComponent>
+              )}
               <ButtonComponent
                 variant="ghost"
                 size="sm"
@@ -340,46 +444,65 @@ export default function BenchmarkPageComponent() {
               </ButtonComponent>
             </div>
 
-            {/* ── Model Selector ── */}
-            {showModelSelector && (
-              <div>
-                <div className={styles.modelSelectorLabel}>
-                  Select specific models to benchmark (leave empty for all):
+            {/* ── Selected Model Cards ── */}
+            {selectedModels.length > 0 && (
+              <div className={styles.selectedModelsSection}>
+                <div className={styles.selectedModelsLabel}>
+                  <Check size={14} />
+                  {selectedModels.length} model{selectedModels.length !== 1 ? "s" : ""} selected
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    marginBottom: 8,
-                  }}
-                >
-                  <button
-                    className={styles.selectAllBtn}
-                    onClick={selectAllModels}
-                  >
-                    Select All
-                  </button>
-                  <button
-                    className={styles.selectAllBtn}
-                    onClick={clearModelSelection}
-                  >
-                    Clear
-                  </button>
+                <div className={styles.selectedModelsGrid}>
+                  {selectedModels.map((m) => (
+                    <SelectedModelCard
+                      key={`${m.provider}:${m.name}`}
+                      model={m}
+                    />
+                  ))}
                 </div>
-                <div className={styles.modelSelectorGrid}>
-                  {availableModels.map((m) => {
-                    const key = `${m.provider}:${m.model}`;
-                    return (
-                      <button
-                        key={key}
-                        className={`${styles.modelChip} ${selectedModels.has(key) ? styles.selected : ""}`}
-                        onClick={() => toggleModel(key)}
-                      >
-                        {m.label}
-                      </button>
-                    );
-                  })}
-                </div>
+              </div>
+            )}
+
+            {/* ── Model Picker (Table) ── */}
+            {showModelPicker && (
+              <div className={styles.modelPickerSection}>
+                {modelsLoading ? (
+                  <div className={styles.runProgress}>
+                    <div className={styles.progressSpinner} />
+                    <div className={styles.progressText}>
+                      Loading models…
+                    </div>
+                  </div>
+                ) : (
+                  <ModelGrid
+                    models={allModels}
+                    onSelect={handleModelSelect}
+                    showSearch
+                    showProviderFilter
+                    renderActions={(rawModel) => {
+                      const key = `${rawModel.provider}:${rawModel.name}`;
+                      const isSelected = selectedModelKeys.has(key);
+                      return (
+                        <button
+                          className={`${styles.selectBtn} ${isSelected ? styles.selectBtnActive : ""}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleModelSelect(rawModel);
+                          }}
+                        >
+                          {isSelected ? (
+                            <>
+                              <CheckCircle2 size={12} /> Selected
+                            </>
+                          ) : (
+                            <>
+                              <Plus size={12} /> Select
+                            </>
+                          )}
+                        </button>
+                      );
+                    }}
+                  />
+                )}
               </div>
             )}
 
@@ -389,8 +512,8 @@ export default function BenchmarkPageComponent() {
                 <div className={styles.progressSpinner} />
                 <div className={styles.progressText}>
                   Running benchmark against{" "}
-                  {selectedModels.size > 0
-                    ? `${selectedModels.size} models`
+                  {selectedModels.length > 0
+                    ? `${selectedModels.length} models`
                     : "all models"}
                   …
                 </div>
@@ -543,7 +666,9 @@ export default function BenchmarkPageComponent() {
                           )}
                         </td>
                         <td className={styles.latencyCell}>
-                          {result.latency ? `${result.latency.toFixed(2)}s` : "—"}
+                          {result.latency
+                            ? `${result.latency.toFixed(2)}s`
+                            : "—"}
                         </td>
                         <td className={styles.costCell}>
                           {result.estimatedCost != null
@@ -695,9 +820,7 @@ export default function BenchmarkPageComponent() {
                 <div className={styles.cardFooter}>
                   <div className={styles.runSummary}>
                     <Clock size={12} />
-                    <span className={styles.noRuns}>
-                      Click to run
-                    </span>
+                    <span className={styles.noRuns}>Click to run</span>
                   </div>
                   <ButtonComponent variant="ghost" size="xs" icon={Play}>
                     Run
@@ -711,10 +834,7 @@ export default function BenchmarkPageComponent() {
 
       {/* ── Create / Edit Modal ── */}
       {showModal && (
-        <ModalOverlayComponent
-          onClose={() => setShowModal(false)}
-          portal
-        >
+        <ModalOverlayComponent onClose={() => setShowModal(false)} portal>
           <div className={styles.modalPanel}>
             <div className={styles.modalHeader}>
               <span className={styles.modalTitle}>
