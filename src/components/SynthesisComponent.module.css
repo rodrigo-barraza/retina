@@ -2,62 +2,19 @@
 
 /* ── Layout ── */
 
-.pageLayout {
-  display: flex;
+.appContainer {
   width: 100%;
   height: 100dvh;
   overflow: hidden;
   background: var(--bg-primary);
 }
 
-.sidePanel {
-  width: 320px;
-  min-width: 280px;
-  max-width: 400px;
-  height: 100%;
-  border-right: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  flex-shrink: 0;
-}
+/* ── Header Center Group (model pickers + split toggle) ── */
 
-.mainContent {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* ── Header ── */
-
-.header {
+.headerCenterGroup {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.headerLeft {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-primary);
-  min-width: 0;
-}
-
-.headerTitle {
-  font-size: 16px;
-  font-weight: 600;
-  white-space: nowrap;
+  gap: 8px;
 }
 
 .headerBadge {
@@ -847,12 +804,6 @@
 }
 
 /* ── Responsive ── */
-
-@media (max-width: 1200px) {
-  .sidePanel {
-    display: none;
-  }
-}
 
 @media (max-width: 900px) {
   .personaRow {

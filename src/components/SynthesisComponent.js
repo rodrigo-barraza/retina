@@ -22,13 +22,14 @@ import {
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
+import ThreePanelLayout from "./ThreePanelLayout.js";
 import SettingsPanel from "./SettingsPanel.js";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent.js";
 import SelectDropdown from "./SelectDropdown.js";
 import SliderComponent from "./SliderComponent.js";
 import TabBarComponent from "./TabBarComponent.js";
 import EmptyStateComponent from "./EmptyStateComponent.js";
-import CopyButtonComponent from "./CopyButtonComponent.js";
+import MessageList from "./MessageList.js";
 import { SETTINGS_DEFAULTS } from "../constants.js";
 import styles from "./SynthesisComponent.module.css";
 
@@ -311,12 +312,8 @@ export default function SynthesisComponent() {
 
         if (nextRole === "assistant") {
           // ─── ASSISTANT TURN: genuine model response ───────────
-          // Only pass conversationMeta if the conversation hasn't been
-          // created yet (first assistant call with no seeds). When meta
-          // is present, the /chat route also persists the last user
-          // message — which would duplicate it if we already appended
-          // it explicitly during a user-simulation turn.
           const turnMeta = conversationCreated ? undefined : convMeta;
+          let turnThinking = "";
 
           const assistantContent = await streamTurn(
             settings,
@@ -325,19 +322,28 @@ export default function SynthesisComponent() {
             (partial) => {
               setGeneratedMessages([
                 ...conversation,
-                { role: "assistant", content: partial, _streaming: true },
+                { role: "assistant", content: partial, thinking: turnThinking || undefined, _streaming: true },
               ]);
               setGenerationProgress(partial);
             },
             abortRef,
             convId,
             turnMeta,
+            {
+              onThinking: (chunk) => {
+                turnThinking += chunk;
+                setGeneratedMessages([
+                  ...conversation,
+                  { role: "assistant", content: "", thinking: turnThinking, _streaming: true },
+                ]);
+              },
+            },
           );
           conversationCreated = true;
 
           if (abortedRef.current) break;
 
-          conversation.push({ role: "assistant", content: assistantContent });
+          conversation.push({ role: "assistant", content: assistantContent, thinking: turnThinking || undefined });
           setGeneratedMessages([...conversation]);
           setGenerationProgress("");
           nextRole = "user";
@@ -419,6 +425,7 @@ export default function SynthesisComponent() {
         conversation.length > 0 &&
         conversation[conversation.length - 1].role !== "assistant"
       ) {
+        let finalThinking = "";
         const assistantContent = await streamTurn(
           settings,
           effectiveAssistantPrompt,
@@ -426,16 +433,26 @@ export default function SynthesisComponent() {
           (partial) => {
             setGeneratedMessages([
               ...conversation,
-              { role: "assistant", content: partial, _streaming: true },
+              { role: "assistant", content: partial, thinking: finalThinking || undefined, _streaming: true },
             ]);
             setGenerationProgress(partial);
           },
           abortRef,
           convId,
+          undefined,
+          {
+            onThinking: (chunk) => {
+              finalThinking += chunk;
+              setGeneratedMessages([
+                ...conversation,
+                { role: "assistant", content: "", thinking: finalThinking, _streaming: true },
+              ]);
+            },
+          },
         );
 
         if (!abortedRef.current) {
-          conversation.push({ role: "assistant", content: assistantContent });
+          conversation.push({ role: "assistant", content: assistantContent, thinking: finalThinking || undefined });
           setGeneratedMessages([...conversation]);
         }
       }
@@ -596,16 +613,20 @@ export default function SynthesisComponent() {
   );
 
   return (
-    <div className={styles.pageLayout}>
-      <NavigationSidebarComponent mode="user" isGenerating={isGenerating} />
-      <div className={styles.sidePanel}>{leftPanel}</div>
-
-      <div className={styles.mainContent}>
-        {/* Header */}
-        <div className={styles.header}>
-          <div className={styles.headerLeft}>
-            <FlaskConical size={18} />
-            <h1 className={styles.headerTitle}>Synthesis</h1>
+    <main className={styles.appContainer}>
+      <ThreePanelLayout
+        leftTitle={null}
+        leftPanel={leftPanel}
+        rightPanel={null}
+        headerTitle="Synthesis"
+        navSidebar={
+          <NavigationSidebarComponent
+            mode="user"
+            isGenerating={isGenerating}
+          />
+        }
+        headerCenter={
+          <div className={styles.headerCenterGroup}>
             <ModelPickerPopoverComponent
               config={filteredConfig}
               settings={settings}
@@ -631,6 +652,8 @@ export default function SynthesisComponent() {
               </>
             )}
           </div>
+        }
+        headerControls={
           <div className={styles.headerActions}>
             <button
               className={styles.resetBtn}
@@ -657,8 +680,8 @@ export default function SynthesisComponent() {
               </button>
             )}
           </div>
-        </div>
-
+        }
+      >
         {/* Main area */}
         <div className={styles.workspace}>
           {/* Conversation Length & Category bar */}
@@ -889,59 +912,12 @@ export default function SynthesisComponent() {
                 )}
               </div>
 
-              {generatedMessages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`${styles.generatedMessage} ${styles[`generated_${msg.role}`]}${msg._streaming ? ` ${styles.generatedMessageStreaming}` : ""}`}
-                >
-                  <div className={styles.generatedMsgHeader}>
-                    <span
-                      className={`${styles.roleBadge} ${styles[`role_${msg.role}`]}`}
-                    >
-                      {msg.role === "user" ? (
-                        <User size={11} />
-                      ) : (
-                        <Bot size={11} />
-                      )}
-                      {msg.role}
-                    </span>
-                    {!msg._streaming && !isGenerating && (
-                      <div className={styles.generatedMsgActions}>
-                        <CopyButtonComponent text={msg.content} size={12} />
-                        <button
-                          className={styles.removeSeedBtn}
-                          onClick={() => removeGeneratedMessage(i)}
-                          title="Remove"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  {msg._streaming ? (
-                    <div className={styles.generatedContent}>
-                      {msg.content}
-                      <span className={styles.streamCursor} />
-                    </div>
-                  ) : isGenerating ? (
-                    <div className={styles.generatedContent}>
-                      {msg.content}
-                    </div>
-                  ) : (
-                    <textarea
-                      className={styles.generatedTextarea}
-                      value={msg.content}
-                      onChange={(e) =>
-                        updateGeneratedMessage(i, e.target.value)
-                      }
-                      rows={Math.max(
-                        2,
-                        Math.ceil(msg.content.length / 80),
-                      )}
-                    />
-                  )}
-                </div>
-              ))}
+              <MessageList
+                messages={generatedMessages}
+                isGenerating={isGenerating}
+                onDelete={removeGeneratedMessage}
+                onEdit={updateGeneratedMessage}
+              />
 
               <div ref={messagesEndRef} />
             </div>
@@ -958,8 +934,8 @@ export default function SynthesisComponent() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </ThreePanelLayout>
+    </main>
   );
 }
 
@@ -970,7 +946,7 @@ export default function SynthesisComponent() {
  * Each turn is a real /chat call — the model genuinely responds to the context.
  * When conversationId is provided, the messages are persisted to that conversation.
  */
-function streamTurn(settings, turnSystemPrompt, history, onPartial, abortRef, conversationId, conversationMeta, { skipConversation = false } = {}) {
+function streamTurn(settings, turnSystemPrompt, history, onPartial, abortRef, conversationId, conversationMeta, { skipConversation = false, onThinking } = {}) {
   return new Promise((resolve, reject) => {
     let collected = "";
 
@@ -985,11 +961,18 @@ function streamTurn(settings, turnSystemPrompt, history, onPartial, abortRef, co
       maxTokens: settings.maxTokens,
     };
 
+    // Thinking / reasoning settings
+    if (settings.thinkingEnabled || settings.provider === "lm-studio") {
+      payload.thinkingEnabled = true;
+      if (settings.reasoningEffort) payload.reasoningEffort = settings.reasoningEffort;
+      if (settings.thinkingLevel) payload.thinkingLevel = settings.thinkingLevel;
+      if (settings.thinkingBudget) payload.thinkingBudget = settings.thinkingBudget;
+    }
+
     // Skip conversation persistence entirely (used for user-simulation turns)
     if (skipConversation) {
       payload.skipConversation = true;
     } else if (conversationId) {
-      // Attach conversation ID for persistence when available
       payload.conversationId = conversationId;
       if (conversationMeta) payload.conversationMeta = conversationMeta;
     }
@@ -1001,12 +984,12 @@ function streamTurn(settings, turnSystemPrompt, history, onPartial, abortRef, co
           collected += content;
           onPartial(collected);
         },
+        onThinking: onThinking || undefined,
         onDone: () => resolve(collected),
         onError: (err) => reject(err),
       },
     );
 
-    // Store cancellation so the parent can abort mid-turn
     abortRef.current = cancel;
   });
 }

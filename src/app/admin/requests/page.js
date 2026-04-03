@@ -722,6 +722,9 @@ export default function RequestsPage() {
               }
 
               const displayMessages = prepareDisplayMessages(chatMessages);
+              // Re-inject system prompt at top (prepareDisplayMessages strips it)
+              const systemMsg = chatMessages.find((m) => m.role === "system");
+              if (systemMsg) displayMessages.unshift(systemMsg);
               if (!displayMessages.length) return null;
 
               return (
