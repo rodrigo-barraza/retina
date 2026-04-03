@@ -145,6 +145,8 @@ export default function DashboardPage() {
     }
   }, [dateParams, timelineHours, projectFilter]);
 
+  // Live dashboard updates via Change Streams (debounced to 2s).
+  // Falls back to 60s polling if Change Streams aren't available.
   useEffect(() => {
     // Immediately enter loading state and clear stale data when filters change
     setLoading(true);
@@ -158,8 +160,34 @@ export default function DashboardPage() {
     setRecentConversations([]);
 
     loadDashboard();
-    const interval = setInterval(loadDashboard, 60000);
-    return () => clearInterval(interval);
+
+    let pollInterval = null;
+    let debounceTimer = null;
+
+    const debouncedReload = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadDashboard();
+      }, 2000);
+    };
+
+    const es = IrisService.subscribeCollectionChanges({
+      onStatus: (data) => {
+        if (!data.changeStreams) {
+          // No Change Streams — fall back to 60s polling
+          if (!pollInterval) {
+            pollInterval = setInterval(loadDashboard, 60000);
+          }
+        }
+      },
+      onChange: debouncedReload,
+    });
+
+    return () => {
+      es.close();
+      if (pollInterval) clearInterval(pollInterval);
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
   }, [loadDashboard]);
 
   // Inject project dropdown into AdminShell header
