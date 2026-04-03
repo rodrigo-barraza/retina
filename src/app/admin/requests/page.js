@@ -233,11 +233,6 @@ export default function RequestsPage() {
   useEffect(() => {
     setControls(
       <>
-        {total > 0 && (
-          <span className={styles.headerBadge}>
-            {formatNumber(total)} total
-          </span>
-        )}
         <ErrorMessage message={error} />
         <SelectDropdown
           value={projectFilter || ""}
@@ -743,7 +738,6 @@ export default function RequestsPage() {
                 <JsonViewerComponent
                   data={selectedRequest.requestPayload}
                   label="Request Payload"
-                  collapsed={1}
                   maxHeight="400px"
                 />
               </div>
@@ -753,7 +747,6 @@ export default function RequestsPage() {
                 <JsonViewerComponent
                   data={selectedRequest.responsePayload}
                   label="Response Payload"
-                  collapsed={1}
                   maxHeight="400px"
                 />
               </div>

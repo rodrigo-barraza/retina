@@ -39,7 +39,18 @@
 }
 
 .titleCount {
-  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: var(--accent-subtle);
+  color: var(--accent-color);
+  font-weight: 500;
+  white-space: nowrap;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 .headerControls {

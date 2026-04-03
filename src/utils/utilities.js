@@ -36,10 +36,11 @@ export function formatCost(n) {
   return `$${n.toFixed(5)}`;
 }
 
-export function formatLatency(ms) {
-  if (ms === null || ms === undefined) return "-";
-  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${Math.round(ms)}ms`;
+export function formatLatency(seconds) {
+  if (seconds === null || seconds === undefined) return "-";
+  if (seconds >= 60) return `${(seconds / 60).toFixed(1)}m`;
+  if (seconds >= 1) return `${seconds.toFixed(1)}s`;
+  return `${Math.round(seconds * 1000)}ms`;
 }
 
 /**

@@ -17,7 +17,7 @@ import styles from "./JsonViewerComponent.module.css";
 export default function JsonViewerComponent({
   data,
   label,
-  collapsed = 1,
+  collapsed = Infinity,
   maxHeight,
   className,
 }) {
