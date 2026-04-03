@@ -93,7 +93,7 @@ function AdminShellInner({ children }) {
     }
 
     poll();
-    const interval = setInterval(poll, 3000); // 3s
+    const interval = setInterval(poll, 5000); // 5s
     return () => clearInterval(interval);
   }, []);
 
