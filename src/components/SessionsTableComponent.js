@@ -1,5 +1,4 @@
 import SortableTableComponent from "./SortableTableComponent";
-import ConversationsTableComponent from "./ConversationsTableComponent";
 import RequestsTableComponent from "./RequestsTableComponent";
 import {
   sessionIdColumn,
@@ -9,7 +8,7 @@ import {
   modelsListColumn,
   providersListColumn,
   toolsColumn,
-  conversationCountColumn,
+
   requestCountColumn,
   tokenColumns,
   costColumns,
@@ -30,6 +29,9 @@ import styles from "./SessionsTableComponent.module.css";
  * @param {boolean} [props.mini]         - Mini density mode
  * @param {string}  [props.title]        - Optional table title
  * @param {number}  [props.maxHeight]    - Optional max height for scrollable body
+ * @param {string}  [props.sortKey]    - Current sort key (for server-side sorting)
+ * @param {string}  [props.sortDir]    - Current sort direction
+ * @param {Function} [props.onSort]    - (key, dir) => void (server-side sort)
  * @param {Function} [props.onRequestRowClick] - (request) => void, opens detail drawer
  */
 export default function SessionsTableComponent({
@@ -39,6 +41,9 @@ export default function SessionsTableComponent({
   mini = false,
   title,
   maxHeight,
+  sortKey,
+  sortDir,
+  onSort,
   onRequestRowClick,
 }) {
   const SESSION_COLUMNS = [
@@ -49,7 +54,7 @@ export default function SessionsTableComponent({
     modelsListColumn(),
     providersListColumn(),
     toolsColumn(),
-    conversationCountColumn(),
+
     requestCountColumn(),
     ...tokenColumns({ showDash: true }),
     ...costColumns(1, { costKey: "totalCost" }),
@@ -62,7 +67,7 @@ export default function SessionsTableComponent({
   const allColumns = SESSION_COLUMNS.filter((c) => c.key !== "costShare");
 
   const COMPACT_KEYS = [
-    "id", "project", "username", "conversationCount",
+    "id", "project", "username",
     "requestCount", "totalCost", "createdAt", "duration",
   ];
   const columns = compact
@@ -74,16 +79,11 @@ export default function SessionsTableComponent({
       columns={columns}
       data={sessions}
       getRowKey={(s) => s.id}
+      sortKey={sortKey}
+      sortDir={sortDir}
+      onSort={onSort}
       renderExpandedContent={(session) => (
         <div className={styles.expandedPanels}>
-          <ConversationsTableComponent
-            conversations={session.conversations || []}
-            emptyText="No conversations linked"
-            sessionId={session.id}
-            compact
-            mini
-            title="Conversations"
-          />
           <RequestsTableComponent
             requests={session.requests || []}
             emptyText="No requests"

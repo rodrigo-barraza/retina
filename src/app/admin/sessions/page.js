@@ -89,6 +89,8 @@ export default function SessionsPage() {
   const [sessions, setSessions] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState("createdAt");
+  const [order, setOrder] = useState("desc");
   const [loading, setLoading] = useState(true);
   const initialLoadDone = useRef(false);
   const fetchGenRef = useRef(0);
@@ -109,8 +111,8 @@ export default function SessionsPage() {
       const params = {
         page,
         limit: PAGE_SIZE,
-        sort: "createdAt",
-        order: "desc",
+        sort,
+        order,
         ...dateParams,
       };
       if (projectFilter) params.project = projectFilter;
@@ -130,7 +132,7 @@ export default function SessionsPage() {
         setLoading(false);
       }
     }
-  }, [page, dateParams, projectFilter]);
+  }, [page, sort, order, dateParams, projectFilter]);
 
   useEffect(() => {
     // Bump generation to invalidate any in-flight requests from previous effect
@@ -257,6 +259,13 @@ export default function SessionsPage() {
       <SessionsTableComponent
         sessions={sessions}
         emptyText="No sessions"
+        sortKey={sort}
+        sortDir={order}
+        onSort={(key, dir) => {
+          setSort(key);
+          setOrder(dir);
+          setPage(1);
+        }}
         onRequestRowClick={handleRequestRowClick}
       />
 

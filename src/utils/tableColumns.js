@@ -491,6 +491,7 @@ export const endpointColumn = () => ({
 export const statusColumn = () => ({
   key: "success",
   label: "Status",
+  align: "right",
   render: (r) => (
     <BadgeComponent variant={r.success ? "success" : "error"}>
       {r.success ? "OK" : "ERR"}
