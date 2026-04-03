@@ -215,6 +215,12 @@
   padding-right: 4px;
 }
 
+/* Nested expanded content (2 levels deep, e.g. session → convo → requests) */
+.expandedContentCell .expandedContentRow td {
+  background: rgba(0, 0, 0, 0.06);
+  border-left: 2px solid var(--accent-color);
+}
+
 /* Sub-rows */
 .subRow td {
   background: var(--bg-tertiary);

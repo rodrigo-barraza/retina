@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import SortableTableComponent from "./SortableTableComponent";
 import { getRequestsColumns } from "../app/admin/requestsColumns";
 
@@ -34,7 +35,15 @@ export default function RequestsTableComponent({
   onRowMouseLeave,
   getRowClassName,
 }) {
-  const allColumns = getRequestsColumns();
+  const totalCost = useMemo(
+    () => requests.reduce((sum, r) => sum + (r.estimatedCost || 0), 0) || 1,
+    [requests],
+  );
+
+  const allColumns = useMemo(
+    () => getRequestsColumns({ totalCost, mini }),
+    [totalCost, mini],
+  );
 
   const COMPACT_KEYS = [
     "timestamp",

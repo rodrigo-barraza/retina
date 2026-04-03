@@ -1,5 +1,6 @@
 import SortableTableComponent from "./SortableTableComponent";
 import ConversationsTableComponent from "./ConversationsTableComponent";
+import RequestsTableComponent from "./RequestsTableComponent";
 import {
   sessionIdColumn,
   projectColumn,
@@ -16,9 +17,11 @@ import {
   durationColumn,
   createdAtColumn,
 } from "../utils/tableColumns";
+import styles from "./SessionsTableComponent.module.css";
 
 /**
- * SessionsTableComponent — reusable sessions table with expandable conversation rows.
+ * SessionsTableComponent — reusable sessions table with expandable rows
+ * showing both a conversations table and a requests table side by side.
  *
  * @param {Object}  props
  * @param {Array}   props.sessions       - Array of session objects
@@ -70,13 +73,23 @@ export default function SessionsTableComponent({
       data={sessions}
       getRowKey={(s) => s.id}
       renderExpandedContent={(session) => (
-        <ConversationsTableComponent
-          conversations={session.conversations || []}
-          emptyText="No conversations linked"
-          sessionId={session.id}
-          compact
-          mini
-        />
+        <div className={styles.expandedPanels}>
+          <ConversationsTableComponent
+            conversations={session.conversations || []}
+            emptyText="No conversations linked"
+            sessionId={session.id}
+            compact
+            mini
+            title="Conversations"
+          />
+          <RequestsTableComponent
+            requests={session.requests || []}
+            emptyText="No requests"
+            compact
+            mini
+            title="Requests"
+          />
+        </div>
       )}
       emptyText={emptyText}
       title={title}

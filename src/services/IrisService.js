@@ -1,4 +1,5 @@
 import { PRISM_URL } from "../../config.js";
+import { subscribe as sseSubscribe } from "./SSEManager";
 
 const API_BASE = PRISM_URL;
 
@@ -115,49 +116,37 @@ export default class IrisService {
 
   /**
    * Subscribe to real-time conversation stats via SSE.
+   * Uses a shared singleton connection per URL (SSEManager).
    * @param {Function} onStats - ({ generatingCount, recentCount }) => void
    * @param {string} [project] - Optional project filter
-   * @returns {EventSource} — call .close() to unsubscribe
+   * @returns {{ close: Function }} — call .close() to unsubscribe
    */
   static subscribeConversationStats(onStats, project = null) {
     const params = project ? `?project=${encodeURIComponent(project)}` : "";
-    const es = new EventSource(
-      `${API_BASE}/admin/conversations/stream${params}`,
-    );
-    es.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        onStats(data);
-      } catch {
-        /* ignore parse errors */
-      }
-    };
-    return es;
+    const url = `${API_BASE}/admin/conversations/stream${params}`;
+    const { unsubscribe } = sseSubscribe(url, (data) => onStats(data));
+    return { close: unsubscribe };
   }
 
   /**
    * Subscribe to real-time collection change events via SSE.
    * Powered by MongoDB Change Streams on the backend.
+   * Uses a shared singleton connection (SSEManager).
    * @param {object} callbacks
    * @param {Function} callbacks.onChange - ({ collection, operationType, id, timestamp }) => void
    * @param {Function} [callbacks.onStatus] - ({ changeStreams: boolean }) => void
-   * @returns {EventSource} — call .close() to unsubscribe
+   * @returns {{ close: Function }} — call .close() to unsubscribe
    */
   static subscribeCollectionChanges({ onChange, onStatus }) {
-    const es = new EventSource(`${API_BASE}/admin/changes/stream`);
-    es.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "status" && onStatus) {
-          onStatus(data);
-        } else if (data.type === "change" && onChange) {
-          onChange(data);
-        }
-      } catch {
-        /* ignore parse errors */
+    const url = `${API_BASE}/admin/changes/stream`;
+    const { unsubscribe } = sseSubscribe(url, (data) => {
+      if (data.type === "status" && onStatus) {
+        onStatus(data);
+      } else if (data.type === "change" && onChange) {
+        onChange(data);
       }
-    };
-    return es;
+    });
+    return { close: unsubscribe };
   }
 
   // ── Health ────────────────────────────────────────────────

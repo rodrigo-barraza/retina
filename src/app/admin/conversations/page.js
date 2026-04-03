@@ -163,22 +163,14 @@ export default function ConversationsPage({ initialId = null, sessionId = null }
     }
   }, [projectFilter, providerFilter, modelFilter, dateRange, activeSession]);
 
-  // Initial stats fetch + SSE subscription for real-time updates
+  // Initial stats fetch (SSE subscription for generating count is handled
+  // globally by AdminShell to avoid duplicate SSE connections).
   useEffect(() => {
-    // Immediate HTTP fetch for initial values
     IrisService.getConversationStats(projectFilter)
       .then((data) => {
         setGeneratingCount(data.generatingCount || 0);
       })
-      .catch(() => {
-        /* SSE will handle it */
-      });
-
-    // SSE for continuous real-time updates
-    const es = IrisService.subscribeConversationStats((data) => {
-      setGeneratingCount(data.generatingCount || 0);
-    }, projectFilter);
-    return () => es.close();
+      .catch(() => {});
   }, [projectFilter]);
 
   // Live conversation detail — re-fetch when Change Streams detect updates
