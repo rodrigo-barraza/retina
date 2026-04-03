@@ -913,9 +913,11 @@ export default function HomePage({ initialConversationId = null }) {
         (selectedModelDef?.thinking || settings.provider === "lm-studio")
           ? {
               thinkingEnabled: settings.thinkingEnabled || settings.provider === "lm-studio",
-              reasoningEffort: settings.reasoningEffort,
-              thinkingLevel: settings.thinkingLevel,
-              thinkingBudget: settings.thinkingBudget || undefined,
+              ...((settings.thinkingEnabled || settings.provider === "lm-studio") ? {
+                reasoningEffort: settings.reasoningEffort,
+                thinkingLevel: settings.thinkingLevel,
+                thinkingBudget: settings.thinkingBudget || undefined,
+              } : {}),
             }
           : {}),
         ...(settings.webSearchEnabled ? { webSearch: true } : {}),
@@ -1574,9 +1576,11 @@ export default function HomePage({ initialConversationId = null }) {
         (selectedModelDef?.thinking || settings.provider === "lm-studio")
           ? {
               thinkingEnabled: settings.thinkingEnabled || settings.provider === "lm-studio",
-              reasoningEffort: settings.reasoningEffort,
-              thinkingLevel: settings.thinkingLevel,
-              thinkingBudget: settings.thinkingBudget || undefined,
+              ...((settings.thinkingEnabled || settings.provider === "lm-studio") ? {
+                reasoningEffort: settings.reasoningEffort,
+                thinkingLevel: settings.thinkingLevel,
+                thinkingBudget: settings.thinkingBudget || undefined,
+              } : {}),
             }
           : {}),
         ...(settings.webSearchEnabled ? { webSearch: true } : {}),
