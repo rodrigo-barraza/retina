@@ -11,6 +11,7 @@ import {
   benchmarkTokensOutColumn,
   benchmarkTokPerSecColumn,
   benchmarkCostColumn,
+  benchmarkDateColumn,
   benchmarkMatchModeColumn,
 } from "../utils/tableColumns";
 
@@ -55,6 +56,7 @@ export default function BenchmarksTableComponent({
       benchmarkTokensOutColumn(),
       benchmarkTokPerSecColumn(),
       benchmarkCostColumn(),
+      benchmarkDateColumn(),
     ],
     [expectedValue, modelConfigMap],
   );

@@ -20,6 +20,7 @@ import {
   Timer,
   Gauge,
   HardDrive,
+  Calendar,
 } from "lucide-react";
 import ModelBadgeComponent from "../components/ModelBadgeComponent";
 import ProvidersBadgeComponent from "../components/ProvidersBadgeComponent";
@@ -785,6 +786,23 @@ export const benchmarkCostColumn = () => ({
   render: (r) =>
     r.estimatedCost != null ? (
       <span className={styles.monoCell}>${r.estimatedCost.toFixed(6)}</span>
+    ) : (
+      emptyDash()
+    ),
+});
+
+export const benchmarkDateColumn = () => ({
+  key: "completedAt",
+  label: "Date",
+  description: "When this model was tested",
+  sortable: true,
+  align: "right",
+  render: (r) =>
+    r.completedAt ? (
+      <span className={styles.durationCell}>
+        <Calendar size={10} />
+        {formatDateTime(r.completedAt)}
+      </span>
     ) : (
       emptyDash()
     ),
