@@ -975,4 +975,85 @@ export default class PrismService {
       body: {},
     });
   }
+
+  /**
+   * Check if a benchmark has an active (in-progress) run.
+   * @param {string} id - Benchmark ID
+   * @returns {Promise<{ active: boolean, completedResults?, activeModel?, startedAt? }>}
+   */
+  static async getBenchmarkActive(id) {
+    return PrismService._request(`/benchmark/${id}/active`, { method: "GET" });
+  }
+
+  /**
+   * Follow an in-progress benchmark run via SSE.
+   * Replays completed results first, then streams live events.
+   * @param {string} id - Benchmark ID
+   * @param {object} callbacks - { onModelStart, onModelComplete, onRunComplete, onError }
+   * @returns {Function} abort — call to disconnect
+   */
+  static followBenchmarkRun(id, callbacks = {}) {
+    const { onModelStart, onModelComplete, onRunComplete, onError } = callbacks;
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/benchmark/${id}/follow`, {
+          method: "GET",
+          headers: getHeaders(),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          // No active run or server error
+          if (onError) onError(new Error(`HTTP ${res.status}`));
+          return;
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const json = line.slice(6);
+            if (!json) continue;
+
+            try {
+              const data = JSON.parse(json);
+              if (data.type === "model_start" && onModelStart) {
+                onModelStart(data);
+              } else if (data.type === "model_complete" && onModelComplete) {
+                onModelComplete(data);
+              } else if (data.type === "run_complete" && onRunComplete) {
+                onRunComplete(data);
+              } else if (data.type === "error" && onError) {
+                onError(new Error(data.message));
+              }
+            } catch (parseErr) {
+              if (json.length > 0) {
+                console.warn(
+                  `[PrismService] Benchmark follow SSE parse failed:`,
+                  parseErr.message,
+                );
+              }
+            }
+          }
+        }
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        if (onError) onError(err);
+      }
+    })();
+
+    return () => controller.abort();
+  }
 }

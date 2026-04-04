@@ -90,6 +90,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
 
   // Streaming progress
   const [streamingResults, setStreamingResults] = useState([]);
+  const [streamingTotal, setStreamingTotal] = useState(0);
   const [activeModel, setActiveModel] = useState(null);
   const [activeProgress, setActiveProgress] = useState(0);
   const [activePhase, setActivePhase] = useState("");
@@ -130,6 +131,116 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   useEffect(() => {
     loadBenchmark();
   }, [loadBenchmark]);
+
+  // ── Reconnect to an in-progress run on mount ──────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const status = await PrismService.getBenchmarkActive(benchmarkId);
+        if (cancelled || !status?.active) return;
+
+        // Don't pre-populate streamingResults or activeModel here —
+        // the follow SSE replays all completed results and sends the
+        // active model_start event, keeping a single source of truth.
+        setRunning(true);
+        setLatestRun(null);
+
+        // Connect to the follow SSE for live updates
+        abortRef.current = PrismService.followBenchmarkRun(benchmarkId, {
+          onModelStart: (data) => {
+            setActiveModel(data);
+            setActiveProgress(0);
+            setActivePhase(data.isLocal ? "Loading model" : "Connecting");
+
+            if (progressRef.current) clearInterval(progressRef.current);
+
+            const startTime = Date.now();
+            const isLocal = !!data.isLocal;
+            const phases = isLocal
+              ? [
+                  { end: 0.30, duration: 5000,  label: "Loading model" },
+                  { end: 0.60, duration: 2000,  label: "Processing prompt" },
+                  { end: 0.95, duration: 8000,  label: "Generating" },
+                ]
+              : [
+                  { end: 0.40, duration: 3000,  label: "Processing" },
+                  { end: 0.95, duration: 5000,  label: "Generating" },
+                ];
+
+            let phaseIndex = 0;
+            let phaseStart = startTime;
+
+            progressRef.current = setInterval(() => {
+              const now = Date.now();
+              const phase = phases[phaseIndex];
+              const prevEnd = phaseIndex > 0 ? phases[phaseIndex - 1].end : 0;
+              const phaseRange = phase.end - prevEnd;
+              const elapsed = now - phaseStart;
+              const phaseProgress = elapsed / (elapsed + phase.duration);
+              const totalProgress = prevEnd + phaseRange * phaseProgress;
+
+              setActiveProgress(totalProgress);
+              setActivePhase(phase.label);
+
+              if (phaseProgress > 0.9 && phaseIndex < phases.length - 1) {
+                phaseIndex++;
+                phaseStart = now;
+              }
+            }, 60);
+          },
+          onModelComplete: (result) => {
+            if (progressRef.current) {
+              clearInterval(progressRef.current);
+              progressRef.current = null;
+            }
+            setActiveProgress(0);
+            setActivePhase("");
+            setStreamingResults((prev) => [...prev, result]);
+            setActiveModel(null);
+          },
+          onRunComplete: async (run) => {
+            if (progressRef.current) {
+              clearInterval(progressRef.current);
+              progressRef.current = null;
+            }
+            setActiveProgress(0);
+            setActivePhase("");
+            setLatestRun(run);
+            setActiveRunId(run.id);
+            setRunning(false);
+            setStreamingResults([]);
+            setActiveModel(null);
+            abortRef.current = null;
+
+            try {
+              const { runs } = await PrismService.getBenchmarkRuns(benchmarkId);
+              setRunHistory(runs || []);
+            } catch { /* noop */ }
+          },
+          onError: (err) => {
+            if (err?.name === "AbortError" || err?.message?.includes("abort")) return;
+            if (progressRef.current) {
+              clearInterval(progressRef.current);
+              progressRef.current = null;
+            }
+            setActiveProgress(0);
+            setActivePhase("");
+            setRunning(false);
+            setActiveModel(null);
+            abortRef.current = null;
+          },
+        });
+      } catch {
+        // No active run or server unreachable — ignore
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [benchmarkId]);
 
   // ── Load Prism config (drives model picker + size column) ──
   useEffect(() => {
@@ -619,7 +730,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
 
           {/* ── Running Progress ── */}
           {running && (() => {
-            const totalExpected = selectedModels.length > 0 ? selectedModels.length : allModels.length;
+            const totalExpected = streamingTotal || (selectedModels.length > 0 ? selectedModels.length : allModels.length);
             const completed = streamingResults.length;
             const passed = streamingResults.filter((r) => r.passed).length;
             const failed = streamingResults.filter((r) => !r.passed && !r.error).length;
