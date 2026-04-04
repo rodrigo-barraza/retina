@@ -2025,19 +2025,8 @@ export default function HomePage({ initialConversationId = null }) {
                 temperature: temp,
               }));
             }}
-            onLmStudioSelect={async (rawModel) => {
-              const modelKey = rawModel.name || rawModel.key;
-
-              // Load persisted settings if available, otherwise use defaults
-              const LS_KEY_PREFIX = "lm-studio-load-config:";
-              let loadOptions = {};
-              try {
-                const raw = localStorage.getItem(`${LS_KEY_PREFIX}${modelKey}`);
-                if (raw) loadOptions = JSON.parse(raw);
-              } catch { /* ignore */ }
-
-              // Always auto-load immediately on pick
-              startLmLoad(modelKey, loadOptions);
+            onLmStudioSelect={(rawModel) => {
+              setLmConfigModel(rawModel);
             }}
             loadingProgress={lmLoadProgress}
             favorites={favoriteKeys}

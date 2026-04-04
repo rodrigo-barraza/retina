@@ -754,13 +754,31 @@ export default class PrismService {
     if (options.offloadKvCache != null) body.offload_kv_cache_to_gpu = options.offloadKvCache;
 
     (async () => {
+      // Client-side synthetic progress (asymptotic: approaches 95% over ~15s)
+      const EXPECTED_LOAD_MS = 15_000;
+      const startTime = Date.now();
+      let lastPct = 0;
+      const progressInterval = setInterval(() => {
+        if (controller.signal.aborted) { clearInterval(progressInterval); return; }
+        const elapsed = Date.now() - startTime;
+        const pct = Math.min(0.95, elapsed / (elapsed + EXPECTED_LOAD_MS));
+        if (pct > lastPct + 0.005) {
+          lastPct = pct;
+          if (onProgress) onProgress(pct);
+        }
+      }, 300);
+
       try {
-        const res = await fetch(`${API_BASE}/lm-studio/load-stream`, {
+        if (onProgress) onProgress(0);
+
+        const res = await fetch(`${API_BASE}/lm-studio/load`, {
           method: "POST",
           headers: getHeaders(),
           body: JSON.stringify(body),
           signal: controller.signal,
         });
+
+        clearInterval(progressInterval);
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -768,51 +786,10 @@ export default class PrismService {
           return;
         }
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop();
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.type === "progress" && onProgress) {
-                onProgress(data.progress);
-              } else if (data.type === "complete" && onComplete) {
-                onComplete();
-              } else if (data.type === "error" && onError) {
-                onError(new Error(data.message));
-              }
-            } catch {
-              // skip malformed
-            }
-          }
-
-          // Process any remaining data in buffer after stream ends
-          if (buffer && buffer.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(buffer.slice(6));
-              if (data.type === "progress" && onProgress) {
-                onProgress(data.progress);
-              } else if (data.type === "complete" && onComplete) {
-                onComplete();
-              } else if (data.type === "error" && onError) {
-                onError(new Error(data.message));
-              }
-            } catch {
-              // skip malformed
-            }
-          }
-        }
+        if (onProgress) onProgress(1);
+        if (onComplete) onComplete();
       } catch (err) {
+        clearInterval(progressInterval);
         if (err.name === "AbortError") return;
         if (onError) onError(err);
       }
