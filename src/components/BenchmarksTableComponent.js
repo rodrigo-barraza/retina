@@ -72,6 +72,7 @@ export default function BenchmarksTableComponent({
       getRowKey={(r, i) => `${r.provider}:${r.label}:${i}`}
       emptyText={emptyText}
       mini={mini}
+      storageKey="benchmarks"
     />
   );
 }

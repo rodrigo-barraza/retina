@@ -81,6 +81,7 @@ export default function ProvidersTableComponent({
       data={providers}
       getRowKey={(p) => p.provider}
       emptyText={emptyText}
+      storageKey="providers"
     />
   );
 }

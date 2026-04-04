@@ -6,6 +6,16 @@
   gap: 12px;
 }
 
+/* ── Table header (title + column filter) ─────────── */
+
+.tableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 24px;
+}
+
 /* ── Table ─────────────────────────────────────────── */
 
 .tableScroll {
@@ -266,6 +276,7 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
+  margin: 0;
 }
 
 /* Empty state — rendered as a full-width <td> inside the table */
@@ -306,4 +317,142 @@
   .tdName {
     padding: 8px 10px;
   }
+}
+
+/* ── Column filter ────────────────────────────────── */
+
+.columnFilterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  margin-left: auto;
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+    background: var(--bg-tertiary);
+  }
+}
+
+.columnFilterBtnActive {
+  color: var(--accent-color);
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.columnFilterCount {
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.columnFilterDropdown {
+  position: fixed;
+  transform: translateX(-100%);
+  z-index: 9999;
+  min-width: 180px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  animation: columnFilterIn 0.12s ease-out;
+}
+
+@keyframes columnFilterIn {
+  from {
+    opacity: 0;
+    transform: translateX(-100%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-100%) translateY(0);
+  }
+}
+
+.columnFilterHeader {
+  padding: 6px 8px 4px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 2px;
+}
+
+.columnFilterList {
+  display: flex;
+  flex-direction: column;
+}
+
+.columnFilterItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.1s ease;
+  text-decoration: line-through;
+  opacity: 0.55;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--text-primary);
+    opacity: 1;
+    text-decoration: none;
+  }
+}
+
+.columnFilterItemVisible {
+  color: var(--text-primary);
+  text-decoration: none;
+  opacity: 1;
+}
+
+.columnFilterCheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--border-color);
+  color: transparent;
+  flex-shrink: 0;
+  transition: all 0.1s ease;
+}
+
+.columnFilterItemVisible .columnFilterCheck {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #fff;
+}
+
+.columnFilterLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

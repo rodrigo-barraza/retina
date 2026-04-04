@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback, Fragment } from "react";
+import { useState, useRef, useCallback, useEffect, Fragment } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, ChevronUp, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, Columns3, Check } from "lucide-react";
 import tooltipStyles from "./TooltipComponent.module.css";
 import styles from "./TableComponent.module.css";
 
@@ -100,6 +100,106 @@ function HeaderCell({ col, thClasses, isSortable, handleSort, sort }) {
   );
 }
 
+/* ── Column visibility filter ──────────────────────── */
+
+/**
+ * Reads saved hidden-column keys from localStorage.
+ * Returns a Set of column keys that should be hidden.
+ */
+function loadHiddenColumns(storageKey) {
+  if (!storageKey) return new Set();
+  try {
+    const raw = localStorage.getItem(`table-hidden-cols:${storageKey}`);
+    if (raw) return new Set(JSON.parse(raw));
+  } catch { /* ignore */ }
+  return new Set();
+}
+
+function saveHiddenColumns(storageKey, hiddenSet) {
+  if (!storageKey) return;
+  try {
+    localStorage.setItem(
+      `table-hidden-cols:${storageKey}`,
+      JSON.stringify([...hiddenSet]),
+    );
+  } catch { /* ignore */ }
+}
+
+function ColumnFilter({ columns, hiddenColumns, onToggle, storageKey }) {
+  const btnRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  const toggle = useCallback(() => {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setCoords({ top: rect.bottom + 4, left: rect.right });
+    }
+    setOpen((v) => !v);
+  }, [open]);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (btnRef.current?.contains(e.target)) return;
+      // Check if click is inside the portal dropdown
+      const dropdown = document.querySelector(`[data-column-filter="${storageKey}"]`);
+      if (dropdown?.contains(e.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open, storageKey]);
+
+  const hiddenCount = hiddenColumns.size;
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        className={`${styles.columnFilterBtn} ${hiddenCount > 0 ? styles.columnFilterBtnActive : ""}`}
+        onClick={toggle}
+        title="Show/hide columns"
+      >
+        <Columns3 size={12} />
+        <span>Columns</span>
+        {hiddenCount > 0 && (
+          <span className={styles.columnFilterCount}>{columns.length - hiddenCount}/{columns.length}</span>
+        )}
+      </button>
+      {open &&
+        createPortal(
+          <div
+            className={styles.columnFilterDropdown}
+            data-column-filter={storageKey}
+            style={{ top: coords.top, left: coords.left }}
+          >
+            <div className={styles.columnFilterHeader}>Toggle Columns</div>
+            <div className={styles.columnFilterList}>
+              {columns.map((col) => {
+                const visible = !hiddenColumns.has(col.key);
+                return (
+                  <button
+                    key={col.key}
+                    className={`${styles.columnFilterItem} ${visible ? styles.columnFilterItemVisible : ""}`}
+                    onClick={() => onToggle(col.key)}
+                  >
+                    <span className={styles.columnFilterCheck}>
+                      {visible && <Check size={10} />}
+                    </span>
+                    <span className={styles.columnFilterLabel}>{col.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
 export default function TableComponent({
   title,
   columns,
@@ -120,12 +220,30 @@ export default function TableComponent({
   onRowMouseLeave,
   getRowClassName,
   mini = false,
+  storageKey,
 }) {
   const [internalSort, setInternalSort] = useState({ key: null, dir: "desc" });
   const sort = onSort
     ? { key: externalSortKey, dir: externalSortDir }
     : internalSort;
   const [expanded, setExpanded] = useState(new Set());
+
+  /* ── Column visibility ── */
+  const [hiddenColumns, setHiddenColumns] = useState(() => loadHiddenColumns(storageKey));
+
+  const toggleColumn = useCallback((key) => {
+    setHiddenColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      saveHiddenColumns(storageKey, next);
+      return next;
+    });
+  }, [storageKey]);
+
+  const visibleColumns = storageKey
+    ? columns.filter((c) => !hiddenColumns.has(c.key))
+    : columns;
 
   /* ── Drag-to-scroll (grab scrolling) ── */
   const scrollRef = useRef(null);
@@ -249,7 +367,19 @@ export default function TableComponent({
 
   return (
     <div className={`${styles.container} ${mini ? styles.mini : ""}`}>
-      {title && <h2 className={styles.title}>{title}</h2>}
+      {(title || storageKey) && (
+        <div className={styles.tableHeader}>
+          {title && <h2 className={styles.title}>{title}</h2>}
+          {storageKey && (
+            <ColumnFilter
+              columns={columns}
+              hiddenColumns={hiddenColumns}
+              onToggle={toggleColumn}
+              storageKey={storageKey}
+            />
+          )}
+        </div>
+      )}
 
       <div
         ref={scrollRef}
@@ -264,7 +394,7 @@ export default function TableComponent({
         <table className={styles.table}>
           <thead>
             <tr>
-              {columns.map((col, _ci) => {
+              {visibleColumns.map((col, _ci) => {
                 const isSortable = col.sortable !== false;
                 const isActive = sort.key === col.key;
                 const thClasses = [
@@ -291,7 +421,7 @@ export default function TableComponent({
           <tbody>
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className={styles.emptyRow}>
+                <td colSpan={visibleColumns.length} className={styles.emptyRow}>
                   {emptyText}
                 </td>
               </tr>
@@ -300,6 +430,7 @@ export default function TableComponent({
                 const key = getRowKey ? getRowKey(row, ri) : ri;
                 const subRows = hasSubRows ? getSubRows(row) : [];
                 const isExpanded = expanded.has(key);
+                const colsToRender = visibleColumns;
                 const isExpandable = (subRows && subRows.length > 0) || hasExpandedContent;
                 const clickable = !!onRowClick || isExpandable;
                 const isActive = activeRowKey != null && key === activeRowKey;
@@ -331,7 +462,7 @@ export default function TableComponent({
                         onRowMouseLeave ? () => onRowMouseLeave(row, ri) : undefined
                       }
                     >
-                      {columns.map((col, ci) => {
+                      {colsToRender.map((col, ci) => {
                         const isFirst = ci === 0;
                         const isSorted = sort.key === col.key;
                         const tdClass = isFirst ? styles.tdName : styles.td;
@@ -369,7 +500,7 @@ export default function TableComponent({
                     </tr>
                     {isExpanded && hasExpandedContent && (
                       <tr className={styles.expandedContentRow}>
-                        <td colSpan={columns.length} className={styles.expandedContentCell}>
+                        <td colSpan={colsToRender.length} className={styles.expandedContentCell}>
                           {renderExpandedContent(row)}
                         </td>
                       </tr>
@@ -378,7 +509,7 @@ export default function TableComponent({
                       !hasExpandedContent &&
                       subRows.map((sub, si) => (
                         <tr key={`${key}-sub-${si}`} className={styles.subRow}>
-                          {columns.map((col, _ci) => {
+                          {colsToRender.map((col, _ci) => {
                             const cellStyle = col.align
                               ? { textAlign: col.align }
                               : {};

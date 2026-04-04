@@ -70,6 +70,7 @@ export default function ProjectsTableComponent({
       data={projects}
       getRowKey={(p, i) => p.project || i}
       emptyText={emptyText}
+      storageKey="projects"
     />
   );
 }

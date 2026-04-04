@@ -79,6 +79,7 @@ export default function RequestsTableComponent({
       getRowKey={(r, i) => r.requestId || i}
       emptyText={emptyText}
       mini={mini}
+      storageKey="requests"
     />
   );
 }

@@ -92,6 +92,7 @@ export default function ConversationsTableComponent({
       maxHeight={maxHeight || (compact ? "300px" : undefined)}
       mini={mini}
       title={title}
+      storageKey="conversations"
     />
   );
 }

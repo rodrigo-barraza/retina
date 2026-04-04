@@ -96,6 +96,7 @@ export default function SessionsTableComponent({
       title={title}
       maxHeight={maxHeight}
       mini={mini}
+      storageKey="sessions"
     />
   );
 }

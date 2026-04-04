@@ -331,6 +331,7 @@ export default function ModelsTableComponent({
         data={models}
         getRowKey={(m, i) => `${m.provider}-${m.model}-${i}`}
         emptyText={emptyText || "No data yet"}
+        storageKey="models-stats"
       />
     );
   }
@@ -983,6 +984,7 @@ function ModelsTableInner({
         activeRowKey={activeRowKey}
         highlightedRowKey={highlightedRowKey}
         highlightedRowRef={highlightedRowRef}
+        storageKey="models"
       />
     </div>
   );
