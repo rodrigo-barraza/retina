@@ -125,12 +125,6 @@
 
 /* ── Model name cell layout ───────────────────────── */
 
-.nameStack {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
 .nameRow {
   display: flex;
   align-items: center;
@@ -144,7 +138,7 @@
 }
 
 .modelKey {
-  font-size: 9px;
+  font-size: 10px;
   font-family: var(
     --font-mono,
     "SF Mono",
@@ -154,7 +148,6 @@
     monospace
   );
   color: var(--text-secondary);
-  opacity: 0.5;
 }
 
 .modelProvider {

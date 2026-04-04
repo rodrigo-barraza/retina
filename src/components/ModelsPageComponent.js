@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader2, Power, PowerOff, RefreshCw } from "lucide-react";
 import IrisService from "../services/IrisService";
 import PrismService from "../services/PrismService";
@@ -59,6 +59,7 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
   const [toastElement, showToast] = useToast(4000);
   const [favoriteKeys, setFavoriteKeys] = useState([]);
   const [loadConfigModel, setLoadConfigModel] = useState(null);
+  const hasLoadedRef = useRef(false);
 
   // Helper: merge config + LM data + stats into the allModels array
   const buildMergedModels = useCallback((config, lmData, modelStats) => {
@@ -132,10 +133,13 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
         statsService.getModelStats().catch(() => []),
       ]);
 
-      // Show cloud models immediately
-      const cloudModels = buildMergedModels(config, { models: [] }, modelStats);
-      setAllModels(cloudModels);
-      setLoading(false);
+      // Show cloud models immediately — only on first load to avoid flash
+      // on subsequent interval refreshes
+      if (!hasLoadedRef.current) {
+        const cloudModels = buildMergedModels(config, { models: [] }, modelStats);
+        setAllModels(cloudModels);
+        setLoading(false);
+      }
 
       // Phase 2: progressive — merge local provider models + LM Studio API data
       const localService = isAdmin ? IrisService : PrismService;
@@ -155,6 +159,7 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
       // Rebuild with local models + LM Studio API data
       const fullModels = buildMergedModels(mergedConfig, lmData, modelStats);
       setAllModels(fullModels);
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(err.message);
       setAllModels([]);

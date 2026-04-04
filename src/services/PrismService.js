@@ -795,6 +795,22 @@ export default class PrismService {
               // skip malformed
             }
           }
+
+          // Process any remaining data in buffer after stream ends
+          if (buffer && buffer.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(buffer.slice(6));
+              if (data.type === "progress" && onProgress) {
+                onProgress(data.progress);
+              } else if (data.type === "complete" && onComplete) {
+                onComplete();
+              } else if (data.type === "error" && onError) {
+                onError(new Error(data.message));
+              }
+            } catch {
+              // skip malformed
+            }
+          }
         }
       } catch (err) {
         if (err.name === "AbortError") return;

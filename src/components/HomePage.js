@@ -133,6 +133,50 @@ export default function HomePage({ initialConversationId = null }) {
   const lmLoadAbortRef = useRef(null);
   const [toastElement, showToast] = useToast(4000);
 
+  // ── Reusable LM Studio model load trigger ──────────────────
+  const startLmLoad = useCallback(
+    (modelKey, options = {}) => {
+      setLmConfigLoading(true);
+      setLmConfigModel(null);
+      setLmLoadProgress(0);
+
+      // Select the model immediately so the user can start chatting
+      const modelDef = (config?.textToText?.models?.["lm-studio"] || []).find(
+        (m) => m.name === modelKey,
+      );
+      const temp = modelDef?.defaultTemperature ?? 1.0;
+      setSettings((s) => ({
+        ...s,
+        provider: "lm-studio",
+        model: modelKey,
+        temperature: temp,
+      }));
+
+      // Stream the load with real-time progress
+      if (lmLoadAbortRef.current) lmLoadAbortRef.current();
+      lmLoadAbortRef.current = PrismService.loadLmStudioModelStream(
+        modelKey,
+        options,
+        {
+          onProgress: (progress) => setLmLoadProgress(progress),
+          onComplete: () => {
+            setLmLoadProgress(null);
+            setLmConfigLoading(false);
+            lmLoadAbortRef.current = null;
+            showToast(`Loaded ${modelKey}`, "success");
+          },
+          onError: (err) => {
+            setLmLoadProgress(null);
+            setLmConfigLoading(false);
+            lmLoadAbortRef.current = null;
+            showToast(`Failed to load: ${err.message}`, "error");
+          },
+        },
+      );
+    },
+    [config, showToast],
+  );
+
   // ── Function Calling state ──────────────────────────────────
   const [leftTab, setLeftTab] = useState("settings");
 
@@ -966,6 +1010,16 @@ export default function HomePage({ initialConversationId = null }) {
 
         abortRef.current = PrismService.streamText(payload, {
           onStatus: (message) => {
+            // Sync lmLoadProgress with chat auto-load status
+            const loadMatch = message.match(/Loading model[….]\s*(\d+)%/);
+            if (loadMatch) {
+              const pct = parseInt(loadMatch[1], 10) / 100;
+              setLmLoadProgress(pct < 1 ? pct : null);
+            } else if (!message.toLowerCase().includes("unload")) {
+              // Non-loading status (e.g. generation started) — clear progress
+              setLmLoadProgress((prev) => (prev != null ? null : prev));
+            }
+
             setMessages((prev) => {
               const updated = [...prev];
               updated[insertIndex] = {
@@ -976,6 +1030,9 @@ export default function HomePage({ initialConversationId = null }) {
             });
           },
           onChunk: (content) => {
+            // Safety net: clear stale lmLoadProgress if model auto-loaded via chat
+            setLmLoadProgress((prev) => (prev != null ? null : prev));
+
             streamedText += content;
             setMessages((prev) => {
               const updated = [...prev];
@@ -1632,6 +1689,16 @@ export default function HomePage({ initialConversationId = null }) {
 
         abortRef.current = PrismService.streamText(payload, {
           onStatus: (message) => {
+            // Sync lmLoadProgress with chat auto-load status
+            const loadMatch = message.match(/Loading model[\u2026.]\s*(\d+)%/);
+            if (loadMatch) {
+              const pct = parseInt(loadMatch[1], 10) / 100;
+              setLmLoadProgress(pct < 1 ? pct : null);
+            } else if (!message.toLowerCase().includes("unload")) {
+              // Non-loading status — clear progress
+              setLmLoadProgress((prev) => (prev != null ? null : prev));
+            }
+
             setMessages((prev) => {
               const updated = [...prev];
               updated[updated.length - 1] = {
@@ -1642,6 +1709,10 @@ export default function HomePage({ initialConversationId = null }) {
             });
           },
           onChunk: (content) => {
+            // Safety net: if we receive a chunk while lmLoadProgress is
+            // stuck (model loaded via chat auto-load), clear it now.
+            setLmLoadProgress((prev) => (prev != null ? null : prev));
+
             streamedText += content;
             setMessages((prev) => {
               const updated = [...prev];
@@ -1955,18 +2026,18 @@ export default function HomePage({ initialConversationId = null }) {
               }));
             }}
             onLmStudioSelect={async (rawModel) => {
-              // Fetch full LM Studio API data so the config panel has
-              // size_bytes, archParams, max_context_length, etc.
+              const modelKey = rawModel.name || rawModel.key;
+
+              // Load persisted settings if available, otherwise use defaults
+              const LS_KEY_PREFIX = "lm-studio-load-config:";
+              let loadOptions = {};
               try {
-                const lmData = await PrismService.getLmStudioModels();
-                const apiModel = (lmData?.models || []).find(
-                  (m) => m.key === rawModel.name || m.key === rawModel.key,
-                );
-                setLmConfigModel(apiModel || { ...rawModel, key: rawModel.name });
-              } catch {
-                // Fallback: use whatever we have from config
-                setLmConfigModel({ ...rawModel, key: rawModel.name });
-              }
+                const raw = localStorage.getItem(`${LS_KEY_PREFIX}${modelKey}`);
+                if (raw) loadOptions = JSON.parse(raw);
+              } catch { /* ignore */ }
+
+              // Always auto-load immediately on pick
+              startLmLoad(modelKey, loadOptions);
             }}
             loadingProgress={lmLoadProgress}
             favorites={favoriteKeys}
@@ -2304,46 +2375,7 @@ export default function HomePage({ initialConversationId = null }) {
           service={PrismService}
           loading={lmConfigLoading}
           onClose={() => setLmConfigModel(null)}
-          onLoad={(modelKey, options) => {
-            setLmConfigLoading(true);
-            setLmConfigModel(null);
-            setLmLoadProgress(0);
-
-            // Select the model immediately so the user can start chatting
-            const modelDef =
-              (config?.textToText?.models?.["lm-studio"] || []).find(
-                (m) => m.name === modelKey,
-              );
-            const temp = modelDef?.defaultTemperature ?? 1.0;
-            setSettings((s) => ({
-              ...s,
-              provider: "lm-studio",
-              model: modelKey,
-              temperature: temp,
-            }));
-
-            // Stream the load with real-time progress
-            if (lmLoadAbortRef.current) lmLoadAbortRef.current();
-            lmLoadAbortRef.current = PrismService.loadLmStudioModelStream(
-              modelKey,
-              options,
-              {
-                onProgress: (progress) => setLmLoadProgress(progress),
-                onComplete: () => {
-                  setLmLoadProgress(null);
-                  setLmConfigLoading(false);
-                  lmLoadAbortRef.current = null;
-                  showToast(`Loaded ${modelKey}`, "success");
-                },
-                onError: (err) => {
-                  setLmLoadProgress(null);
-                  setLmConfigLoading(false);
-                  lmLoadAbortRef.current = null;
-                  showToast(`Failed to load: ${err.message}`, "error");
-                },
-              },
-            );
-          }}
+          onLoad={(modelKey, options) => startLmLoad(modelKey, options)}
         />
       )}
 

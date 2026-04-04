@@ -21,6 +21,8 @@ import {
   TOOL_COLORS,
 } from "./WorkflowNodeConstants";
 import SortableTableComponent from "./SortableTableComponent";
+import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
+import ModelBadgeComponent from "./ModelBadgeComponent";
 import ToolIconComponent from "./ToolIconComponent";
 import TooltipComponent from "./TooltipComponent";
 import SearchInputComponent from "./SearchInputComponent";
@@ -166,7 +168,9 @@ function buildRow(rawModel, favorites = []) {
     _raw: rawModel,
     _model: model,
     _favKey: favKey,
-    model: model.name.toLowerCase(),
+    model: model.key.toLowerCase(),
+    name: model.name.toLowerCase(),
+    provider: (PROVIDER_LABELS[model.provider] || model.provider).toLowerCase(),
     year: rawModel.year || 0,
     context:
       rawModel.max_context_length ||
@@ -338,64 +342,90 @@ export default function ModelGrid({
   const columns = useMemo(() => {
     const cols = [];
 
+    // 1. FAVORITE — sortable star toggle
+    cols.push({
+      key: "favorite",
+      label: "★",
+      align: "center",
+      sortable: true,
+      render: (row) => {
+        const isFav = favorites.includes(row._favKey);
+        if (!onToggleFavorite) return "—";
+        return (
+          <span
+            className={styles.favWrap}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(row._favKey);
+            }}
+          >
+            <Star
+              size={14}
+              className={`${styles.favStar} ${isFav ? styles.favStarActive : ""}`}
+              fill={isFav ? "currentColor" : "none"}
+            />
+          </span>
+        );
+      },
+    });
+
+    // 2. NAME — provider icon + display name + loaded badge + actions
+    cols.push({
+      key: "name",
+      label: "Name",
+      align: "left",
+      sortValue: (row) => row._model.name.toLowerCase(),
+      render: (row) => {
+        const model = row._model;
+        const rawModel = row._raw;
+        return (
+          <span className={styles.nameRow}>
+            <ProviderLogo provider={model.provider} size={16} />
+            <span className={styles.modelName}>{model.name}</span>
+            {model.provider === "lm-studio" && model.isLoaded && (
+              <span className={styles.loadedBadge}>
+                <span className={`${styles.statusDot} ${styles.active}`} />
+                Loaded
+              </span>
+            )}
+            {model.provider === "lm-studio" && !model.isLoaded && loadingModelKey === model.key && (
+              <span className={styles.loadingBadge}>
+                <Loader2 size={9} className={styles.loadingSpin} />
+                Loading
+              </span>
+            )}
+            {hasActions && (
+              <span
+                className={styles.inlineActions}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {renderActions(rawModel)}
+              </span>
+            )}
+          </span>
+        );
+      },
+    });
+
+    // 3. MODEL — model key (monospace identifier)
     cols.push({
       key: "model",
       label: "Model",
       align: "left",
-      render: (row) => {
-        const model = row._model;
-        const rawModel = row._raw;
-        const isFav = favorites.includes(row._favKey);
-        return (
-          <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {onToggleFavorite && (
-              <span
-                className={styles.favWrap}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleFavorite(row._favKey);
-                }}
-              >
-                <Star
-                  size={14}
-                  className={`${styles.favStar} ${isFav ? styles.favStarActive : ""}`}
-                  fill={isFav ? "currentColor" : "none"}
-                />
-              </span>
-            )}
-            <ProviderLogo provider={model.provider} size={18} />
-            <span className={styles.nameStack}>
-              <span className={styles.nameRow}>
-                <span className={styles.modelName}>{model.name}</span>
-                {model.provider === "lm-studio" && model.isLoaded && (
-                  <span className={styles.loadedBadge}>
-                    <span className={`${styles.statusDot} ${styles.active}`} />
-                    Loaded
-                  </span>
-                )}
-                {model.provider === "lm-studio" && !model.isLoaded && loadingModelKey === model.key && (
-                  <span className={styles.loadingBadge}>
-                    <Loader2 size={9} className={styles.loadingSpin} />
-                    Loading
-                  </span>
-                )}
-                {hasActions && (
-                  <span
-                    className={styles.inlineActions}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {renderActions(rawModel)}
-                  </span>
-                )}
-              </span>
-              <span className={styles.modelKey}>{model.key}</span>
-              <span className={styles.modelProvider}>
-                {PROVIDER_LABELS[model.provider] || model.provider}
-              </span>
-            </span>
-          </span>
-        );
-      },
+      render: (row) => (
+        <ModelBadgeComponent models={[row._model.key]} />
+      ),
+    });
+
+    // 4. PROVIDER — provider badge
+    cols.push({
+      key: "provider",
+      label: "Provider",
+      align: "left",
+      sortValue: (row) => (PROVIDER_LABELS[row._model.provider] || row._model.provider).toLowerCase(),
+      render: (row) => (
+        <ProvidersBadgeComponent providers={[row._model.provider]} />
+      ),
     });
 
     if (hasYear) {

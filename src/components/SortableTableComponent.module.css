@@ -45,16 +45,8 @@
   top: 0;
   z-index: 2;
   user-select: none;
-
-  &:first-child {
-    width: 1%;
-    text-align: left;
-    position: sticky;
-    left: 0;
-    z-index: 3;
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.15);
-  }
 }
+
 
 .thSortable {
   cursor: pointer;
@@ -95,7 +87,6 @@
 
   &:hover td:first-child {
     background: rgba(99, 102, 241, 0.10);
-    box-shadow: inset 2px 0 0 var(--accent-color);
   }
 }
 
@@ -106,7 +97,6 @@
 
 .activeRow td:first-child {
   background: rgba(99, 102, 241, 0.12);
-  box-shadow: inset 2px 0 0 var(--accent-color);
 }
 
 /* Keyboard-highlighted row */
@@ -116,7 +106,6 @@
 
 .highlightedRow td:first-child {
   background: rgba(99, 102, 241, 0.16);
-  box-shadow: inset 2px 0 0 var(--accent-color);
 }
 
 /* ── Cells ────────────────────────────────────────── */
@@ -138,16 +127,11 @@
   color: var(--text-primary);
 }
 
-/* Primary name column — sticky on horizontal scroll */
+/* Primary name column */
 .tdName {
-  width: 1%;
-  text-align: left;
   white-space: nowrap;
   background: transparent;
   color: var(--text-primary);
-  position: sticky;
-  left: 0;
-  z-index: 1;
 }
 
 /* Highlight cost column */
@@ -249,9 +233,6 @@
 .subRow td:first-child {
   padding-left: 38px;
   background: var(--bg-tertiary);
-  position: sticky;
-  left: 0;
-  z-index: 1;
 }
 
 .subRow:hover td {
