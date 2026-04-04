@@ -979,6 +979,14 @@ export default class PrismService {
   }
 
   /**
+   * Fetch all benchmark IDs that currently have active (in-progress) runs.
+   * @returns {Promise<{ activeIds: string[] }>}
+   */
+  static async getActiveBenchmarks() {
+    return PrismService._request("/benchmark/active-list", { method: "GET" });
+  }
+
+  /**
    * Check if a benchmark has an active (in-progress) run.
    * @param {string} id - Benchmark ID
    * @returns {Promise<{ active: boolean, completedResults?, activeModel?, startedAt? }>}

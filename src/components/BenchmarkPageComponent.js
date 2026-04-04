@@ -11,6 +11,7 @@ import {
   Clock,
   X,
   Coins,
+  Loader2,
 } from "lucide-react";
 import PrismService from "../services/PrismService";
 import PageHeaderComponent from "./PageHeaderComponent";
@@ -50,6 +51,7 @@ export default function BenchmarkPageComponent() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
+  const [activeBenchmarkIds, setActiveBenchmarkIds] = useState(new Set());
 
   // ── Derived: aggregate cost across all benchmarks ────────
   const totalCost = useMemo(
@@ -76,6 +78,25 @@ export default function BenchmarkPageComponent() {
   useEffect(() => {
     loadBenchmarks();
   }, [loadBenchmarks]);
+
+  // ── Poll active benchmarks (running indicator) ─────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    const poll = async () => {
+      try {
+        const { activeIds } = await PrismService.getActiveBenchmarks();
+        if (!cancelled) setActiveBenchmarkIds(new Set(activeIds || []));
+      } catch { /* ignore */ }
+    };
+
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   // ── Create / Edit ──────────────────────────────────────────
   const openCreate = useCallback(() => {
@@ -201,14 +222,24 @@ export default function BenchmarkPageComponent() {
           </EmptyStateComponent>
         ) : (
           <div className={styles.benchmarkGrid}>
-            {benchmarks.map((b) => (
+            {benchmarks.map((b) => {
+              const isRunning = activeBenchmarkIds.has(b.id);
+              return (
               <div
                 key={b.id}
-                className={styles.benchmarkCard}
+                className={`${styles.benchmarkCard} ${isRunning ? styles.benchmarkCardRunning : ""}`}
                 onClick={() => navigateToBenchmark(b)}
               >
                 <div className={styles.cardHeader}>
-                  <div className={styles.cardTitle}>{b.name}</div>
+                  <div className={styles.cardTitle}>
+                    {isRunning && (
+                      <span className={styles.runningIndicator}>
+                        <Loader2 size={12} className={styles.spinIcon} />
+                        Running
+                      </span>
+                    )}
+                    {b.name}
+                  </div>
                   <div className={styles.cardActions}>
                     <button
                       className={styles.cardActionBtn}
@@ -285,7 +316,8 @@ export default function BenchmarkPageComponent() {
                   </ButtonComponent>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

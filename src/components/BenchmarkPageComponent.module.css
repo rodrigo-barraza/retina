@@ -77,6 +77,42 @@
   }
 }
 
+/* ── Running state for benchmark cards ─────────────────────── */
+
+.benchmarkCardRunning {
+  border-color: color-mix(in srgb, var(--accent-color) 40%, var(--border-color));
+  background: color-mix(in srgb, var(--accent-color) 4%, var(--bg-secondary));
+  overflow: hidden;
+}
+
+.benchmarkCardRunning::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent-color);
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+.runningIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--accent-color);
+  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-right: 6px;
+  flex-shrink: 0;
+  animation: fadeIn 0.3s ease-out;
+}
+
 .cardHeader {
   display: flex;
   align-items: center;

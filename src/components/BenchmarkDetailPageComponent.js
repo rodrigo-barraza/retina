@@ -754,8 +754,8 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                 <div className={styles.progressSpinner} />
                 <div className={styles.progressText}>
                   Running benchmark against{" "}
-                  {selectedModels.length > 0
-                    ? `${selectedModels.length} models`
+                  {streamingTotal > 0 && streamingTotal !== allModels.length
+                    ? `${streamingTotal} models`
                     : "all models"}
                   …
                   {completed > 0 && (
