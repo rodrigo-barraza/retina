@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -15,6 +15,9 @@ import {
   DollarSign,
   Cpu,
   Coins,
+  Loader2,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
 import PrismService from "../services/PrismService";
 import PageHeaderComponent from "./PageHeaderComponent";
@@ -53,7 +56,7 @@ function flattenConversationModels(config) {
   return results;
 }
 
-export default function BenchmarkDetailPageComponent({ benchmarkId }) {
+export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningChange }) {
   const router = useRouter();
   // ── State ──────────────────────────────────────────────────
   const [benchmark, setBenchmark] = useState(null);
@@ -75,11 +78,21 @@ export default function BenchmarkDetailPageComponent({ benchmarkId }) {
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
 
+  // Propagate running state to parent for sidebar animation
+  useEffect(() => {
+    onRunningChange?.(running);
+  }, [running, onRunningChange]);
+
   // Model selection
   const [allModels, setAllModels] = useState([]);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [selectedModelKeys, setSelectedModelKeys] = useState(new Set());
   const [showModelPicker, setShowModelPicker] = useState(false);
+
+  // Streaming progress
+  const [streamingResults, setStreamingResults] = useState([]);
+  const [activeModel, setActiveModel] = useState(null);
+  const abortRef = useRef(null);
 
   // ── Load benchmark detail ──────────────────────────────────
   const loadBenchmark = useCallback(async () => {
@@ -133,6 +146,12 @@ export default function BenchmarkDetailPageComponent({ benchmarkId }) {
     }
   }, [allModels.length]);
 
+  // Eagerly load model configs for the size column lookup
+  useEffect(() => {
+    loadModels();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Selected model objects (derived) ───────────────────────
   const selectedModels = useMemo(
     () =>
@@ -141,6 +160,15 @@ export default function BenchmarkDetailPageComponent({ benchmarkId }) {
       ),
     [allModels, selectedModelKeys],
   );
+
+  // Build provider:name → config lookup for size column
+  const modelConfigMap = useMemo(() => {
+    const map = {};
+    for (const m of allModels) {
+      map[`${m.provider}:${m.name}`] = m;
+    }
+    return map;
+  }, [allModels]);
 
   // ── Edit ───────────────────────────────────────────────────
   const openEdit = useCallback(() => {
@@ -187,24 +215,43 @@ export default function BenchmarkDetailPageComponent({ benchmarkId }) {
   const handleRun = useCallback(async () => {
     if (!benchmark) return;
     setRunning(true);
+    setStreamingResults([]);
+    setActiveModel(null);
+    setLatestRun(null);
 
-    try {
-      const models =
-        selectedModels.length > 0
-          ? selectedModels.map((m) => ({ provider: m.provider, model: m.name }))
-          : undefined;
+    const models =
+      selectedModels.length > 0
+        ? selectedModels.map((m) => ({ provider: m.provider, model: m.name }))
+        : undefined;
 
-      const run = await PrismService.runBenchmark(benchmarkId, models);
-      setLatestRun(run);
-      setActiveRunId(run.id);
+    abortRef.current = PrismService.streamBenchmarkRun(benchmarkId, models, {
+      onModelStart: (data) => {
+        setActiveModel(data);
+      },
+      onModelComplete: (result) => {
+        setStreamingResults((prev) => [...prev, result]);
+        setActiveModel(null);
+      },
+      onRunComplete: async (run) => {
+        setLatestRun(run);
+        setActiveRunId(run.id);
+        setRunning(false);
+        setStreamingResults([]);
+        setActiveModel(null);
+        abortRef.current = null;
 
-      const { runs } = await PrismService.getBenchmarkRuns(benchmarkId);
-      setRunHistory(runs || []);
-    } catch (err) {
-      console.error("Failed to run benchmark:", err);
-    } finally {
-      setRunning(false);
-    }
+        try {
+          const { runs } = await PrismService.getBenchmarkRuns(benchmarkId);
+          setRunHistory(runs || []);
+        } catch { /* noop */ }
+      },
+      onError: (err) => {
+        console.error("Benchmark run error:", err);
+        setRunning(false);
+        setActiveModel(null);
+        abortRef.current = null;
+      },
+    });
   }, [benchmark, selectedModels, benchmarkId]);
 
   // ── View a past run ────────────────────────────────────────
@@ -478,14 +525,84 @@ export default function BenchmarkDetailPageComponent({ benchmarkId }) {
           {/* ── Running Progress ── */}
           {running && (
             <div className={styles.runProgress}>
-              <div className={styles.progressSpinner} />
-              <div className={styles.progressText}>
-                Running benchmark against{" "}
-                {selectedModels.length > 0
-                  ? `${selectedModels.length} models`
-                  : "all models"}
-                …
+              <div className={styles.progressHeader}>
+                <div className={styles.progressSpinner} />
+                <div className={styles.progressText}>
+                  Running benchmark against{" "}
+                  {selectedModels.length > 0
+                    ? `${selectedModels.length} models`
+                    : "all models"}
+                  …
+                  {streamingResults.length > 0 && (
+                    <span className={styles.progressCount}>
+                      {" "}— {streamingResults.length} completed
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {/* Live model feed */}
+              <div className={styles.streamingFeed}>
+                {streamingResults.map((r, i) => (
+                  <div
+                    key={`${r.provider}:${r.model}:${i}`}
+                    className={`${styles.streamingItem} ${r.passed ? styles.streamingPassed : styles.streamingFailed}`}
+                  >
+                    <span className={styles.streamingIcon}>
+                      {r.error ? (
+                        <AlertCircle size={13} />
+                      ) : r.passed ? (
+                        <CheckCircle2 size={13} />
+                      ) : (
+                        <XCircle size={13} />
+                      )}
+                    </span>
+                    <ProviderLogo provider={r.provider} size={14} />
+                    <span className={styles.streamingLabel}>
+                      {r.label || r.model}
+                    </span>
+                    <span className={styles.streamingLatency}>
+                      {r.latency?.toFixed(1)}s
+                    </span>
+                    {r.estimatedCost > 0 && (
+                      <span className={styles.streamingCost}>
+                        {formatCost(r.estimatedCost)}
+                      </span>
+                    )}
+                    {r.error && (
+                      <span className={styles.streamingError}>
+                        {r.error.slice(0, 60)}
+                      </span>
+                    )}
+                  </div>
+                ))}
+
+                {/* Currently running model */}
+                {activeModel && (
+                  <div className={`${styles.streamingItem} ${styles.streamingActive}`}>
+                    <span className={styles.streamingIcon}>
+                      <Loader2 size={13} className={styles.spinIcon} />
+                    </span>
+                    <ProviderLogo provider={activeModel.provider} size={14} />
+                    <span className={styles.streamingLabel}>
+                      {activeModel.label || activeModel.model}
+                    </span>
+                    <span className={styles.streamingStatus}>running…</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Progressive results table */}
+              {streamingResults.length > 0 && (
+                <div className={styles.streamingTableWrapper}>
+                  <BenchmarksTableComponent
+                    results={streamingResults}
+                    expectedValue={benchmark.expectedValue}
+                    modelConfigMap={modelConfigMap}
+                    mini
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -588,7 +705,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId }) {
               </div>
 
               {/* Results Table */}
-              <BenchmarksTableComponent results={latestRun.models} expectedValue={benchmark.expectedValue} />
+              <BenchmarksTableComponent results={latestRun.models} expectedValue={benchmark.expectedValue} modelConfigMap={modelConfigMap} />
             </div>
           )}
 

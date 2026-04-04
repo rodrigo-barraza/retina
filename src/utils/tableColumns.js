@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Timer,
   Gauge,
+  HardDrive,
 } from "lucide-react";
 import ModelBadgeComponent from "../components/ModelBadgeComponent";
 import ProvidersBadgeComponent from "../components/ProvidersBadgeComponent";
@@ -586,6 +587,40 @@ export const benchmarkModelColumn = () => ({
       <span className={styles.benchmarkModelProvider}>{r.provider}</span>
     </span>
   ),
+});
+
+/**
+ * Model file size column for benchmarks.
+ * Shows the GGUF/weight file size for local models (e.g. "4.3 GB").
+ * @param {Object} modelConfigMap  Map of "provider:modelName" → model config object
+ */
+export const benchmarkSizeColumn = ({ modelConfigMap = {} } = {}) => ({
+  key: "size",
+  label: "Size",
+  description: "Model file/weight size on disk (local models only)",
+  sortable: true,
+  sortValue: (r) => {
+    const cfg = modelConfigMap[`${r.provider}:${r.model}`];
+    const s = cfg?.size || "";
+    const match = s.match(/([\d.]+)\s*(GB|MB|KB)/i);
+    if (!match) return 0;
+    const val = parseFloat(match[1]);
+    const unit = match[2].toUpperCase();
+    if (unit === "GB") return val * 1024;
+    if (unit === "MB") return val;
+    return val / 1024;
+  },
+  align: "right",
+  render: (r) => {
+    const cfg = modelConfigMap[`${r.provider}:${r.model}`];
+    if (!cfg?.size) return emptyDash();
+    return (
+      <span className={styles.benchmarkTpsCell}>
+        <HardDrive size={10} />
+        {cfg.size}
+      </span>
+    );
+  },
 });
 
 /**

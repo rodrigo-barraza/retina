@@ -3,6 +3,7 @@ import TableComponent from "./TableComponent";
 import {
   benchmarkStatusColumn,
   benchmarkModelColumn,
+  benchmarkSizeColumn,
   benchmarkResponseColumn,
   benchmarkLatencyColumn,
   benchmarkDurationColumn,
@@ -31,6 +32,7 @@ import {
 export default function BenchmarksTableComponent({
   results = [],
   expectedValue,
+  modelConfigMap = {},
   emptyText = "No results",
   mini = false,
   title,
@@ -44,6 +46,7 @@ export default function BenchmarksTableComponent({
     () => [
       benchmarkStatusColumn(),
       benchmarkModelColumn(),
+      benchmarkSizeColumn({ modelConfigMap }),
       benchmarkMatchModeColumn(),
       benchmarkResponseColumn({ expectedValue }),
       benchmarkDurationColumn(),
@@ -53,7 +56,7 @@ export default function BenchmarksTableComponent({
       benchmarkTokPerSecColumn(),
       benchmarkCostColumn(),
     ],
-    [expectedValue],
+    [expectedValue, modelConfigMap],
   );
 
   return (

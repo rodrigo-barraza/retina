@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -50,6 +50,16 @@ export default function BenchmarkPageComponent() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
+
+  // ── Derived: aggregate cost across all benchmarks ────────
+  const totalCost = useMemo(
+    () =>
+      benchmarks.reduce(
+        (sum, b) => sum + (b.cumulativeCost || 0),
+        0,
+      ),
+    [benchmarks],
+  );
 
   // ── Load benchmarks ────────────────────────────────────────
   const loadBenchmarks = useCallback(async () => {
@@ -162,6 +172,13 @@ export default function BenchmarkPageComponent() {
       </PageHeaderComponent>
 
       <div className={styles.content}>
+        {totalCost > 0 && (
+          <div className={styles.totalCostBar}>
+            <Coins size={14} className={styles.costIcon} />
+            <span className={styles.totalCostLabel}>Total Cost · All Runs</span>
+            <span className={styles.totalCostValue}>{formatCost(totalCost)}</span>
+          </div>
+        )}
         {loading ? (
           <div className={styles.runProgress}>
             <div className={styles.progressSpinner} />
@@ -236,6 +253,7 @@ export default function BenchmarkPageComponent() {
                 <div className={styles.cardFooter}>
                   {b.latestRun ? (
                     <div className={styles.runSummary}>
+                      <BadgeComponent variant="accent" mini>Latest</BadgeComponent>
                       <span className={styles.passCount}>
                         {b.latestRun.summary.passed} ✓
                       </span>
@@ -244,15 +262,22 @@ export default function BenchmarkPageComponent() {
                       </span>
                       {b.latestRun.summary.totalCost > 0 && (
                         <span className={styles.runCost}>
-                          <Coins size={10} />
                           {formatCost(b.latestRun.summary.totalCost)}
                         </span>
+                      )}
+                      {b.cumulativeCost > 0 && (
+                        <>
+                          <span className={styles.footerDivider} />
+                          <span className={styles.cumulativeCost}>
+                            Σ {formatCost(b.cumulativeCost)}
+                          </span>
+                        </>
                       )}
                     </div>
                   ) : (
                     <div className={styles.runSummary}>
                       <Clock size={12} />
-                      <span className={styles.noRuns}>Click to run</span>
+                      <span className={styles.noRuns}>No runs yet</span>
                     </div>
                   )}
                   <ButtonComponent variant="ghost" size="xs" icon={Play}>
