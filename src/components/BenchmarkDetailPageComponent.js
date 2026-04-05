@@ -6,7 +6,6 @@ import {
   Play,
   Copy,
   CheckCircle2,
-  History,
   X,
   Check,
   DollarSign,
@@ -18,7 +17,8 @@ import {
   Square,
 } from "lucide-react";
 import PrismService from "../services/PrismService";
-import PageHeaderComponent from "./PageHeaderComponent";
+import ThreePanelLayout from "./ThreePanelLayout";
+import RunHistorySidebarComponent from "./RunHistorySidebarComponent";
 import ButtonComponent from "./ButtonComponent";
 import BadgeComponent from "./BadgeComponent";
 import ModalDialogComponent from "./ModalDialogComponent";
@@ -57,7 +57,7 @@ function flattenAllModels(config) {
   return [...seen.values()];
 }
 
-export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningChange, sidebar }) {
+export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningChange, navSidebar, rightSidebar }) {
   const router = useRouter();
   // ── State ──────────────────────────────────────────────────
   const [benchmark, setBenchmark] = useState(null);
@@ -84,6 +84,9 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   // Model selection
   const [prismConfig, setPrismConfig] = useState(null);
   const [selectedModelKeys, setSelectedModelKeys] = useState(new Set());
+
+  // Selected result (for chat preview)
+  const [selectedResult, setSelectedResult] = useState(null);
 
   // Streaming progress
   const [streamingResults, setStreamingResults] = useState([]);
@@ -497,6 +500,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   const viewRun = useCallback((run) => {
     setLatestRun(run);
     setActiveRunId(run.id);
+    setSelectedResult(null);
   }, []);
 
   // ── Toggle model in selection ──────────────────────────────
@@ -575,95 +579,95 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   // ── Loading state ──────────────────────────────────────────
   if (loading) {
     return (
-      <div className={styles.container}>
-        <PageHeaderComponent
-          title="Benchmarks"
-          subtitle="Loading…"
-          backHref="/benchmarks"
-        />
-        <div className={styles.content}>
-          <div className={styles.contentMain}>
-            <div className={styles.runProgress}>
-              <div className={styles.progressSpinner} />
-              <div className={styles.progressText}>Loading benchmark…</div>
-            </div>
+      <ThreePanelLayout
+        navSidebar={navSidebar}
+        leftPanel={null}
+        leftTitle="Run History"
+        rightPanel={rightSidebar}
+        rightTitle="Benchmarks"
+        headerTitle="Loading…"
+      >
+        <div className={styles.contentMain}>
+          <div className={styles.runProgress}>
+            <div className={styles.progressSpinner} />
+            <div className={styles.progressText}>Loading benchmark…</div>
           </div>
-          {sidebar && (
-            <aside className={styles.sidebarPanel}>
-              <div className={styles.sidebarHeader}>Benchmarks</div>
-              {sidebar}
-            </aside>
-          )}
         </div>
-      </div>
+      </ThreePanelLayout>
     );
   }
 
   if (!benchmark) {
     return (
-      <div className={styles.container}>
-        <PageHeaderComponent
-          title="Benchmarks"
-          subtitle="Not found"
-          backHref="/benchmarks"
-        />
-        <div className={styles.content}>
-          <div className={styles.contentMain}>
-            <div className={styles.runProgress}>
-              <div className={styles.progressText}>Benchmark not found.</div>
-            </div>
+      <ThreePanelLayout
+        navSidebar={navSidebar}
+        leftPanel={null}
+        leftTitle="Run History"
+        rightPanel={rightSidebar}
+        rightTitle="Benchmarks"
+        headerTitle="Not found"
+      >
+        <div className={styles.contentMain}>
+          <div className={styles.runProgress}>
+            <div className={styles.progressText}>Benchmark not found.</div>
           </div>
-          {sidebar && (
-            <aside className={styles.sidebarPanel}>
-              <div className={styles.sidebarHeader}>Benchmarks</div>
-              {sidebar}
-            </aside>
-          )}
         </div>
-      </div>
+      </ThreePanelLayout>
     );
   }
 
   // ── Render ─────────────────────────────────────────────────
   return (
-    <div className={styles.container}>
-      <PageHeaderComponent
-        title="Benchmarks"
-        subtitle={benchmark.name}
-        backHref="/benchmarks"
-        centerContent={
-          <ModelPickerPopoverComponent
-            config={prismConfig}
-            multiSelect
-            selectedKeys={selectedModelKeys}
-            onSelectModel={handleModelSelect}
-          />
-        }
-      />
+    <ThreePanelLayout
+      navSidebar={navSidebar}
+      leftPanel={
+        <RunHistorySidebarComponent
+          benchmark={benchmark}
+          runHistory={runHistory}
+          activeRunId={activeRunId}
+          onViewRun={viewRun}
+          running={running}
+          streamingCompleted={streamingResults.length}
+        />
+      }
+      leftTitle="Run History"
+      rightPanel={rightSidebar}
+      rightTitle="Benchmarks"
+      headerTitle={benchmark.name}
+      headerCenter={
+        <ModelPickerPopoverComponent
+          config={prismConfig}
+          multiSelect
+          selectedKeys={selectedModelKeys}
+          onSelectModel={handleModelSelect}
+        />
+      }
+      headerControls={
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <ButtonComponent
+            variant="ghost"
+            size="sm"
+            icon={Copy}
+            onClick={openClone}
+          >
+            Clone
+          </ButtonComponent>
+          <ButtonComponent
+            variant="primary"
+            size="sm"
+            icon={running ? Square : Play}
+            onClick={running ? handleStop : handleRun}
+            loading={running}
+          >
+            {running
+              ? "Stop"
+              : `Run ${selectedModels.length > 0 ? selectedModels.length : allModels.length} Models`}
+          </ButtonComponent>
+        </div>
+      }
+    >
+      <div className={styles.contentMain}>
 
-      <div className={styles.content}>
-        <div className={styles.contentMain}>
-          <div className={styles.contentMainHeader}>
-            <ButtonComponent
-              variant="ghost"
-              size="sm"
-              icon={Copy}
-              onClick={openClone}
-            >
-              Clone
-            </ButtonComponent>
-            <ButtonComponent
-              variant="primary"
-              size="sm"
-              icon={running ? Square : Play}
-              onClick={running ? handleStop : handleRun}
-              loading={running}
-            >
-              {running
-                ? "Stop"
-                : `Run ${selectedModels.length > 0 ? selectedModels.length : allModels.length} Models`}
-            </ButtonComponent>
-          </div>
           <div className={styles.detailPanel}>
           {/* ── Benchmark Info ── */}
           <div className={styles.detailHeader}>
@@ -724,15 +728,6 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
               )}
             </div>
           )}
-
-          <ChatPreviewComponent
-            messages={[
-              { role: "system", content: benchmark.systemPrompt || "\u00A0" },
-              { role: "user", content: benchmark.prompt },
-            ]}
-          />
-
-
 
           {/* ── Running Progress ── */}
           {running && (() => {
@@ -863,6 +858,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                     results={streamingResults}
                     expectedValue={benchmark.expectedValue}
                     modelConfigMap={modelConfigMap}
+                    onRowClick={setSelectedResult}
                     mini
                   />
                 </div>
@@ -911,69 +907,25 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
               />
 
               {/* Results Table */}
-              <BenchmarksTableComponent results={latestRun.models} expectedValue={benchmark.expectedValue} modelConfigMap={modelConfigMap} />
+              <BenchmarksTableComponent results={latestRun.models} expectedValue={benchmark.expectedValue} modelConfigMap={modelConfigMap} onRowClick={setSelectedResult} />
             </div>
           )}
 
-          {/* ── Run History ── */}
-          {runHistory.length > 0 && (
-            <div className={styles.resultsSection}>
-              <div className={styles.resultsSectionTitle}>
-                <History size={14} style={{ marginRight: 6 }} />
-                Run History ({runHistory.length})
-              </div>
-              <div className={styles.runHistoryList}>
-                {runHistory.map((run) => (
-                  <div
-                    key={run.id}
-                    className={`${styles.runHistoryItem} ${activeRunId === run.id ? styles.activeRun : ""}`}
-                    onClick={() => viewRun(run)}
-                  >
-                    <div className={styles.runHistoryMeta}>
-                      <span className={styles.runHistoryDate}>
-                        {new Date(run.completedAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className={styles.runHistoryStats}>
-                      <span className={styles.passCount}>
-                        {run.summary.passed} ✓
-                      </span>
-                      <span className={styles.failCount}>
-                        {run.summary.failed + (run.summary.errored || 0)} ✗
-                      </span>
-                      {(run.summary.totalCost > 0 || run.models?.some(r => r.estimatedCost > 0)) && (
-                        <span className={styles.runCost}>
-                          <Coins size={10} />
-                          {formatCost(
-                            run.summary.totalCost ??
-                            run.models.reduce((s, r) => s + (r.estimatedCost || 0), 0)
-                          )}
-                        </span>
-                      )}
-                      <div className={styles.passBar}>
-                        <div
-                          className={styles.passBarFill}
-                          style={{
-                            width: `${(run.summary.passed / run.summary.total) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        </div>
+          <ChatPreviewComponent
+            messages={[
+              ...(benchmark.systemPrompt ? [{ role: "system", content: benchmark.systemPrompt }] : []),
+              { role: "user", content: benchmark.prompt },
+              ...(selectedResult?.response ? [{
+                role: "assistant",
+                content: selectedResult.response,
+                model: selectedResult.label || selectedResult.model,
+                provider: selectedResult.provider,
+              }] : []),
+            ]}
+          />
 
-        {sidebar && (
-          <aside className={styles.sidebarPanel}>
-            <div className={styles.sidebarHeader}>Benchmarks</div>
-            {sidebar}
-          </aside>
-        )}
-      </div>
+        </div>
+        </div>
 
       {/* ── Clone Modal ── */}
       {showModal && (
@@ -1009,6 +961,6 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           />
         </ModalDialogComponent>
       )}
-    </div>
+    </ThreePanelLayout>
   );
 }

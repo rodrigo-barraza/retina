@@ -1058,4 +1058,43 @@ export default class PrismService {
 
     return () => controller.abort();
   }
+
+  // ---------------------------------------------------------------------------
+  // Synthesis
+  // ---------------------------------------------------------------------------
+
+  /**
+   * List all synthesis runs for the current project.
+   * @returns {Promise<Array>}
+   */
+  static async getSynthesisRuns() {
+    return PrismService._request("/synthesis", { method: "GET" });
+  }
+
+  /**
+   * Get a single synthesis run by ID.
+   * @param {string} id
+   * @returns {Promise<object>}
+   */
+  static async getSynthesisRun(id) {
+    return PrismService._request(`/synthesis/${id}`, { method: "GET" });
+  }
+
+  /**
+   * Create a new synthesis run.
+   * @param {object} data - { id, title, systemPrompt, assistantPersona, userPersona, category, targetTurns, seedMessages, settings, conversationId }
+   * @returns {Promise<object>}
+   */
+  static async createSynthesisRun(data) {
+    return PrismService._request("/synthesis", { body: data });
+  }
+
+  /**
+   * Delete a synthesis run.
+   * @param {string} id
+   * @returns {Promise<object>}
+   */
+  static async deleteSynthesisRun(id) {
+    return PrismService._request(`/synthesis/${id}`, { method: "DELETE" });
+  }
 }

@@ -151,6 +151,15 @@ export default function HistoryPanel({
           },
         });
       }
+      if (conv.synthetic) {
+        tags.push({
+          label: "SYNTHETIC",
+          style: {
+            background: "rgba(168, 85, 247, 0.12)",
+            color: "rgb(168, 85, 247)",
+          },
+        });
+      }
 
       // Extract the most recent model name from assistant messages
       const msgs = conv.messages || [];

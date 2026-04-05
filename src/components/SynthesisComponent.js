@@ -144,11 +144,8 @@ export default function SynthesisComponent() {
   // ── Load synthesis history ─────────────────────────────────────
   const loadSynthesisHistory = useCallback(async () => {
     try {
-      const all = await PrismService.getConversations();
-      const synthOnly = all.filter(
-        (c) => c.title && c.title.startsWith("Synthesis:"),
-      );
-      setSynthesisConversations(synthOnly);
+      const runs = await PrismService.getSynthesisRuns();
+      setSynthesisConversations(runs);
     } catch (err) {
       console.error("Failed to load synthesis history:", err);
     }
@@ -287,6 +284,7 @@ export default function SynthesisComponent() {
         await PrismService.appendMessages(convId, conversation, undefined, {
           title: `Synthesis: ${systemPrompt.slice(0, 60)}`,
           systemPrompt: effectiveAssistantPrompt,
+          synthetic: true,
           settings: {
             provider: settings.provider,
             model: settings.model,
@@ -303,6 +301,7 @@ export default function SynthesisComponent() {
     const convMeta = {
       title: `Synthesis: ${systemPrompt.slice(0, 60)}`,
       systemPrompt: effectiveAssistantPrompt,
+      synthetic: true,
       settings: {
         provider: settings.provider,
         model: settings.model,
@@ -479,6 +478,31 @@ export default function SynthesisComponent() {
 
       if (!abortedRef.current) {
         setLeftTab("output");
+
+        // Save the synthesis run to the dedicated collection
+        const synthesisRunId = crypto.randomUUID();
+        try {
+          await PrismService.createSynthesisRun({
+            id: synthesisRunId,
+            title: `Synthesis: ${systemPrompt.slice(0, 60)}`,
+            systemPrompt,
+            assistantPersona,
+            userPersona,
+            category,
+            targetTurns,
+            seedMessages: seedMessages.filter((m) => m.content.trim()),
+            settings: {
+              provider: settings.provider,
+              model: settings.model,
+              temperature: settings.temperature,
+            },
+            conversationId: convId,
+          });
+          setActiveHistoryId(synthesisRunId);
+        } catch (err) {
+          console.error("Failed to save synthesis run:", err);
+        }
+
         loadSynthesisHistory();
       }
     } catch (err) {
@@ -500,7 +524,9 @@ export default function SynthesisComponent() {
     settings,
     systemPrompt,
     effectiveAssistantPrompt,
+    assistantPersona,
     userPersona,
+    category,
     targetTurns,
     seedMessages,
     useUserSimModel,
@@ -536,33 +562,53 @@ export default function SynthesisComponent() {
   }, []);
 
   // ── History selection ─────────────────────────────────────────
-  const handleSelectHistory = useCallback(async (conv) => {
+  const handleSelectHistory = useCallback(async (run) => {
     try {
-      const full = await PrismService.getConversation(conv.id);
-      const msgs = (full.messages || []).filter((m) => m.role !== "system");
-      setGeneratedMessages(msgs);
-      setConversationId(conv.id);
-      setActiveHistoryId(conv.id);
-
-      // Restore system prompt from the conversation
-      if (full.systemPrompt) {
-        setSystemPrompt(full.systemPrompt);
+      // Restore the synthesis config
+      if (run.systemPrompt) setSystemPrompt(run.systemPrompt);
+      if (run.assistantPersona !== undefined) setAssistantPersona(run.assistantPersona);
+      if (run.userPersona !== undefined) setUserPersona(run.userPersona);
+      if (run.category) setCategory(run.category);
+      if (run.targetTurns) setTargetTurns(run.targetTurns);
+      if (run.seedMessages) setSeedMessages(run.seedMessages);
+      if (run.settings) {
+        setSettings((s) => ({
+          ...s,
+          provider: run.settings.provider || s.provider,
+          model: run.settings.model || s.model,
+          temperature: run.settings.temperature ?? s.temperature,
+        }));
       }
 
-      // Show generated section
-      if (msgs.length > 0) {
-        setLeftTab("output");
+      setActiveHistoryId(run.id);
+      setConversationId(run.conversationId || null);
+
+      // Load the generated conversation if it exists
+      if (run.conversationId) {
+        try {
+          const full = await PrismService.getConversation(run.conversationId);
+          const msgs = (full.messages || []).filter((m) => m.role !== "system");
+          setGeneratedMessages(msgs);
+          if (msgs.length > 0) setLeftTab("output");
+        } catch {
+          // Conversation may have been deleted separately
+          setGeneratedMessages([]);
+          setLeftTab("config");
+        }
+      } else {
+        setGeneratedMessages([]);
+        setLeftTab("config");
       }
     } catch (err) {
-      console.error("Failed to load synthesis conversation:", err);
+      console.error("Failed to load synthesis run:", err);
     }
   }, []);
 
   const handleDeleteHistory = useCallback(async (id) => {
     try {
-      await PrismService.deleteConversation(id);
+      await PrismService.deleteSynthesisRun(id);
       setSynthesisConversations((prev) => prev.filter((c) => c.id !== id));
-      // If the deleted conversation is currently active, clear the view
+      // If the deleted run is currently active, clear the view
       setActiveHistoryId((prev) => {
         if (prev === id) {
           setGeneratedMessages([]);
@@ -573,7 +619,7 @@ export default function SynthesisComponent() {
         return prev;
       });
     } catch (err) {
-      console.error("Failed to delete synthesis conversation:", err);
+      console.error("Failed to delete synthesis run:", err);
     }
   }, []);
 

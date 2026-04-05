@@ -1,0 +1,285 @@
+/* ============================================================
+   RunHistorySidebarComponent — left sidebar for benchmark runs
+   ============================================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Assertions Section ──────────────────────────────────── */
+
+.assertionsSection {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.assertionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.assertionRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.assertionValue {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-color);
+  background: var(--accent-subtle);
+  padding: 2px 6px;
+  border-radius: 3px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.operatorBadge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Prompt Preview ──────────────────────────────────────── */
+
+.promptSection {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.promptPreview {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* ── Run History List ────────────────────────────────────── */
+
+.historyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 6px;
+  flex-shrink: 0;
+}
+
+.historyLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+}
+
+.historyCount {
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 8px 8px;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 16px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* ── Run Item ────────────────────────────────────────────── */
+
+.runItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: var(--border-radius-sm);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+
+  &:hover {
+    background: var(--accent-glow);
+    border-color: color-mix(in srgb, var(--accent-color) 15%, transparent);
+  }
+}
+
+.runItemActive {
+  background: color-mix(in srgb, var(--accent-color) 8%, transparent);
+  border-color: color-mix(in srgb, var(--accent-color) 30%, transparent);
+}
+
+.runItemAborted {
+  opacity: 0.7;
+}
+
+/* ── Run Item Header ─────────────────────────────────────── */
+
+.runItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.runIndex {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  min-width: 18px;
+}
+
+.runItemActive .runIndex {
+  color: var(--accent-color);
+}
+
+.runDate {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Run Item Stats ──────────────────────────────────────── */
+
+.runStats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  padding-left: 24px;
+}
+
+.statPassed {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.statFailed {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.statCost {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
+/* ── Mini Pass Rate Bar ──────────────────────────────────── */
+
+.miniPassBar {
+  width: 36px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--danger-subtle);
+  overflow: hidden;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.miniPassBarFill {
+  height: 100%;
+  background: var(--success);
+  border-radius: 2px;
+  transition: width 0.3s ease-out;
+}
+
+/* ── Running Indicator ───────────────────────────────────── */
+
+.runningBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin: 0 8px 4px;
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--accent-color) 8%, var(--bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--accent-color) 25%, transparent);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-color);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+  color: var(--accent-color);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
