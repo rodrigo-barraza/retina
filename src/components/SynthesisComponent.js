@@ -14,7 +14,6 @@ import {
   User,
   Bot,
   Settings2,
-  Split,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
@@ -32,7 +31,8 @@ import IconButtonComponent from "./IconButtonComponent.js";
 import TextAreaComponent from "./TextAreaComponent.js";
 import CopyButtonComponent from "./CopyButtonComponent.js";
 import BadgeComponent from "./BadgeComponent.js";
-import HistoryPanel from "./HistoryPanel.js";
+import JsonViewerComponent from "./JsonViewerComponent.js";
+import SynthesisHistoryPanel from "./SynthesisHistoryPanel.js";
 import { SETTINGS_DEFAULTS } from "../constants.js";
 import styles from "./SynthesisComponent.module.css";
 
@@ -117,7 +117,7 @@ export default function SynthesisComponent() {
   );
   const [assistantPersona, setAssistantPersona] = useState("");
   const [userPersona, setUserPersona] = useState("");
-  const [useUserSimModel, setUseUserSimModel] = useState(false);
+  const [useUserSimModel, setUseUserSimModel] = useState(true);
   const [userSimSettings, setUserSimSettings] = useState({
     provider: "",
     model: "",
@@ -219,15 +219,14 @@ export default function SynthesisComponent() {
     return msgs;
   }, [effectiveAssistantPrompt, generatedMessages]);
 
-  const sftJsonString = useMemo(() => {
-    const dataset = {
-      prompt: effectiveAssistantPrompt,
-      prompt_id: crypto.randomUUID().replace(/-/g, ""),
-      messages: sftOutput,
-      category,
-    };
-    return JSON.stringify(dataset, null, 2);
-  }, [sftOutput, category, effectiveAssistantPrompt]);
+  const sftData = useMemo(() => ({
+    prompt: effectiveAssistantPrompt,
+    prompt_id: crypto.randomUUID().replace(/-/g, ""),
+    messages: sftOutput,
+    category,
+  }), [sftOutput, category, effectiveAssistantPrompt]);
+
+  const sftJsonString = useMemo(() => JSON.stringify(sftData, null, 2), [sftData]);
 
   // ── Auto-scroll messages ──────────────────────────────────────
   useEffect(() => {
@@ -551,7 +550,7 @@ export default function SynthesisComponent() {
     setSystemPrompt("You are a helpful AI assistant.");
     setAssistantPersona("");
     setUserPersona("");
-    setUseUserSimModel(false);
+    setUseUserSimModel(true);
     setUserSimSettings({ provider: "", model: "", temperature: 0.9 });
     setTargetTurns(DEFAULT_TURNS);
     setCategory("Chat");
@@ -697,9 +696,11 @@ export default function SynthesisComponent() {
                   Download
                 </ButtonComponent>
               </div>
-              <div className={styles.outputPreview}>
-                <pre className={styles.jsonOutput}>{sftJsonString}</pre>
-              </div>
+              <JsonViewerComponent
+                data={sftData}
+                label="SFT Output"
+                collapsed={2}
+              />
             </>
           ) : (
             <div className={styles.outputEmpty}>
@@ -717,13 +718,13 @@ export default function SynthesisComponent() {
       <ThreePanelLayout
         leftTitle={null}
         leftPanel={leftPanel}
+        rightTitle="History"
         rightPanel={
-          <HistoryPanel
+          <SynthesisHistoryPanel
             conversations={synthesisConversations}
             activeId={activeHistoryId}
             onSelect={handleSelectHistory}
             onDelete={handleDeleteHistory}
-            readOnly={false}
           />
         }
         headerTitle="Synthesis"
@@ -740,25 +741,14 @@ export default function SynthesisComponent() {
               settings={settings}
               onSelectModel={handleSelectModel}
             />
-            <button
-              className={`${styles.splitModelToggle} ${useUserSimModel ? styles.splitModelToggleActive : ""}`}
-              onClick={() => setUseUserSimModel((v) => !v)}
-              title={useUserSimModel ? "Using separate model for user simulation" : "Use same model for both roles"}
-            >
-              <Split size={14} />
-            </button>
-            {useUserSimModel && (
-              <>
-                <span className={styles.userSimLabel}>
-                  <User size={12} />
-                </span>
-                <ModelPickerPopoverComponent
-                  config={filteredConfig}
-                  settings={userSimSettings}
-                  onSelectModel={handleSelectUserSimModel}
-                />
-              </>
-            )}
+            <span className={styles.userSimLabel}>
+              <User size={12} />
+            </span>
+            <ModelPickerPopoverComponent
+              config={filteredConfig}
+              settings={userSimSettings}
+              onSelectModel={handleSelectUserSimModel}
+            />
           </div>
         }
         headerControls={

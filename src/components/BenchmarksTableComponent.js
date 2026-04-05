@@ -29,6 +29,8 @@ import {
  * @param {string}   [props.sortDir]         - Current sort direction
  * @param {Function} [props.onSort]          - (key, dir) => void
  * @param {string}   [props.expectedValue]   - Expected value to highlight in responses
+ * @param {Function} [props.onRowClick]      - (row) => void — called when a row is clicked
+ * @param {string}   [props.activeRowKey]    - Key of the currently active/selected row
  */
 export default function BenchmarksTableComponent({
   results = [],
@@ -42,6 +44,7 @@ export default function BenchmarksTableComponent({
   sortDir,
   onSort,
   onRowClick,
+  activeRowKey,
 }) {
   const columns = useMemo(
     () => [
@@ -71,6 +74,7 @@ export default function BenchmarksTableComponent({
       sortDir={sortDir}
       onSort={onSort}
       onRowClick={onRowClick}
+      activeRowKey={activeRowKey}
       getRowKey={(r, i) => `${r.provider}:${r.label}:${i}`}
       emptyText={emptyText}
       mini={mini}

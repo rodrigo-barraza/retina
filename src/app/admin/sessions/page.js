@@ -143,8 +143,16 @@ export default function SessionsPage() {
 
     loadSessions();
 
-    // Subscribe to change stream SSE for real-time updates
+    // Subscribe to change stream SSE for real-time updates.
+    // Session data is aggregated from sessions + requests + conversations
+    // via $lookup, so we need to refresh on changes to all three collections.
+    // Debounce to batch rapid request-level changes during streaming.
     let pollInterval = null;
+    let debounceTimer = null;
+    const debouncedLoad = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(loadSessions, 800);
+    };
     const es = IrisService.subscribeCollectionChanges({
       onStatus: (data) => {
         if (!data.changeStreams) {
@@ -156,7 +164,15 @@ export default function SessionsPage() {
       },
       onChange: (event) => {
         if (event.collection === "sessions") {
+          // Session created/updated — immediate refresh
           loadSessions();
+        } else if (
+          event.collection === "requests" ||
+          event.collection === "conversations"
+        ) {
+          // Request/conversation changes update aggregated session data
+          // (tokens, cost, models, etc.) — debounce to batch streaming updates
+          debouncedLoad();
         }
       },
     });
@@ -164,6 +180,7 @@ export default function SessionsPage() {
     return () => {
       es.close();
       if (pollInterval) clearInterval(pollInterval);
+      if (debounceTimer) clearTimeout(debounceTimer);
     };
   }, [loadSessions]);
 

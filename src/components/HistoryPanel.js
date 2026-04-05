@@ -130,6 +130,11 @@ export default function HistoryPanel({
   onToggleFavorite,
   initialProviders,
   initialSearch = "",
+  // Customisable labels — defaults match "conversations" context
+  newLabel = "New Conversation",
+  emptyText = "No recent chats",
+  searchText = "Search conversations...",
+  itemIcon,
 }) {
   // Normalize conversations into HistoryList items
   const items = useMemo(() => {
@@ -191,7 +196,7 @@ export default function HistoryPanel({
 
   return (
     <div className={styles.container}>
-      {!readOnly && (
+      {!readOnly && onNew && (
         <ButtonComponent
           variant="primary"
           size="sm"
@@ -201,7 +206,7 @@ export default function HistoryPanel({
           className={styles.newBtn}
           data-panel-close
         >
-          New Conversation
+          {newLabel}
         </ButtonComponent>
       )}
       <HistoryList
@@ -212,10 +217,10 @@ export default function HistoryPanel({
           if (conv) onSelect(conv);
         }}
         onDelete={!readOnly && onDelete ? onDelete : undefined}
-        icon={MessageSquare}
+        icon={itemIcon || MessageSquare}
         readOnly={readOnly}
-        emptyLabel="No recent chats"
-        searchPlaceholder="Search conversations..."
+        emptyLabel={emptyText}
+        searchPlaceholder={searchText}
         admin={showUsername}
         newIds={newIds}
         favorites={favorites}

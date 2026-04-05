@@ -67,6 +67,21 @@
   pointer-events: auto;
 }
 
+.headerAvatar {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-glow);
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
 /* ── Header Toggle Buttons ─────────────────────────── */
 
 .headerToggle {

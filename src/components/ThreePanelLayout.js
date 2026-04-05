@@ -6,6 +6,7 @@ import {
   PanelLeft,
   PanelRightClose,
   PanelRight,
+  Bot,
 } from "lucide-react";
 import styles from "./ThreePanelLayout.module.css";
 import { LS_PANEL_LEFT, LS_PANEL_RIGHT } from "../constants";
@@ -154,6 +155,9 @@ export default function ThreePanelLayout({
                 right: rightPanel && showRight ? 320 : 0,
               }}
             >
+              <div className={styles.headerAvatar}>
+                <Bot size={14} />
+              </div>
               {headerCenter}
             </div>
           )}

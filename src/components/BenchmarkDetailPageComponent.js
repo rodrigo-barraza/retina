@@ -88,6 +88,14 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   // Selected result (for chat preview)
   const [selectedResult, setSelectedResult] = useState(null);
 
+  // Compute the active row key for table highlight
+  const getActiveKey = useCallback((results) => {
+    if (!selectedResult) return undefined;
+    const idx = results.indexOf(selectedResult);
+    if (idx === -1) return undefined;
+    return `${selectedResult.provider}:${selectedResult.label}:${idx}`;
+  }, [selectedResult]);
+
   // Streaming progress
   const [streamingResults, setStreamingResults] = useState([]);
   const [streamingTotal, setStreamingTotal] = useState(0);
@@ -859,6 +867,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                     expectedValue={benchmark.expectedValue}
                     modelConfigMap={modelConfigMap}
                     onRowClick={setSelectedResult}
+                    activeRowKey={getActiveKey(streamingResults)}
                     mini
                   />
                 </div>
@@ -907,7 +916,13 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
               />
 
               {/* Results Table */}
-              <BenchmarksTableComponent results={latestRun.models} expectedValue={benchmark.expectedValue} modelConfigMap={modelConfigMap} onRowClick={setSelectedResult} />
+              <BenchmarksTableComponent
+                results={latestRun.models}
+                expectedValue={benchmark.expectedValue}
+                modelConfigMap={modelConfigMap}
+                onRowClick={setSelectedResult}
+                activeRowKey={getActiveKey(latestRun.models)}
+              />
             </div>
           )}
 
