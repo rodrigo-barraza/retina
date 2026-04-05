@@ -745,6 +745,7 @@ export default function MessageList({
   readOnly = false,
   isGenerating = false,
   streamingOutputs,
+  headerContent,
 
   onDelete,
   onRestore,
@@ -779,6 +780,7 @@ export default function MessageList({
 
   return (
     <div className={styles.messagesList}>
+      {headerContent}
       {messages.map((msg, i) => {
         const roleClass =
           msg.role === "user"

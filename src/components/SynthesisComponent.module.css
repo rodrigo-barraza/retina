@@ -322,36 +322,7 @@
   animation: pulse 1.2s ease-in-out infinite;
 }
 
-/* ── System Prompt Block (inside generated section) ── */
 
-.systemPromptBlock {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-left: 2px solid color-mix(in srgb, var(--warning) 40%, transparent);
-  border-radius: var(--border-radius-sm);
-  padding: 12px 14px;
-  font-size: 13px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.systemPromptLabel {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-bottom: 6px;
-  color: var(--warning);
-}
-
-.systemPromptContent {
-  color: var(--text-secondary);
-}
 
 /* ── Animations ── */
 

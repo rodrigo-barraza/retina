@@ -32,6 +32,7 @@ import IconButtonComponent from "./IconButtonComponent.js";
 import TextAreaComponent from "./TextAreaComponent.js";
 import CopyButtonComponent from "./CopyButtonComponent.js";
 import BadgeComponent from "./BadgeComponent.js";
+import HistoryPanel from "./HistoryPanel.js";
 import { SETTINGS_DEFAULTS } from "../constants.js";
 import styles from "./SynthesisComponent.module.css";
 
@@ -136,6 +137,23 @@ export default function SynthesisComponent() {
   const messagesEndRef = useRef(null);
   const [conversationId, setConversationId] = useState(null);
 
+  // ── History state ─────────────────────────────────────────────
+  const [synthesisConversations, setSynthesisConversations] = useState([]);
+  const [activeHistoryId, setActiveHistoryId] = useState(null);
+
+  // ── Load synthesis history ─────────────────────────────────────
+  const loadSynthesisHistory = useCallback(async () => {
+    try {
+      const all = await PrismService.getConversations();
+      const synthOnly = all.filter(
+        (c) => c.title && c.title.startsWith("Synthesis:"),
+      );
+      setSynthesisConversations(synthOnly);
+    } catch (err) {
+      console.error("Failed to load synthesis history:", err);
+    }
+  }, []);
+
   // ── Load config ───────────────────────────────────────────────
   useEffect(() => {
     PrismService.getConfigWithLocalModels({
@@ -156,6 +174,7 @@ export default function SynthesisComponent() {
       },
       onLocalMerge: setConfig,
     }).catch(console.error);
+    loadSynthesisHistory();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Filtered config: text-to-text models only ─────────────────
@@ -460,6 +479,7 @@ export default function SynthesisComponent() {
 
       if (!abortedRef.current) {
         setLeftTab("output");
+        loadSynthesisHistory();
       }
     } catch (err) {
       if (err.name !== "AbortError" && !abortedRef.current) {
@@ -485,6 +505,7 @@ export default function SynthesisComponent() {
     seedMessages,
     useUserSimModel,
     userSimSettings,
+    loadSynthesisHistory,
   ]);
 
   const handleStop = useCallback(() => {
@@ -510,7 +531,50 @@ export default function SynthesisComponent() {
     setCategory("Chat");
     setGenerationProgress("");
     setConversationId(null);
+    setActiveHistoryId(null);
     setLeftTab("config");
+  }, []);
+
+  // ── History selection ─────────────────────────────────────────
+  const handleSelectHistory = useCallback(async (conv) => {
+    try {
+      const full = await PrismService.getConversation(conv.id);
+      const msgs = (full.messages || []).filter((m) => m.role !== "system");
+      setGeneratedMessages(msgs);
+      setConversationId(conv.id);
+      setActiveHistoryId(conv.id);
+
+      // Restore system prompt from the conversation
+      if (full.systemPrompt) {
+        setSystemPrompt(full.systemPrompt);
+      }
+
+      // Show generated section
+      if (msgs.length > 0) {
+        setLeftTab("output");
+      }
+    } catch (err) {
+      console.error("Failed to load synthesis conversation:", err);
+    }
+  }, []);
+
+  const handleDeleteHistory = useCallback(async (id) => {
+    try {
+      await PrismService.deleteConversation(id);
+      setSynthesisConversations((prev) => prev.filter((c) => c.id !== id));
+      // If the deleted conversation is currently active, clear the view
+      setActiveHistoryId((prev) => {
+        if (prev === id) {
+          setGeneratedMessages([]);
+          setConversationId(null);
+          setLeftTab("config");
+          return null;
+        }
+        return prev;
+      });
+    } catch (err) {
+      console.error("Failed to delete synthesis conversation:", err);
+    }
   }, []);
 
   const handleDownload = useCallback(() => {
@@ -607,7 +671,15 @@ export default function SynthesisComponent() {
       <ThreePanelLayout
         leftTitle={null}
         leftPanel={leftPanel}
-        rightPanel={null}
+        rightPanel={
+          <HistoryPanel
+            conversations={synthesisConversations}
+            activeId={activeHistoryId}
+            onSelect={handleSelectHistory}
+            onDelete={handleDeleteHistory}
+            readOnly={false}
+          />
+        }
         headerTitle="Synthesis"
         navSidebar={
           <NavigationSidebarComponent
@@ -887,21 +959,23 @@ export default function SynthesisComponent() {
                 )}
               </div>
 
-              {effectiveAssistantPrompt && (
-                <div className={styles.systemPromptBlock}>
-                  <span className={styles.systemPromptLabel}>
-                    <Settings2 size={11} />
-                    System
-                  </span>
-                  <span className={styles.systemPromptContent}>{effectiveAssistantPrompt}</span>
-                </div>
-              )}
-
               <MessageList
-                messages={generatedMessages}
+                messages={[
+                  ...(effectiveAssistantPrompt
+                    ? [{ role: "system", content: effectiveAssistantPrompt }]
+                    : []),
+                  ...generatedMessages,
+                ]}
                 isGenerating={isGenerating}
-                onDelete={removeGeneratedMessage}
-                onEdit={updateGeneratedMessage}
+                onDelete={(index) => {
+                  const offset = effectiveAssistantPrompt ? 1 : 0;
+                  if (index >= offset) removeGeneratedMessage(index - offset);
+                }}
+                onEdit={(index, content) => {
+                  const offset = effectiveAssistantPrompt ? 1 : 0;
+                  if (index >= offset) updateGeneratedMessage(index - offset, content);
+                }}
+                readOnly={false}
               />
 
               <div ref={messagesEndRef} />
