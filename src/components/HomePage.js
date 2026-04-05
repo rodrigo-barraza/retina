@@ -977,6 +977,9 @@ export default function HomePage({ initialConversationId = null }) {
           role: m.role,
           content: m.content,
           ...(m.images ? { images: m.images } : {}),
+          ...(m.video ? { video: m.video } : {}),
+          ...(m.audio ? { audio: m.audio } : {}),
+          ...(m.pdf ? { pdf: m.pdf } : {}),
         }));
       const stopArray = settings.stopSequences
         ? settings.stopSequences
@@ -1444,11 +1447,32 @@ export default function HomePage({ initialConversationId = null }) {
     }
 
     // --- Normal text generation branch ---
+    // Categorize attachments by MIME type so the server places them
+    // in the correct media fields (images, video, audio, pdf).
+    const mediaFields = {};
+    if (images.length > 0) {
+      const imageArr = [];
+      const videoArr = [];
+      const audioArr = [];
+      const pdfArr = [];
+      for (const dataUrl of images) {
+        const mimeMatch = dataUrl.match(/^data:([^;]+);/);
+        const mime = mimeMatch?.[1] || "";
+        if (mime.startsWith("video/")) videoArr.push(dataUrl);
+        else if (mime.startsWith("audio/")) audioArr.push(dataUrl);
+        else if (mime === "application/pdf") pdfArr.push(dataUrl);
+        else imageArr.push(dataUrl); // default to image
+      }
+      if (imageArr.length > 0) mediaFields.images = imageArr;
+      if (videoArr.length > 0) mediaFields.video = videoArr;
+      if (audioArr.length > 0) mediaFields.audio = audioArr;
+      if (pdfArr.length > 0) mediaFields.pdf = pdfArr;
+    }
     const userMsg = {
       role: "user",
       content,
       timestamp: new Date().toISOString(),
-      ...(images.length > 0 ? { images } : {}),
+      ...mediaFields,
     };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
@@ -1704,6 +1728,9 @@ export default function HomePage({ initialConversationId = null }) {
           role: m.role,
           content: m.content,
           ...(m.images ? { images: m.images } : {}),
+          ...(m.video ? { video: m.video } : {}),
+          ...(m.audio ? { audio: m.audio } : {}),
+          ...(m.pdf ? { pdf: m.pdf } : {}),
         }));
       const stopArray = settings.stopSequences
         ? settings.stopSequences
@@ -2167,7 +2194,9 @@ export default function HomePage({ initialConversationId = null }) {
                       role: m.role,
                       content: m.content || "",
                       ...(m.images?.length > 0 ? { images: m.images } : {}),
-                      ...(m.audio ? { audio: m.audio } : {}),
+                      ...(m.video?.length > 0 ? { video: m.video } : {}),
+                      ...(m.audio?.length > 0 ? { audio: m.audio } : {}),
+                      ...(m.pdf?.length > 0 ? { pdf: m.pdf } : {}),
                     });
                   });
                   sessionStorage.setItem(
