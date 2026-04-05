@@ -70,8 +70,8 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     name: "",
     prompt: "",
     systemPrompt: "",
-    expectedValue: "",
-    matchMode: "contains",
+    assertions: [{ expectedValue: "", matchMode: "contains" }],
+    assertionOperator: "AND",
   });
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
@@ -292,12 +292,15 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   // ── Clone ──────────────────────────────────────────────────
   const openClone = useCallback(() => {
     if (!benchmark) return;
+    const assertions = benchmark.assertions?.length > 0
+      ? benchmark.assertions
+      : [{ expectedValue: benchmark.expectedValue || "", matchMode: benchmark.matchMode || "contains" }];
     setForm({
       name: `${benchmark.name} (copy)`,
       prompt: benchmark.prompt,
       systemPrompt: benchmark.systemPrompt || "",
-      expectedValue: benchmark.expectedValue,
-      matchMode: benchmark.matchMode || "contains",
+      assertions,
+      assertionOperator: benchmark.assertionOperator || "AND",
     });
     setShowModal(true);
   }, [benchmark]);
@@ -305,10 +308,16 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
-      const payload = { ...form };
+      const { assertions, assertionOperator, ...rest } = form;
+      const payload = {
+        ...rest,
+        expectedValue: assertions[0]?.expectedValue || "",
+        matchMode: assertions[0]?.matchMode || "contains",
+        assertions,
+        assertionOperator,
+      };
       const created = await PrismService.createBenchmark(payload);
       setShowModal(false);
-      // Navigate to the newly cloned benchmark
       if (created?.id) {
         router.push(`/benchmarks/${created.id}`);
       }
@@ -636,6 +645,14 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
         <div className={styles.contentMain}>
           <div className={styles.contentMainHeader}>
             <ButtonComponent
+              variant="ghost"
+              size="sm"
+              icon={Copy}
+              onClick={openClone}
+            >
+              Clone
+            </ButtonComponent>
+            <ButtonComponent
               variant="primary"
               size="sm"
               icon={running ? Square : Play}
@@ -654,46 +671,31 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
               {benchmark.name}
             </div>
             <div className={styles.detailMeta}>
-              <BadgeComponent variant="accent">
-                {benchmark.matchMode || "contains"}
-              </BadgeComponent>
-              <span className={styles.expectedValue}>
-                Expected: {benchmark.expectedValue}
-              </span>
+              {(() => {
+                const assertions = benchmark.assertions?.length > 0
+                  ? benchmark.assertions
+                  : [{ expectedValue: benchmark.expectedValue, matchMode: benchmark.matchMode || "contains" }];
+                const operator = benchmark.assertionOperator || "AND";
+                return assertions.map((a, i) => (
+                  <span key={i} style={{ display: "contents" }}>
+                    {i > 0 && (
+                      <BadgeComponent variant={operator === "OR" ? "warning" : "info"} mini>{operator}</BadgeComponent>
+                    )}
+                    <BadgeComponent variant="accent">
+                      {a.matchMode || "contains"}
+                    </BadgeComponent>
+                    <span className={styles.expectedValue}>
+                      Expected: {a.expectedValue}
+                    </span>
+                  </span>
+                ));
+              })()}
               {benchmark.tags?.map((tag) => (
                 <span key={tag} className={styles.tag}>
                   {tag}
                 </span>
               ))}
             </div>
-          </div>
-
-          <ChatPreviewComponent
-            messages={[
-              { role: "system", content: benchmark.systemPrompt || "\u00A0" },
-              { role: "user", content: benchmark.prompt },
-            ]}
-          />
-
-          {/* ── Actions ── */}
-          <div className={styles.detailActions}>
-            {selectedModels.length > 0 && (
-              <ButtonComponent
-                variant="ghost"
-                size="xs"
-                onClick={clearModelSelection}
-              >
-                Clear Selection
-              </ButtonComponent>
-            )}
-            <ButtonComponent
-              variant="ghost"
-              size="sm"
-              icon={Copy}
-              onClick={openClone}
-            >
-              Clone
-            </ButtonComponent>
           </div>
 
           {/* ── Selected Model Cards ── */}
@@ -711,8 +713,26 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                   />
                 ))}
               </div>
+              {selectedModels.length > 0 && (
+                <ButtonComponent
+                  variant="ghost"
+                  size="xs"
+                  onClick={clearModelSelection}
+                >
+                  Clear Selection
+                </ButtonComponent>
+              )}
             </div>
           )}
+
+          <ChatPreviewComponent
+            messages={[
+              { role: "system", content: benchmark.systemPrompt || "\u00A0" },
+              { role: "user", content: benchmark.prompt },
+            ]}
+          />
+
+
 
           {/* ── Running Progress ── */}
           {running && (() => {
@@ -959,6 +979,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
       {showModal && (
         <ModalDialogComponent
           title="Clone Benchmark"
+          size="xl"
           onClose={() => setShowModal(false)}
           footer={
             <>
@@ -974,7 +995,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                 size="sm"
                 onClick={handleSave}
                 loading={saving}
-                disabled={!form.name || !form.prompt || !form.expectedValue}
+                disabled={!form.name || !form.prompt || !form.assertions?.some(a => a.expectedValue)}
               >
                 Create Clone
               </ButtonComponent>

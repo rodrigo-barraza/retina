@@ -28,6 +28,11 @@
   max-width: 95vw;
 }
 
+.size_xl {
+  width: 1280px;
+  max-width: 95vw;
+}
+
 /* ── Header ── */
 
 .header {

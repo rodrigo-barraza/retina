@@ -822,7 +822,7 @@ export default class PrismService {
 
   /**
    * Create a new benchmark test.
-   * @param {object} data - { name, prompt, systemPrompt?, expectedValue, matchMode?, temperature?, maxTokens?, tags? }
+   * @param {object} data - { name, prompt, systemPrompt?, expectedValue, matchMode?, temperature?, maxTokens?, tags?, assertions?, assertionOperator? }
    * @returns {Promise<object>}
    */
   static async createBenchmark(data) {

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Search, X, Loader2 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import PrismService from "../services/PrismService";
 import ModelsTableComponent from "./ModelsTableComponent";
 import CloseButtonComponent from "./CloseButtonComponent";
 import styles from "./ModelPickerPopoverComponent.module.css";
@@ -72,7 +73,51 @@ export default function ModelPickerPopoverComponent({
   }, []);
 
   // ── Build unified model list across all sections ─────────────────────
-  const allModels = buildAllModels(config);
+  const baseModels = buildAllModels(config);
+
+  // ── Fetch usage stats and enrich models ──────────────────────────────
+  const [usageMap, setUsageMap] = useState(null);
+  const usageFetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (usageFetchedRef.current) return;
+    usageFetchedRef.current = true;
+    PrismService.getModelStats()
+      .then((stats) => {
+        const map = new Map();
+        for (const s of stats) {
+          const key = `${s.provider}:${s.model}`;
+          const existing = map.get(key);
+          if (existing) {
+            existing.totalRequests += s.totalRequests;
+            existing.totalInputTokens += s.totalInputTokens || 0;
+            existing.totalOutputTokens += s.totalOutputTokens || 0;
+          } else {
+            map.set(key, {
+              totalRequests: s.totalRequests,
+              totalInputTokens: s.totalInputTokens || 0,
+              totalOutputTokens: s.totalOutputTokens || 0,
+            });
+          }
+        }
+        setUsageMap(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  const allModels = useMemo(() => {
+    if (!usageMap) return baseModels;
+    return baseModels.map((m) => {
+      const stats = usageMap.get(`${m.provider}:${m.name}`);
+      if (!stats) return m;
+      return {
+        ...m,
+        usageCount: stats.totalRequests,
+        totalInputTokens: stats.totalInputTokens,
+        totalOutputTokens: stats.totalOutputTokens,
+      };
+    });
+  }, [baseModels, usageMap]);
 
   // ── Filter by search ─────────────────────────────────────────────────
   const filteredModels = search.trim()

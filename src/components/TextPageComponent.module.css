@@ -157,29 +157,12 @@
   margin-left: auto;
 }
 
-.textContent {
-  padding: 12px 14px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-secondary);
+/* ChatPreviewComponent inside card — remove its own border/radius so it
+   sits flush within the card container */
+.cardPreview {
+  border: none !important;
+  border-radius: 0 !important;
   max-height: 400px;
-  overflow-y: auto;
-}
-
-.rawText {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.textFooter {
-  padding: 6px 14px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.cost {
-  font-size: 11px;
-  font-family: var(--font-mono, monospace);
-  color: var(--text-muted);
 }
 
 /* Empty */

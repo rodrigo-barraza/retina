@@ -29,7 +29,6 @@ import { useTheme } from "./ThemeProvider";
 import SpinningCatComponent from "./SpinningCatComponent";
 import styles from "./NavigationSidebarComponent.module.css";
 import { LS_PANEL_NAV } from "../constants";
-import { IS_LOCALHOST } from "../../config.js";
 
 import RainbowCanvasComponent from "./RainbowCanvasComponent";
 
@@ -102,6 +101,12 @@ export default function NavigationSidebarComponent({
   const [showNav, setShowNav] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isLocal, setIsLocal] = useState(false);
+
+  useEffect(() => {
+    // Resolve on client only — prevents SSR hydration flash of admin link
+    setIsLocal(!window.location.hostname.endsWith(".com"));
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem(LS_PANEL_NAV);
@@ -236,7 +241,7 @@ export default function NavigationSidebarComponent({
                     <ArrowLeft className={styles.navIcon} />
                     <span className={styles.navLabel}>Back to Retina</span>
                   </Link>
-                ) : IS_LOCALHOST ? (
+                ) : isLocal ? (
                   <Link
                     href="/admin"
                     className={styles.navLink}
@@ -359,7 +364,7 @@ export default function NavigationSidebarComponent({
               <ArrowLeft className={styles.navIcon} />
               <span className={styles.navLabel}>Back to Retina</span>
             </Link>
-          ) : IS_LOCALHOST ? (
+          ) : isLocal ? (
             <Link href="/admin" className={styles.navLink}>
               <Settings className={styles.navIcon} />
               <span className={styles.navLabel}>Admin</span>

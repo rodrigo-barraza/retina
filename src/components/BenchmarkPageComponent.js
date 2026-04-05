@@ -33,8 +33,8 @@ const INITIAL_FORM = {
   name: "",
   prompt: "",
   systemPrompt: "",
-  expectedValue: "",
-  matchMode: "contains",
+  assertions: [{ expectedValue: "", matchMode: "contains" }],
+  assertionOperator: "AND",
 };
 
 export default function BenchmarkPageComponent({ sidebar }) {
@@ -101,12 +101,15 @@ export default function BenchmarkPageComponent({ sidebar }) {
 
   const openClone = useCallback((e, benchmark) => {
     e.stopPropagation();
+    const assertions = benchmark.assertions?.length > 0
+      ? benchmark.assertions
+      : [{ expectedValue: benchmark.expectedValue || "", matchMode: benchmark.matchMode || "contains" }];
     setForm({
       name: `${benchmark.name} (copy)`,
       prompt: benchmark.prompt,
       systemPrompt: benchmark.systemPrompt || "",
-      expectedValue: benchmark.expectedValue,
-      matchMode: benchmark.matchMode || "contains",
+      assertions,
+      assertionOperator: benchmark.assertionOperator || "AND",
     });
     setShowModal(true);
   }, []);
@@ -114,7 +117,15 @@ export default function BenchmarkPageComponent({ sidebar }) {
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
-      const payload = { ...form };
+      // Build payload — keep backward compat: first assertion becomes top-level expectedValue/matchMode
+      const { assertions, assertionOperator, ...rest } = form;
+      const payload = {
+        ...rest,
+        expectedValue: assertions[0]?.expectedValue || "",
+        matchMode: assertions[0]?.matchMode || "contains",
+        assertions,
+        assertionOperator,
+      };
       await PrismService.createBenchmark(payload);
 
       setShowModal(false);
@@ -239,11 +250,16 @@ export default function BenchmarkPageComponent({ sidebar }) {
                     <div className={styles.metaRow}>
                       <span className={styles.metaLabel}>Expect</span>
                       <span className={styles.expectedValue}>
-                        {b.expectedValue}
+                        {b.assertions?.[0]?.expectedValue || b.expectedValue}
                       </span>
                       <BadgeComponent variant="accent" mini>
-                        {b.matchMode || "contains"}
+                        {b.assertions?.[0]?.matchMode || b.matchMode || "contains"}
                       </BadgeComponent>
+                      {(b.assertions?.length || 0) > 1 && (
+                        <BadgeComponent variant={b.assertionOperator === "OR" ? "warning" : "info"} mini>
+                          +{b.assertions.length - 1} {b.assertionOperator || "AND"}
+                        </BadgeComponent>
+                      )}
                     </div>
                   </div>
 
@@ -310,6 +326,7 @@ export default function BenchmarkPageComponent({ sidebar }) {
       {showModal && (
         <ModalDialogComponent
           title="New Benchmark"
+          size="xl"
           onClose={() => setShowModal(false)}
           footer={
             <>
@@ -325,7 +342,7 @@ export default function BenchmarkPageComponent({ sidebar }) {
                 size="sm"
                 onClick={handleSave}
                 loading={saving}
-                disabled={!form.name || !form.prompt || !form.expectedValue}
+                disabled={!form.name || !form.prompt || !form.assertions?.some(a => a.expectedValue)}
               >
                 Create
               </ButtonComponent>

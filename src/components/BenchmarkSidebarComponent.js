@@ -76,7 +76,8 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
       (b) =>
         b.name.toLowerCase().includes(q) ||
         b.prompt?.toLowerCase().includes(q) ||
-        b.expectedValue?.toLowerCase().includes(q),
+        b.expectedValue?.toLowerCase().includes(q) ||
+        b.assertions?.some((a) => a.expectedValue?.toLowerCase().includes(q)),
     );
   }, [benchmarks, search]);
 
@@ -149,11 +150,16 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
 
                 <div className={styles.itemMeta}>
                   <BadgeComponent variant="accent" mini>
-                    {b.matchMode || "contains"}
+                    {b.assertions?.[0]?.matchMode || b.matchMode || "contains"}
                   </BadgeComponent>
                   <span className={styles.itemExpected}>
-                    {b.expectedValue}
+                    {b.assertions?.[0]?.expectedValue || b.expectedValue}
                   </span>
+                  {(b.assertions?.length || 0) > 1 && (
+                    <BadgeComponent variant={b.assertionOperator === "OR" ? "warning" : "info"} mini>
+                      +{b.assertions.length - 1}
+                    </BadgeComponent>
+                  )}
                 </div>
 
                 {/* Latest run summary */}

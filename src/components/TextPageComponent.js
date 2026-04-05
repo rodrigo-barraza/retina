@@ -6,24 +6,19 @@ import {
   Sparkles,
   ExternalLink,
   Image as ImageIcon,
-  Code,
-  Eye,
   Star,
 } from "lucide-react";
 import Link from "next/link";
 import IrisService from "../services/IrisService";
 import PrismService from "../services/PrismService";
-import MarkdownContent from "./MarkdownContent";
+import ChatPreviewComponent from "./ChatPreviewComponent";
 import SearchFilterComponent from "./SearchFilterComponent";
 import PaginationComponent from "./PaginationComponent";
 import PageHeaderComponent from "./PageHeaderComponent";
 import SearchInputComponent from "./SearchInputComponent";
 import FilterDropdownComponent from "./FilterDropdownComponent";
 import { LoadingMessage, EmptyMessage } from "./StateMessageComponent";
-import {
-  FilterBarComponent,
-  ViewModeToggleComponent,
-} from "./FilterBarComponent";
+import { FilterBarComponent } from "./FilterBarComponent";
 import { formatCost, buildDateRangeParams } from "../utils/utilities";
 import styles from "./TextPageComponent.module.css";
 import { LS_DATE_RANGE } from "../constants";
@@ -48,7 +43,6 @@ export default function TextPageComponent({ mode = "user", dateRange: externalDa
   const [providers, setProviders] = useState([]);
   const [models, setModels] = useState([]);
   const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState("raw");
   const [internalDateRange, setInternalDateRange] = useState({ from: "", to: "" });
   const dateRange = externalDateRange ?? internalDateRange;
   const [favoriteKeys, setFavoriteKeys] = useState([]);
@@ -191,15 +185,6 @@ export default function TextPageComponent({ mode = "user", dateRange: externalDa
             placeholder="All Models"
             allLabel="All Models"
           />
-
-          <ViewModeToggleComponent
-            mode={viewMode}
-            onChange={setViewMode}
-            modes={[
-              { key: "raw", icon: Code, title: "Raw text" },
-              { key: "preview", icon: Eye, title: "Markdown preview" },
-            ]}
-          />
         </FilterBarComponent>
 
         {loading && <LoadingMessage message="Loading messages..." />}
@@ -259,24 +244,17 @@ export default function TextPageComponent({ mode = "user", dateRange: externalDa
                       </span>
                     )}
                   </div>
-                  <div className={styles.textContent}>
-                    {viewMode === "preview" ? (
-                      <MarkdownContent content={t.content} />
-                    ) : (
-                      <span className={styles.rawText}>
-                        {t.content.length > 600
-                          ? t.content.substring(0, 600) + "…"
-                          : t.content}
-                      </span>
-                    )}
-                  </div>
-                  {t.estimatedCost > 0 && (
-                    <div className={styles.textFooter}>
-                      <span className={styles.cost}>
-                        {formatCost(t.estimatedCost)}
-                      </span>
-                    </div>
-                  )}
+                  <ChatPreviewComponent
+                    messages={[{
+                      role: t.origin === "ai" ? "assistant" : "user",
+                      content: t.content,
+                      model: t.model,
+                      estimatedCost: t.estimatedCost,
+                    }]}
+                    readOnly
+                    maxHeight="400px"
+                    className={styles.cardPreview}
+                  />
                 </div>
               );
             })}

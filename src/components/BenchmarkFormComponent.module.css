@@ -7,3 +7,110 @@
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+
+/* ── Assertions Section ─────────────────────────────────── */
+
+.assertionsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assertionsHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.assertionsLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex: 1;
+}
+
+.operatorToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--accent-subtle);
+  color: var(--accent-color);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
+}
+
+.operatorToggle:hover {
+  background: color-mix(in srgb, var(--accent-color) 20%, transparent);
+  border-color: var(--accent-color);
+}
+
+.operatorOr {
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 30%, transparent);
+}
+
+.operatorOr:hover {
+  background: color-mix(in srgb, var(--warning) 20%, transparent);
+  border-color: var(--warning);
+}
+
+/* ── Assertions List ────────────────────────────────────── */
+
+.assertionsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.assertionRow {
+  display: flex;
+  flex-direction: column;
+}
+
+.assertionFields {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: end;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+}
+
+/* When there's only one assertion (no remove button), span full width */
+.assertionFields:has(> :nth-child(3)) {
+  grid-template-columns: 1fr auto auto;
+}
+
+.assertionFields:not(:has(> :nth-child(3))) {
+  grid-template-columns: 1fr auto;
+}
+
+.assertionRemove {
+  display: flex;
+  align-items: center;
+  padding-bottom: 2px;
+}
+
+/* ── Operator Divider ───────────────────────────────────── */
+
+.operatorDivider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.operatorDividerLine {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
