@@ -636,13 +636,17 @@ export default function HomePage({ initialConversationId = null }) {
 
       let newMessages;
       if (hadAssistantAfter) {
+        const softDeleted = { ...nextMsg, deleted: true };
         newMessages = [
           ...messages.slice(0, userMsgIndex + 1),
+          softDeleted,
           ...messages.slice(userMsgIndex + 2),
         ];
       } else {
         newMessages = [...messages];
       }
+
+      const ttsInsertIndex = hadAssistantAfter ? userMsgIndex + 2 : userMsgIndex + 1;
 
       setMessages(newMessages);
       setIsGenerating(true);
@@ -692,9 +696,9 @@ export default function HomePage({ initialConversationId = null }) {
           estimatedCost,
         };
 
-        // Insert at the position right after the user message
+        // Insert at the position after the soft-deleted assistant (or after user msg)
         const finalMessages = [...newMessages];
-        finalMessages.splice(userMsgIndex + 1, 0, assistantMsg);
+        finalMessages.splice(ttsInsertIndex, 0, assistantMsg);
         setMessages(finalMessages);
 
         try {
@@ -732,20 +736,24 @@ export default function HomePage({ initialConversationId = null }) {
     // Collect all messages up to and including this user message
     const historyUpToUser = messages.slice(0, userMsgIndex + 1);
 
-    // Check if the next message is an assistant response — remove it if so
+    // Soft-delete the old assistant response (if any) so it stays visible
+    // in the conversation as a collapsed "Deleted" message.
     const nextMsg = messages[userMsgIndex + 1];
     const hadAssistantAfter = nextMsg && nextMsg.role === "assistant";
 
-    // Build newMessages: everything up to user msg, then everything after the assistant (if any)
+    // Build newMessages: keep the old assistant (soft-deleted) + everything after it
     let newMessages;
     if (hadAssistantAfter) {
-      newMessages = [...historyUpToUser, ...messages.slice(userMsgIndex + 2)];
+      const softDeleted = { ...nextMsg, deleted: true };
+      newMessages = [...historyUpToUser, softDeleted, ...messages.slice(userMsgIndex + 2)];
     } else {
       newMessages = [...historyUpToUser, ...messages.slice(userMsgIndex + 1)];
     }
 
-    // We want to re-generate right after the user message, so the new AI message
-    // goes at position userMsgIndex + 1. For the API call, send history up to user msg.
+    // The new AI response inserts after the (potentially soft-deleted) old assistant.
+    // insertIndex = userMsgIndex + 1 when no old assistant, +2 when soft-deleted one is kept.
+    const rerunInsertIndex = hadAssistantAfter ? userMsgIndex + 2 : userMsgIndex + 1;
+
     setMessages(newMessages);
     setIsGenerating(true);
     setToolActivity([]);
@@ -759,27 +767,18 @@ export default function HomePage({ initialConversationId = null }) {
         const systemPromptText = settings.systemPrompt || FC_SYSTEM_PROMPT;
         const currentMessages = [...historyUpToUser];
 
-        // Insert placeholder so the blinking cursor shows immediately
-        setMessages((prev) => {
-          const cleaned = prev.filter(
-            (m) =>
-              !(
-                m.role === "assistant" &&
-                !m.content?.trim() &&
-                !m.toolCalls?.length
-              ),
-          );
-          return [
-            ...cleaned,
-            {
-              role: "assistant",
-              content: "",
-              timestamp: new Date().toISOString(),
-              provider: settings.provider,
-              model: settings.model,
-            },
-          ];
-        });
+        // Insert placeholder so the blinking cursor shows immediately.
+        // newMessages keeps the old assistant as soft-deleted; new reply goes after it.
+        setMessages([
+          ...newMessages,
+          {
+            role: "assistant",
+            content: "",
+            timestamp: new Date().toISOString(),
+            provider: settings.provider,
+            model: settings.model,
+          },
+        ]);
 
         await new Promise((resolve, reject) => {
           const payload = {
@@ -1047,7 +1046,7 @@ export default function HomePage({ initialConversationId = null }) {
         let streamedThinking = "";
         let streamedImages = [];
         const codeBlocks = [];
-        const insertIndex = userMsgIndex + 1;
+        const insertIndex = rerunInsertIndex;
 
         const placeholderMsg = {
           role: "assistant",
