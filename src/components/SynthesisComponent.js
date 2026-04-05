@@ -106,15 +106,12 @@ export default function SynthesisComponent() {
   const [config, setConfig] = useState(null);
   const [settings, setSettings] = useState({
     ...SETTINGS_DEFAULTS,
-    systemPrompt: "You are a helpful AI assistant.",
     maxTokens: 4096,
   });
   const [leftTab, setLeftTab] = useState("config"); // "config" | "output"
 
   // ── Synthesis state ───────────────────────────────────────────
-  const [systemPrompt, setSystemPrompt] = useState(
-    "You are a helpful AI assistant.",
-  );
+  const [systemPrompt, setSystemPrompt] = useState("");
 
   const [userPersona, setUserPersona] = useState("");
   const [useUserSimModel, setUseUserSimModel] = useState(true);
@@ -536,7 +533,7 @@ export default function SynthesisComponent() {
   const handleReset = useCallback(() => {
     setSeedMessages([]);
     setGeneratedMessages([]);
-    setSystemPrompt("You are a helpful AI assistant.");
+    setSystemPrompt("");
 
     setUserPersona("");
     setUseUserSimModel(true);

@@ -723,15 +723,18 @@ export default function RequestsPage() {
               }
 
               const displayMessages = prepareDisplayMessages(chatMessages);
-              // Re-inject system prompt at top (prepareDisplayMessages strips it)
+              // Extract system prompt content for the banner
               const systemMsg = chatMessages.find((m) => m.role === "system");
-              if (systemMsg) displayMessages.unshift(systemMsg);
               if (!displayMessages.length) return null;
 
               return (
                 <div className={styles.detailSection}>
                   <div className={styles.detailSectionTitle}>Chat Preview</div>
-                  <ChatPreviewComponent messages={displayMessages} readOnly />
+                  <ChatPreviewComponent
+                    messages={displayMessages}
+                    systemPrompt={systemMsg?.content}
+                    readOnly
+                  />
                 </div>
               );
             })()}

@@ -359,7 +359,7 @@ export default function HomePage({ initialConversationId = null }) {
 
   // ── Function Calling infrastructure ────────────────────────
 
-  const FC_SYSTEM_PROMPT = config?.fcSystemPrompt?.replace("{{CURRENT_DATE_TIME}}", new Date().toLocaleString()) || "You are a helpful AI assistant.";
+  const FC_SYSTEM_PROMPT = config?.fcSystemPrompt?.replace("{{CURRENT_DATE_TIME}}", new Date().toLocaleString()) || "";
 
   const allToolSchemas = useMemo(
     () => buildToolSchemas(builtInTools, disabledBuiltIns, customTools),
@@ -452,8 +452,7 @@ export default function HomePage({ initialConversationId = null }) {
             ...TOOL_TOGGLE_DEFAULTS,
             ...restoredSettings,
             ...detectedToggles,
-            systemPrompt:
-              full.systemPrompt || "You are a helpful AI assistant.",
+            systemPrompt: full.systemPrompt ?? "",
           }));
         })
         .catch(() => {
@@ -487,7 +486,7 @@ export default function HomePage({ initialConversationId = null }) {
     skipSystemPromptSave.current = true;
     setSettings((s) => ({
       ...s,
-      systemPrompt: "You are a helpful AI assistant.",
+      systemPrompt: "",
     }));
   };
 
@@ -550,7 +549,7 @@ export default function HomePage({ initialConversationId = null }) {
         ...TOOL_TOGGLE_DEFAULTS,
         ...restoredSettings,
         ...detectedToggles,
-        systemPrompt: full.systemPrompt || "You are a helpful AI assistant.",
+        systemPrompt: full.systemPrompt ?? "",
       }));
     } catch (err) {
       console.error(err);

@@ -412,11 +412,7 @@ export default function ChatArea({
         responseModalities,
         conversationId: connectConversationId,
       };
-      if (
-        systemPrompt &&
-        systemPrompt !== "You are a helpful AI assistant" &&
-        systemPrompt !== "You are a helpful AI assistant."
-      ) {
+      if (systemPrompt) {
         liveConfig.systemInstruction = systemPrompt;
       }
       if (settings?.temperature !== undefined) {

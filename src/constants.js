@@ -36,7 +36,7 @@ export const LS_DATE_RANGE = "retina-date-range";
 export const SETTINGS_DEFAULTS = {
   provider: "",
   model: "",
-  systemPrompt: "You are a helpful AI assistant",
+  systemPrompt: "",
   temperature: 1.0,
   maxTokens: 2048,
   topP: 1,

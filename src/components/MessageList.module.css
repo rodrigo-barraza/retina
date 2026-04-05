@@ -1032,6 +1032,26 @@
   flex-shrink: 0;
 }
 
+/* ── Grouped deleted items (shown when expanded) ── */
+.deletedGroupItem {
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+  padding: 4px 0;
+}
+
+.deletedGroupItem:last-child {
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+}
+
+.deletedGroupItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
 /* ── Error block ── */
 .errorBlock {
   display: flex;

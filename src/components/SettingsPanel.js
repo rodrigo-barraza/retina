@@ -737,7 +737,7 @@ export default function SettingsPanel({
 
         {!isSpecialModel && !readOnly && (
           <button
-            className={`${styles.systemPromptBtn} ${settings.systemPrompt && settings.systemPrompt !== "You are a helpful AI assistant" && settings.systemPrompt !== "You are a helpful AI assistant." ? styles.systemPromptActive : ""}`}
+            className={`${styles.systemPromptBtn} ${settings.systemPrompt ? styles.systemPromptActive : ""}`}
             onClick={() => onSystemPromptClick?.()}
           >
             <Edit3 size={16} />
@@ -745,10 +745,7 @@ export default function SettingsPanel({
           </button>
         )}
 
-        {readOnly &&
-          settings.systemPrompt &&
-          settings.systemPrompt !== "You are a helpful AI assistant" &&
-          settings.systemPrompt !== "You are a helpful AI assistant." && (
+        {readOnly && settings.systemPrompt && (
             <div className={styles.formGroup}>
               <label>
                 <Edit3 size={12} /> System Prompt

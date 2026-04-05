@@ -44,7 +44,6 @@ export default function ConsoleComponent() {
     useToolToggles(builtInTools);
   const [settings, setSettings] = useState({
     ...SETTINGS_DEFAULTS,
-    systemPrompt: "You are a helpful AI assistant.",
     maxTokens: 8192,
   });
 

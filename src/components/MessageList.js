@@ -757,7 +757,6 @@ export default function MessageList({
   onDocClick,
 }) {
   const [editingIndex, setEditingIndex] = useState(null);
-  const [systemPromptExpanded, setSystemPromptExpanded] = useState(false);
   const [expandedDeletedSet, setExpandedDeletedSet] = useState(new Set());
   const hasSystemPrompt = !!(systemPrompt && systemPrompt.trim());
 
@@ -769,6 +768,33 @@ export default function MessageList({
       return next;
     });
   };
+
+  // ── Coalesce consecutive deleted messages into groups ──────
+  // Each group is keyed by the index of the first deleted message
+  // in the run (the "leader"). Non-leader deleted messages are
+  // skipped during rendering.
+  const deletedGroups = useMemo(() => {
+    const map = new Map(); // index → { isLeader, groupIndices }
+    let i = 0;
+    while (i < messages.length) {
+      if (messages[i].deleted) {
+        const start = i;
+        const indices = [];
+        while (i < messages.length && messages[i].deleted) {
+          indices.push(i);
+          i++;
+        }
+        // First in run is the leader
+        map.set(start, { isLeader: true, groupIndices: indices });
+        for (let k = 1; k < indices.length; k++) {
+          map.set(indices[k], { isLeader: false });
+        }
+      } else {
+        i++;
+      }
+    }
+    return map;
+  }, [messages]);
 
   // ── Coalesce consecutive assistant messages into groups ────
   // Each group shares a single avatar + header. Only the first
@@ -800,42 +826,29 @@ export default function MessageList({
 
   return (
     <div className={styles.messagesList}>
-      <div className={`${styles.systemPromptBanner}${!hasSystemPrompt ? ` ${styles.systemPromptEmpty}` : ''}`}>
-        <button
-          className={styles.systemPromptToggle}
-          onClick={() => hasSystemPrompt && setSystemPromptExpanded((v) => !v)}
-          style={!hasSystemPrompt ? { cursor: 'default' } : undefined}
-        >
-          {hasSystemPrompt ? (
-            systemPromptExpanded ? (
-              <ChevronDown size={14} />
-            ) : (
-              <ChevronRight size={14} />
-            )
-          ) : (
-            <ChevronRight size={14} style={{ opacity: 0.3 }} />
-          )}
-          <span className={styles.systemPromptLabel}>
-            <Terminal size={13} />
-            {hasSystemPrompt ? 'System Prompt' : 'No system prompt'}
-          </span>
-          {!readOnly && onSystemPromptEdit && (
-            <span
-              className={styles.systemPromptEditBtn}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSystemPromptEdit();
-              }}
-              title="Edit system prompt"
-            >
-              <Pencil size={13} />
-            </span>
-          )}
-        </button>
-        {hasSystemPrompt && systemPromptExpanded && (
-          <div className={styles.systemPromptBody}>{systemPrompt}</div>
-        )}
-      </div>
+      {hasSystemPrompt && (
+        <div className={`${styles.message} ${styles.systemNode}`}>
+          <div className={styles.avatar}>
+            <Terminal size={16} />
+          </div>
+          <div className={styles.content}>
+            <div className={styles.messageHeader}>
+              <div className={styles.roleLabel}>System Prompt</div>
+              {!readOnly && onSystemPromptEdit && (
+                <div className={styles.messageActions}>
+                  <IconButtonComponent
+                    icon={<Pencil size={14} />}
+                    onClick={onSystemPromptEdit}
+                    tooltip="Edit system prompt"
+                    className={styles.actionBtn}
+                  />
+                </div>
+              )}
+            </div>
+            <div className={styles.text}>{systemPrompt}</div>
+          </div>
+        </div>
+      )}
       {headerContent}
       {messages.map((msg, i) => {
         const roleClass =
@@ -890,132 +903,171 @@ export default function MessageList({
                 <span className={styles.modelChangeLine} />
               </div>
             )}
-            {/* ── Deleted message: collapsed row or expanded full view ── */}
-            {msg.deleted && !expandedDeletedSet.has(i) ? (
-              <div className={styles.deletedRow}>
-                <button
-                  className={styles.deletedToggle}
-                  onClick={() => toggleDeletedExpanded(i)}
-                >
-                  <ChevronRight size={13} />
-                  <span className={styles.deletedBadge}>Deleted</span>
-                  <span className={styles.deletedRoleBadge}>
-                    {msg.role === "user" ? "User" : "Model"}
-                  </span>
-                  {msg.model && (
-                    <span className={styles.deletedModelLabel}>{msg.model}</span>
-                  )}
-                  {msg.timestamp && (
-                    <span className={styles.deletedTimestamp}>
-                      {formatTimestamp(msg.timestamp)}
-                    </span>
-                  )}
-                  {msg.content && (
-                    <span className={styles.deletedPreview}>
-                      {msg.content.length > 80
-                        ? msg.content.slice(0, 80) + "…"
-                        : msg.content}
-                    </span>
-                  )}
-                </button>
-                <div className={styles.deletedActions}>
-                  {!readOnly && onRestore && (
-                    <IconButtonComponent
-                      icon={<Undo2 size={14} />}
-                      onClick={() => onRestore?.(i)}
-                      tooltip="Restore message"
-                      className={styles.actionBtn}
-                    />
-                  )}
-                </div>
-              </div>
-            ) : msg.deleted && expandedDeletedSet.has(i) ? (
-              <div className={styles.deletedExpanded}>
-                {/* Collapse toggle row */}
-                <div className={styles.deletedRow}>
-                  <button
-                    className={styles.deletedToggle}
-                    onClick={() => toggleDeletedExpanded(i)}
-                  >
-                    <ChevronDown size={13} />
-                    <span className={styles.deletedBadge}>Deleted</span>
-                    <span className={styles.deletedRoleBadge}>
-                      {msg.role === "user" ? "User" : "Model"}
-                    </span>
-                    {msg.model && (
-                      <span className={styles.deletedModelLabel}>{msg.model}</span>
-                    )}
-                  </button>
-                  <div className={styles.deletedActions}>
-                    {!readOnly && onRestore && (
-                      <IconButtonComponent
-                        icon={<Undo2 size={14} />}
-                        onClick={() => onRestore?.(i)}
-                        tooltip="Restore message"
-                        className={styles.actionBtn}
-                      />
-                    )}
-                    {msg.content && (
-                      <CopyButtonComponent
-                        text={msg.content}
-                        tooltip="Copy raw text"
-                        className={styles.actionBtn}
-                      />
-                    )}
-                  </div>
-                </div>
-                {/* Full message rendered normally but faded */}
-                <div className={styles.deletedMessageBody}>
-                  <div className={`${styles.message} ${roleClass}`}>
-                    <div className={`${styles.avatar} ${styles.deletedAvatar}`}>
-                      {msg.role === "user" ? <User size={16} /> : msg.role === "system" ? "S" : <Bot size={16} />}
-                    </div>
-                    <div className={styles.content}>
-                      <div className={styles.messageHeader}>
-                        <div className={styles.roleLabel}>
-                          {msg.role === "user" ? "User" : msg.role === "system" ? "System" : "Model"}
+            {/* ── Deleted message group: coalesced into a single row ── */}
+            {msg.deleted && (() => {
+              const groupInfo = deletedGroups.get(i);
+              // Non-leader deleted messages are rendered inside the leader block
+              if (!groupInfo?.isLeader) return null;
+              const groupIndices = groupInfo.groupIndices;
+              const groupCount = groupIndices.length;
+              const isExpanded = expandedDeletedSet.has(i);
+
+              if (!isExpanded) {
+                // ── Collapsed: single summary row ──
+                return (
+                  <div className={styles.deletedRow}>
+                    <button
+                      className={styles.deletedToggle}
+                      onClick={() => toggleDeletedExpanded(i)}
+                    >
+                      <ChevronRight size={13} />
+                      <span className={styles.deletedBadge}>
+                        Deleted{groupCount > 1 ? ` (${groupCount})` : ""}
+                      </span>
+                      {groupCount === 1 && (
+                        <>
+                          <span className={styles.deletedRoleBadge}>
+                            {msg.role === "user" ? "User" : "Model"}
+                          </span>
+                          {msg.model && (
+                            <span className={styles.deletedModelLabel}>{msg.model}</span>
+                          )}
                           {msg.timestamp && (
-                            <span className={styles.timestamp}>
+                            <span className={styles.deletedTimestamp}>
                               {formatTimestamp(msg.timestamp)}
                             </span>
                           )}
-                        </div>
+                          {msg.content && (
+                            <span className={styles.deletedPreview}>
+                              {msg.content.length > 80
+                                ? msg.content.slice(0, 80) + "…"
+                                : msg.content}
+                            </span>
+                          )}
+                        </>
+                      )}
+                      {groupCount > 1 && (
+                        <span className={styles.deletedTimestamp}>
+                          {formatTimestamp(messages[groupIndices[0]].timestamp)}
+                          {" — "}
+                          {formatTimestamp(messages[groupIndices[groupCount - 1]].timestamp)}
+                        </span>
+                      )}
+                    </button>
+                    {groupCount === 1 && !readOnly && onRestore && (
+                      <div className={styles.deletedActions}>
+                        <IconButtonComponent
+                          icon={<Undo2 size={14} />}
+                          onClick={() => onRestore?.(i)}
+                          tooltip="Restore message"
+                          className={styles.actionBtn}
+                        />
                       </div>
-                      {msg.thinking && (
-                        <ThinkingBlock thinking={msg.thinking} isStreaming={false} />
-                      )}
-                      {msg.toolCalls && msg.toolCalls.length > 0 && (
-                        <ToolCallsBlock toolCalls={msg.toolCalls} />
-                      )}
-                      {msg.images && msg.images.length > 0 && (
-                        <div className={styles.imagePreviewRow}>
-                          {msg.images.map((rawUrl, j) => (
-                            <MediaPreview key={j} dataUrl={rawUrl} />
-                          ))}
-                        </div>
-                      )}
-                      {msg.content ? (
-                        <MarkdownContent content={msg.content} />
-                      ) : null}
-                      {msg.role === "assistant" && (msg.usage || msg.provider) && (
-                        <div className={styles.meta}>
-                          <div className={styles.metaRow}>
-                            {msg.provider && (
-                              <span className={styles.metaProvider}>
-                                <ProviderLogo provider={msg.provider} size={13} />
-                                {PROVIDER_LABELS[msg.provider] || msg.provider}
-                              </span>
+                    )}
+                  </div>
+                );
+              }
+
+              // ── Expanded: show all messages in the group ──
+              return (
+                <div className={styles.deletedExpanded}>
+                  <div className={styles.deletedRow}>
+                    <button
+                      className={styles.deletedToggle}
+                      onClick={() => toggleDeletedExpanded(i)}
+                    >
+                      <ChevronDown size={13} />
+                      <span className={styles.deletedBadge}>
+                        Deleted{groupCount > 1 ? ` (${groupCount})` : ""}
+                      </span>
+                    </button>
+                  </div>
+                  {groupIndices.map((gi) => {
+                    const gMsg = messages[gi];
+                    const gRoleClass =
+                      gMsg.role === "user"
+                        ? styles.userNode
+                        : gMsg.role === "system"
+                          ? styles.systemNode
+                          : styles.aiNode;
+                    return (
+                      <div key={gi} className={styles.deletedGroupItem}>
+                        <div className={styles.deletedGroupItemHeader}>
+                          <span className={styles.deletedRoleBadge}>
+                            {gMsg.role === "user" ? "User" : "Model"}
+                          </span>
+                          {gMsg.model && (
+                            <span className={styles.deletedModelLabel}>{gMsg.model}</span>
+                          )}
+                          {gMsg.timestamp && (
+                            <span className={styles.deletedTimestamp}>
+                              {formatTimestamp(gMsg.timestamp)}
+                            </span>
+                          )}
+                          <div className={styles.deletedActions} style={{ opacity: 1 }}>
+                            {!readOnly && onRestore && (
+                              <IconButtonComponent
+                                icon={<Undo2 size={14} />}
+                                onClick={() => onRestore?.(gi)}
+                                tooltip="Restore message"
+                                className={styles.actionBtn}
+                              />
                             )}
-                            {msg.model && <>{" • "}{msg.model}</>}
+                            {gMsg.content && (
+                              <CopyButtonComponent
+                                text={gMsg.content}
+                                tooltip="Copy raw text"
+                                className={styles.actionBtn}
+                              />
+                            )}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                        <div className={styles.deletedMessageBody}>
+                          <div className={`${styles.message} ${gRoleClass}`}>
+                            <div className={`${styles.avatar} ${styles.deletedAvatar}`}>
+                              {gMsg.role === "user" ? <User size={16} /> : gMsg.role === "system" ? "S" : <Bot size={16} />}
+                            </div>
+                            <div className={styles.content}>
+                              {gMsg.thinking && (
+                                <ThinkingBlock thinking={gMsg.thinking} isStreaming={false} />
+                              )}
+                              {gMsg.toolCalls && gMsg.toolCalls.length > 0 && (
+                                <ToolCallsBlock toolCalls={gMsg.toolCalls} />
+                              )}
+                              {gMsg.images && gMsg.images.length > 0 && (
+                                <div className={styles.imagePreviewRow}>
+                                  {gMsg.images.map((rawUrl, j) => (
+                                    <MediaPreview key={j} dataUrl={rawUrl} />
+                                  ))}
+                                </div>
+                              )}
+                              {gMsg.content ? (
+                                <MarkdownContent content={gMsg.content} />
+                              ) : null}
+                              {gMsg.role === "assistant" && (gMsg.usage || gMsg.provider) && (
+                                <div className={styles.meta}>
+                                  <div className={styles.metaRow}>
+                                    {gMsg.provider && (
+                                      <span className={styles.metaProvider}>
+                                        <ProviderLogo provider={gMsg.provider} size={13} />
+                                        {PROVIDER_LABELS[gMsg.provider] || gMsg.provider}
+                                      </span>
+                                    )}
+                                    {gMsg.model && <>{" • "}{gMsg.model}</>}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-            ) : (
-            /* ── Normal (non-deleted) message ── */
+              );
+            })()}
+            {/* ── Normal (non-deleted) message ── */}
+            {!msg.deleted && (
             <div
               className={`${styles.message} ${roleClass}${coalesce?.isContinuation ? ` ${styles.continuationMessage}` : ""}`}
             >
