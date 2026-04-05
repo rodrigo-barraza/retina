@@ -43,6 +43,7 @@ import ButtonComponent from "./ButtonComponent.js";
 import ToggleSwitchComponent from "./ToggleSwitch.js";
 import SearchInputComponent from "./SearchInputComponent.js";
 import FilterDropdownComponent from "./FilterDropdownComponent.js";
+import TextAreaComponent from "./TextAreaComponent.js";
 import { renderToolName } from "../utils/utilities";
 import styles from "./CustomToolsPanel.module.css";
 
@@ -621,14 +622,15 @@ export default function CustomToolsPanel({
 
           <div className={styles.formGroup}>
             <label>Description</label>
-            <textarea
+            <TextAreaComponent
               className={styles.textarea}
               value={editingTool.description}
               onChange={(e) =>
                 setEditingTool((t) => ({ ...t, description: e.target.value }))
               }
               placeholder="Get current stock price for a given ticker symbol..."
-              rows={3}
+              minRows={3}
+              maxRows={8}
             />
             <span className={styles.hint}>
               Tell the AI when to use this tool
@@ -816,7 +818,7 @@ export default function CustomToolsPanel({
                   a raw parameters object. Name, description, and parameters
                   will be auto-populated.
                 </div>
-                <textarea
+                <TextAreaComponent
                   className={`${styles.textarea} ${styles.jsonTextarea}`}
                   value={jsonText}
                   onChange={(e) => {
@@ -825,7 +827,9 @@ export default function CustomToolsPanel({
                     setJsonSuccess(null);
                   }}
                   placeholder={`{\n  "type": "function",\n  "function": {\n    "name": "get_weather",\n    "description": "Get current weather",\n    "parameters": {\n      "type": "object",\n      "properties": {\n        "location": {\n          "type": "string",\n          "description": "City name"\n        }\n      },\n      "required": ["location"]\n    }\n  }\n}`}
-                  rows={10}
+                  minRows={10}
+                  maxRows={20}
+                  autoResize={false}
                   spellCheck={false}
                 />
                 <div className={styles.jsonActions}>

@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import SelectDropdown from "./SelectDropdown";
 import ModalOverlayComponent from "./ModalOverlayComponent";
 import CloseButtonComponent from "./CloseButtonComponent";
+import TextAreaComponent from "./TextAreaComponent";
 import styles from "./SystemPromptModal.module.css";
 import { LS_SYSTEM_INSTRUCTIONS } from "../constants";
 
@@ -174,9 +175,10 @@ export default function SystemPromptModal({ activePrompt, onApply, onClose }) {
 
           <div className={styles.field}>
             <label>System Prompt</label>
-            <textarea
+            <TextAreaComponent
               className={styles.textarea}
-              rows={10}
+              minRows={10}
+              maxRows={20}
               placeholder="You are a helpful AI assistant..."
               value={body}
               onChange={handleBodyChange}

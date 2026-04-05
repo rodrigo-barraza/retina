@@ -6,8 +6,6 @@ import {
   Play,
   Square,
   Download,
-  Copy,
-  Check,
   Plus,
   Trash2,
   RotateCcw,
@@ -29,6 +27,11 @@ import EmptyStateComponent from "./EmptyStateComponent.js";
 import PromptSectionComponent from "./PromptSectionComponent.js";
 import CollapsibleBlockComponent from "./CollapsibleBlockComponent.js";
 import MessageList from "./MessageList.js";
+import ButtonComponent from "./ButtonComponent.js";
+import IconButtonComponent from "./IconButtonComponent.js";
+import TextAreaComponent from "./TextAreaComponent.js";
+import CopyButtonComponent from "./CopyButtonComponent.js";
+import BadgeComponent from "./BadgeComponent.js";
 import { SETTINGS_DEFAULTS } from "../constants.js";
 import styles from "./SynthesisComponent.module.css";
 
@@ -125,7 +128,6 @@ export default function SynthesisComponent() {
   const [generatedMessages, setGeneratedMessages] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState("");
-  const [copied, setCopied] = useState(false);
   const [seedsExpanded, setSeedsExpanded] = useState(true);
   const [templateExpanded, setTemplateExpanded] = useState(false);
 
@@ -511,16 +513,6 @@ export default function SynthesisComponent() {
     setLeftTab("config");
   }, []);
 
-  const handleCopyOutput = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(sftJsonString);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable */
-    }
-  }, [sftJsonString]);
-
   const handleDownload = useCallback(() => {
     const blob = new Blob([sftJsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -579,22 +571,21 @@ export default function SynthesisComponent() {
           {generatedMessages.length > 0 ? (
             <>
               <div className={styles.outputActions}>
-                <button
+                <CopyButtonComponent
+                  text={sftJsonString}
+                  showLabel
+                  tooltip="Copy SFT JSON"
                   className={styles.outputActionBtn}
-                  onClick={handleCopyOutput}
-                  title="Copy SFT JSON"
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                  {copied ? "Copied!" : "Copy JSON"}
-                </button>
-                <button
-                  className={styles.outputActionBtn}
+                />
+                <ButtonComponent
+                  variant="secondary"
+                  size="sm"
+                  icon={Download}
                   onClick={handleDownload}
                   title="Download JSON"
                 >
-                  <Download size={14} />
                   Download
-                </button>
+                </ButtonComponent>
               </div>
               <div className={styles.outputPreview}>
                 <pre className={styles.jsonOutput}>{sftJsonString}</pre>
@@ -654,29 +645,35 @@ export default function SynthesisComponent() {
         }
         headerControls={
           <div className={styles.headerActions}>
-            <button
-              className={styles.resetBtn}
+            <ButtonComponent
+              variant="secondary"
+              size="sm"
+              icon={RotateCcw}
               onClick={handleReset}
               disabled={isGenerating}
               title="Reset all"
             >
-              <RotateCcw size={14} />
               Reset
-            </button>
+            </ButtonComponent>
             {isGenerating ? (
-              <button className={styles.stopBtn} onClick={handleStop}>
-                <Square size={14} />
+              <ButtonComponent
+                variant="danger"
+                size="sm"
+                icon={Square}
+                onClick={handleStop}
+              >
                 Stop
-              </button>
+              </ButtonComponent>
             ) : (
-              <button
-                className={styles.generateBtn}
+              <ButtonComponent
+                variant="primary"
+                size="sm"
+                icon={Play}
                 onClick={handleGenerate}
                 disabled={!settings.provider || !settings.model}
               >
-                <Play size={14} />
                 Generate
-              </button>
+              </ButtonComponent>
             )}
           </div>
         }
@@ -819,40 +816,45 @@ export default function SynthesisComponent() {
                       )}
                       {msg.role}
                     </button>
-                    <button
-                      className={styles.removeSeedBtn}
+                    <IconButtonComponent
+                      icon={<Trash2 size={12} />}
                       onClick={() => removeSeedMessage(i)}
-                      title="Remove message"
-                    >
-                      <Trash2 size={12} />
-                    </button>
+                      tooltip="Remove message"
+                      variant="danger"
+                      className={styles.removeSeedBtn}
+                    />
                   </div>
-                  <textarea
+                  <TextAreaComponent
                     className={styles.seedTextarea}
                     value={msg.content}
                     onChange={(e) =>
                       updateSeedMessage(i, "content", e.target.value)
                     }
                     placeholder={`${msg.role === "user" ? "User" : "Assistant"} message...`}
-                    rows={2}
+                    minRows={2}
+                    maxRows={6}
                   />
                 </div>
               ))}
               <div className={styles.addSeedRow}>
-                <button
-                  className={styles.addSeedBtn}
+                <ButtonComponent
+                  variant="ghost"
+                  size="sm"
+                  icon={Plus}
                   onClick={() => addSeedMessage("user")}
-                >
-                  <Plus size={12} />
-                  User
-                </button>
-                <button
                   className={styles.addSeedBtn}
-                  onClick={() => addSeedMessage("assistant")}
                 >
-                  <Plus size={12} />
+                  User
+                </ButtonComponent>
+                <ButtonComponent
+                  variant="ghost"
+                  size="sm"
+                  icon={Plus}
+                  onClick={() => addSeedMessage("assistant")}
+                  className={styles.addSeedBtn}
+                >
                   Assistant
-                </button>
+                </ButtonComponent>
               </div>
             </div>
           </CollapsibleBlockComponent>
@@ -864,9 +866,9 @@ export default function SynthesisComponent() {
                 <FlaskConical size={14} />
                 <span>Generated Conversation</span>
                 {generatedMessages.length > 0 && (
-                  <span className={styles.msgCount}>
+                  <BadgeComponent variant="accent" mini>
                     {generatedMessages.length} messages
-                  </span>
+                  </BadgeComponent>
                 )}
                 {conversationId && !isGenerating && (
                   <a
@@ -878,10 +880,10 @@ export default function SynthesisComponent() {
                   </a>
                 )}
                 {isGenerating && (
-                  <span className={styles.streamingBadge}>
+                  <BadgeComponent variant="success" className={styles.streamingBadge}>
                     <span className={styles.streamingDot} />
                     Streaming
-                  </span>
+                  </BadgeComponent>
                 )}
               </div>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import TextAreaComponent from "./TextAreaComponent";
 import styles from "./PromptSectionComponent.module.css";
 
 /**
@@ -34,13 +35,15 @@ export default function PromptSectionComponent({
         <span>{label}</span>
         {badge && <span className={styles.badge}>{badge}</span>}
       </div>
-      <textarea
+      <TextAreaComponent
         className={styles.textarea}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        rows={rows}
+        minRows={rows}
+        maxRows={8}
       />
     </div>
   );
 }
+

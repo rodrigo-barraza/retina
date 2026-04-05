@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState } from "react";
 import { Code, BookOpen } from "lucide-react";
 import MarkdownContent from "./MarkdownContent";
+import TextAreaComponent from "./TextAreaComponent";
 import styles from "./TextContentComponent.module.css";
 
 /**
@@ -24,21 +25,8 @@ export default function TextContentComponent({
   className,
 }) {
   const [preview, setPreview] = useState(false);
-  const textareaRef = useRef(null);
 
   const isEditable = !!onChange && !readOnly;
-
-  const autoResize = useCallback(
-    (el) => {
-      if (!el) return;
-      textareaRef.current = el;
-      if (isEditable) {
-        el.style.height = "auto";
-        el.style.height = el.scrollHeight + "px";
-      }
-    },
-    [isEditable],
-  );
 
   return (
     <div className={`${styles.wrapper} ${className || ""}`}>
@@ -71,22 +59,21 @@ export default function TextContentComponent({
           )}
         </div>
       ) : (
-        <textarea
-          ref={autoResize}
+        <TextAreaComponent
           className={`${styles.textarea} ${!isEditable ? styles.textareaReadOnly : ""}`}
           value={value}
           onChange={
             isEditable
-              ? (e) => {
-                  onChange(e.target.value);
-                  autoResize(e.target);
-                }
+              ? (e) => onChange(e.target.value)
               : undefined
           }
           readOnly={!isEditable}
           placeholder={isEditable ? placeholder : undefined}
+          minRows={4}
+          maxRows={20}
         />
       )}
     </div>
   );
 }
+
