@@ -963,10 +963,12 @@ export default function HomePage({ initialConversationId = null }) {
             }
           : {}),
         ...(!selectedModelDef?.responsesAPI &&
-        (selectedModelDef?.thinking || settings.provider === "lm-studio")
+        (selectedModelDef?.thinking || (settings.provider === "lm-studio" && !selectedModelDef?.thinking))
           ? {
-              thinkingEnabled: settings.thinkingEnabled || settings.provider === "lm-studio",
-              ...((settings.thinkingEnabled || settings.provider === "lm-studio") ? {
+              thinkingEnabled: selectedModelDef?.thinking
+                ? (settings.thinkingEnabled || false)
+                : true, // force-on for LM Studio models without explicit thinking
+              ...((settings.thinkingEnabled || (settings.provider === "lm-studio" && !selectedModelDef?.thinking)) ? {
                 reasoningEffort: settings.reasoningEffort,
                 thinkingLevel: settings.thinkingLevel,
                 thinkingBudget: settings.thinkingBudget || undefined,
@@ -1639,10 +1641,12 @@ export default function HomePage({ initialConversationId = null }) {
             }
           : {}),
         ...(!selectedModelDef?.responsesAPI &&
-        (selectedModelDef?.thinking || settings.provider === "lm-studio")
+        (selectedModelDef?.thinking || (settings.provider === "lm-studio" && !selectedModelDef?.thinking))
           ? {
-              thinkingEnabled: settings.thinkingEnabled || settings.provider === "lm-studio",
-              ...((settings.thinkingEnabled || settings.provider === "lm-studio") ? {
+              thinkingEnabled: selectedModelDef?.thinking
+                ? (settings.thinkingEnabled || false)
+                : true, // force-on for LM Studio models without explicit thinking
+              ...((settings.thinkingEnabled || (settings.provider === "lm-studio" && !selectedModelDef?.thinking)) ? {
                 reasoningEffort: settings.reasoningEffort,
                 thinkingLevel: settings.thinkingLevel,
                 thinkingBudget: settings.thinkingBudget || undefined,

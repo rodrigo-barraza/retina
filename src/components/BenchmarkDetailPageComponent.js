@@ -635,6 +635,19 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
 
       <div className={styles.content}>
         <div className={styles.contentMain}>
+          <div className={styles.contentMainHeader}>
+            <ButtonComponent
+              variant="primary"
+              size="sm"
+              icon={running ? Square : Play}
+              onClick={running ? handleStop : handleRun}
+              loading={running}
+            >
+              {running
+                ? "Stop"
+                : `Run ${selectedModels.length > 0 ? selectedModels.length : allModels.length} Models`}
+            </ButtonComponent>
+          </div>
           <div className={styles.detailPanel}>
           {/* ── Benchmark Info ── */}
           <div className={styles.detailHeader}>
@@ -665,18 +678,6 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
 
           {/* ── Actions ── */}
           <div className={styles.detailActions}>
-            <ButtonComponent
-              variant="primary"
-              size="sm"
-              icon={Play}
-              onClick={handleRun}
-              loading={running}
-              disabled={running}
-            >
-              {selectedModels.length > 0
-                ? `Run (${selectedModels.length} models)`
-                : "Run All Models"}
-            </ButtonComponent>
             <ModelPickerPopoverComponent
               config={prismConfig}
               multiSelect

@@ -21,6 +21,21 @@
   min-width: 0;
   overflow-y: auto;
   padding: 20px;
+  position: relative;
+}
+
+.contentMainHeader {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 12px;
+  pointer-events: none;
+}
+
+.contentMainHeader > * {
+  pointer-events: auto;
 }
 
 /* ── Sidebar Panel (inside .content) ───────────────────────── */

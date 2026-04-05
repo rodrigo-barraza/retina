@@ -242,10 +242,14 @@ export default function ChatArea({
     switch (tool) {
       case "Thinking": {
         const isLmStudio = settings?.provider === "lm-studio";
+        // LM Studio models with explicit thinking support (capabilities.reasoning,
+        // surfaced as thinking: true) are toggleable. Models without it always
+        // emit <think> tags, so the toggle is force-locked on.
+        const lmStudioAlwaysOn = isLmStudio && !selectedModelDef?.thinking;
         return {
-          checked: isLmStudio || settings?.thinkingEnabled || false,
+          checked: lmStudioAlwaysOn || settings?.thinkingEnabled || false,
           onChange: (val) => onUpdateSettings?.({ thinkingEnabled: val }),
-          disabled: isLmStudio,
+          disabled: lmStudioAlwaysOn,
         };
       }
       case "Web Search":

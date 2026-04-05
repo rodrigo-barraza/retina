@@ -912,6 +912,16 @@ export default function SynthesisComponent() {
                 )}
               </div>
 
+              {effectiveAssistantPrompt && (
+                <div className={styles.systemPromptBlock}>
+                  <span className={styles.systemPromptLabel}>
+                    <Settings2 size={11} />
+                    System
+                  </span>
+                  <span className={styles.systemPromptContent}>{effectiveAssistantPrompt}</span>
+                </div>
+              )}
+
               <MessageList
                 messages={generatedMessages}
                 isGenerating={isGenerating}
