@@ -735,24 +735,39 @@
   letter-spacing: 0.5px;
 }
 
-.turnsControl {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.turnsInput {
+  width: 72px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  text-align: center;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  /* Hide number spinners for a cleaner look */
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  -moz-appearance: textfield;
 }
 
 .turnsValue {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent-color);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
   white-space: nowrap;
-  min-width: 60px;
-  text-align: right;
-}
-
-.turnsHint {
-  font-size: 11px;
-  color: var(--text-muted);
 }
 
 /* ── Output Panel ── */

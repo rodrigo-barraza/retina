@@ -963,12 +963,13 @@ export default function HomePage({ initialConversationId = null }) {
             }
           : {}),
         ...(!selectedModelDef?.responsesAPI &&
-        (selectedModelDef?.thinking || (settings.provider === "lm-studio" && !selectedModelDef?.thinking))
+        (selectedModelDef?.thinking || settings.provider === "lm-studio")
           ? {
-              thinkingEnabled: selectedModelDef?.thinking
-                ? (settings.thinkingEnabled || false)
-                : true, // force-on for LM Studio models without explicit thinking
-              ...((settings.thinkingEnabled || (settings.provider === "lm-studio" && !selectedModelDef?.thinking)) ? {
+              // LM Studio: thinking defaults to ON; only send false when explicitly toggled off
+              thinkingEnabled: settings.provider === "lm-studio"
+                ? (settings.thinkingEnabled !== false)
+                : (settings.thinkingEnabled || false),
+              ...((settings.thinkingEnabled !== false || settings.provider === "lm-studio") ? {
                 reasoningEffort: settings.reasoningEffort,
                 thinkingLevel: settings.thinkingLevel,
                 thinkingBudget: settings.thinkingBudget || undefined,
@@ -1641,12 +1642,13 @@ export default function HomePage({ initialConversationId = null }) {
             }
           : {}),
         ...(!selectedModelDef?.responsesAPI &&
-        (selectedModelDef?.thinking || (settings.provider === "lm-studio" && !selectedModelDef?.thinking))
+        (selectedModelDef?.thinking || settings.provider === "lm-studio")
           ? {
-              thinkingEnabled: selectedModelDef?.thinking
-                ? (settings.thinkingEnabled || false)
-                : true, // force-on for LM Studio models without explicit thinking
-              ...((settings.thinkingEnabled || (settings.provider === "lm-studio" && !selectedModelDef?.thinking)) ? {
+              // LM Studio: thinking defaults to ON; only send false when explicitly toggled off
+              thinkingEnabled: settings.provider === "lm-studio"
+                ? (settings.thinkingEnabled !== false)
+                : (settings.thinkingEnabled || false),
+              ...((settings.thinkingEnabled !== false || settings.provider === "lm-studio") ? {
                 reasoningEffort: settings.reasoningEffort,
                 thinkingLevel: settings.thinkingLevel,
                 thinkingBudget: settings.thinkingBudget || undefined,

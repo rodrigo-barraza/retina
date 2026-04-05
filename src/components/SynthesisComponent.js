@@ -26,7 +26,6 @@ import ThreePanelLayout from "./ThreePanelLayout.js";
 import SettingsPanel from "./SettingsPanel.js";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent.js";
 import SelectDropdown from "./SelectDropdown.js";
-import SliderComponent from "./SliderComponent.js";
 import TabBarComponent from "./TabBarComponent.js";
 import EmptyStateComponent from "./EmptyStateComponent.js";
 import MessageList from "./MessageList.js";
@@ -35,7 +34,7 @@ import styles from "./SynthesisComponent.module.css";
 
 const DEFAULT_TURNS = 4;
 const MIN_TURNS = 1;
-const MAX_TURNS = 20;
+const MAX_TURNS = 500;
 
 const SAMPLE_SEEDS = [
   {
@@ -692,14 +691,25 @@ export default function SynthesisComponent() {
                 Length
               </div>
               <div className={styles.configBarControl}>
-                <SliderComponent
+                <input
+                  type="number"
+                  className={styles.turnsInput}
                   value={targetTurns}
                   min={MIN_TURNS}
                   max={MAX_TURNS}
                   step={1}
-                  onChange={(v) => setTargetTurns(v)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === "") { setTargetTurns(""); return; }
+                    const v = parseInt(raw, 10);
+                    if (!isNaN(v)) setTargetTurns(v);
+                  }}
+                  onBlur={() => {
+                    const clamped = Math.max(MIN_TURNS, Math.min(MAX_TURNS, Number(targetTurns) || DEFAULT_TURNS));
+                    setTargetTurns(clamped);
+                  }}
                 />
-                <span className={styles.turnsValue}>{targetTurns} turns</span>
+                <span className={styles.turnsValue}>turns</span>
               </div>
             </div>
             <div className={styles.configBarItem}>
