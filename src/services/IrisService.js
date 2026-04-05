@@ -1,4 +1,4 @@
-import { PRISM_URL } from "../../config.js";
+import { PRISM_URL, PROJECT_NAME } from "../../config.js";
 import { subscribe as sseSubscribe } from "./SSEManager";
 
 const API_BASE = PRISM_URL;
@@ -6,7 +6,7 @@ const API_BASE = PRISM_URL;
 function getHeaders() {
   return {
     "Content-Type": "application/json",
-    "x-project": "retina",
+    "x-project": PROJECT_NAME,
     "x-username": "admin",
   };
 }

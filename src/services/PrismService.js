@@ -1,13 +1,13 @@
 // API Service for communicating with Prism AI Gateway
 
-import { PRISM_URL } from "../../config.js";
+import { PRISM_URL, PROJECT_NAME } from "../../config.js";
 
 const API_BASE = PRISM_URL;
 
 function getHeaders() {
   return {
     "Content-Type": "application/json",
-    "x-project": "retina",
+    "x-project": PROJECT_NAME,
   };
 }
 

@@ -2,7 +2,7 @@
 // Retina — Runtime Configuration
 // ============================================================
 // Imports defaults from secrets.js and overrides with production
-// values when served from clankerbox.com.
+// values when served from *.com
 // ============================================================
 
 import {
@@ -14,9 +14,14 @@ import {
 
 export const PORT = SECRETS_PORT || 3333;
 
-const IS_PRODUCTION =
+export const IS_PRODUCTION =
   typeof window !== "undefined" &&
-  window.location.hostname.endsWith("clankerbox.com");
+  window.location.hostname.endsWith(".com");
+
+export const IS_LOCALHOST = !IS_PRODUCTION;
+
+// Environment-aware project name — isolates data between dev and prod
+export const PROJECT_NAME = IS_PRODUCTION ? "retina-web" : "retina";
 
 export const PRISM_URL = IS_PRODUCTION
   ? "https://prism.clankerbox.com"

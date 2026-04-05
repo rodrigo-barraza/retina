@@ -2470,7 +2470,3 @@ export default function HomePage({ initialConversationId = null }) {
         />
       )}
 
-      {toastElement}
-    </main>
-  );
-}
