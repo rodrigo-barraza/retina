@@ -1075,6 +1075,10 @@ function ModelsTableInner({
         highlightedRowKey={highlightedRowKey}
         highlightedRowRef={highlightedRowRef}
         storageKey="models"
+        getRowClassName={hasSelection ? (row) => {
+          const key = `${row._model.provider}:${row._model.key}`;
+          return selectedKeys.has(key) ? styles.selectedRow : "";
+        } : undefined}
       />
     </div>
   );

@@ -1,0 +1,248 @@
+/* ============================================================
+   BenchmarkSidebarComponent — right sidebar benchmark list
+   ============================================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Search ──────────────────────────────────────────────── */
+
+.searchWrap {
+  padding: 10px 12px 6px;
+  flex-shrink: 0;
+}
+
+/* ── All Benchmarks link ─────────────────────────────────── */
+
+.allLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  margin: 0 8px 4px;
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  background: none;
+  text-align: left;
+  width: calc(100% - 16px);
+
+  &:hover {
+    background: var(--accent-glow);
+    color: var(--text-primary);
+  }
+
+  & svg {
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+  }
+}
+
+.allLinkActive {
+  background: var(--accent-subtle);
+  color: var(--accent-color);
+  border-color: color-mix(in srgb, var(--accent-color) 25%, transparent);
+
+  & svg {
+    color: var(--accent-color);
+  }
+}
+
+.allLinkCount {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* ── List ─────────────────────────────────────────────────── */
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 16px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* ── Item ─────────────────────────────────────────────────── */
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:hover {
+    background: var(--accent-glow);
+  }
+}
+
+.itemActive {
+  background: color-mix(in srgb, var(--accent-color) 8%, transparent);
+  border-left: 3px solid var(--accent-color);
+}
+
+.itemRunning {
+  background: color-mix(in srgb, var(--accent-color) 4%, transparent);
+}
+
+.itemRunning::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-color);
+  animation: runPulse 2s ease-in-out infinite;
+}
+
+@keyframes runPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Item Header ──────────────────────────────────────────── */
+
+.itemHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.itemName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.itemActive .itemName {
+  color: var(--accent-color);
+}
+
+/* ── Item Meta ────────────────────────────────────────────── */
+
+.itemMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.itemExpected {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Item Stats (latest run) ──────────────────────────────── */
+
+.itemStats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.statPassed {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.statFailed {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.statCost {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
+.noRuns {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+/* ── Mini Pass Rate Bar ───────────────────────────────────── */
+
+.miniPassBar {
+  width: 40px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--danger-subtle);
+  overflow: hidden;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.miniPassBarFill {
+  height: 100%;
+  background: var(--success);
+  border-radius: 2px;
+  transition: width 0.3s ease-out;
+}
+
+/* ── Spin Icon ────────────────────────────────────────────── */
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+  color: var(--accent-color);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

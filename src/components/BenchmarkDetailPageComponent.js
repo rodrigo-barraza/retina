@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Plus,
   Play,
   Copy,
   CheckCircle2,
@@ -662,29 +661,6 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
               multiSelect
               selectedKeys={selectedModelKeys}
               onSelectModel={handleModelSelect}
-              renderActions={(rawModel) => {
-                const key = `${rawModel.provider}:${rawModel.name}`;
-                const isSelected = selectedModelKeys.has(key);
-                return (
-                  <button
-                    className={`${styles.selectBtn} ${isSelected ? styles.selectBtnActive : ""}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleModelSelect(rawModel);
-                    }}
-                  >
-                    {isSelected ? (
-                      <>
-                        <CheckCircle2 size={12} /> Selected
-                      </>
-                    ) : (
-                      <>
-                        <Plus size={12} /> Select
-                      </>
-                    )}
-                  </button>
-                );
-              }}
             />
             {selectedModels.length > 0 && (
               <ButtonComponent

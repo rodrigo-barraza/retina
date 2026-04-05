@@ -836,18 +836,6 @@ export default class PrismService {
     return PrismService._request(`/benchmark/${id}`, { method: "GET" });
   }
 
-  /**
-   * Update a benchmark test.
-   * @param {string} id
-   * @param {object} updates
-   * @returns {Promise<object>}
-   */
-  static async updateBenchmark(id, updates) {
-    return PrismService._request(`/benchmark/${id}`, {
-      method: "PUT",
-      body: updates,
-    });
-  }
 
   /**
    * Delete a benchmark test and all its runs.

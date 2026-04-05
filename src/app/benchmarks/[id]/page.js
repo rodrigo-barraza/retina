@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import NavigationSidebarComponent from "../../../components/NavigationSidebarComponent";
 import BenchmarkDetailPageComponent from "../../../components/BenchmarkDetailPageComponent";
+import BenchmarkSidebarComponent from "../../../components/BenchmarkSidebarComponent";
 import styles from "../page.module.css";
 
 export default function BenchmarkDetailPage() {
@@ -15,6 +16,10 @@ export default function BenchmarkDetailPage() {
       <div className={styles.page}>
         <BenchmarkDetailPageComponent benchmarkId={id} onRunningChange={setIsRunning} />
       </div>
+      <aside className={styles.rightSidebar}>
+        <div className={styles.sidebarHeader}>Benchmarks</div>
+        <BenchmarkSidebarComponent activeBenchmarkId={id} />
+      </aside>
     </div>
   );
 }

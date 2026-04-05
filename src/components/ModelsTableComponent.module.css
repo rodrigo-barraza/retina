@@ -271,5 +271,64 @@
   filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5));
 }
 
+/* ── Selection checkbox ───────────────────────────── */
+
+.selectWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 2px;
+  padding: 1px;
+  transition: all 0.15s ease;
+}
+
+.selectBox {
+  color: var(--text-secondary);
+  opacity: 0.3;
+  transition: all 0.15s ease;
+
+  &:hover {
+    opacity: 0.6;
+  }
+}
+
+.selectWrap:hover .selectBox {
+  opacity: 0.6;
+  color: var(--accent-color);
+}
+
+.selectCheck {
+  color: var(--accent-color);
+  transition: all 0.15s ease;
+}
+
+.selectPartial {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+  transition: all 0.15s ease;
+}
+
+.selectWrapActive {
+  .selectCheck {
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--accent-color) 40%, transparent));
+  }
+}
+
+/* ── Selected row highlight ───────────────────────── */
+
+.selectedRow td {
+  background: color-mix(in srgb, var(--accent-color) 8%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--accent-color) 15%, var(--border-color)) !important;
+}
+
+.selectedRow td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent-color);
+}
+
+.selectedRow:hover td {
+  background: color-mix(in srgb, var(--accent-color) 14%, transparent) !important;
+}
 
 /* ── Animations ────────────────────────────────────── */

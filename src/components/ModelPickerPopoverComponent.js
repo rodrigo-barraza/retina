@@ -380,6 +380,8 @@ export default function ModelPickerPopoverComponent({
                     : undefined
                 }
                 highlightedRowRef={highlightedRowRef}
+                selectedKeys={multiSelect ? selectedKeys : undefined}
+                onToggleSelect={multiSelect ? onSelectModel : undefined}
               />
             </div>
           </div>,
