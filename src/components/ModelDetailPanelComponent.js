@@ -154,6 +154,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
       usageCount: model.usageCount || 0,
       totalInputTokens: model.totalInputTokens || 0,
       totalOutputTokens: model.totalOutputTokens || 0,
+      totalTokens: model.totalTokens || 0,
     };
   }, [model]);
 
@@ -539,10 +540,19 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
                 Usage Statistics
               </div>
               <div className={styles.kvGrid}>
-                <span className={styles.kvLabel}>Total Requests</span>
+                <span className={styles.kvLabel}>API Calls</span>
                 <span className={styles.kvValueMono}>
                   {formatNumber(m.usageCount)}
                 </span>
+
+                {m.totalTokens > 0 && (
+                  <>
+                    <span className={styles.kvLabel}>Total Tokens</span>
+                    <span className={styles.kvValueMono}>
+                      {formatTokenCount(m.totalTokens)}
+                    </span>
+                  </>
+                )}
 
                 {m.totalInputTokens > 0 && (
                   <>

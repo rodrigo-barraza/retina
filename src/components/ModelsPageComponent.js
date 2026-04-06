@@ -79,11 +79,13 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
         existing.totalRequests += s.totalRequests;
         existing.totalInputTokens += s.totalInputTokens || 0;
         existing.totalOutputTokens += s.totalOutputTokens || 0;
+        existing.totalTokens += s.totalTokens || 0;
       } else {
         usageMap.set(key, {
           totalRequests: s.totalRequests,
           totalInputTokens: s.totalInputTokens || 0,
           totalOutputTokens: s.totalOutputTokens || 0,
+          totalTokens: s.totalTokens || 0,
         });
       }
       grandTotal += s.totalRequests;
@@ -91,7 +93,7 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
 
     return flat.map((m) => {
       const usageKey = `${m.provider}:${m.name}`;
-      const stats = usageMap.get(usageKey) || { totalRequests: 0, totalInputTokens: 0, totalOutputTokens: 0 };
+      const stats = usageMap.get(usageKey) || { totalRequests: 0, totalInputTokens: 0, totalOutputTokens: 0, totalTokens: 0 };
       const usageCount = stats.totalRequests;
       let result = {
         ...m,
@@ -99,6 +101,7 @@ export default function ModelsPageComponent({ mode = "user", onCountChange }) {
         usageTotal: grandTotal,
         totalInputTokens: stats.totalInputTokens,
         totalOutputTokens: stats.totalOutputTokens,
+        totalTokens: stats.totalTokens,
       };
 
       if (m.provider === "lm-studio") {
