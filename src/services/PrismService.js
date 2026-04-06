@@ -390,6 +390,8 @@ export default class PrismService {
       onToolCall,
       onToolExecution,
       onToolOutput,
+      onApprovalRequired,
+      onPlanProposal,
       onStatus,
       onDone,
       onError,
@@ -463,6 +465,10 @@ export default class PrismService {
                 onToolExecution(data);
               } else if (data.type === "tool_output" && onToolOutput) {
                 onToolOutput(data);
+              } else if (data.type === "approval_required" && onApprovalRequired) {
+                onApprovalRequired(data);
+              } else if (data.type === "plan_proposal" && onPlanProposal) {
+                onPlanProposal(data);
               } else if (data.type === "status" && onStatus) {
                 onStatus(data.message);
               } else if (data.type === "done" && onDone) {
@@ -1112,5 +1118,32 @@ export default class PrismService {
    */
   static async deleteSynthesisRun(id) {
     return PrismService._request(`/synthesis/${id}`, { method: "DELETE" });
+  }
+
+  // ---------------------------------------------------------------------------
+  // VRAM Benchmarks
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Fetch VRAM benchmark entries with optional filters.
+   * @param {object} [params] - { settings, hostname, ctx, limit }
+   * @returns {Promise<{ count: number, data: Array }>}
+   */
+  static async getVramBenchmarks(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return PrismService._request(
+      `/vram-benchmarks${query ? `?${query}` : ""}`,
+      { method: "GET" },
+    );
+  }
+
+  /**
+   * Fetch distinct machines that have run VRAM benchmarks.
+   * @returns {Promise<Array<{ hostname, gpu, gpuVramGB, cpu, ramGiB, benchmarkCount, lastRun }>>}
+   */
+  static async getVramBenchmarkMachines() {
+    return PrismService._request("/vram-benchmarks/machines", {
+      method: "GET",
+    });
   }
 }

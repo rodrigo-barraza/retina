@@ -25,6 +25,7 @@ import {
   FlaskConical,
   Target,
   Bot,
+  MemoryStick,
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import SpinningCatComponent from "./SpinningCatComponent";
@@ -55,6 +56,7 @@ const USER_NAV_ITEMS = [
 const USER_EXPERIMENT_ITEMS = [
   { href: "/agent", label: "Agent", icon: Bot },
   { href: "/benchmarks", label: "Benchmarks", icon: Target },
+  { href: "/vram-benchmark", label: "VRAM Bench", icon: MemoryStick },
   { href: "/synthesis", label: "Synthesis", icon: FlaskConical },
   { href: "/workflows", label: "Workflows", icon: Workflow },
 ];

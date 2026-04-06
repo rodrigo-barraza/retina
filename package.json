@@ -13,6 +13,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
     "gifuct-js": "^2.1.2",
     "lucide-react": "^0.577.0",
     "luxon": "^3.7.2",

@@ -1,0 +1,253 @@
+.container {
+  padding: 32px 40px 60px;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeIn var(--transition-normal) ease-out;
+}
+
+/* ─── Header ─── */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.hwBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: var(--accent-subtle);
+  border: 1px solid var(--border-color);
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--accent-color);
+  transition: border-color var(--transition-fast);
+}
+
+.hwBadge:hover {
+  border-color: var(--accent-color);
+}
+
+.hwBadge svg {
+  width: 13px;
+  height: 13px;
+  opacity: 0.8;
+}
+
+/* ─── Stats strip ─── */
+.statsStrip {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.statPill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  min-width: 115px;
+  transition:
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.statPill:hover {
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+.statValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+/* ─── Controls ─── */
+.controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.controlGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.controlGroup label {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.controlGroup select {
+  height: 34px;
+  padding: 0 28px 0 10px;
+  font-size: 0.82rem;
+}
+
+/* ─── Chart cards ─── */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.chartCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 24px 24px 18px;
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.chartCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-color), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.chartCard:hover::before {
+  opacity: 1;
+}
+
+.chartCard:hover {
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-glow);
+}
+
+.chartTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.chartSubtitle {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.chartWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.chartWrapper canvas {
+  width: 100% !important;
+}
+
+/* ─── Loading / Error ─── */
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 20px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  gap: 16px;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 8px;
+}
+
+.errorState strong {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.errorState span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 16px 40px;
+  }
+
+  .title {
+    font-size: 1.4rem;
+  }
+
+  .chartCard {
+    padding: 14px 12px;
+  }
+
+  .statsStrip {
+    gap: 8px;
+  }
+
+  .statPill {
+    min-width: 90px;
+    padding: 8px 12px;
+  }
+
+  .statValue {
+    font-size: 1.1rem;
+  }
+}

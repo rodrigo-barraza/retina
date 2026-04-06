@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Bot, Paperclip, X, Code2 } from "lucide-react";
+import { Bot, Paperclip, X, Code2, ClipboardList, Zap } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ThreePanelLayout from "./ThreePanelLayout.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
@@ -13,10 +13,19 @@ import ImagePreviewComponent from "./ImagePreviewComponent.js";
 import TabBarComponent from "./TabBarComponent.js";
 import EmptyStateComponent from "./EmptyStateComponent.js";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent.js";
+import ApprovalCardComponent from "./ApprovalCardComponent.js";
+import PlanCardComponent from "./PlanCardComponent.js";
 
 import {
   buildToolSchemas,
 } from "../utils/FunctionCallingUtilities.js";
+import {
+  getUniqueModels,
+  getConversationCost,
+  getConversationTokenStats,
+  getUsedTools,
+} from "../utils/utilities.js";
+import { getModalities } from "./HistoryPanel.js";
 import { PROJECT_AGENT, SETTINGS_DEFAULTS } from "../constants.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./AgentComponent.module.css";
@@ -107,6 +116,12 @@ export default function AgentComponent() {
   const [lightboxSrc, setLightboxSrc] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
+
+  // Phase 1: Agentic controls
+  const [autoApprove, setAutoApprove] = useState(false);
+  const [planFirst, setPlanFirst] = useState(false);
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [planProposal, setPlanProposal] = useState(null); // { plan, steps, status }
 
   const textareaRef = useRef(null);
   const endRef = useRef(null);
@@ -258,6 +273,16 @@ export default function AgentComponent() {
     loadAgenticTools().catch(console.error);
   }, []);
 
+  // ── Conversation stats for SettingsPanel ──────────────────
+  const uniqueModels = useMemo(() => getUniqueModels(messages), [messages]);
+  const totalCost = useMemo(() => getConversationCost(messages), [messages]);
+  const { totalTokens, requestCount } = useMemo(
+    () => getConversationTokenStats(messages),
+    [messages],
+  );
+  const usedTools = useMemo(() => getUsedTools(messages), [messages]);
+  const modalities = useMemo(() => getModalities(messages), [messages]);
+
   // Build final tool schemas
   const allToolSchemas = useMemo(
     () => buildToolSchemas(builtInTools, disabledBuiltIns, customTools),
@@ -393,6 +418,9 @@ export default function AgentComponent() {
             title: resolvedTitle,
             systemPrompt: systemPromptText,
           },
+          // Phase 1: Agentic controls
+          autoApprove,
+          planFirst,
         };
 
         let streamedText = "";
@@ -532,6 +560,25 @@ export default function AgentComponent() {
               });
             }
           },
+          onApprovalRequired: (data) => {
+            setPendingApprovals((prev) => [
+              ...prev,
+              {
+                id: data.toolCall.id || `ap-${Date.now()}`,
+                toolName: data.toolCall.name,
+                toolArgs: data.toolCall.args,
+                tier: data.tier,
+                status: "pending",
+              },
+            ]);
+          },
+          onPlanProposal: (data) => {
+            setPlanProposal({
+              plan: data.plan,
+              steps: data.steps || [],
+              status: "pending",
+            });
+          },
           onDone: () => resolve(),
           onError: (err) => reject(err),
         });
@@ -548,6 +595,8 @@ export default function AgentComponent() {
       settings.systemPrompt,
       conversationId,
       allToolSchemas,
+      autoApprove,
+      planFirst,
     ],
   );
 
@@ -568,6 +617,8 @@ export default function AgentComponent() {
       setIsGenerating(true);
       setToolActivity([]);
       setStreamingOutputs(new Map());
+      setPendingApprovals([]);
+      setPlanProposal(null);
 
       let resolvedTitle = title;
       if (messages.length === 0) {
@@ -699,6 +750,21 @@ export default function AgentComponent() {
           onChange={(updates) => setSettings((s) => ({ ...s, ...updates, functionCallingEnabled: true }))}
           hasAssistantImages={false}
           lockedTools={AGENT_LOCKED_TOOLS}
+          conversationStats={
+            messages.length > 0
+              ? {
+                  messageCount: messages.length,
+                  deletedCount: 0,
+                  requestCount,
+                  uniqueModels,
+                  totalTokens,
+                  totalCost,
+                  originalTotalCost: 0,
+                  usedTools,
+                  modalities,
+                }
+              : null
+          }
         />
       )}
 
@@ -749,6 +815,42 @@ export default function AgentComponent() {
           isGenerating={isGenerating}
           streamingOutputs={streamingOutputs}
         />
+
+        {/* Plan proposal card */}
+        {planProposal && (
+          <PlanCardComponent
+            planText={planProposal.plan}
+            steps={planProposal.steps}
+            status={planProposal.status}
+            onApprove={() => setPlanProposal((p) => p ? { ...p, status: "approved" } : null)}
+            onReject={() => setPlanProposal((p) => p ? { ...p, status: "rejected" } : null)}
+          />
+        )}
+
+        {/* Pending approval cards */}
+        {pendingApprovals.filter((a) => a.status === "pending").map((approval) => (
+          <ApprovalCardComponent
+            key={approval.id}
+            toolName={approval.toolName}
+            toolArgs={approval.toolArgs}
+            tier={approval.tier}
+            onApprove={() => {
+              setPendingApprovals((prev) =>
+                prev.map((a) => a.id === approval.id ? { ...a, status: "approved" } : a),
+              );
+            }}
+            onReject={() => {
+              setPendingApprovals((prev) =>
+                prev.map((a) => a.id === approval.id ? { ...a, status: "rejected" } : a),
+              );
+            }}
+            onApproveAll={() => {
+              setPendingApprovals((prev) =>
+                prev.map((a) => a.status === "pending" ? { ...a, status: "approved" } : a),
+              );
+            }}
+          />
+        ))}
 
         <div ref={endRef} />
       </div>
@@ -917,6 +1019,22 @@ export default function AgentComponent() {
       }
       headerControls={
         <div className={styles.headerControls}>
+          <button
+            className={`${styles.headerToggle} ${planFirst ? styles.headerToggleActive : ""}`}
+            onClick={() => setPlanFirst((v) => !v)}
+            title="Plan First: Generate a plan for approval before executing"
+          >
+            <ClipboardList size={10} />
+            Plan
+          </button>
+          <button
+            className={`${styles.headerToggle} ${autoApprove ? styles.headerToggleActive : ""}`}
+            onClick={() => setAutoApprove((v) => !v)}
+            title="Auto Mode: Skip approval prompts for all tool calls"
+          >
+            <Zap size={10} />
+            Auto
+          </button>
           <span className={styles.headerBadge}>
             <Code2 size={10} />
             Agentic
