@@ -36,7 +36,7 @@ function setSharedSearch(value) {
   _notify();
 }
 function useSharedModelSearch() {
-  const value = useSyncExternalStore(subscribeSearch, getSearchSnapshot);
+  const value = useSyncExternalStore(subscribeSearch, getSearchSnapshot, getSearchSnapshot);
   return [value, setSharedSearch];
 }
 
