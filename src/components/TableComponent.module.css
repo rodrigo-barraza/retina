@@ -144,6 +144,7 @@
 
 /* Primary name column */
 .tdName {
+  padding: 2px 14px;
   white-space: nowrap;
   background: transparent;
   color: var(--text-primary);

@@ -18,6 +18,8 @@ export default function ChatPreviewComponent({
   // Prompt block mode (when no messages array)
   systemPrompt,
   userPrompt,
+  // Compact sidebar variant
+  mini = false,
   // Optional max-height override
   maxHeight,
   // Optional extra className
@@ -27,7 +29,7 @@ export default function ChatPreviewComponent({
   if (messages) {
     return (
       <div
-        className={`${styles.chatPreview}${className ? ` ${className}` : ""}`}
+        className={`${styles.chatPreview} ${mini ? styles.mini : ""}${className ? ` ${className}` : ""}`}
         style={maxHeight ? { maxHeight } : undefined}
       >
         <MessageList
@@ -46,7 +48,7 @@ export default function ChatPreviewComponent({
   if (!hasSystem && !hasUser) return null;
 
   return (
-    <div className={`${styles.promptPreview}${className ? ` ${className}` : ""}`}>
+    <div className={`${styles.promptPreview} ${mini ? styles.mini : ""}${className ? ` ${className}` : ""}`}>
       {hasSystem && (
         <div className={`${styles.promptBlock} ${styles.promptBlockSystem}`}>
           <span className={`${styles.promptLabel} ${styles.promptLabelSystem}`}>

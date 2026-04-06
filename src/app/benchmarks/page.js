@@ -3,17 +3,13 @@
 import NavigationSidebarComponent from "../../components/NavigationSidebarComponent";
 import BenchmarkPageComponent from "../../components/BenchmarkPageComponent";
 import BenchmarkSidebarComponent from "../../components/BenchmarkSidebarComponent";
-import styles from "./page.module.css";
 
 export default function BenchmarksPage() {
   return (
-    <div className={styles.pageWrapper}>
-      <NavigationSidebarComponent mode="user" />
-      <div className={styles.page}>
-        <BenchmarkPageComponent
-          sidebar={<BenchmarkSidebarComponent />}
-        />
-      </div>
-    </div>
+    <BenchmarkPageComponent
+      navSidebar={<NavigationSidebarComponent mode="user" />}
+      rightSidebar={<BenchmarkSidebarComponent />}
+    />
   );
 }
+

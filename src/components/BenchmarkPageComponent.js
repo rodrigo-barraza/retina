@@ -1,25 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Plus,
-  Play,
-  Trash2,
-  Copy,
-  Target,
-  Clock,
-  Coins,
-  Loader2,
-} from "lucide-react";
+import { Target } from "lucide-react";
 import PrismService from "../services/PrismService";
-import PageHeaderComponent from "./PageHeaderComponent";
+import ThreePanelLayout from "./ThreePanelLayout";
+import BenchmarkPreviewSidebarComponent from "./BenchmarkPreviewSidebarComponent";
 import ButtonComponent from "./ButtonComponent";
-import BadgeComponent from "./BadgeComponent";
-import EmptyStateComponent from "./EmptyStateComponent";
-import ModalDialogComponent from "./ModalDialogComponent";
 import BenchmarkFormComponent from "./BenchmarkFormComponent";
-import { formatCost } from "../utils/utilities";
 import styles from "./BenchmarkPageComponent.module.css";
 
 const MATCH_MODES = [
@@ -37,87 +25,20 @@ const INITIAL_FORM = {
   assertionOperator: "AND",
 };
 
-export default function BenchmarkPageComponent({ sidebar }) {
+export default function BenchmarkPageComponent({ navSidebar, rightSidebar }) {
   const router = useRouter();
 
   // ── State ──────────────────────────────────────────────────
-  const [benchmarks, setBenchmarks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
-  const [activeBenchmarkIds, setActiveBenchmarkIds] = useState(new Set());
 
-  // ── Derived: aggregate cost across all benchmarks ────────
-  const totalCost = useMemo(
-    () =>
-      benchmarks.reduce(
-        (sum, b) => sum + (b.cumulativeCost || 0),
-        0,
-      ),
-    [benchmarks],
-  );
+  // ── Validation ─────────────────────────────────────────────
+  const isValid = form.name && form.prompt && form.assertions?.some((a) => a.expectedValue);
 
-  // ── Load benchmarks ────────────────────────────────────────
-  const loadBenchmarks = useCallback(async () => {
-    try {
-      const { benchmarks: data } = await PrismService.getBenchmarks();
-      setBenchmarks(data || []);
-    } catch (err) {
-      console.error("Failed to load benchmarks:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadBenchmarks();
-  }, [loadBenchmarks]);
-
-  // ── Poll active benchmarks (running indicator) ─────────────
-  useEffect(() => {
-    let cancelled = false;
-
-    const poll = async () => {
-      try {
-        const { activeIds } = await PrismService.getActiveBenchmarks();
-        if (!cancelled) setActiveBenchmarkIds(new Set(activeIds || []));
-      } catch { /* ignore */ }
-    };
-
-    poll();
-    const interval = setInterval(poll, 3000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, []);
-
-  // ── Create / Clone ─────────────────────────────────────────
-  const openCreate = useCallback(() => {
-    setForm(INITIAL_FORM);
-    setShowModal(true);
-  }, []);
-
-  const openClone = useCallback((e, benchmark) => {
-    e.stopPropagation();
-    const assertions = benchmark.assertions?.length > 0
-      ? benchmark.assertions
-      : [{ expectedValue: benchmark.expectedValue || "", matchMode: benchmark.matchMode || "contains" }];
-    setForm({
-      name: `${benchmark.name} (copy)`,
-      prompt: benchmark.prompt,
-      systemPrompt: benchmark.systemPrompt || "",
-      assertions,
-      assertionOperator: benchmark.assertionOperator || "AND",
-    });
-    setShowModal(true);
-  }, []);
-
+  // ── Create ─────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
-      // Build payload — keep backward compat: first assertion becomes top-level expectedValue/matchMode
       const { assertions, assertionOperator, ...rest } = form;
       const payload = {
         ...rest,
@@ -126,236 +47,59 @@ export default function BenchmarkPageComponent({ sidebar }) {
         assertions,
         assertionOperator,
       };
-      await PrismService.createBenchmark(payload);
-
-      setShowModal(false);
+      const created = await PrismService.createBenchmark(payload);
       setForm(INITIAL_FORM);
-      await loadBenchmarks();
+      if (created?.id) {
+        router.push(`/benchmarks/${created.id}`);
+      }
     } catch (err) {
       console.error("Failed to save benchmark:", err);
     } finally {
       setSaving(false);
     }
-  }, [form, loadBenchmarks]);
+  }, [form, router]);
 
-  // ── Delete ─────────────────────────────────────────────────
-  const handleDelete = useCallback(
-    async (e, id) => {
-      e.stopPropagation();
-      if (!confirm("Delete this benchmark and all its runs?")) return;
-      try {
-        await PrismService.deleteBenchmark(id);
-        await loadBenchmarks();
-      } catch (err) {
-        console.error("Failed to delete benchmark:", err);
-      }
-    },
-    [loadBenchmarks],
-  );
-
-  // ── Navigate to detail ─────────────────────────────────────
-  const navigateToBenchmark = useCallback(
-    (benchmark) => {
-      router.push(`/benchmarks/${benchmark.id}`);
-    },
-    [router],
-  );
-
-  // ── Render: List View ──────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────
   return (
-    <div className={styles.container}>
-      <PageHeaderComponent
-        title="Benchmarks"
-        subtitle="Custom LLM accuracy tests"
-      >
+    <ThreePanelLayout
+      navSidebar={navSidebar}
+      leftPanel={<BenchmarkPreviewSidebarComponent form={form} />}
+      leftTitle="Preview"
+      rightPanel={rightSidebar}
+      rightTitle="Benchmarks"
+      headerTitle="New Benchmark"
+      headerControls={
         <ButtonComponent
           variant="primary"
           size="sm"
-          icon={Plus}
-          onClick={openCreate}
+          onClick={handleSave}
+          loading={saving}
+          disabled={!isValid}
         >
-          New Benchmark
+          Create
         </ButtonComponent>
-      </PageHeaderComponent>
-
-      <div className={styles.content}>
-        <div className={styles.contentMain}>
-          {totalCost > 0 && (
-            <div className={styles.totalCostBar}>
-              <Coins size={14} className={styles.costIcon} />
-              <span className={styles.totalCostLabel}>Total Cost · All Runs</span>
-              <span className={styles.totalCostValue}>{formatCost(totalCost)}</span>
+      }
+    >
+      <div className={styles.contentMain}>
+        <div className={styles.createFormWrapper}>
+          <div className={styles.createFormHeader}>
+            <Target size={18} className={styles.createFormIcon} />
+            <div>
+              <div className={styles.createFormTitle}>New Benchmark</div>
+              <div className={styles.createFormSubtitle}>
+                Define a prompt, expected output, and match criteria to evaluate model accuracy.
+              </div>
             </div>
-          )}
-          {loading ? (
-            <div className={styles.runProgress}>
-              <div className={styles.progressSpinner} />
-              <div className={styles.progressText}>Loading benchmarks…</div>
-            </div>
-          ) : benchmarks.length === 0 ? (
-            <EmptyStateComponent
-              icon={<Target size={36} />}
-              title="No Benchmarks Yet"
-              subtitle="Create your first benchmark test to evaluate LLM accuracy across models."
-            >
-              <ButtonComponent
-                variant="primary"
-                size="sm"
-                icon={Plus}
-                onClick={openCreate}
-              >
-                Create Benchmark
-              </ButtonComponent>
-            </EmptyStateComponent>
-          ) : (
-            <div className={styles.benchmarkGrid}>
-              {benchmarks.map((b) => {
-                const isRunning = activeBenchmarkIds.has(b.id);
-                return (
-                <div
-                  key={b.id}
-                  className={`${styles.benchmarkCard} ${isRunning ? styles.benchmarkCardRunning : ""}`}
-                  onClick={() => navigateToBenchmark(b)}
-                >
-                  <div className={styles.cardHeader}>
-                    <div className={styles.cardTitle}>
-                      {isRunning && (
-                        <span className={styles.runningIndicator}>
-                          <Loader2 size={12} className={styles.spinIcon} />
-                          Running
-                        </span>
-                      )}
-                      {b.name}
-                    </div>
-                    <div className={styles.cardActions}>
-                      <button
-                        className={styles.cardActionBtn}
-                        onClick={(e) => openClone(e, b)}
-                        title="Clone"
-                      >
-                        <Copy size={14} />
-                      </button>
-                      <button
-                        className={`${styles.cardActionBtn} ${styles.danger}`}
-                        onClick={(e) => handleDelete(e, b.id)}
-                        title="Delete"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
+          </div>
 
-                  <div className={styles.cardMeta}>
-                    <div className={styles.promptPreview}>{b.prompt}</div>
-                    <div className={styles.metaRow}>
-                      <span className={styles.metaLabel}>Expect</span>
-                      <span className={styles.expectedValue}>
-                        {b.assertions?.[0]?.expectedValue || b.expectedValue}
-                      </span>
-                      <BadgeComponent variant="accent" mini>
-                        {b.assertions?.[0]?.matchMode || b.matchMode || "contains"}
-                      </BadgeComponent>
-                      {(b.assertions?.length || 0) > 1 && (
-                        <BadgeComponent variant={b.assertionOperator === "OR" ? "warning" : "info"} mini>
-                          +{b.assertions.length - 1} {b.assertionOperator || "AND"}
-                        </BadgeComponent>
-                      )}
-                    </div>
-                  </div>
-
-                  {b.tags?.length > 0 && (
-                    <div className={styles.tagsRow}>
-                      {b.tags.map((tag) => (
-                        <span key={tag} className={styles.tag}>
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className={styles.cardFooter}>
-                    {b.latestRun ? (
-                      <div className={styles.runSummary}>
-                        <BadgeComponent variant="accent" mini>Latest</BadgeComponent>
-                        <span className={styles.passCount}>
-                          {b.latestRun.summary.passed} ✓
-                        </span>
-                        <span className={styles.failCount}>
-                          {b.latestRun.summary.failed + (b.latestRun.summary.errored || 0)} ✗
-                        </span>
-                        {b.latestRun.summary.totalCost > 0 && (
-                          <span className={styles.runCost}>
-                            {formatCost(b.latestRun.summary.totalCost)}
-                          </span>
-                        )}
-                        {b.cumulativeCost > 0 && (
-                          <>
-                            <span className={styles.footerDivider} />
-                            <span className={styles.cumulativeCost}>
-                              Σ {formatCost(b.cumulativeCost)}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <div className={styles.runSummary}>
-                        <Clock size={12} />
-                        <span className={styles.noRuns}>No runs yet</span>
-                      </div>
-                    )}
-                    <ButtonComponent variant="ghost" size="xs" icon={Play}>
-                      Run
-                    </ButtonComponent>
-                  </div>
-                </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {sidebar && (
-          <aside className={styles.sidebarPanel}>
-            <div className={styles.sidebarHeader}>Benchmarks</div>
-            {sidebar}
-          </aside>
-        )}
-      </div>
-
-      {/* ── Create / Clone Modal ── */}
-      {showModal && (
-        <ModalDialogComponent
-          title="New Benchmark"
-          size="xl"
-          onClose={() => setShowModal(false)}
-          footer={
-            <>
-              <ButtonComponent
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </ButtonComponent>
-              <ButtonComponent
-                variant="primary"
-                size="sm"
-                onClick={handleSave}
-                loading={saving}
-                disabled={!form.name || !form.prompt || !form.assertions?.some(a => a.expectedValue)}
-              >
-                Create
-              </ButtonComponent>
-            </>
-          }
-        >
           <BenchmarkFormComponent
             form={form}
             onChange={setForm}
             matchModes={MATCH_MODES}
           />
-        </ModalDialogComponent>
-      )}
-    </div>
+        </div>
+      </div>
+    </ThreePanelLayout>
   );
 }
+

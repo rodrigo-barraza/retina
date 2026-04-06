@@ -10,6 +10,112 @@
   overflow: hidden;
 }
 
+/* ── Model Selection Section ─────────────────────────────── */
+
+.modelsSection {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modelCountBadge {
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: auto;
+}
+
+.modelChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.modelChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 4px 3px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s;
+  animation: fadeIn 0.15s ease-out;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--accent-color) 40%, transparent);
+    color: var(--text-primary);
+  }
+}
+
+.modelChip svg:first-child {
+  flex-shrink: 0;
+}
+
+.modelChipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.modelChipRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  opacity: 0.5;
+
+  &:hover {
+    background: var(--danger-subtle);
+    color: var(--danger);
+    opacity: 1;
+  }
+}
+
+.modelActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clearModelsBtn {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  padding: 3px 8px;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: var(--danger);
+    background: var(--danger-subtle);
+  }
+}
+
+.emptyModels {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+
 /* ── Assertions Section ──────────────────────────────────── */
 
 .assertionsSection {

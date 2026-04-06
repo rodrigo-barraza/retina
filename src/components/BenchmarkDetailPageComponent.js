@@ -6,10 +6,6 @@ import {
   Play,
   Copy,
   CheckCircle2,
-  X,
-  Check,
-  DollarSign,
-  Cpu,
   Coins,
   Loader2,
   XCircle,
@@ -27,8 +23,8 @@ import SummaryBarComponent from "./SummaryBarComponent";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent";
 import BenchmarksTableComponent from "./BenchmarksTableComponent";
 import ChatPreviewComponent from "./ChatPreviewComponent";
-import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
-import { formatContextTokens, formatCost } from "../utils/utilities";
+import ProviderLogo from "./ProviderLogos";
+import { formatCost } from "../utils/utilities";
 import styles from "./BenchmarkPageComponent.module.css";
 
 const MATCH_MODES = [
@@ -347,10 +343,8 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     setActiveModel(null);
     setLatestRun(null);
 
-    const models =
-      selectedModels.length > 0
-        ? selectedModels.map((m) => ({ provider: m.provider, model: m.name }))
-        : undefined;
+    if (selectedModels.length === 0) return;
+    const models = selectedModels.map((m) => ({ provider: m.provider, model: m.name }));
 
     abortRef.current = PrismService.streamBenchmarkRun(benchmarkId, models, {
       onRunInfo: (data) => {
@@ -537,52 +531,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     setSelectedModelKeys(new Set());
   }, []);
 
-  // ── Selected model card ────────────────────────────────────
-  function SelectedModelCard({ model }) {
-    const key = `${model.provider}:${model.name}`;
-    const label = model.display_name || model.label || model.name;
-    const ctx = model.contextLength || model.max_context_length;
-    const hasInput = model.pricing?.inputPerMillion != null;
-    const hasOutput = model.pricing?.outputPerMillion != null;
 
-    return (
-      <div className={styles.selectedCard}>
-        <div className={styles.selectedCardHeader}>
-          <ProviderLogo provider={model.provider} size={16} />
-          <span className={styles.selectedCardName}>{label}</span>
-          <button
-            className={styles.selectedCardRemove}
-            onClick={() => removeModel(key)}
-            title="Remove"
-          >
-            <X size={12} />
-          </button>
-        </div>
-        <div className={styles.selectedCardMeta}>
-          <span className={styles.selectedCardProvider}>
-            {PROVIDER_LABELS[model.provider] || model.provider}
-          </span>
-          {ctx && (
-            <span className={styles.selectedCardStat}>
-              <Cpu size={10} />
-              {formatContextTokens(ctx)}
-            </span>
-          )}
-          {hasInput && (
-            <span className={styles.selectedCardStat}>
-              <DollarSign size={10} />
-              ${model.pricing.inputPerMillion}/{hasOutput ? model.pricing.outputPerMillion : "—"}
-            </span>
-          )}
-          {model.tools?.length > 0 && (
-            <span className={styles.selectedCardStat}>
-              {model.tools.length} tools
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   // ── Loading state ──────────────────────────────────────────
   if (loading) {
@@ -636,6 +585,9 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           onViewRun={viewRun}
           running={running}
           streamingCompleted={streamingResults.length}
+          selectedModels={selectedModels}
+          onRemoveModel={removeModel}
+          onClearSelection={clearModelSelection}
         />
       }
       leftTitle="Run History"
@@ -666,10 +618,13 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             icon={running ? Square : Play}
             onClick={running ? handleStop : handleRun}
             loading={running}
+            disabled={!running && selectedModels.length === 0}
           >
             {running
               ? "Stop"
-              : `Run ${selectedModels.length > 0 ? selectedModels.length : allModels.length} Models`}
+              : selectedModels.length > 0
+                ? `Run ${selectedModels.length} Model${selectedModels.length > 1 ? "s" : ""}`
+                : "Select Models"}
           </ButtonComponent>
         </div>
       }
@@ -710,36 +665,11 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             </div>
           </div>
 
-          {/* ── Selected Model Cards ── */}
-          {selectedModels.length > 0 && (
-            <div className={styles.selectedModelsSection}>
-              <div className={styles.selectedModelsLabel}>
-                <Check size={14} />
-                {selectedModels.length} model{selectedModels.length !== 1 ? "s" : ""} selected
-              </div>
-              <div className={styles.selectedModelsGrid}>
-                {selectedModels.map((m) => (
-                  <SelectedModelCard
-                    key={`${m.provider}:${m.name}`}
-                    model={m}
-                  />
-                ))}
-              </div>
-              {selectedModels.length > 0 && (
-                <ButtonComponent
-                  variant="ghost"
-                  size="xs"
-                  onClick={clearModelSelection}
-                >
-                  Clear Selection
-                </ButtonComponent>
-              )}
-            </div>
-          )}
+
 
           {/* ── Running Progress ── */}
           {running && (() => {
-            const totalExpected = streamingTotal || (selectedModels.length > 0 ? selectedModels.length : allModels.length);
+            const totalExpected = streamingTotal || selectedModels.length;
             const completed = streamingResults.length;
             const passed = streamingResults.filter((r) => r.passed).length;
             const failed = streamingResults.filter((r) => !r.passed && !r.error).length;

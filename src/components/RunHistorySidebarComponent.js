@@ -9,10 +9,13 @@ import {
   Clock,
   Loader2,
   ListChecks,
-  FileText,
   AlertTriangle,
+  Cpu,
+  X,
 } from "lucide-react";
 import BadgeComponent from "./BadgeComponent";
+import ChatPreviewComponent from "./ChatPreviewComponent";
+import ProviderLogo from "./ProviderLogos";
 import { formatCost } from "../utils/utilities";
 import styles from "./RunHistorySidebarComponent.module.css";
 
@@ -35,6 +38,10 @@ export default function RunHistorySidebarComponent({
   onViewRun,
   running = false,
   streamingCompleted = 0,
+  // Model selection props
+  selectedModels = [],
+  onRemoveModel,
+  onClearSelection,
 }) {
   // Derive assertions array (backward compat)
   const assertions = useMemo(() => {
@@ -51,6 +58,61 @@ export default function RunHistorySidebarComponent({
 
   return (
     <div className={styles.container}>
+      {/* ── Model Selection ─────────────────────────────────── */}
+      <div className={styles.modelsSection}>
+        <div className={styles.sectionLabel}>
+          <Cpu size={12} />
+          Models
+          <span className={styles.modelCountBadge}>
+            {selectedModels.length}
+          </span>
+        </div>
+
+        {/* Selected model chips */}
+        {selectedModels.length > 0 ? (
+          <div className={styles.modelChips}>
+            {selectedModels.map((m) => {
+              const key = `${m.provider}:${m.name}`;
+              const label = m.display_name || m.label || m.name;
+              return (
+                <div key={key} className={styles.modelChip}>
+                  <ProviderLogo provider={m.provider} size={12} />
+                  <span className={styles.modelChipName} title={label}>
+                    {label}
+                  </span>
+                  <button
+                    className={styles.modelChipRemove}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveModel?.(key);
+                    }}
+                    title="Remove"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className={styles.emptyModels}>
+            Use the model picker above to select models
+          </div>
+        )}
+
+        {/* Clear action */}
+        {selectedModels.length > 0 && (
+          <div className={styles.modelActions}>
+            <button
+              className={styles.clearModelsBtn}
+              onClick={onClearSelection}
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* ── Assertions ──────────────────────────────────────── */}
       {assertions.length > 0 && (
         <div className={styles.assertionsSection}>
@@ -82,13 +144,15 @@ export default function RunHistorySidebarComponent({
       )}
 
       {/* ── Prompt Preview ──────────────────────────────────── */}
-      {benchmark.prompt && (
+      {(benchmark.prompt || benchmark.systemPrompt) && (
         <div className={styles.promptSection}>
-          <div className={styles.sectionLabel}>
-            <FileText size={12} />
-            Prompt
-          </div>
-          <div className={styles.promptPreview}>{benchmark.prompt}</div>
+          <ChatPreviewComponent
+            systemPrompt={benchmark.systemPrompt}
+            messages={[
+              { role: "user", content: benchmark.prompt },
+            ]}
+            mini
+          />
         </div>
       )}
 

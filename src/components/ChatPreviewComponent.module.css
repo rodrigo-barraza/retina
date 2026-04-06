@@ -4,7 +4,8 @@
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
-  max-height: 500px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 20px;
 }
@@ -84,4 +85,62 @@
 /* User block gets accent left border */
 .promptBlockUser {
   border-left: 2px solid color-mix(in srgb, var(--accent-color) 40%, transparent);
+}
+
+/* ── Mini Mode ───────────────────────────────────────── */
+
+.mini {
+  max-height: 200px;
+  padding: 6px;
+  font-size: 10px;
+  transform-origin: top left;
+  /* Scale the whole preview down to ~80% for a compact look */
+  transform: scale(0.82);
+  width: 121.95%; /* 1/0.82 to compensate for the scale shrink */
+}
+
+/* Tighten the gap between messages */
+.mini > div {
+  gap: 6px !important;
+}
+
+/* Shrink message rows */
+.mini > div > div {
+  max-width: 100% !important;
+  gap: 8px !important;
+}
+
+
+/* Shrink avatars */
+.mini > div > div > div:first-child {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+}
+
+.mini > div > div > div:first-child svg {
+  width: 10px !important;
+  height: 10px !important;
+}
+
+/* Reduce padding on collapsible sections */
+.mini button {
+  padding: 5px 8px !important;
+  font-size: 10px !important;
+}
+
+/* Compact content body padding */
+.mini pre,
+.mini p {
+  margin: 2px 0 !important;
+}
+
+/* Mini prompt-block mode */
+.mini.promptPreview .promptBlock {
+  padding: 8px 10px;
+}
+
+.mini.promptPreview .promptLabel {
+  font-size: 9px !important;
+  margin-bottom: 4px;
 }

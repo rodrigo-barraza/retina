@@ -12,6 +12,7 @@ import {
   Coins,
 } from "lucide-react";
 import PrismService from "../services/PrismService";
+import ButtonComponent from "./ButtonComponent";
 import BadgeComponent from "./BadgeComponent";
 import SearchInputComponent from "./SearchInputComponent";
 import { formatCost } from "../utils/utilities";
@@ -97,6 +98,19 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
 
   return (
     <div className={styles.container}>
+      {/* New Benchmark */}
+      <ButtonComponent
+        variant="primary"
+        size="sm"
+        icon={Plus}
+        onClick={navigateToList}
+        disabled={isOnListPage && !activeBenchmarkId}
+        className={styles.newBtn}
+        data-panel-close
+      >
+        New Benchmark
+      </ButtonComponent>
+
       {/* Search */}
       <div className={styles.searchWrap}>
         <SearchInputComponent
