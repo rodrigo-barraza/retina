@@ -1,15 +1,14 @@
 "use client";
 
 import NavigationSidebarComponent from "../../components/NavigationSidebarComponent";
-import BenchmarkPageComponent from "../../components/BenchmarkPageComponent";
+import BenchmarkDashboardComponent from "../../components/BenchmarkDashboardComponent";
 import BenchmarkSidebarComponent from "../../components/BenchmarkSidebarComponent";
 
 export default function BenchmarksPage() {
   return (
-    <BenchmarkPageComponent
+    <BenchmarkDashboardComponent
       navSidebar={<NavigationSidebarComponent mode="user" />}
       rightSidebar={<BenchmarkSidebarComponent />}
     />
   );
 }
-

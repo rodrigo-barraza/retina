@@ -816,26 +816,26 @@ export default function SynthesisComponent() {
             </div>
           </div>
 
-          {/* System Prompt */}
-          <PromptSectionComponent
-            icon={<Settings2 size={14} />}
-            label="System Prompt"
-            value={systemPrompt}
-            onChange={setSystemPrompt}
-            placeholder="Core instructions for the assistant model..."
-            rows={2}
-          />
-
-          {/* User Persona */}
-          <PromptSectionComponent
-            icon={<User size={14} />}
-            label="User Persona"
-            badge="Optional"
-            value={userPersona}
-            onChange={setUserPersona}
-            placeholder="The simulated user's personality, tone, and style..."
-            rows={3}
-          />
+          {/* System Prompt + User Persona — side by side */}
+          <div className={styles.promptRow}>
+            <PromptSectionComponent
+              icon={<Settings2 size={14} />}
+              label="System Prompt"
+              value={systemPrompt}
+              onChange={setSystemPrompt}
+              placeholder="Core instructions for the assistant model..."
+              rows={3}
+            />
+            <PromptSectionComponent
+              icon={<User size={14} />}
+              label="User Persona"
+              badge="Optional"
+              value={userPersona}
+              onChange={setUserPersona}
+              placeholder="The simulated user's personality, tone, and style..."
+              rows={3}
+            />
+          </div>
 
           {/* Seed Templates */}
           <CollapsibleBlockComponent

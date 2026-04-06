@@ -191,3 +191,74 @@
   padding: 1px 2px;
   font-weight: 600;
 }
+
+/* ── Benchmark Dashboard cells ──────────────────────────── */
+
+.dashboardModelCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboardModelName {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboardPassedCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--success);
+
+  & svg {
+    flex-shrink: 0;
+  }
+}
+
+.dashboardFailedCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--danger);
+
+  & svg {
+    flex-shrink: 0;
+  }
+}
+
+.dashboardRateCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboardRateBar {
+  width: 60px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-tertiary);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dashboardRateBarFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease-out;
+}
+
+.dashboardRateValue {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 12px;
+  min-width: 36px;
+}
+

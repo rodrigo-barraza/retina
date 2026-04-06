@@ -126,12 +126,11 @@ export default function RunHistorySidebarComponent({
                 {i > 0 && (
                   <BadgeComponent
                     variant={operator === "OR" ? "warning" : "info"}
-                    mini
                   >
                     {operator}
                   </BadgeComponent>
                 )}
-                <BadgeComponent variant="accent" mini>
+                <BadgeComponent variant="accent">
                   {a.matchMode || "contains"}
                 </BadgeComponent>
                 <span className={styles.assertionValue} title={a.expectedValue}>

@@ -32,12 +32,14 @@ import ProportionBarComponent from "../components/ProportionBarComponent";
 import ModalityIconComponent from "../components/ModalityIconComponent";
 import ToolIconComponent from "../components/ToolIconComponent";
 import BadgeComponent from "../components/BadgeComponent";
+import ProviderLogo from "../components/ProviderLogos";
 import {
   formatTokenCount,
   formatLatency,
   formatTokensPerSec,
   formatDateTime,
   getTotalInputTokens,
+  formatCost,
 } from "./utilities";
 import styles from "../components/TableComponents.module.css";
 
@@ -826,4 +828,122 @@ export const benchmarkMatchModeColumn = () => ({
       </BadgeComponent>
     );
   },
+});
+
+/* ── Benchmark Dashboard columns (aggregated model stats) ── */
+
+export const dashboardModelColumn = () => ({
+  key: "label",
+  label: "Model",
+  description: "Model name and provider tested across benchmarks",
+  sortable: true,
+  render: (r) => (
+    <span className={styles.dashboardModelCell}>
+      <ProviderLogo provider={r.provider} size={16} />
+      <span className={styles.dashboardModelName}>{r.label}</span>
+    </span>
+  ),
+});
+
+export const dashboardProviderColumn = () => ({
+  key: "provider",
+  label: "Provider",
+  description: "The API provider hosting this model",
+  sortable: true,
+  render: (r) => (
+    <ProvidersBadgeComponent providers={r.provider ? [r.provider] : []} />
+  ),
+});
+
+export const dashboardTestsColumn = () => ({
+  key: "total",
+  label: "Tests",
+  description: "Total number of benchmark tests run for this model",
+  sortable: true,
+  align: "right",
+  render: (r) => (
+    <span className={styles.monoCell}>{r.total}</span>
+  ),
+});
+
+export const dashboardPassedColumn = () => ({
+  key: "passed",
+  label: "Passed",
+  description: "Number of benchmark tests this model passed",
+  sortable: true,
+  align: "right",
+  render: (r) => (
+    <span className={styles.dashboardPassedCell}>
+      <CheckCircle2 size={12} />
+      {r.passed}
+    </span>
+  ),
+});
+
+export const dashboardFailedColumn = () => ({
+  key: "failed",
+  label: "Failed",
+  description: "Number of benchmark tests this model failed or errored",
+  sortable: true,
+  sortValue: (r) => r.failed + r.errored,
+  align: "right",
+  render: (r) => (
+    <span className={styles.dashboardFailedCell}>
+      <XCircle size={12} />
+      {r.failed + r.errored}
+    </span>
+  ),
+});
+
+export const dashboardPassRateColumn = () => ({
+  key: "passRate",
+  label: "Pass Rate",
+  description: "Percentage of benchmark tests this model passed",
+  sortable: true,
+  render: (r) => {
+    const pct = Math.round(r.passRate * 100);
+    const color =
+      pct >= 80 ? "var(--success)" : pct >= 50 ? "var(--warning)" : "var(--danger)";
+    return (
+      <span className={styles.dashboardRateCell}>
+        <span className={styles.dashboardRateBar}>
+          <span
+            className={styles.dashboardRateBarFill}
+            style={{ width: `${pct}%`, background: color }}
+          />
+        </span>
+        <span className={styles.dashboardRateValue} style={{ color }}>
+          {pct}%
+        </span>
+      </span>
+    );
+  },
+});
+
+export const dashboardAvgLatencyColumn = () => ({
+  key: "avgLatency",
+  label: "Avg Latency",
+  description: "Average response latency across all benchmark tests",
+  sortable: true,
+  align: "right",
+  render: (r) => (
+    <span className={styles.durationCell}>
+      <Clock size={12} />
+      {r.avgLatency.toFixed(1)}s
+    </span>
+  ),
+});
+
+export const dashboardCostColumn = () => ({
+  key: "totalCost",
+  label: "Cost",
+  description: "Total estimated cost across all benchmark tests for this model",
+  sortable: true,
+  align: "right",
+  render: (r) =>
+    r.totalCost > 0 ? (
+      <span className={styles.monoCell}>{formatCost(r.totalCost)}</span>
+    ) : (
+      emptyDash()
+    ),
 });

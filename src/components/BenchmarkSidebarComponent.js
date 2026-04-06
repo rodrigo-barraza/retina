@@ -90,11 +90,11 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
     [router],
   );
 
-  const navigateToList = useCallback(() => {
-    router.push("/benchmarks");
+  const navigateToNew = useCallback(() => {
+    router.push("/benchmarks/new");
   }, [router]);
 
-  const isOnListPage = pathname === "/benchmarks";
+  const isOnNewPage = pathname === "/benchmarks/new";
 
   return (
     <div className={styles.container}>
@@ -103,8 +103,8 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
         variant="primary"
         size="sm"
         icon={Plus}
-        onClick={navigateToList}
-        disabled={isOnListPage && !activeBenchmarkId}
+        onClick={navigateToNew}
+        disabled={isOnNewPage}
         className={styles.newBtn}
         data-panel-close
       >
@@ -122,8 +122,8 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
 
       {/* "All Benchmarks" link */}
       <button
-        className={`${styles.allLink} ${isOnListPage && !activeBenchmarkId ? styles.allLinkActive : ""}`}
-        onClick={navigateToList}
+        className={`${styles.allLink} ${pathname === "/benchmarks" && !activeBenchmarkId ? styles.allLinkActive : ""}`}
+        onClick={() => router.push("/benchmarks")}
         data-panel-close
       >
         <Target size={13} />

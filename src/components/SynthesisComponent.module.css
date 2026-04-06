@@ -50,6 +50,24 @@
   gap: 16px;
 }
 
+/* ── Prompt Row (system prompt + user persona side-by-side) ── */
+
+.promptRow {
+  display: flex;
+  gap: 16px;
+
+  & > * {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .promptRow {
+    flex-direction: column;
+  }
+}
+
 /* ── Config Bar (length + category inline) ── */
 
 .configBar {

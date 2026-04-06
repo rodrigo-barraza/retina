@@ -3,7 +3,7 @@
 import styles from "./SummaryBarComponent.module.css";
 
 /**
- * SummaryBarComponent — A horizontal stats bar with labeled values separated by dividers.
+ * SummaryBarComponent — A horizontal stats strip with stacked value/label pairs.
  *
  * Each item can be a simple value/label pair, or include an icon, color, or
  * a progress bar visualization.
@@ -14,10 +14,10 @@ import styles from "./SummaryBarComponent.module.css";
  *
  * @typedef {object} SummaryItem
  * @property {string|number} value    — Display value
- * @property {string}        [label]  — Label text below/beside the value
+ * @property {string}        [label]  — Label text below the value
  * @property {string}        [color]  — CSS color for the value
  * @property {React.ReactNode} [icon] — Optional icon element before the value
- * @property {number}        [bar]    — If set, renders a mini progress bar (0–100)
+ * @property {number}        [bar]    — If set, renders a progress bar (0–100)
  */
 export default function SummaryBarComponent({ items, live = false, className }) {
   if (!items || items.length === 0) return null;
@@ -36,9 +36,8 @@ export default function SummaryBarComponent({ items, live = false, className }) 
         <div key={i} className={styles.entry}>
           {i > 0 && <div className={styles.divider} />}
           <div className={styles.item}>
-            {item.icon && <span className={styles.icon}>{item.icon}</span>}
             {item.bar != null ? (
-              <>
+              <div className={styles.progressWrapper}>
                 <div className={styles.passBar}>
                   <div
                     className={styles.passBarFill}
@@ -48,15 +47,18 @@ export default function SummaryBarComponent({ items, live = false, className }) 
                 {item.label && (
                   <span className={styles.label}>{item.label}</span>
                 )}
-              </>
+              </div>
             ) : (
               <>
-                <span
-                  className={styles.value}
-                  style={item.color ? { color: item.color } : undefined}
-                >
-                  {item.value}
-                </span>
+                <div className={styles.valueRow}>
+                  {item.icon && <span className={styles.icon}>{item.icon}</span>}
+                  <span
+                    className={styles.value}
+                    style={item.color ? { color: item.color } : undefined}
+                  >
+                    {item.value}
+                  </span>
+                </div>
                 {item.label && (
                   <span className={styles.label}>{item.label}</span>
                 )}

@@ -813,6 +813,14 @@ export default class PrismService {
   }
 
   /**
+   * Get aggregated model performance stats across all benchmark runs.
+   * @returns {Promise<{ models: Array, totalModels: number, totalBenchmarks: number }>}
+   */
+  static async getBenchmarkStats() {
+    return PrismService._request("/benchmark/stats", { method: "GET" });
+  }
+
+  /**
    * Get available conversation models for benchmarking.
    * @returns {Promise<{ models: Array, count: number }>}
    */
