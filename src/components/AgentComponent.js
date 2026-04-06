@@ -34,6 +34,7 @@ import useToolToggles from "../hooks/useToolToggles.js";
 
 // ── Agentic tool names — these are the 9 tools we built in tools-api
 const AGENTIC_TOOL_NAMES = new Set([
+  // File operations (original)
   "read_file",
   "write_file",
   "str_replace_file",
@@ -41,8 +42,23 @@ const AGENTIC_TOOL_NAMES = new Set([
   "list_directory",
   "grep_search",
   "glob_files",
+  // File operations (extended)
+  "multi_file_read",
+  "file_info",
+  "file_diff",
+  "move_file",
+  "delete_file",
+  // Web
   "fetch_url",
   "web_search",
+  // Command execution
+  "run_command",
+  // Git operations
+  "git_status",
+  "git_diff",
+  "git_log",
+  // Project intelligence
+  "project_summary",
 ]);
 
 // ── Coding-focused quick prompts

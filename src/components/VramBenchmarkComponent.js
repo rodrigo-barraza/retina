@@ -84,6 +84,17 @@ function shortGPU(name) {
     .replace("NVIDIA ", "");
 }
 
+function shortModelName(name, max = 18) {
+  if (!name) return "";
+  // Strip common prefixes for brevity
+  let short = name
+    .replace(/^(lmstudio-community|lmstudio-ai|bartowski|unsloth)\//, "")
+    .replace(/-GGUF$/i, "")
+    .replace(/-[A-Z]\d+.*$/, ""); // strip quant suffix like -Q4_K_M
+  if (short.length > max) short = short.slice(0, max - 1) + "…";
+  return short;
+}
+
 // ── Chart defaults ───────────────────────────────────────────
 
 const CHART_FONT = "'Inter', sans-serif";
@@ -132,6 +143,53 @@ const LEGEND_STYLE = {
     boxHeight: 8,
   },
 };
+
+// ── Custom inline datalabels plugin ──────────────────────────
+// Draws model name labels directly on chart data points.
+// Works per-chart without global registration issues.
+
+function makeDatalabelsPlugin({ getLabel, anchor = "end", align = "top", offset = 4, filterFn, maxLabels = 60 }) {
+  return {
+    id: "customDatalabels",
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      ctx.save();
+      ctx.font = `500 9px ${CHART_FONT}`;
+      ctx.fillStyle = "rgba(142, 149, 174, 0.85)";
+      ctx.textBaseline = align === "top" ? "bottom" : "middle";
+
+      let labelCount = 0;
+      for (let di = 0; di < chart.data.datasets.length; di++) {
+        if (filterFn && !filterFn(di)) continue;
+        const meta = chart.getDatasetMeta(di);
+        if (!meta.visible) continue;
+        for (let i = 0; i < meta.data.length; i++) {
+          if (labelCount >= maxLabels) break;
+          const el = meta.data[i];
+          const raw = chart.data.datasets[di].data[i];
+          const label = getLabel(raw, i, di);
+          if (!label) continue;
+
+          let x = el.x;
+          let y = el.y;
+
+          if (anchor === "end" && align === "top") {
+            y = y - (el.height || el.options?.radius || 6) - offset;
+            ctx.textAlign = "center";
+          } else if (anchor === "end" && align === "right") {
+            x = x + offset;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+          }
+
+          ctx.fillText(label, x, y);
+          labelCount++;
+        }
+      }
+      ctx.restore();
+    },
+  };
+}
 
 // ── View tabs ────────────────────────────────────────────────
 
@@ -387,6 +445,14 @@ export default function VramBenchmarkComponent() {
     chartInstances.current.scatter = new Chart(ctx, {
       type: "bubble",
       data: { datasets },
+      plugins: [
+        makeDatalabelsPlugin({
+          getLabel: (raw) => shortModelName(raw?.model?.displayName, 16),
+          anchor: "end",
+          align: "top",
+          offset: 4,
+        }),
+      ],
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -478,6 +544,18 @@ export default function VramBenchmarkComponent() {
           },
         ],
       },
+      plugins: [
+        makeDatalabelsPlugin({
+          getLabel: (_raw, i) => {
+            const m = models[i];
+            return m ? `${m.modelVramGiB.toFixed(1)}G` : "";
+          },
+          anchor: "end",
+          align: "right",
+          offset: 6,
+          filterFn: (di) => di === 0,
+        }),
+      ],
       options: {
         indexAxis: "y",
         responsive: true,
@@ -594,6 +672,14 @@ export default function VramBenchmarkComponent() {
           },
         ],
       },
+      plugins: [
+        makeDatalabelsPlugin({
+          getLabel: (raw) => typeof raw === "number" ? `${raw.toFixed(1)}` : "",
+          anchor: "end",
+          align: "right",
+          offset: 6,
+        }),
+      ],
       options: {
         indexAxis: "y",
         responsive: true,
