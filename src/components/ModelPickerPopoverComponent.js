@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Search, X, Loader2 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
@@ -8,6 +15,30 @@ import PrismService from "../services/PrismService";
 import ModelsTableComponent from "./ModelsTableComponent";
 import CloseButtonComponent from "./CloseButtonComponent";
 import styles from "./ModelPickerPopoverComponent.module.css";
+
+// ── Shared model-search store ──────────────────────────────────────────
+// Module-scoped so every ModelPickerPopoverComponent instance shares the
+// same search term. Uses useSyncExternalStore for tear-free reads.
+let _sharedSearch = "";
+const _listeners = new Set();
+function _notify() {
+  for (const fn of _listeners) fn();
+}
+function subscribeSearch(cb) {
+  _listeners.add(cb);
+  return () => _listeners.delete(cb);
+}
+function getSearchSnapshot() {
+  return _sharedSearch;
+}
+function setSharedSearch(value) {
+  _sharedSearch = value;
+  _notify();
+}
+function useSharedModelSearch() {
+  const value = useSyncExternalStore(subscribeSearch, getSearchSnapshot);
+  return [value, setSharedSearch];
+}
 
 /**
  * ModelPickerPopoverComponent
@@ -60,7 +91,7 @@ export default function ModelPickerPopoverComponent({
   triggerIcon: triggerIconProp,
 }) {
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useSharedModelSearch();
   const [popoverStyle, setPopoverStyle] = useState({});
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const triggerRef = useRef(null);
@@ -166,7 +197,7 @@ export default function ModelPickerPopoverComponent({
   const openPopover = useCallback(() => {
     positionPopover();
     setOpen(true);
-    setSearch("");
+    // Preserve the shared search — don't clear it
   }, [positionPopover]);
 
   // Focus search when popover opens

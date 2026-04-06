@@ -410,6 +410,8 @@ export default function AgentComponent() {
           maxTokens: settings.maxTokens,
           temperature: settings.temperature,
           thinkingEnabled: settings.thinkingEnabled ?? false,
+          ...(settings.reasoningEffort && { reasoningEffort: settings.reasoningEffort }),
+          ...(settings.thinkingBudget && { thinkingBudget: settings.thinkingBudget }),
           // Local models need enough context for MCP tool schemas + conversation
           minContextLength: 50000,
           project: PROJECT_AGENT,
@@ -579,7 +581,25 @@ export default function AgentComponent() {
               status: "pending",
             });
           },
-          onDone: () => resolve(),
+          onDone: (data) => {
+            setMessages((prev) => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              if (last?.role === "assistant") {
+                updated[updated.length - 1] = {
+                  ...last,
+                  provider: settings.provider,
+                  model: settings.model,
+                  usage: data.usage,
+                  totalTime: data.totalTime,
+                  tokensPerSec: data.tokensPerSec,
+                  estimatedCost: data.estimatedCost,
+                };
+              }
+              return updated;
+            });
+            resolve();
+          },
           onError: (err) => reject(err),
         });
       });
@@ -592,6 +612,8 @@ export default function AgentComponent() {
       settings.maxTokens,
       settings.temperature,
       settings.thinkingEnabled,
+      settings.reasoningEffort,
+      settings.thinkingBudget,
       settings.systemPrompt,
       conversationId,
       allToolSchemas,
@@ -705,6 +727,24 @@ export default function AgentComponent() {
         setActiveId(conv.id);
         setTitle(full.title || "Agent");
         setToolActivity([]);
+
+        // Restore settings from the last assistant message (source of truth)
+        const lastAssistant = [...(full.messages || [])]
+          .reverse()
+          .find((m) => m.role === "assistant" && m.provider);
+        if (lastAssistant) {
+          const gs = lastAssistant.generationSettings || {};
+          setSettings((prev) => ({
+            ...prev,
+            ...(lastAssistant.provider && { provider: lastAssistant.provider }),
+            ...(lastAssistant.model && { model: lastAssistant.model }),
+            ...(gs.temperature !== undefined && { temperature: gs.temperature }),
+            ...(gs.maxTokens !== undefined && { maxTokens: gs.maxTokens }),
+            ...(gs.thinkingEnabled !== undefined && { thinkingEnabled: gs.thinkingEnabled }),
+            ...(gs.reasoningEffort && { reasoningEffort: gs.reasoningEffort }),
+            ...(gs.thinkingBudget && { thinkingBudget: gs.thinkingBudget }),
+          }));
+        }
       } catch (err) {
         console.error("Failed to load conversation:", err);
       }
