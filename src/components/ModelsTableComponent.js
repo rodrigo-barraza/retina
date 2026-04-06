@@ -15,6 +15,9 @@ import {
   Link,
   ImagePlus,
   Loader2,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import {
@@ -264,20 +267,25 @@ function buildStatsColumns({ configModels, totalRequests, totalCost, compact }) 
 
 
 /**
- * ModelsTableComponent — unified model table supporting three display modes:
+ * ModelsTableComponent — unified model table supporting four display modes:
  *
- *   mode="model"  — Model specs: name, provider, modalities, tools, context, size,
- *                    params, quant, BPW, arch, publisher, pricing, arena scores.
- *                    Includes search, filters, favorites. (default)
+ *   mode="model"     — Model specs: name, provider, modalities, tools, context, size,
+ *                       params, quant, BPW, arch, publisher, pricing, arena scores.
+ *                       Includes search, filters, favorites. (default)
  *
- *   mode="stats"  — Usage statistics: requests, usage, tokens, costs, latency,
- *                    sessions, conversations, workflows. Used on the admin dashboard.
+ *   mode="stats"     — Usage statistics: requests, usage, tokens, costs, latency,
+ *                       sessions, conversations, workflows. Used on the admin dashboard.
  *
- *   mode="full"   — Combined: model columns + stats columns in a single table.
+ *   mode="full"      — Combined: model columns + stats columns in a single table.
+ *
+ *   mode="benchmark" — Benchmark dashboard: model identity columns (Favorite, Name,
+ *                       Model, Provider, Type, Modalities) + benchmark-specific
+ *                       columns (Tests, Passed, Failed, Pass Rate, Avg Latency, Cost).
+ *                       Other model columns are hidden by default but toggleable.
  *
  * @param {Object}   props
  * @param {Array}    props.models            - Model data array (raw models or stat objects)
- * @param {string}   [props.mode="model"]    - Display mode: "model" | "stats" | "full"
+ * @param {string}   [props.mode="model"]    - Display mode: "model" | "stats" | "full" | "benchmark"
  * @param {Function} [props.onSelect]        - (rawModel) => void — row click handler
  * @param {Function} [props.renderActions]   - (rawModel) => ReactNode — per-row actions
  * @param {boolean}  [props.showSearch]      - Show search bar (model/full modes)
@@ -297,6 +305,7 @@ function buildStatsColumns({ configModels, totalRequests, totalCost, compact }) 
  * @param {number}   [props.maxHeight]       - Max height for scrollable body
  * @param {Set}      [props.selectedKeys]    - Set of "provider:model" keys for selection column
  * @param {Function} [props.onToggleSelect]  - (rawModel) => void — toggle selection
+ * @param {Function} [props.getRowClassName] - (row) => string — custom row class (benchmark mode)
  */
 export default function ModelsTableComponent({
   models = [],
@@ -320,6 +329,7 @@ export default function ModelsTableComponent({
   maxHeight,
   selectedKeys,
   onToggleSelect,
+  getRowClassName,
 }) {
   /* ── Stats-only mode (simple passthrough) ── */
   if (mode === "stats") {
@@ -345,7 +355,7 @@ export default function ModelsTableComponent({
     );
   }
 
-  /* ── Model mode + Full mode (rich table with filters) ── */
+  /* ── Model / Full / Benchmark modes (rich table with filters) ── */
   return (
     <ModelsTableInner
       models={models}
@@ -368,13 +378,14 @@ export default function ModelsTableComponent({
       maxHeight={maxHeight}
       selectedKeys={selectedKeys}
       onToggleSelect={onToggleSelect}
+      getRowClassName={getRowClassName}
     />
   );
 }
 
 
 /**
- * Inner component for model/full modes — uses hooks so it must be a
+ * Inner component for model/full/benchmark modes — uses hooks so it must be a
  * proper component (can't conditionally call hooks in the parent).
  */
 function ModelsTableInner({
@@ -395,6 +406,7 @@ function ModelsTableInner({
   maxHeight,
   selectedKeys,
   onToggleSelect,
+  getRowClassName: getRowClassNameProp,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeProvider, setActiveProvider] = useState(null);
@@ -516,6 +528,7 @@ function ModelsTableInner({
   const hasActions = !!renderActions;
   const hasSelection = !!selectedKeys && !!onToggleSelect;
   const isFull = mode === "full";
+  const isBenchmark = mode === "benchmark";
 
   const arenaCols = ARENA_COLUMNS.filter((col) =>
     filtered.some((m) => m.arena && m.arena[col.dataKey] != null),
@@ -545,6 +558,8 @@ function ModelsTableInner({
 
   const columns = useMemo(() => {
     const cols = [];
+    // In benchmark mode, non-core model-spec columns default to hidden
+    const benchmarkHide = isBenchmark ? { defaultHidden: true } : {};
 
     // 0. SELECTION — checkbox column (non-hideable, non-sortable)
     if (hasSelection) {
@@ -710,6 +725,106 @@ function ModelsTableInner({
         description: "Release year of this model",
         align: "right",
         render: (row) => row._raw.year || "—",
+        ...benchmarkHide,
+      });
+    }
+
+    // ── Benchmark-specific columns ──
+    if (isBenchmark) {
+      cols.push({
+        key: "benchTests",
+        label: "Tests",
+        description: "Total number of benchmark tests run for this model",
+        sortable: true,
+        align: "right",
+        sortValue: (row) => row._raw._benchTotal || 0,
+        render: (row) => {
+          const v = row._raw._benchTotal || 0;
+          return v > 0 ? formatNumber(v) : "—";
+        },
+      });
+      cols.push({
+        key: "benchPassed",
+        label: "Passed",
+        description: "Number of benchmark tests this model passed",
+        sortable: true,
+        align: "right",
+        sortValue: (row) => row._raw._benchPassed || 0,
+        render: (row) => (
+          <span className={styles.benchPassedCell}>
+            <CheckCircle2 size={12} />
+            {row._raw._benchPassed || 0}
+          </span>
+        ),
+      });
+      cols.push({
+        key: "benchFailed",
+        label: "Failed",
+        description: "Number of benchmark tests this model failed or errored",
+        sortable: true,
+        align: "right",
+        sortValue: (row) => (row._raw._benchFailed || 0) + (row._raw._benchErrored || 0),
+        render: (row) => (
+          <span className={styles.benchFailedCell}>
+            <XCircle size={12} />
+            {(row._raw._benchFailed || 0) + (row._raw._benchErrored || 0)}
+          </span>
+        ),
+      });
+      cols.push({
+        key: "benchPassRate",
+        label: "Pass Rate",
+        description: "Percentage of benchmark tests this model passed",
+        sortable: true,
+        sortValue: (row) => row._raw._benchPassRate || 0,
+        render: (row) => {
+          const pct = Math.round((row._raw._benchPassRate || 0) * 100);
+          const color =
+            pct >= 80 ? "var(--success)" : pct >= 50 ? "var(--warning)" : "var(--danger)";
+          return (
+            <span className={styles.benchRateCell}>
+              <span className={styles.benchRateBar}>
+                <span
+                  className={styles.benchRateBarFill}
+                  style={{ width: `${pct}%`, background: color }}
+                />
+              </span>
+              <span className={styles.benchRateValue} style={{ color }}>
+                {pct}%
+              </span>
+            </span>
+          );
+        },
+      });
+      cols.push({
+        key: "benchAvgLatency",
+        label: "Avg Latency",
+        description: "Average response latency across all benchmark tests",
+        sortable: true,
+        align: "right",
+        sortValue: (row) => row._raw._benchAvgLatency || 0,
+        render: (row) => {
+          const v = row._raw._benchAvgLatency;
+          if (!v || v <= 0) return emptyDash();
+          return (
+            <span className={styles.benchLatencyCell}>
+              <Clock size={12} />
+              {v.toFixed(1)}s
+            </span>
+          );
+        },
+      });
+      cols.push({
+        key: "benchCost",
+        label: "Cost",
+        description: "Total estimated cost across all benchmark tests for this model",
+        sortable: true,
+        align: "right",
+        sortValue: (row) => row._raw._benchTotalCost || 0,
+        render: (row) => {
+          const v = row._raw._benchTotalCost;
+          return v > 0 ? <CostBadgeComponent cost={v} /> : emptyDash();
+        },
       });
     }
 
@@ -823,6 +938,7 @@ function ModelsTableInner({
         label: "Tools",
         description: "Capabilities like thinking, web search, code execution",
         align: "left",
+        ...benchmarkHide,
         render: (row) => {
           const tools = row._raw.tools;
           if (!tools?.length) return "—";
@@ -837,6 +953,7 @@ function ModelsTableInner({
         label: "Context",
         description: "Maximum context window size in tokens",
         align: "right",
+        ...benchmarkHide,
         render: (row) =>
           row._model.contextLength
             ? formatContextTokens(row._model.contextLength)
@@ -850,6 +967,7 @@ function ModelsTableInner({
         label: "Size",
         description: "Model file size on disk",
         align: "right",
+        ...benchmarkHide,
         render: (row) => row._model.size || "—",
       });
     }
@@ -860,6 +978,7 @@ function ModelsTableInner({
         label: "Params",
         description: "Total parameter count (e.g. 7B, 70B)",
         align: "right",
+        ...benchmarkHide,
         render: (row) => row._model.params || "—",
       });
     }
@@ -870,6 +989,7 @@ function ModelsTableInner({
         label: "Quant",
         description: "Quantization method (e.g. Q4_K_M, Q8_0)",
         align: "right",
+        ...benchmarkHide,
         render: (row) => row._model.quantization || "—",
       });
     }
@@ -880,6 +1000,7 @@ function ModelsTableInner({
         label: "BPW",
         description: "Bits per weight — lower means more compression",
         align: "right",
+        ...benchmarkHide,
         render: (row) =>
           row._model.bitsPerWeight != null ? row._model.bitsPerWeight : "—",
       });
@@ -890,6 +1011,7 @@ function ModelsTableInner({
         key: "arch",
         label: "Arch",
         description: "Model architecture (e.g. LLaMA, Mistral, Qwen)",
+        ...benchmarkHide,
         render: (row) => row._model.architecture || "—",
       });
     }
@@ -900,6 +1022,7 @@ function ModelsTableInner({
         label: "Publisher",
         description: "Organization that published the model weights",
         align: "left",
+        ...benchmarkHide,
         render: (row) => row._model.publisher || "—",
       });
     }
@@ -910,6 +1033,7 @@ function ModelsTableInner({
         label: "Input",
         description: "Cost per million input tokens (USD)",
         align: "right",
+        ...benchmarkHide,
         render: (row) =>
           row._raw.pricing?.inputPerMillion != null
             ? `$${row._raw.pricing.inputPerMillion}`
@@ -923,6 +1047,7 @@ function ModelsTableInner({
         label: "Output",
         description: "Cost per million output tokens (USD)",
         align: "right",
+        ...benchmarkHide,
         render: (row) =>
           row._raw.pricing?.outputPerMillion != null
             ? `$${row._raw.pricing.outputPerMillion}`
@@ -969,6 +1094,7 @@ function ModelsTableInner({
         label: arenaCol.label,
         description: `LMArena ${arenaCol.label} benchmark ELO score`,
         align: "right",
+        ...benchmarkHide,
         render: (row) => row._raw.arena?.[arenaCol.dataKey] ?? "—",
       });
     }
@@ -1002,6 +1128,7 @@ function ModelsTableInner({
     arenaCols,
     loadingModelKey,
     isFull,
+    isBenchmark,
   ]);
 
   return (
@@ -1085,18 +1212,24 @@ function ModelsTableInner({
         columns={columns}
         data={tableData}
         getRowKey={(row) => `${row._model.provider}-${row._model.key}`}
-        onRowClick={onSelect ? (row) => onSelect(row._raw) : undefined}
+        onRowClick={onSelect ? (row) => onSelect(isBenchmark ? row._raw._benchStat : row._raw) : undefined}
         emptyText={
           emptyText || (searchQuery.trim() ? "No matching models" : "No models found")
         }
         activeRowKey={activeRowKey}
         highlightedRowKey={highlightedRowKey}
         highlightedRowRef={highlightedRowRef}
-        storageKey="models"
-        getRowClassName={hasSelection ? (row) => {
-          const key = `${row._model.provider}:${row._model.key}`;
-          return selectedKeys.has(key) ? styles.selectedRow : "";
-        } : undefined}
+        storageKey={isBenchmark ? "models-benchmark" : "models"}
+        getRowClassName={
+          getRowClassNameProp
+            ? (row) => getRowClassNameProp(isBenchmark ? row._raw._benchStat : row)
+            : hasSelection
+              ? (row) => {
+                  const key = `${row._model.provider}:${row._model.key}`;
+                  return selectedKeys.has(key) ? styles.selectedRow : "";
+                }
+              : undefined
+        }
       />
     </div>
   );

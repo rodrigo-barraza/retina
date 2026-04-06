@@ -34,7 +34,17 @@
   to { transform: rotate(360deg); }
 }
 
-/* ── Detail Row (expanded content via renderExpandedContent) ─ */
+/* ── Detail Cards (sidebar + inline grid) ───────────────── */
+
+.sidebarDetailGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
 
 .detailGrid {
   display: grid;
@@ -136,6 +146,20 @@
   font-family: var(--font-mono);
   font-weight: 700;
   margin-left: auto;
+}
+
+/* ── Selected Row Highlight ─────────────────────────────── */
+
+.selectedRow td {
+  background: color-mix(in srgb, var(--accent-color) 8%, transparent) !important;
+}
+
+.selectedRow td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent-color);
+}
+
+.selectedRow:hover td {
+  background: color-mix(in srgb, var(--accent-color) 12%, transparent) !important;
 }
 
 /* ── Animations ──────────────────────────────────────────── */

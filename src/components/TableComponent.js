@@ -101,14 +101,20 @@ function HeaderCell({ col, thClasses, isSortable, handleSort, sort }) {
 
 /**
  * Reads saved hidden-column keys from localStorage.
+ * Falls back to columns with `defaultHidden: true` when no saved state exists.
  * Returns a Set of column keys that should be hidden.
  */
-function loadHiddenColumns(storageKey) {
+function loadHiddenColumns(storageKey, columns) {
   if (!storageKey) return new Set();
   try {
     const raw = localStorage.getItem(`table-hidden-cols:${storageKey}`);
     if (raw) return new Set(JSON.parse(raw));
   } catch { /* ignore */ }
+  // No saved preference — use defaultHidden from column definitions
+  if (columns) {
+    const defaults = columns.filter((c) => c.defaultHidden).map((c) => c.key);
+    if (defaults.length > 0) return new Set(defaults);
+  }
   return new Set();
 }
 
@@ -226,7 +232,7 @@ export default function TableComponent({
   const [expanded, setExpanded] = useState(new Set());
 
   /* ── Column visibility ── */
-  const [hiddenColumns, setHiddenColumns] = useState(() => loadHiddenColumns(storageKey));
+  const [hiddenColumns, setHiddenColumns] = useState(() => loadHiddenColumns(storageKey, columns));
 
   const toggleColumn = useCallback((key) => {
     setHiddenColumns((prev) => {

@@ -1,27 +1,73 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, Coins, Loader2 } from "lucide-react";
+import { BarChart3, CheckCircle2, Coins, Loader2, XCircle } from "lucide-react";
 import PrismService from "../services/PrismService";
 import ThreePanelLayout from "./ThreePanelLayout";
 import SummaryBarComponent from "./SummaryBarComponent";
-import BenchmarkDashboardTableComponent from "./BenchmarkDashboardTableComponent";
+import ModelsTableComponent from "./ModelsTableComponent";
 import EmptyStateComponent from "./EmptyStateComponent";
 import ButtonComponent from "./ButtonComponent";
 import { formatCost } from "../utils/utilities";
 import styles from "./BenchmarkDashboardComponent.module.css";
 
+/**
+ * Build a Map<"provider:model", configModelObject> from the config.
+ * Used to enrich benchmark stat rows with proper display_name, modalities,
+ * model type, etc. that the stats endpoint doesn't carry.
+ */
+function buildConfigLookup(config) {
+  if (!config) return new Map();
+  const map = new Map();
+  const MODEL_SECTIONS = [
+    "textToText", "textToImage", "textToSpeech",
+    "imageToText", "audioToText", "embedding",
+  ];
+  for (const section of MODEL_SECTIONS) {
+    const providers = config[section]?.models || {};
+    for (const [provider, models] of Object.entries(providers)) {
+      for (const m of models) {
+        const key = `${provider}:${m.name}`;
+        if (!map.has(key)) {
+          map.set(key, { ...m, provider });
+        }
+      }
+    }
+  }
+  return map;
+}
+
 export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }) {
   const router = useRouter();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedModel, setSelectedModel] = useState(null);
+  const [configLookup, setConfigLookup] = useState(new Map());
+  const [favoriteKeys, setFavoriteKeys] = useState([]);
+  const hasLoadedRef = useRef(false);
 
-  // ── Load stats ────────────────────────────────────────────
-  const loadStats = useCallback(async () => {
+  // ── Load stats + config + favorites ───────────────────────
+  const loadData = useCallback(async () => {
     try {
-      const data = await PrismService.getBenchmarkStats();
+      const [data, config] = await Promise.all([
+        PrismService.getBenchmarkStats(),
+        PrismService.getConfig().catch(() => null),
+      ]);
       setStats(data);
+
+      // Merge local models (LM Studio, Ollama, etc.) into config
+      // so we get display_name for local models too
+      let mergedConfig = config;
+      if (config?.localProviders?.length > 0) {
+        try {
+          const localResult = await PrismService.getLocalConfig();
+          mergedConfig = PrismService.mergeLocalModels(config, localResult?.models);
+        } catch { /* local config unavailable, use base config */ }
+      }
+
+      setConfigLookup(buildConfigLookup(mergedConfig));
+      hasLoadedRef.current = true;
     } catch (err) {
       console.error("Failed to load benchmark stats:", err);
     } finally {
@@ -30,8 +76,26 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
   }, []);
 
   useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+    loadData();
+    PrismService.getFavorites("model")
+      .then((favs) => setFavoriteKeys(favs.map((f) => f.key)))
+      .catch(() => {});
+  }, [loadData]);
+
+  // ── Favorites ──────────────────────────────────────────────
+  const handleToggleFavorite = useCallback(async (key) => {
+    if (favoriteKeys.includes(key)) {
+      setFavoriteKeys((prev) => prev.filter((k) => k !== key));
+      PrismService.removeFavorite("model", key).catch(() => {});
+    } else {
+      setFavoriteKeys((prev) => [...prev, key]);
+      const [provider, ...rest] = key.split(":");
+      PrismService.addFavorite("model", key, {
+        provider,
+        name: rest.join(":"),
+      }).catch(() => {});
+    }
+  }, [favoriteKeys]);
 
   // ── Aggregate totals ──────────────────────────────────────
   const totals = useMemo(() => {
@@ -48,11 +112,131 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
     );
   }, [stats]);
 
+  // ── Transform stat rows → ModelsTableComponent-compatible shape ──
+  // Enriches each stat row with config data (display_name, modalities,
+  // model type, etc.) so normalizeModel() produces clean names.
+  const modelRows = useMemo(() => {
+    if (!stats?.models) return [];
+    return stats.models.map((s) => {
+      const configKey = `${s.provider}:${s.model}`;
+      const configModel = configLookup.get(configKey);
+      return {
+        // Config fields first (provides display_name, modalities, tools, etc.)
+        ...(configModel || {}),
+        // Override with stat-specific identity fields
+        name: s.model,
+        key: s.model,
+        provider: s.provider,
+        // Use config display_name if available, otherwise fall back to stat label
+        display_name: configModel?.display_name || s.label,
+        // Benchmark-specific data (read by benchmark columns via _raw)
+        _benchTotal: s.total,
+        _benchPassed: s.passed,
+        _benchFailed: s.failed,
+        _benchErrored: s.errored,
+        _benchPassRate: s.passRate,
+        _benchAvgLatency: s.avgLatency,
+        _benchTotalCost: s.totalCost,
+        // Preserve the original stat object for row click / sidebar
+        _benchStat: s,
+      };
+    });
+  }, [stats, configLookup]);
+
+  // ── Row click → select model for sidebar detail ───────────
+  const handleRowClick = useCallback((stat) => {
+    setSelectedModel((prev) =>
+      prev?.model === stat.model && prev?.provider === stat.provider ? null : stat,
+    );
+  }, []);
+
+  // ── Row class for selected highlight ──────────────────────
+  const getRowClassName = useCallback(
+    (stat) => {
+      if (
+        selectedModel &&
+        stat?.model === selectedModel.model &&
+        stat?.provider === selectedModel.provider
+      ) {
+        return styles.selectedRow;
+      }
+      return "";
+    },
+    [selectedModel],
+  );
+
+  // ── Detail cards for selected model (left sidebar) ────────
+  const sidebarDetail = useMemo(() => {
+    if (!selectedModel?.benchmarks?.length) return null;
+    return (
+      <div className={styles.sidebarDetailGrid}>
+        {selectedModel.benchmarks.map((b, i) => {
+          const bRate =
+            b.total > 0 ? Math.round((b.passed / b.total) * 100) : 0;
+          return (
+            <div
+              key={i}
+              className={`${styles.detailCard} ${
+                b.latestPassed
+                  ? styles.detailCardPassed
+                  : b.latestErrored
+                    ? styles.detailCardErrored
+                    : styles.detailCardFailed
+              }`}
+            >
+              <div className={styles.detailHeader}>
+                <div className={styles.detailName}>{b.name}</div>
+                <span
+                  className={`${styles.detailStatus} ${
+                    b.latestPassed
+                      ? styles.detailStatusPassed
+                      : styles.detailStatusFailed
+                  }`}
+                >
+                  {b.latestPassed
+                    ? "✓ Latest"
+                    : b.latestErrored
+                      ? "⚠ Error"
+                      : "✗ Latest"}
+                </span>
+              </div>
+              <div className={styles.detailStats}>
+                <span className={styles.detailRuns}>
+                  {b.total} run{b.total !== 1 ? "s" : ""}
+                </span>
+                <span className={styles.detailPassed}>
+                  <CheckCircle2 size={10} /> {b.passed}
+                </span>
+                <span className={styles.detailFailed}>
+                  <XCircle size={10} /> {b.failed + b.errored}
+                </span>
+                <span
+                  className={styles.detailRate}
+                  style={{
+                    color:
+                      bRate >= 80
+                        ? "var(--success)"
+                        : bRate >= 50
+                          ? "var(--warning)"
+                          : "var(--danger)",
+                  }}
+                >
+                  {bRate}%
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }, [selectedModel]);
+
   // ── Render ────────────────────────────────────────────────
   return (
     <ThreePanelLayout
       navSidebar={navSidebar}
-      leftPanel={null}
+      leftPanel={sidebarDetail}
+      leftTitle={selectedModel?.model || ""}
       rightPanel={rightSidebar}
       rightTitle="Benchmarks"
       headerTitle="Benchmarks"
@@ -112,8 +296,16 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
             />
 
             {/* ── Model Performance Table ──────────── */}
-            <BenchmarkDashboardTableComponent
-              models={stats.models}
+            <ModelsTableComponent
+              models={modelRows}
+              mode="benchmark"
+              onSelect={handleRowClick}
+              showSearch={true}
+              showProviderFilter={true}
+              favorites={favoriteKeys}
+              onToggleFavorite={handleToggleFavorite}
+              getRowClassName={getRowClassName}
+              emptyText="No benchmark data"
             />
           </>
         )}
@@ -121,4 +313,3 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
     </ThreePanelLayout>
   );
 }
-

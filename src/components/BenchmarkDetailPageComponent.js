@@ -11,6 +11,7 @@ import {
   XCircle,
   AlertCircle,
   Square,
+  Trash2,
 } from "lucide-react";
 import PrismService from "../services/PrismService";
 import ThreePanelLayout from "./ThreePanelLayout";
@@ -62,6 +63,8 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   const [runHistory, setRunHistory] = useState([]);
   const [activeRunId, setActiveRunId] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({
     name: "",
     prompt: "",
@@ -531,6 +534,18 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     setSelectedModelKeys(new Set());
   }, []);
 
+  // ── Delete benchmark ──────────────────────────────────────
+  const handleDelete = useCallback(async () => {
+    setDeleting(true);
+    try {
+      await PrismService.deleteBenchmark(benchmarkId);
+      router.push("/benchmarks");
+    } catch (err) {
+      console.error("Failed to delete benchmark:", err);
+      setDeleting(false);
+    }
+  }, [benchmarkId, router]);
+
 
 
   // ── Loading state ──────────────────────────────────────────
@@ -607,6 +622,14 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           <ButtonComponent
             variant="ghost"
             size="sm"
+            icon={Trash2}
+            onClick={() => setShowDeleteModal(true)}
+          >
+            Delete
+          </ButtonComponent>
+          <ButtonComponent
+            variant="ghost"
+            size="sm"
             icon={Copy}
             onClick={openClone}
           >
@@ -646,7 +669,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                 return assertions.map((a, i) => (
                   <span key={i} style={{ display: "contents" }}>
                     {i > 0 && (
-                      <BadgeComponent variant={operator === "OR" ? "warning" : "info"} mini>{operator}</BadgeComponent>
+                      <BadgeComponent variant={operator === "OR" ? "warning" : "info"}>{operator}</BadgeComponent>
                     )}
                     <BadgeComponent variant="accent">
                       {a.matchMode || "contains"}
@@ -798,7 +821,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                     modelConfigMap={modelConfigMap}
                     onRowClick={setSelectedResult}
                     activeRowKey={getActiveKey(streamingResults)}
-                    mini
+
                   />
                 </div>
               )}
@@ -904,6 +927,40 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             onChange={setForm}
             matchModes={MATCH_MODES}
           />
+        </ModalDialogComponent>
+      )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {showDeleteModal && (
+        <ModalDialogComponent
+          title="Delete Benchmark"
+          size="sm"
+          onClose={() => setShowDeleteModal(false)}
+          footer={
+            <>
+              <ButtonComponent
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </ButtonComponent>
+              <ButtonComponent
+                variant="danger"
+                size="sm"
+                icon={Trash2}
+                onClick={handleDelete}
+                loading={deleting}
+              >
+                Delete Benchmark
+              </ButtonComponent>
+            </>
+          }
+        >
+          <p style={{ color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+            Are you sure you want to delete <strong style={{ color: "var(--text-primary)" }}>{benchmark.name}</strong>?
+            This will permanently remove the benchmark and all {runHistory.length > 0 ? `${runHistory.length} ` : ""}associated test run{runHistory.length !== 1 ? "s" : ""}.
+          </p>
         </ModalDialogComponent>
       )}
     </ThreePanelLayout>
