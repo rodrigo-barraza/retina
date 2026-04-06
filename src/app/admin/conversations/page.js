@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import IrisService from "../../../services/IrisService";
+import PrismService from "../../../services/PrismService";
 import MessageList, {
   prepareDisplayMessages,
 } from "../../../components/MessageList";
@@ -61,6 +62,7 @@ export default function ConversationsPage({ initialId = null, sessionId = null }
 
   const [workflows, setWorkflows] = useState([]);
   const [leftTab, setLeftTab] = useState("settings");
+  const [favoriteKeys, setFavoriteKeys] = useState([]);
 
   const knownIdsRef = useRef(null); // null = not yet initialized
   const lastFingerprintRef = useRef("");
@@ -85,7 +87,27 @@ export default function ConversationsPage({ initialId = null, sessionId = null }
     IrisService.getConfig()
       .then(setConfig)
       .catch(() => {});
+
+    // Load favorites
+    PrismService.getFavorites("model")
+      .then((favs) => setFavoriteKeys(favs.map((f) => f.key)))
+      .catch(() => {});
   }, []);
+
+  // ── Favorites ─────────────────────────────────────────────────
+  const handleToggleFavorite = useCallback(async (key) => {
+    if (favoriteKeys.includes(key)) {
+      setFavoriteKeys((prev) => prev.filter((k) => k !== key));
+      PrismService.removeFavorite("model", key).catch(() => {});
+    } else {
+      setFavoriteKeys((prev) => [...prev, key]);
+      const [provider, ...rest] = key.split(":");
+      PrismService.addFavorite("model", key, {
+        provider,
+        name: rest.join(":"),
+      }).catch(() => {});
+    }
+  }, [favoriteKeys]);
 
   // If initialId is set, load that conversation immediately
   useEffect(() => {
@@ -503,6 +525,8 @@ export default function ConversationsPage({ initialId = null, sessionId = null }
                 settings={settingsWithDefaults}
                 onSelectModel={() => {}}
                 readOnly
+                favorites={favoriteKeys}
+                onToggleFavorite={handleToggleFavorite}
               />
             ) : null
           }

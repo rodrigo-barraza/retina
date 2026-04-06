@@ -287,6 +287,13 @@ export default function ChatArea({
             onUpdateSettings?.({ functionCallingEnabled: val }),
           disabled: false,
         };
+      case "Image Generation":
+        return {
+          checked: settings?.forceImageGeneration || false,
+          onChange: (val) =>
+            onUpdateSettings?.({ forceImageGeneration: val }),
+          disabled: false,
+        };
       default:
         return null;
     }

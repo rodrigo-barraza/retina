@@ -137,6 +137,7 @@ export default function SynthesisComponent() {
   // ── History state ─────────────────────────────────────────────
   const [synthesisConversations, setSynthesisConversations] = useState([]);
   const [activeHistoryId, setActiveHistoryId] = useState(null);
+  const [favoriteKeys, setFavoriteKeys] = useState([]);
 
   // ── Load synthesis history ─────────────────────────────────────
   const loadSynthesisHistory = useCallback(async () => {
@@ -169,7 +170,27 @@ export default function SynthesisComponent() {
       onLocalMerge: setConfig,
     }).catch(console.error);
     loadSynthesisHistory();
+
+    // Load favorites
+    PrismService.getFavorites("model")
+      .then((favs) => setFavoriteKeys(favs.map((f) => f.key)))
+      .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Favorites ─────────────────────────────────────────────────
+  const handleToggleFavorite = useCallback(async (key) => {
+    if (favoriteKeys.includes(key)) {
+      setFavoriteKeys((prev) => prev.filter((k) => k !== key));
+      PrismService.removeFavorite("model", key).catch(() => {});
+    } else {
+      setFavoriteKeys((prev) => [...prev, key]);
+      const [provider, ...rest] = key.split(":");
+      PrismService.addFavorite("model", key, {
+        provider,
+        name: rest.join(":"),
+      }).catch(() => {});
+    }
+  }, [favoriteKeys]);
 
   // ── Filtered config: text-to-text models only ─────────────────
   const filteredConfig = useMemo(() => {
@@ -725,6 +746,8 @@ export default function SynthesisComponent() {
               config={filteredConfig}
               settings={settings}
               onSelectModel={handleSelectModel}
+              favorites={favoriteKeys}
+              onToggleFavorite={handleToggleFavorite}
             />
             <span className={styles.userSimLabel}>
               <User size={12} />
@@ -733,6 +756,8 @@ export default function SynthesisComponent() {
               config={filteredConfig}
               settings={userSimSettings}
               onSelectModel={handleSelectUserSimModel}
+              favorites={favoriteKeys}
+              onToggleFavorite={handleToggleFavorite}
             />
           </div>
         }

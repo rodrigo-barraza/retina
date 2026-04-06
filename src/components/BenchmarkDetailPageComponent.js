@@ -83,6 +83,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   // Model selection
   const [prismConfig, setPrismConfig] = useState(null);
   const [selectedModelKeys, setSelectedModelKeys] = useState(new Set());
+  const [favoriteKeys, setFavoriteKeys] = useState([]);
 
   // Selected result (for chat preview)
   const [selectedResult, setSelectedResult] = useState(null);
@@ -273,7 +274,27 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
         console.error("Failed to load config:", err);
       }
     })();
+
+    // Load favorites
+    PrismService.getFavorites("model")
+      .then((favs) => setFavoriteKeys(favs.map((f) => f.key)))
+      .catch(() => {});
   }, []);
+
+  // ── Favorites ──────────────────────────────────────────────
+  const handleToggleFavorite = useCallback(async (key) => {
+    if (favoriteKeys.includes(key)) {
+      setFavoriteKeys((prev) => prev.filter((k) => k !== key));
+      PrismService.removeFavorite("model", key).catch(() => {});
+    } else {
+      setFavoriteKeys((prev) => [...prev, key]);
+      const [provider, ...rest] = key.split(":");
+      PrismService.addFavorite("model", key, {
+        provider,
+        name: rest.join(":"),
+      }).catch(() => {});
+    }
+  }, [favoriteKeys]);
 
   // All models flattened (for selected model derivation + size lookup)
   const allModels = useMemo(
@@ -615,6 +636,8 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           multiSelect
           selectedKeys={selectedModelKeys}
           onSelectModel={handleModelSelect}
+          favorites={favoriteKeys}
+          onToggleFavorite={handleToggleFavorite}
         />
       }
       headerControls={

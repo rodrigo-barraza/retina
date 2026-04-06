@@ -29,6 +29,8 @@ export default function ToolCardComponent({
   glowing = false,
   onHover,
   locked = false,
+  enabledLabel = "Enabled",
+  disabledLabel = "Disabled",
 }) {
   return (
     <div
@@ -68,7 +70,7 @@ export default function ToolCardComponent({
           className={`${styles.badge}${!enabled ? ` ${styles.badgeDisabled}` : ""}`}
         >
           {enabled ? <CircleCheck size={12} /> : <Circle size={12} />}
-          {enabled ? "Enabled" : "Disabled"}
+          {enabled ? enabledLabel : disabledLabel}
         </div>
       )}
     </div>
