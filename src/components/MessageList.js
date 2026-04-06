@@ -402,35 +402,30 @@ function ToolCallsBlock({ toolCalls, streamingOutputs }) {
 
             return (
               <div key={j} className={styles.toolCallItem}>
-                <div className={styles.toolCallHeader}>
-                  <span className={styles.toolCallIcon} style={{ color }}>
-                    <Icon size={14} />
-                  </span>
-                  <span className={styles.toolCallName}>{name}</span>
-                </div>
+                <span className={styles.toolCallIcon} style={{ color }}>
+                  <Icon size={13} />
+                </span>
+                <span className={styles.toolCallName}>{name}</span>
 
-                {/* Arg pills */}
-                {argEntries.length > 0 && (
-                  <div className={styles.toolCallArgPills}>
-                    {argEntries.map(([k, v]) => (
-                      <span key={k} className={styles.toolCallArgPill}>
-                        <span className={styles.toolCallArgKey}>{k}</span>
-                        <span className={styles.toolCallArgValue}>
-                          {typeof v === "string" ? v : JSON.stringify(v)}
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {/* Arg pills — inline after name */}
+                {argEntries.length > 0 && argEntries.map(([k, v]) => (
+                  <span key={k} className={styles.toolCallArgPill}>
+                    <span className={styles.toolCallArgKey}>{k}</span>
+                    <span className={styles.toolCallArgValue}>
+                      {typeof v === "string" ? v : JSON.stringify(v)}
+                    </span>
+                  </span>
+                ))}
 
                 {/* Quick result summary */}
                 {summary && (
-                  <div className={styles.toolCallSummary}>
-                    <Check size={11} />
+                  <span className={styles.toolCallSummary}>
+                    <Check size={10} />
                     <span>{summary}</span>
-                  </div>
+                  </span>
                 )}
 
+                {/* Expandable result — wraps to next line */}
                 <ToolCallResultBlock result={tc.result} />
 
                 {/* Inline terminal for compute tools */}
