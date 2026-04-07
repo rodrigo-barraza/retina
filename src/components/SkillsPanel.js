@@ -98,18 +98,22 @@ export default function SkillsPanel({ skills, onSkillsChange, project }) {
     [onSkillsChange],
   );
 
-  const handleToggle = useCallback(
-    async (skill) => {
+  const handleToggleAll = useCallback(
+    async () => {
+      const allEnabled = skills.length > 0 && skills.every((s) => s.enabled);
+      const newEnabled = !allEnabled;
       try {
-        await PrismService.updateSkill(skill.id || skill._id, {
-          enabled: !skill.enabled,
-        });
+        await Promise.all(
+          skills.map((s) =>
+            PrismService.updateSkill(s.id || s._id, { enabled: newEnabled }),
+          ),
+        );
         onSkillsChange();
       } catch (err) {
-        console.error("Failed to toggle skill:", err);
+        console.error("Failed to toggle all skills:", err);
       }
     },
-    [onSkillsChange],
+    [skills, onSkillsChange],
   );
 
   // ── Edit / Create Form ───────────────────────────────────────
@@ -190,16 +194,7 @@ export default function SkillsPanel({ skills, onSkillsChange, project }) {
             </div>
           </div>
 
-          <div className={styles.toggleRow}>
-            <span className={styles.toggleLabel}>Enabled</span>
-            <ToggleSwitchComponent
-              checked={editingSkill.enabled}
-              onChange={(v) =>
-                setEditingSkill((s) => ({ ...s, enabled: v }))
-              }
-              size="small"
-            />
-          </div>
+
 
           <div className={styles.formActions}>
             <button
@@ -225,18 +220,23 @@ export default function SkillsPanel({ skills, onSkillsChange, project }) {
 
   // ── List View ────────────────────────────────────────────────
 
-  const enabledCount = skills.filter((s) => s.enabled).length;
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <span className={styles.headerTitle}>
-          Skills ({enabledCount}/{skills.length})
+          Skills ({skills.length})
         </span>
         <div className={styles.headerActions}>
+          {skills.length > 0 && (
+            <ToggleSwitchComponent
+              checked={skills.length > 0 && skills.every((s) => s.enabled)}
+              onChange={handleToggleAll}
+              size="small"
+            />
+          )}
           <button className={styles.addBtn} onClick={handleCreate}>
             <Plus size={12} />
-            New Skill
+            New
           </button>
         </div>
       </div>
@@ -281,11 +281,6 @@ export default function SkillsPanel({ skills, onSkillsChange, project }) {
                 )}
               </div>
               <div className={styles.skillActions}>
-                <ToggleSwitchComponent
-                  checked={skill.enabled}
-                  onChange={() => handleToggle(skill)}
-                  size="small"
-                />
                 <button
                   className={styles.skillActionBtn}
                   onClick={() => handleEdit(skill)}
