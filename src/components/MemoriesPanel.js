@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Brain, RefreshCw, User, MessageSquare, FolderKanban, ExternalLink, Trash2 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import styles from "./MemoriesPanel.module.css";
@@ -56,13 +56,33 @@ export default function MemoriesPanel({ project, refreshKey }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
+  const [newMemoryIds, setNewMemoryIds] = useState(new Set());
+  const knownIdsRef = useRef(new Set());
 
   const loadMemories = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const result = await PrismService.getAgentMemories(project);
-      setMemories(result.memories || []);
+      const fetched = result.memories || [];
+
+      // Detect newly arrived memories
+      const freshIds = new Set();
+      for (const m of fetched) {
+        const id = m.id || m._id;
+        if (knownIdsRef.current.size > 0 && !knownIdsRef.current.has(id)) {
+          freshIds.add(id);
+        }
+        knownIdsRef.current.add(id);
+      }
+
+      if (freshIds.size > 0) {
+        setNewMemoryIds(freshIds);
+        // Auto-clear highlight after 6s
+        setTimeout(() => setNewMemoryIds(new Set()), 6000);
+      }
+
+      setMemories(fetched);
       setTotal(result.total || 0);
     } catch (err) {
       console.error("Failed to load memories:", err);
@@ -154,9 +174,13 @@ export default function MemoriesPanel({ project, refreshKey }) {
         const iconClass = TYPE_ICON_CLASSES[type] || "memoryIconProject";
         const badgeClass = TYPE_BADGE_CLASSES[type] || "badgeProject";
         const isConfirming = confirmingDeleteId === memoryId;
+        const isNew = newMemoryIds.has(memoryId);
 
         return (
-          <div key={memoryId} className={styles.memoryCard}>
+          <div
+            key={memoryId}
+            className={`${styles.memoryCard} ${isNew ? styles.memoryCardNew : ""}`}
+          >
             <div className={styles.memoryCardHeader}>
               <div className={`${styles.memoryIcon} ${styles[iconClass]}`}>
                 <IconComponent size={14} />
