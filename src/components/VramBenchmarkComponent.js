@@ -502,6 +502,10 @@ export default function VramBenchmarkComponent() {
   const [scatterMode, setScatterMode] = useState("vram_vs_speed");
   const [vramClipMin, setVramClipMin] = useState("");
   const [vramClipMax, setVramClipMax] = useState("");
+  const [tpsClipMin, setTpsClipMin] = useState("");
+  const [tpsClipMax, setTpsClipMax] = useState("");
+  const [scatterClipXMin, setScatterClipXMin] = useState("");
+  const [scatterClipXMax, setScatterClipXMax] = useState("");
   const [activeView, setActiveView] = useState("scatter");
 
   // Parsed clip values — undefined means "auto" (Chart.js default)
@@ -513,6 +517,22 @@ export default function VramBenchmarkComponent() {
     const v = parseFloat(vramClipMax);
     return isNaN(v) || v <= 0 ? undefined : v;
   }, [vramClipMax]);
+  const tpsClipMinVal = useMemo(() => {
+    const v = parseFloat(tpsClipMin);
+    return isNaN(v) || v < 0 ? undefined : v;
+  }, [tpsClipMin]);
+  const tpsClipMaxVal = useMemo(() => {
+    const v = parseFloat(tpsClipMax);
+    return isNaN(v) || v <= 0 ? undefined : v;
+  }, [tpsClipMax]);
+  const scatterClipXMinVal = useMemo(() => {
+    const v = parseFloat(scatterClipXMin);
+    return isNaN(v) || v < 0 ? undefined : v;
+  }, [scatterClipXMin]);
+  const scatterClipXMaxVal = useMemo(() => {
+    const v = parseFloat(scatterClipXMax);
+    return isNaN(v) || v <= 0 ? undefined : v;
+  }, [scatterClipXMax]);
 
   // Active scatter mode config
   const activeScatterMode = useMemo(
@@ -1209,8 +1229,9 @@ export default function VramBenchmarkComponent() {
       currentChart.data.datasets = datasets;
       currentChart.options.scales.x.title.text = mode.xLabel;
       currentChart.options.scales.y.title.text = mode.yLabel;
-      currentChart.options.scales.x.min = mode.xMin ?? 0;
+      currentChart.options.scales.x.min = scatterClipXMinVal ?? (mode.xMin ?? 0);
       currentChart.options.scales.y.min = mode.yMin ?? 0;
+      if (scatterClipXMaxVal !== undefined) { currentChart.options.scales.x.max = scatterClipXMaxVal; } else { delete currentChart.options.scales.x.max; }
       currentChart.update("none");
     } else {
       chartInstances.current.scatter = new Chart(ctx, {
@@ -1232,6 +1253,7 @@ export default function VramBenchmarkComponent() {
           animation: { duration: 600, easing: "easeInOutQuart" },
           transitions: {
             active: { animation: { duration: 200 } },
+            zoom: { animation: { duration: 500, easing: "easeInOutCubic" } },
           },
           interaction: { mode: "nearest", intersect: true },
           scales: {
@@ -1239,7 +1261,8 @@ export default function VramBenchmarkComponent() {
               title: { ...AXIS_TITLE_STYLE, text: mode.xLabel },
               grid: GRID_STYLE,
               ticks: TICK_STYLE,
-              min: mode.xMin ?? 0,
+              min: scatterClipXMinVal ?? (mode.xMin ?? 0),
+              ...(scatterClipXMaxVal !== undefined ? { max: scatterClipXMaxVal } : {}),
             },
             y: {
               title: { ...AXIS_TITLE_STYLE, text: mode.yLabel },
@@ -1329,7 +1352,17 @@ export default function VramBenchmarkComponent() {
     return { vramRanges: vram, tpsRanges: tps };
   }, [allFilteredData, rawData]);
 
-  // ── Zoom-update effect: animate x-axis range when clip values change ──
+  // ── Zoom-update effects: animate x-axis range when clip values change ──
+  useEffect(() => {
+    const chart = chartInstances.current.scatter;
+    if (!chart) return;
+    const xScale = chart.options.scales.x;
+    const mode = activeScatterMode;
+    xScale.min = scatterClipXMinVal ?? (mode.xMin ?? 0);
+    if (scatterClipXMaxVal !== undefined) { xScale.max = scatterClipXMaxVal; } else { delete xScale.max; }
+    chart.update("zoom");
+  }, [scatterClipXMinVal, scatterClipXMaxVal, activeScatterMode]);
+
   useEffect(() => {
     const chart = chartInstances.current.bar;
     if (!chart) return;
@@ -1670,10 +1703,17 @@ export default function VramBenchmarkComponent() {
             title: { ...AXIS_TITLE_STYLE, text: "Tokens / sec" },
             grid: GRID_STYLE,
             ticks: TICK_STYLE,
+            ...(tpsClipMinVal !== undefined ? { min: tpsClipMinVal } : {}),
+            ...(tpsClipMaxVal !== undefined ? { max: tpsClipMaxVal } : {}),
           },
           y: {
             grid: { color: "rgba(255,255,255,0.04)", drawBorder: false },
             ticks: { ...TICK_STYLE, padding: 8 },
+          },
+        },
+        transitions: {
+          zoom: {
+            animation: { duration: 500, easing: "easeInOutCubic" },
           },
         },
         plugins: {
@@ -1740,6 +1780,16 @@ export default function VramBenchmarkComponent() {
       },
     });
   }, [models, tpsRanges]);
+
+  // ── TPS zoom-update effect ──
+  useEffect(() => {
+    const chart = chartInstances.current.efficiency;
+    if (!chart) return;
+    const xScale = chart.options.scales.x;
+    if (tpsClipMinVal !== undefined) { xScale.min = tpsClipMinVal; } else { delete xScale.min; }
+    if (tpsClipMaxVal !== undefined) { xScale.max = tpsClipMaxVal; } else { delete xScale.max; }
+    chart.update("zoom");
+  }, [tpsClipMinVal, tpsClipMaxVal]);
 
   // ── Quantization Distribution ────────────────────────────
 
@@ -2352,6 +2402,33 @@ export default function VramBenchmarkComponent() {
                 }))}
               />
             )}
+            {activeView === "scatter" && (
+              <div className={styles.vramClipGroup}>
+                <label className={styles.vramClipLabel}>{activeScatterMode.xLabel.split(' (')[0]} Range</label>
+                <div className={styles.vramClipInputs}>
+                  <input
+                    type="number"
+                    className={styles.vramClipInput}
+                    placeholder="Min"
+                    value={scatterClipXMin}
+                    onChange={(e) => setScatterClipXMin(e.target.value)}
+                    min="0"
+                    step="0.5"
+                  />
+                  <span className={styles.vramClipSeparator}>–</span>
+                  <input
+                    type="number"
+                    className={styles.vramClipInput}
+                    placeholder="Max"
+                    value={scatterClipXMax}
+                    onChange={(e) => setScatterClipXMax(e.target.value)}
+                    min="0"
+                    step="0.5"
+                  />
+                  <span className={styles.vramClipUnit}>{activeScatterMode.xLabel.match(/\(([^)]+)\)/)?.[1] || ''}</span>
+                </div>
+              </div>
+            )}
             {activeView === "bar" && (
               <div className={styles.vramClipGroup}>
                 <label className={styles.vramClipLabel}>VRAM Range</label>
@@ -2376,6 +2453,33 @@ export default function VramBenchmarkComponent() {
                     step="0.5"
                   />
                   <span className={styles.vramClipUnit}>GiB</span>
+                </div>
+              </div>
+            )}
+            {activeView === "efficiency" && (
+              <div className={styles.vramClipGroup}>
+                <label className={styles.vramClipLabel}>TPS Range</label>
+                <div className={styles.vramClipInputs}>
+                  <input
+                    type="number"
+                    className={styles.vramClipInput}
+                    placeholder="Min"
+                    value={tpsClipMin}
+                    onChange={(e) => setTpsClipMin(e.target.value)}
+                    min="0"
+                    step="5"
+                  />
+                  <span className={styles.vramClipSeparator}>–</span>
+                  <input
+                    type="number"
+                    className={styles.vramClipInput}
+                    placeholder="Max"
+                    value={tpsClipMax}
+                    onChange={(e) => setTpsClipMax(e.target.value)}
+                    min="0"
+                    step="5"
+                  />
+                  <span className={styles.vramClipUnit}>t/s</span>
                 </div>
               </div>
             )}
