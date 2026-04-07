@@ -2,13 +2,16 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ChevronDown } from "lucide-react";
+import TooltipComponent from "./TooltipComponent";
 import styles from "./SelectDropdown.module.css";
 
 /**
  * Custom dropdown component that supports rendering arbitrary content
- * (icons, logos, etc.) in each option.
+ * (icons, logos, etc.) in each option. Options may include a `tooltip`
+ * property (string or JSX) which renders via TooltipComponent on hover.
  *
- *  options: [{ value, label, icon?, disabled? }]
+ *  options:      [{ value, label, icon?, disabled?, tooltip? }]
+ *  triggerTooltip — optional tooltip (string/JSX) shown on the trigger button hover
  */
 export default function SelectDropdown({
   value,
@@ -17,6 +20,7 @@ export default function SelectDropdown({
   placeholder = "Select...",
   icon = null,
   disabled = false,
+  triggerTooltip = null,
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -54,6 +58,59 @@ export default function SelectDropdown({
     return () => document.removeEventListener("keydown", handleKey);
   }, [open]);
 
+  const renderOption = (opt) => {
+    const btn = (
+      <button
+        key={opt.value}
+        type="button"
+        className={`${styles.option} ${opt.value === value ? styles.optionSelected : ""} ${opt.disabled ? styles.optionDisabled : ""}`}
+        onClick={() => handleSelect(opt)}
+        disabled={opt.disabled}
+      >
+        {opt.icon && (
+          <span className={styles.optionIcon}>{opt.icon}</span>
+        )}
+        <span className={styles.optionLabel}>{opt.label}</span>
+      </button>
+    );
+
+    if (opt.tooltip) {
+      return (
+        <TooltipComponent
+          key={opt.value}
+          label={opt.tooltip}
+          position="right"
+          delay={200}
+        >
+          {btn}
+        </TooltipComponent>
+      );
+    }
+
+    return btn;
+  };
+
+  const triggerButton = (
+      <button
+        type="button"
+        className={`${styles.trigger} ${open ? styles.triggerOpen : ""} ${disabled ? styles.triggerDisabled : ""}`}
+        onClick={() => !disabled && setOpen((prev) => !prev)}
+        disabled={disabled}
+      >
+        <span className={styles.triggerContent}>
+          {icon && <span className={styles.triggerIcon}>{icon}</span>}
+          {!icon && selected?.icon && <span className={styles.optionIcon}>{selected.icon}</span>}
+          <span className={styles.triggerLabel}>
+            {selected ? selected.label : placeholder}
+          </span>
+        </span>
+        <ChevronDown
+          size={14}
+          className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}
+        />
+      </button>
+  );
+
   return (
     <div className={styles.dropdown} ref={containerRef}>
       {/* Hidden sizer — forces width to widest option */}
@@ -66,42 +123,21 @@ export default function SelectDropdown({
           </span>
         ))}
       </div>
-      <button
-        type="button"
-        className={`${styles.trigger} ${open ? styles.triggerOpen : ""} ${disabled ? styles.triggerDisabled : ""}`}
-        onClick={() => !disabled && setOpen((prev) => !prev)}
-        disabled={disabled}
-      >
-        <span className={styles.triggerContent}>
-          {icon && <span className={styles.triggerIcon}>{icon}</span>}
-          <span className={styles.triggerLabel}>
-            {selected ? selected.label : placeholder}
-          </span>
-        </span>
-        <ChevronDown
-          size={14}
-          className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}
-        />
-      </button>
+
+      {triggerTooltip && !open ? (
+        <TooltipComponent label={triggerTooltip} position="bottom" delay={400}>
+          {triggerButton}
+        </TooltipComponent>
+      ) : (
+        triggerButton
+      )}
 
       {open && (
         <div className={styles.menu}>
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              className={`${styles.option} ${opt.value === value ? styles.optionSelected : ""} ${opt.disabled ? styles.optionDisabled : ""}`}
-              onClick={() => handleSelect(opt)}
-              disabled={opt.disabled}
-            >
-              {opt.icon && (
-                <span className={styles.optionIcon}>{opt.icon}</span>
-              )}
-              <span className={styles.optionLabel}>{opt.label}</span>
-            </button>
-          ))}
+          {options.map(renderOption)}
         </div>
       )}
     </div>
   );
 }
+

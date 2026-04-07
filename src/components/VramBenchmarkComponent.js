@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Fragment } from "react";
 import {
   Monitor,
   Cpu,
@@ -32,6 +32,7 @@ import {
   FilterBarComponent,
   FilterSelectComponent,
 } from "./FilterBarComponent";
+import SelectDropdown from "./SelectDropdown";
 import { LoadingMessage, ErrorMessage } from "./StateMessageComponent";
 import styles from "./VramBenchmarkComponent.module.css";
 
@@ -302,6 +303,97 @@ function makeConnectorHighlightPlugin() {
   };
 }
 
+// ── Settings info for tooltips ──────────────────────────────
+
+const SETTINGS_INFO = {
+  "no-flash-attn": {
+    flash: false, kv: "GPU", batch: 512, parallel: 4,
+    purpose: "Worst-case VRAM. FP32 KV cache (~2× size) + 4 concurrent slots. Stress test ceiling.",
+  },
+  "max-quality": {
+    flash: false, kv: "GPU", batch: 512, parallel: 1,
+    purpose: "Maximum precision, single user. FP32 KV cache, all VRAM for one request.",
+  },
+  "default": {
+    flash: true, kv: "GPU", batch: 512, parallel: 4,
+    purpose: "Standard config. Flash attention (Q8 KV, ~50% savings). What most people use.",
+  },
+  "small-batch": {
+    flash: true, kv: "GPU", batch: 128, parallel: 4,
+    purpose: "Lower peak VRAM during prefill. Slightly slower TTFT but gentler on memory spikes.",
+  },
+  "single-slot": {
+    flash: true, kv: "GPU", batch: 512, parallel: 1,
+    purpose: "Default quality, single user. Shows per-slot KV cache overhead.",
+  },
+  "kv-on-cpu": {
+    flash: true, kv: "CPU", batch: 512, parallel: 4,
+    purpose: "KV cache in system RAM. Massive VRAM savings but attention crosses PCIe — hurts latency.",
+  },
+  "min-vram": {
+    flash: true, kv: "CPU", batch: 128, parallel: 1,
+    purpose: "Everything minimized. Absolute floor for running a model — \"can it even load?\" testing.",
+  },
+};
+
+function SettingsTooltipContent({ settingsKey }) {
+  const info = SETTINGS_INFO[settingsKey];
+  if (!info) return settingsKey;
+  return (
+    <span style={{ display: "block", whiteSpace: "normal", maxWidth: 320, lineHeight: 1.5 }}>
+      <span style={{ fontWeight: 700, fontSize: 12, marginBottom: 4, display: "block" }}>
+        {settingsKey}
+      </span>
+      <span style={{ display: "block", fontSize: 11, opacity: 0.7, marginBottom: 6 }}>
+        {info.purpose}
+      </span>
+      <span style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 12px", fontSize: 10.5, opacity: 0.55 }}>
+        <span>Flash Attn: {info.flash ? "✓" : "✗"}</span>
+        <span>KV Cache: {info.kv}</span>
+        <span>Batch: {info.batch}</span>
+        <span>Parallel: {info.parallel}</span>
+      </span>
+    </span>
+  );
+}
+
+const SETTINGS_EMOJI = {
+  "no-flash-attn": "🔥",
+  "max-quality": "💎",
+  "default": "⚡",
+  "small-batch": "📦",
+  "single-slot": "🎯",
+  "kv-on-cpu": "🧊",
+  "min-vram": "🪶",
+};
+
+function SettingsMatrixTooltip() {
+  const rows = Object.entries(SETTINGS_INFO);
+  return (
+    <span style={{ display: "block", whiteSpace: "normal", maxWidth: 420, lineHeight: 1.6 }}>
+      <span style={{ fontWeight: 700, fontSize: 12, marginBottom: 6, display: "block" }}>
+        Settings Configuration Matrix
+      </span>
+      <span style={{ display: "grid", gridTemplateColumns: "auto auto auto auto auto", gap: "2px 10px", fontSize: 10, opacity: 0.8 }}>
+        <span style={{ fontWeight: 700, opacity: 0.5 }}>Setting</span>
+        <span style={{ fontWeight: 700, opacity: 0.5 }}>Flash</span>
+        <span style={{ fontWeight: 700, opacity: 0.5 }}>KV</span>
+        <span style={{ fontWeight: 700, opacity: 0.5 }}>Batch</span>
+        <span style={{ fontWeight: 700, opacity: 0.5 }}>Parallel</span>
+        {rows.map(([key, info]) => (
+          <Fragment key={key}>
+            <span>{SETTINGS_EMOJI[key] || "⚙️"} {key}</span>
+            <span>{info.flash ? "✓" : "✗"}</span>
+            <span>{info.kv}</span>
+            <span>{info.batch}</span>
+            <span>{info.parallel}</span>
+          </Fragment>
+        ))}
+      </span>
+    </span>
+  );
+}
+
 // ── Scatter axis modes ───────────────────────────────────────
 // Each mode maps different data dimensions to the X/Y axes of the
 // bubble chart, turning the sort dropdown into a dimension explorer.
@@ -492,12 +584,25 @@ export default function VramBenchmarkComponent() {
       );
     }
 
-    // Deduplicate: one per model+context combo (prefer latest run)
+    // Deduplicate: one per model+context combo
+    // When "All Settings" is loaded, prefer "default" setting as representative
     const byKey = {};
     for (const d of filtered) {
       const key = `${d.displayName}__${d.contextLength}`;
-      if (!byKey[key] || d.createdAt > byKey[key].createdAt) {
+      const existing = byKey[key];
+      if (!existing) {
         byKey[key] = d;
+      } else {
+        // Prefer "default" setting over others, then latest run
+        const dIsDefault = d.settings?.label === "default";
+        const existingIsDefault = existing.settings?.label === "default";
+        if (dIsDefault && !existingIsDefault) {
+          byKey[key] = d;
+        } else if (!dIsDefault && existingIsDefault) {
+          // keep existing
+        } else if (d.createdAt > existing.createdAt) {
+          byKey[key] = d;
+        }
       }
     }
 
@@ -692,15 +797,140 @@ export default function VramBenchmarkComponent() {
         )
       : null;
 
+    // ── Build sorted card arrays by model name ──
+
+    const bestCards = [
+      fastest && {
+        key: "best-throughput",
+        label: "🏆 Best Throughput",
+        value: `${fastest.tokensPerSecond.toFixed(0)} t/s`,
+        subtitle: `${shortModelName(fastest.displayName, 30)} · ${fastest.quantization} · ${fastest.modelVramGiB.toFixed(1)}G`,
+        icon: Zap,
+        variant: "success",
+        sortName: fastest.displayName,
+      },
+      fastestResponse && {
+        key: "fastest-response",
+        label: "⚡ Fastest Response",
+        value: `${fastestResponse.ttft.ms.toFixed(0)} ms TTFT`,
+        subtitle: `${shortModelName(fastestResponse.displayName, 30)} · ${fastestResponse.tokensPerSecond.toFixed(0)} t/s · ${fastestResponse.modelVramGiB.toFixed(1)}G`,
+        icon: Crown,
+        variant: "success",
+        sortName: fastestResponse.displayName,
+      },
+      bestForChat && {
+        key: "best-chat",
+        label: "💬 Best for Chat",
+        value: shortModelName(bestForChat.displayName, 28),
+        subtitle: `${bestForChat.tokensPerSecond.toFixed(0)} t/s · ${bestForChat.modelVramGiB.toFixed(1)}G · largest ≥30 t/s`,
+        icon: MessageSquare,
+        variant: "accent",
+        sortName: bestForChat.displayName,
+      },
+      largestRunnable && {
+        key: "largest-runnable",
+        label: "🐘 Largest Runnable",
+        value: shortModelName(largestRunnable.displayName, 28),
+        subtitle: `${largestRunnable.modelVramGiB.toFixed(1)}G VRAM · ${largestRunnable.tokensPerSecond.toFixed(0)} t/s · ${largestRunnable.quantization}`,
+        icon: ArrowDownToLine,
+        variant: "info",
+        sortName: largestRunnable.displayName,
+      },
+      lowestFootprint && {
+        key: "lowest-footprint",
+        label: "🪶 Lowest Footprint",
+        value: shortModelName(lowestFootprint.displayName, 28),
+        subtitle: `${lowestFootprint.modelVramGiB.toFixed(1)}G VRAM · ${lowestFootprint.tokensPerSecond.toFixed(0)} t/s · ${lowestFootprint.quantization}`,
+        icon: HardDrive,
+        variant: "success",
+        sortName: lowestFootprint.displayName,
+      },
+      bestPrefill && {
+        key: "best-prefill",
+        label: "🚀 Best Prefill",
+        value: `${bestPrefill.ttft.prefillTokPerSec.toFixed(0)} tok/s`,
+        subtitle: `${shortModelName(bestPrefill.displayName, 30)} · prompt ingestion · ${bestPrefill.modelVramGiB.toFixed(1)}G`,
+        icon: Rocket,
+        variant: "success",
+        sortName: bestPrefill.displayName,
+      },
+      bestLargeModel && {
+        key: "best-large",
+        label: "🧠 Best Large Model",
+        value: `${bestLargeModel.tokensPerSecond.toFixed(0)} t/s`,
+        subtitle: `${shortModelName(bestLargeModel.displayName, 30)} · fastest ≥8G · ${bestLargeModel.modelVramGiB.toFixed(1)}G`,
+        icon: BrainCircuit,
+        variant: "accent",
+        sortName: bestLargeModel.displayName,
+      },
+    ].filter(Boolean);
+
+    const worstCards = [
+      slowest && {
+        key: "slowest-throughput",
+        label: "🐌 Slowest Throughput",
+        value: `${slowest.tokensPerSecond.toFixed(0)} t/s`,
+        subtitle: `${shortModelName(slowest.displayName, 30)} · ${slowest.quantization} · ${slowest.modelVramGiB.toFixed(1)}G`,
+        icon: ThumbsDown,
+        variant: "danger",
+        sortName: slowest.displayName,
+      },
+      slowestResponse && {
+        key: "slowest-response",
+        label: "🐢 Slowest Response",
+        value: `${slowestResponse.ttft.ms.toFixed(0)} ms TTFT`,
+        subtitle: `${shortModelName(slowestResponse.displayName, 30)} · ${slowestResponse.tokensPerSecond.toFixed(0)} t/s · ${slowestResponse.modelVramGiB.toFixed(1)}G`,
+        icon: AlertTriangle,
+        variant: "danger",
+        sortName: slowestResponse.displayName,
+      },
+      worstForChat && {
+        key: "worst-chat",
+        label: "💬 Worst for Chat",
+        value: shortModelName(worstForChat.displayName, 28),
+        subtitle: `${worstForChat.tokensPerSecond.toFixed(0)} t/s · ${worstForChat.modelVramGiB.toFixed(1)}G · smallest ≥30 t/s`,
+        icon: ThumbsDown,
+        variant: "danger",
+        sortName: worstForChat.displayName,
+      },
+      smallestRunnable && {
+        key: "smallest-runnable",
+        label: "🔬 Smallest Runnable",
+        value: shortModelName(smallestRunnable.displayName, 28),
+        subtitle: `${smallestRunnable.modelVramGiB.toFixed(1)}G VRAM · ${smallestRunnable.tokensPerSecond.toFixed(0)} t/s · ${smallestRunnable.quantization}`,
+        icon: AlertTriangle,
+        variant: "warning",
+        sortName: smallestRunnable.displayName,
+      },
+      heaviestFootprint && {
+        key: "heaviest-footprint",
+        label: "🏋️ Heaviest Footprint",
+        value: shortModelName(heaviestFootprint.displayName, 28),
+        subtitle: `${heaviestFootprint.modelVramGiB.toFixed(1)}G VRAM · ${heaviestFootprint.tokensPerSecond.toFixed(0)} t/s · ${heaviestFootprint.quantization}`,
+        icon: ThumbsDown,
+        variant: "danger",
+        sortName: heaviestFootprint.displayName,
+      },
+      worstLargeModel && {
+        key: "worst-large",
+        label: "🧠 Worst Large Model",
+        value: `${worstLargeModel.tokensPerSecond.toFixed(0)} t/s`,
+        subtitle: `${shortModelName(worstLargeModel.displayName, 30)} · slowest ≥8G · ${worstLargeModel.modelVramGiB.toFixed(1)}G`,
+        icon: AlertTriangle,
+        variant: "danger",
+        sortName: worstLargeModel.displayName,
+      },
+    ].filter(Boolean);
+
+    // Merge best + worst and sort all 12 cards together by model name
+    const modelCards = [...bestCards, ...worstCards]
+      .sort((a, b) => a.sortName.localeCompare(b.sortName));
+
     return {
       n, minVram, maxVram,
       fastest, medianTtft, avgDelta, oomCount,
       quantCount, providerCount,
-      fastestResponse, bestForChat, largestRunnable, lowestFootprint,
-      bestPrefill, bestLargeModel,
-      // worst counterparts
-      slowest, slowestResponse, worstForChat,
-      smallestRunnable, heaviestFootprint, worstLargeModel,
+      modelCards,
     };
   }, [models]);
 
@@ -1854,131 +2084,18 @@ export default function VramBenchmarkComponent() {
               variant="accent"
             />
 
-            {/* ── Best Model cards (wide, 2-col span) ── */}
-            <StatsCard
-              className={styles.statWide}
-              label="🏆 Best Throughput"
-              value={`${stats.fastest.tokensPerSecond.toFixed(0)} t/s`}
-              subtitle={`${shortModelName(stats.fastest.displayName, 30)} · ${stats.fastest.quantization} · ${stats.fastest.modelVramGiB.toFixed(1)}G`}
-              icon={Zap}
-              variant="success"
-            />
-            {stats.fastestResponse && (
+            {/* ── Model cards (wide, 2-col span, sorted by model name) ── */}
+            {stats.modelCards.map((card) => (
               <StatsCard
+                key={card.key}
                 className={styles.statWide}
-                label="⚡ Fastest Response"
-                value={`${stats.fastestResponse.ttft.ms.toFixed(0)} ms TTFT`}
-                subtitle={`${shortModelName(stats.fastestResponse.displayName, 30)} · ${stats.fastestResponse.tokensPerSecond.toFixed(0)} t/s · ${stats.fastestResponse.modelVramGiB.toFixed(1)}G`}
-                icon={Crown}
-                variant="success"
+                label={card.label}
+                value={card.value}
+                subtitle={card.subtitle}
+                icon={card.icon}
+                variant={card.variant}
               />
-            )}
-            {stats.bestForChat && (
-              <StatsCard
-                className={styles.statWide}
-                label="💬 Best for Chat"
-                value={shortModelName(stats.bestForChat.displayName, 28)}
-                subtitle={`${stats.bestForChat.tokensPerSecond.toFixed(0)} t/s · ${stats.bestForChat.modelVramGiB.toFixed(1)}G · largest ≥30 t/s`}
-                icon={MessageSquare}
-                variant="accent"
-              />
-            )}
-            {stats.largestRunnable && (
-              <StatsCard
-                className={styles.statWide}
-                label="🐘 Largest Runnable"
-                value={shortModelName(stats.largestRunnable.displayName, 28)}
-                subtitle={`${stats.largestRunnable.modelVramGiB.toFixed(1)}G VRAM · ${stats.largestRunnable.tokensPerSecond.toFixed(0)} t/s · ${stats.largestRunnable.quantization}`}
-                icon={ArrowDownToLine}
-                variant="info"
-              />
-            )}
-            <StatsCard
-              className={styles.statWide}
-              label="🪶 Lowest Footprint"
-              value={shortModelName(stats.lowestFootprint.displayName, 28)}
-              subtitle={`${stats.lowestFootprint.modelVramGiB.toFixed(1)}G VRAM · ${stats.lowestFootprint.tokensPerSecond.toFixed(0)} t/s · ${stats.lowestFootprint.quantization}`}
-              icon={HardDrive}
-              variant="success"
-            />
-            {stats.bestPrefill && (
-              <StatsCard
-                className={styles.statWide}
-                label="🚀 Best Prefill"
-                value={`${stats.bestPrefill.ttft.prefillTokPerSec.toFixed(0)} tok/s`}
-                subtitle={`${shortModelName(stats.bestPrefill.displayName, 30)} · prompt ingestion · ${stats.bestPrefill.modelVramGiB.toFixed(1)}G`}
-                icon={Rocket}
-                variant="success"
-              />
-            )}
-            {stats.bestLargeModel && (
-              <StatsCard
-                className={styles.statWide}
-                label="🧠 Best Large Model"
-                value={`${stats.bestLargeModel.tokensPerSecond.toFixed(0)} t/s`}
-                subtitle={`${shortModelName(stats.bestLargeModel.displayName, 30)} · fastest ≥8G · ${stats.bestLargeModel.modelVramGiB.toFixed(1)}G`}
-                icon={BrainCircuit}
-                variant="accent"
-              />
-            )}
-
-            {/* ── Worst Model cards (wide, 2-col span) ── */}
-            <StatsCard
-              className={styles.statWide}
-              label="🐌 Slowest Throughput"
-              value={`${stats.slowest.tokensPerSecond.toFixed(0)} t/s`}
-              subtitle={`${shortModelName(stats.slowest.displayName, 30)} · ${stats.slowest.quantization} · ${stats.slowest.modelVramGiB.toFixed(1)}G`}
-              icon={ThumbsDown}
-              variant="danger"
-            />
-            {stats.slowestResponse && (
-              <StatsCard
-                className={styles.statWide}
-                label="🐢 Slowest Response"
-                value={`${stats.slowestResponse.ttft.ms.toFixed(0)} ms TTFT`}
-                subtitle={`${shortModelName(stats.slowestResponse.displayName, 30)} · ${stats.slowestResponse.tokensPerSecond.toFixed(0)} t/s · ${stats.slowestResponse.modelVramGiB.toFixed(1)}G`}
-                icon={AlertTriangle}
-                variant="danger"
-              />
-            )}
-            {stats.worstForChat && (
-              <StatsCard
-                className={styles.statWide}
-                label="💬 Worst for Chat"
-                value={shortModelName(stats.worstForChat.displayName, 28)}
-                subtitle={`${stats.worstForChat.tokensPerSecond.toFixed(0)} t/s · ${stats.worstForChat.modelVramGiB.toFixed(1)}G · smallest ≥30 t/s`}
-                icon={ThumbsDown}
-                variant="danger"
-              />
-            )}
-            {stats.smallestRunnable && (
-              <StatsCard
-                className={styles.statWide}
-                label="🔬 Smallest Runnable"
-                value={shortModelName(stats.smallestRunnable.displayName, 28)}
-                subtitle={`${stats.smallestRunnable.modelVramGiB.toFixed(1)}G VRAM · ${stats.smallestRunnable.tokensPerSecond.toFixed(0)} t/s · ${stats.smallestRunnable.quantization}`}
-                icon={AlertTriangle}
-                variant="warning"
-              />
-            )}
-            <StatsCard
-              className={styles.statWide}
-              label="🏋️ Heaviest Footprint"
-              value={shortModelName(stats.heaviestFootprint.displayName, 28)}
-              subtitle={`${stats.heaviestFootprint.modelVramGiB.toFixed(1)}G VRAM · ${stats.heaviestFootprint.tokensPerSecond.toFixed(0)} t/s · ${stats.heaviestFootprint.quantization}`}
-              icon={ThumbsDown}
-              variant="danger"
-            />
-            {stats.worstLargeModel && (
-              <StatsCard
-                className={styles.statWide}
-                label="🧠 Worst Large Model"
-                value={`${stats.worstLargeModel.tokensPerSecond.toFixed(0)} t/s`}
-                subtitle={`${shortModelName(stats.worstLargeModel.displayName, 30)} · slowest ≥8G · ${stats.worstLargeModel.modelVramGiB.toFixed(1)}G`}
-                icon={AlertTriangle}
-                variant="danger"
-              />
-            )}
+            ))}
           </div>
         )}
 
@@ -2020,17 +2137,20 @@ export default function VramBenchmarkComponent() {
         <div className={styles.chartCard}>
           {/* Per-tab filters */}
           <FilterBarComponent>
-            <FilterSelectComponent
+            <SelectDropdown
               value={settingsFilter}
               onChange={(val) => {
                 setSettingsFilter(val);
                 setLoading(true);
               }}
+              triggerTooltip={<SettingsMatrixTooltip />}
               options={[
-                { value: "all", label: "All Settings" },
+                { value: "all", label: "All Settings", icon: <span>📊</span> },
                 ...settingsLabels.map((s) => ({
                   value: s,
-                  label: `⚙ ${s}`,
+                  label: s,
+                  icon: <span>{SETTINGS_EMOJI[s] || "⚙️"}</span>,
+                  tooltip: <SettingsTooltipContent settingsKey={s} />,
                 })),
               ]}
             />
