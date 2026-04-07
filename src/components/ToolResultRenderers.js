@@ -239,7 +239,8 @@ function DirectoryListRenderer({ result, args }) {
   const parsed = tryParse(result);
   if (!parsed) return <RawResultToggle result={result} />;
 
-  const entries = parsed.entries || parsed.items || parsed.files || [];
+  const rawEntries = parsed.entries || parsed.items || parsed.files || [];
+  const entries = Array.isArray(rawEntries) ? rawEntries : Object.values(rawEntries);
   const dirPath = parsed.path || args?.path || "";
 
   return (
