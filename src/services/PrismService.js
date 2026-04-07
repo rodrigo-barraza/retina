@@ -425,6 +425,76 @@ export default class PrismService {
   }
 
   // ---------------------------------------------------------------------------
+  // MCP Servers
+  // ---------------------------------------------------------------------------
+
+  /**
+   * List all MCP server configs + live connection status.
+   * @param {string} [project]
+   * @returns {Promise<Array>}
+   */
+  static async getMCPServers(project) {
+    const qs = project ? `?project=${encodeURIComponent(project)}` : "";
+    return PrismService._request(`/mcp-servers${qs}`, { method: "GET" });
+  }
+
+  /**
+   * Add a new MCP server config.
+   * @param {object} server
+   * @returns {Promise<object>}
+   */
+  static async createMCPServer(server) {
+    return PrismService._request("/mcp-servers", {
+      method: "POST",
+      body: server,
+    });
+  }
+
+  /**
+   * Update an MCP server config.
+   * @param {string} id
+   * @param {object} updates
+   * @returns {Promise<object>}
+   */
+  static async updateMCPServer(id, updates) {
+    return PrismService._request(`/mcp-servers/${id}`, {
+      method: "PUT",
+      body: updates,
+    });
+  }
+
+  /**
+   * Delete an MCP server config.
+   * @param {string} id
+   * @returns {Promise<object>}
+   */
+  static async deleteMCPServer(id) {
+    return PrismService._request(`/mcp-servers/${id}`, { method: "DELETE" });
+  }
+
+  /**
+   * Connect to an MCP server.
+   * @param {string} id
+   * @returns {Promise<{ success, serverName, toolCount, tools }>}
+   */
+  static async connectMCPServer(id) {
+    return PrismService._request(`/mcp-servers/${id}/connect`, {
+      method: "POST",
+    });
+  }
+
+  /**
+   * Disconnect from an MCP server.
+   * @param {string} id
+   * @returns {Promise<{ success }>}
+   */
+  static async disconnectMCPServer(id) {
+    return PrismService._request(`/mcp-servers/${id}/disconnect`, {
+      method: "POST",
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Chat
   // ---------------------------------------------------------------------------
 

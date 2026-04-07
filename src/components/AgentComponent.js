@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Bot, Paperclip, X, Code2, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain } from "lucide-react";
+import { Bot, Paperclip, X, Code2, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain, Plug } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ThreePanelLayout from "./ThreePanelLayout.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
@@ -10,6 +10,7 @@ import SettingsPanel from "./SettingsPanel.js";
 import CustomToolsPanel from "./CustomToolsPanel.js";
 import SkillsPanel from "./SkillsPanel.js";
 import MemoriesPanel from "./MemoriesPanel.js";
+import MCPServersPanel from "./MCPServersPanel.js";
 import MessageList, { prepareDisplayMessages } from "./MessageList.js";
 import ImagePreviewComponent from "./ImagePreviewComponent.js";
 import TabBarComponent from "./TabBarComponent.js";
@@ -100,6 +101,7 @@ export default function AgentComponent() {
   const [builtInTools, setBuiltInTools] = useState([]);
   const [skills, setSkills] = useState([]);
   const [injectedSkills, setInjectedSkills] = useState([]);
+  const [mcpServers, setMcpServers] = useState([]);
   const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
     useToolToggles(builtInTools);
   const [settings, setSettings] = useState({
@@ -268,6 +270,20 @@ export default function AgentComponent() {
   useEffect(() => {
     loadSkills();
   }, [loadSkills]);
+
+  // Load MCP servers
+  const loadMCPServers = useCallback(async () => {
+    try {
+      const s = await PrismService.getMCPServers(PROJECT_AGENT);
+      setMcpServers(s);
+    } catch (err) {
+      console.error("Failed to load MCP servers:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMCPServers();
+  }, [loadMCPServers]);
 
   // Fetch built-in tools — refresh Prism cache first, then filter to agentic tools
   useEffect(() => {
@@ -892,6 +908,11 @@ export default function AgentComponent() {
             key: "memories",
             icon: <Brain size={14} />,
           },
+          {
+            key: "mcp",
+            icon: <Plug size={14} />,
+            badge: mcpServers.filter((s) => s.connected).length || undefined,
+          },
         ]}
         activeTab={leftTab}
         onChange={setLeftTab}
@@ -945,6 +966,14 @@ export default function AgentComponent() {
 
       {leftTab === "memories" && (
         <MemoriesPanel project={PROJECT_AGENT} />
+      )}
+
+      {leftTab === "mcp" && (
+        <MCPServersPanel
+          servers={mcpServers}
+          onServersChange={loadMCPServers}
+          project={PROJECT_AGENT}
+        />
       )}
     </>
   );
