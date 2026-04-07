@@ -447,13 +447,38 @@ export default function AgentComponent() {
 
         let streamedText = "";
         let streamedThinking = "";
+        // ── Interleaved content tracking ──
+        // contentSegments: ordered list of { type: "thinking", fragmentIndex } | { type: "text", fragmentIndex } | { type: "tools", toolIds: [...] }
+        // textFragments: array of strings, one per text segment — the text delta between tool groups
+        // thinkingFragments: array of strings, one per thinking segment — the thinking delta between tool groups
+        const contentSegments = [];
+        const textFragments = [];
+        const thinkingFragments = [];
+        let lastSegmentType = null; // "thinking" | "text" | "tools"
+        let prevCleanLen = 0; // length of cleanTextRaw at last onChunk — used for computing deltas
+        let prevThinkingLen = 0; // length of thinking text at last onThinking — used for computing deltas
+
+        // Deep-copy segments for React state (objects are shared refs otherwise)
+        const snapshotSegments = () =>
+          contentSegments.map((s) => ({
+            ...s,
+            ...(s.toolIds ? { toolIds: [...s.toolIds] } : {}),
+          }));
 
         abortRef.current = PrismService.streamText(payload, {
           onChunk: (content) => {
             streamedText += content;
+
+            // Track segment ordering: start a new text fragment when text resumes after tools
+            if (lastSegmentType !== "text") {
+              contentSegments.push({ type: "text", fragmentIndex: textFragments.length });
+              textFragments.push("");
+              lastSegmentType = "text";
+            }
+
             // Strip tool call XML markup that some models (Gemma 4) emit in text.
-            // Handle both complete tag pairs and incomplete/streaming tags (no closing tag yet).
-            const cleanText = streamedText
+            // Use cleanTextRaw (no trim) for stable delta computation.
+            const cleanTextRaw = streamedText
               .replace(/<\|?tool_call\|?>[\s\S]*?<\/?\|?tool_call\|?>/gi, "")
               .replace(/<\|?tool_response\|?>[\s\S]*?<\/?\|?tool_response\|?>/gi, "")
               .replace(/<\|?result\|?>[\s\S]*?<\/?\|?result\|?>/gi, "")
@@ -461,31 +486,67 @@ export default function AgentComponent() {
               // Incomplete tags at end of stream (closing tag hasn't arrived yet)
               .replace(/<\|?tool_call\|?>[\s\S]*$/gi, "")
               .replace(/<\|?tool_response\|?>[\s\S]*$/gi, "")
-              .replace(/<\|?result\|?>[\s\S]*$/gi, "")
-              .trim();
+              .replace(/<\|?result\|?>[\s\S]*$/gi, "");
+
+            // Compute text delta since last update and append to current fragment
+            const delta = cleanTextRaw.slice(prevCleanLen);
+            if (delta) {
+              textFragments[textFragments.length - 1] += delta;
+            }
+            prevCleanLen = cleanTextRaw.length;
+
+            const cleanText = cleanTextRaw.trim();
             setMessages((prev) => {
               const updated = [...prev];
               const lastMsg = updated[updated.length - 1];
               if (lastMsg?.role === "assistant") {
                 lastMsg.content = cleanText;
+                lastMsg.contentSegments = snapshotSegments();
+                lastMsg.textFragments = [...textFragments];
+                lastMsg.thinkingFragments = [...thinkingFragments];
               } else {
-                updated.push({ role: "assistant", content: cleanText });
+                updated.push({
+                  role: "assistant",
+                  content: cleanText,
+                  contentSegments: snapshotSegments(),
+                  textFragments: [...textFragments],
+                  thinkingFragments: [...thinkingFragments],
+                });
               }
               return updated;
             });
           },
           onThinking: (content) => {
             streamedThinking += content;
+
+            // Track segment ordering: start a new thinking fragment when thinking resumes after tools
+            if (lastSegmentType !== "thinking") {
+              contentSegments.push({ type: "thinking", fragmentIndex: thinkingFragments.length });
+              thinkingFragments.push("");
+              lastSegmentType = "thinking";
+            }
+
+            // Compute thinking delta and append to current fragment
+            const delta = streamedThinking.slice(prevThinkingLen);
+            if (delta) {
+              thinkingFragments[thinkingFragments.length - 1] += delta;
+            }
+            prevThinkingLen = streamedThinking.length;
+
             setMessages((prev) => {
               const updated = [...prev];
               const lastMsg = updated[updated.length - 1];
               if (lastMsg?.role === "assistant") {
                 lastMsg.thinking = streamedThinking;
+                lastMsg.contentSegments = snapshotSegments();
+                lastMsg.thinkingFragments = [...thinkingFragments];
               } else {
                 updated.push({
                   role: "assistant",
                   content: "",
                   thinking: streamedThinking,
+                  contentSegments: snapshotSegments(),
+                  thinkingFragments: [...thinkingFragments],
                 });
               }
               return updated;
@@ -495,17 +556,26 @@ export default function AgentComponent() {
             const tc = data.tool;
             setToolActivity((prev) => {
               let updated = [];
+              const resolvedId = tc.id || `tc-${Date.now()}-${Math.random()}`;
               if (data.status === "calling") {
                 updated = [
                   ...prev,
                   {
-                    id: tc.id || `tc-${Date.now()}-${Math.random()}`,
+                    id: resolvedId,
                     name: tc.name,
                     args: tc.args,
                     status: "calling",
                     timestamp: Date.now(),
                   },
                 ];
+                // Track segment ordering: group consecutive tool events
+                if (lastSegmentType === "tools") {
+                  // Append to current tools segment
+                  contentSegments[contentSegments.length - 1].toolIds.push(resolvedId);
+                } else {
+                  contentSegments.push({ type: "tools", toolIds: [resolvedId] });
+                  lastSegmentType = "tools";
+                }
               } else {
                 updated = prev.map((activity) => {
                   if (
@@ -521,10 +591,10 @@ export default function AgentComponent() {
                 const arr = [...msgPrev];
                 const last = arr[arr.length - 1];
                 if (last?.role === "assistant") {
-                  arr[arr.length - 1] = { ...last, toolCalls: updated };
+                  arr[arr.length - 1] = { ...last, toolCalls: updated, contentSegments: snapshotSegments(), textFragments: [...textFragments], thinkingFragments: [...thinkingFragments] };
                 } else {
                   // Tool events can arrive before any text chunks — create placeholder
-                  arr.push({ role: "assistant", content: "", toolCalls: updated });
+                  arr.push({ role: "assistant", content: "", toolCalls: updated, contentSegments: snapshotSegments(), textFragments: [...textFragments], thinkingFragments: [...thinkingFragments] });
                 }
                 return arr;
               });
@@ -535,17 +605,25 @@ export default function AgentComponent() {
           onToolCall: (tc) => {
             setToolActivity((prev) => {
               let updated;
+              const resolvedId = tc.id || `tc-${Date.now()}-${Math.random()}`;
               if (tc.status === "calling") {
                 updated = [
                   ...prev,
                   {
-                    id: tc.id || `tc-${Date.now()}-${Math.random()}`,
+                    id: resolvedId,
                     name: tc.name,
                     args: tc.args,
                     status: "calling",
                     timestamp: Date.now(),
                   },
                 ];
+                // Track segment ordering: group consecutive tool events
+                if (lastSegmentType === "tools") {
+                  contentSegments[contentSegments.length - 1].toolIds.push(resolvedId);
+                } else {
+                  contentSegments.push({ type: "tools", toolIds: [resolvedId] });
+                  lastSegmentType = "tools";
+                }
               } else {
                 // done or error — update existing entry
                 updated = prev.map((activity) => {
@@ -562,9 +640,9 @@ export default function AgentComponent() {
                 const arr = [...msgPrev];
                 const last = arr[arr.length - 1];
                 if (last?.role === "assistant") {
-                  arr[arr.length - 1] = { ...last, toolCalls: updated };
+                  arr[arr.length - 1] = { ...last, toolCalls: updated, contentSegments: snapshotSegments(), textFragments: [...textFragments], thinkingFragments: [...thinkingFragments] };
                 } else {
-                  arr.push({ role: "assistant", content: "", toolCalls: updated });
+                  arr.push({ role: "assistant", content: "", toolCalls: updated, contentSegments: snapshotSegments(), textFragments: [...textFragments], thinkingFragments: [...thinkingFragments] });
                 }
                 return arr;
               });

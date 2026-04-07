@@ -106,7 +106,7 @@ function getMimeCategory(ref) {
 
 /* ── Sub-components ──────────────────────────────────────────── */
 
-function ThinkingBlock({ thinking, isStreaming }) {
+function ThinkingBlock({ thinking, isStreaming, children }) {
   // User can manually toggle after streaming has finished
   const [manualOpen, setManualOpen] = useState(false);
   // User can temporarily close during streaming
@@ -133,7 +133,7 @@ function ThinkingBlock({ thinking, isStreaming }) {
     }
   };
 
-  if (!thinking) return null;
+  if (!thinking && !children) return null;
 
   return (
     <div
@@ -146,7 +146,8 @@ function ThinkingBlock({ thinking, isStreaming }) {
       </button>
       {!collapsed && (
         <div className={styles.thinkingContent} ref={contentRef}>
-          <MarkdownContent content={thinking} />
+          {thinking && <MarkdownContent content={thinking} />}
+          {children}
         </div>
       )}
     </div>
@@ -1275,17 +1276,161 @@ export default function MessageList({
                 </div>
                 )}
 
-                {/* Thinking block */}
-                {msg.thinking && (
-                  <ThinkingBlock
-                    thinking={msg.thinking}
-                    isStreaming={isStreaming && !!msg.thinking && !msg.content}
-                  />
-                )}
+                {/* ── Interleaved content: thinking + tool calls + text ── */}
+                {msg.contentSegments && msg.contentSegments.length > 0 ? (
+                  (() => {
+                    const segs = msg.contentSegments;
+                    const hasThinking = segs.some((s) => s.type === "thinking");
 
-                {/* Tool calls */}
-                {msg.toolCalls && msg.toolCalls.length > 0 && (
-                  <ToolCallsBlock toolCalls={msg.toolCalls} streamingOutputs={streamingOutputs} />
+                    // Find the boundary between "reasoning" and "answer":
+                    // Everything up to and including the last thinking/tools segment is reasoning.
+                    // Text segments after that are the final answer.
+                    let answerStartIdx = segs.length;
+                    for (let k = segs.length - 1; k >= 0; k--) {
+                      if (segs[k].type !== "text") {
+                        answerStartIdx = k + 1;
+                        break;
+                      }
+                    }
+
+                    const reasoningSegs = segs.slice(0, answerStartIdx);
+                    const answerSegs = segs.slice(answerStartIdx);
+
+                    // Find the last text segment index in answerSegs for streaming cursor
+                    const lastTextSegIdx = (() => {
+                      for (let k = segs.length - 1; k >= 0; k--) {
+                        if (segs[k].type === "text") return k;
+                      }
+                      return -1;
+                    })();
+
+                    // Helper: render a segment by type
+                    const renderSeg = (seg, si, opts = {}) => {
+                      if (seg.type === "thinking") {
+                        const fragment = msg.thinkingFragments?.[seg.fragmentIndex]?.trim();
+                        if (!fragment) return null;
+                        return <MarkdownContent key={`seg-k-${si}`} content={fragment} />;
+                      }
+                      if (seg.type === "tools" && msg.toolCalls?.length > 0) {
+                        const toolIdSet = new Set(seg.toolIds || []);
+                        const segmentTools = msg.toolCalls.filter((tc) => toolIdSet.has(tc.id));
+                        if (segmentTools.length === 0) return null;
+                        return <ToolCallsBlock key={`seg-t-${si}`} toolCalls={segmentTools} streamingOutputs={streamingOutputs} />;
+                      }
+                      if (seg.type === "text") {
+                        const fragmentText = msg.textFragments?.[seg.fragmentIndex]?.trim();
+                        const isLastTextSeg = si === lastTextSegIdx;
+                        if (fragmentText) {
+                          return (
+                            <MarkdownContent
+                              key={`seg-x-${si}`}
+                              content={fragmentText}
+                              className={isStreaming && isLastTextSeg && !opts.insideThinking ? styles.streamingText : ""}
+                            >
+                              {isLastTextSeg && !opts.insideThinking && <StreamingCursorComponent active={isStreaming} />}
+                            </MarkdownContent>
+                          );
+                        }
+                        if (isStreaming && isLastTextSeg && !opts.insideThinking) {
+                          return <span key={`seg-x-${si}`} className={styles.streamingCursor} />;
+                        }
+                        return null;
+                      }
+                      return null;
+                    };
+
+                    // Edit mode: show reasoning then editable text
+                    if (msg.role === "assistant" && !readOnly && editingIndex === i) {
+                      return (
+                        <>
+                          {hasThinking && reasoningSegs.length > 0 && (
+                            <ThinkingBlock isStreaming={false}>
+                              {reasoningSegs.map((seg, si) => renderSeg(seg, si, { insideThinking: true }))}
+                            </ThinkingBlock>
+                          )}
+                          {!hasThinking && reasoningSegs.map((seg, si) => renderSeg(seg, si))}
+                          <EditableMessage
+                            key="seg-edit"
+                            content={msg.content}
+                            index={i}
+                            role="assistant"
+                            onEdit={onEdit}
+                            editing={true}
+                            onCancelEdit={() => setEditingIndex(null)}
+                          />
+                        </>
+                      );
+                    }
+
+                    // ── Normal rendering ──
+                    // If thinking is present: one ThinkingBlock wraps all reasoning, answer outside
+                    // If no thinking: tools + text render inline (interleaved)
+                    if (hasThinking) {
+                      const thinkingIsStreaming = isStreaming && reasoningSegs.length > 0 && answerSegs.length === 0;
+                      return (
+                        <>
+                          {reasoningSegs.length > 0 && (
+                            <ThinkingBlock isStreaming={thinkingIsStreaming}>
+                              {reasoningSegs.map((seg, si) => renderSeg(seg, si, { insideThinking: true }))}
+                            </ThinkingBlock>
+                          )}
+                          {answerSegs.map((seg, si) => renderSeg(seg, answerStartIdx + si))}
+                          {/* Streaming cursor when answer hasn't started */}
+                          {isStreaming && answerSegs.length === 0 && !thinkingIsStreaming && (
+                            <span className={styles.streamingCursor} />
+                          )}
+                        </>
+                      );
+                    }
+
+                    // No thinking — render all segments inline (tools interleaved with text)
+                    return segs.map((seg, si) => renderSeg(seg, si));
+                  })()
+                ) : (
+                  <>
+                    {/* Thinking block (legacy / saved conversations — no segments) */}
+                    {msg.thinking && (
+                      <ThinkingBlock
+                        thinking={msg.thinking}
+                        isStreaming={isStreaming && !!msg.thinking && !msg.content}
+                      />
+                    )}
+
+                    {/* Tool calls (legacy / saved conversations — no segments) */}
+                    {msg.toolCalls && msg.toolCalls.length > 0 && (
+                      <ToolCallsBlock toolCalls={msg.toolCalls} streamingOutputs={streamingOutputs} />
+                    )}
+
+                    {/* Text content */}
+                    {msg.role === "user" && !readOnly ? (
+                      <EditableMessage
+                        content={msg.content}
+                        index={i}
+                        role="user"
+                        onEdit={onEdit}
+                        editing={editingIndex === i}
+                        onCancelEdit={() => setEditingIndex(null)}
+                      />
+                    ) : msg.role === "assistant" && !readOnly && editingIndex === i ? (
+                      <EditableMessage
+                        content={msg.content}
+                        index={i}
+                        role="assistant"
+                        onEdit={onEdit}
+                        editing={true}
+                        onCancelEdit={() => setEditingIndex(null)}
+                      />
+                    ) : msg.content ? (
+                      <MarkdownContent
+                        content={msg.content}
+                        className={isStreaming ? styles.streamingText : ""}
+                      >
+                        <StreamingCursorComponent active={isStreaming} />
+                      </MarkdownContent>
+                    ) : isStreaming ? (
+                      <span className={styles.streamingCursor} />
+                    ) : null}
+                  </>
                 )}
 
                 {/* Images / media */}
@@ -1361,36 +1506,6 @@ export default function MessageList({
                       )}
                     </div>
                   )}
-
-                {/* Text content */}
-                {msg.role === "user" && !readOnly ? (
-                  <EditableMessage
-                    content={msg.content}
-                    index={i}
-                    role="user"
-                    onEdit={onEdit}
-                    editing={editingIndex === i}
-                    onCancelEdit={() => setEditingIndex(null)}
-                  />
-                ) : msg.role === "assistant" && !readOnly && editingIndex === i ? (
-                  <EditableMessage
-                    content={msg.content}
-                    index={i}
-                    role="assistant"
-                    onEdit={onEdit}
-                    editing={true}
-                    onCancelEdit={() => setEditingIndex(null)}
-                  />
-                ) : msg.content ? (
-                  <MarkdownContent
-                    content={msg.content}
-                    className={isStreaming ? styles.streamingText : ""}
-                  >
-                    <StreamingCursorComponent active={isStreaming} />
-                  </MarkdownContent>
-                ) : isStreaming ? (
-                  <span className={styles.streamingCursor} />
-                ) : null}
 
                 {/* Error block */}
                 {msg.error && (
