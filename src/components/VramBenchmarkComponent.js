@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo, Fragment } from "react";
+
 import {
   Cpu,
   Zap,
@@ -499,7 +500,19 @@ export default function VramBenchmarkComponent() {
   const [ctxFilter, setCtxFilter] = useState("all");
   const [sortBy, setSortBy] = useState("vram");
   const [scatterMode, setScatterMode] = useState("vram_vs_speed");
+  const [vramClipMin, setVramClipMin] = useState("");
+  const [vramClipMax, setVramClipMax] = useState("");
   const [activeView, setActiveView] = useState("scatter");
+
+  // Parsed clip values — undefined means "auto" (Chart.js default)
+  const clipMin = useMemo(() => {
+    const v = parseFloat(vramClipMin);
+    return isNaN(v) || v < 0 ? undefined : v;
+  }, [vramClipMin]);
+  const clipMax = useMemo(() => {
+    const v = parseFloat(vramClipMax);
+    return isNaN(v) || v <= 0 ? undefined : v;
+  }, [vramClipMax]);
 
   // Active scatter mode config
   const activeScatterMode = useMemo(
@@ -1316,6 +1329,17 @@ export default function VramBenchmarkComponent() {
     return { vramRanges: vram, tpsRanges: tps };
   }, [allFilteredData, rawData]);
 
+  // ── Zoom-update effect: animate x-axis range when clip values change ──
+  useEffect(() => {
+    const chart = chartInstances.current.bar;
+    if (!chart) return;
+    const xScale = chart.options.scales.x;
+    // Apply or clear min/max
+    if (clipMin !== undefined) { xScale.min = clipMin; } else { delete xScale.min; }
+    if (clipMax !== undefined) { xScale.max = clipMax; } else { delete xScale.max; }
+    chart.update("zoom");
+  }, [clipMin, clipMax]);
+
   const renderBar = useCallback(() => {
     const canvas = chartRefs.bar.current;
     if (!canvas || models.length === 0) return;
@@ -1434,10 +1458,17 @@ export default function VramBenchmarkComponent() {
             title: { ...AXIS_TITLE_STYLE, text: "VRAM (GiB)" },
             grid: GRID_STYLE,
             ticks: TICK_STYLE,
+            ...(clipMin != null ? { min: clipMin } : {}),
+            ...(clipMax != null ? { max: clipMax } : {}),
           },
           y: {
             grid: { color: "rgba(255,255,255,0.04)", drawBorder: false },
             ticks: { ...TICK_STYLE, padding: 8 },
+          },
+        },
+        transitions: {
+          zoom: {
+            animation: { duration: 500, easing: "easeInOutCubic" },
           },
         },
         plugins: {
@@ -2320,6 +2351,33 @@ export default function VramBenchmarkComponent() {
                   label: `Axes: ${m.label}`,
                 }))}
               />
+            )}
+            {activeView === "bar" && (
+              <div className={styles.vramClipGroup}>
+                <label className={styles.vramClipLabel}>VRAM Range</label>
+                <div className={styles.vramClipInputs}>
+                  <input
+                    type="number"
+                    className={styles.vramClipInput}
+                    placeholder="Min"
+                    value={vramClipMin}
+                    onChange={(e) => setVramClipMin(e.target.value)}
+                    min="0"
+                    step="0.5"
+                  />
+                  <span className={styles.vramClipSeparator}>–</span>
+                  <input
+                    type="number"
+                    className={styles.vramClipInput}
+                    placeholder="Max"
+                    value={vramClipMax}
+                    onChange={(e) => setVramClipMax(e.target.value)}
+                    min="0"
+                    step="0.5"
+                  />
+                  <span className={styles.vramClipUnit}>GiB</span>
+                </div>
+              </div>
             )}
             {["bar", "efficiency"].includes(activeView) && (
               <FilterSelectComponent
