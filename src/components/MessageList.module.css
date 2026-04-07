@@ -86,8 +86,6 @@
   white-space: pre-wrap;
   word-break: break-word;
   border-top: 1px solid var(--border-color);
-  max-height: 300px;
-  overflow-y: auto;
 }
 
 /* ── Per-message row ── */

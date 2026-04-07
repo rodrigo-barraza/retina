@@ -1,0 +1,457 @@
+/* ═══════════════════════════════════════════════════════════════
+   Tool Result Renderers — Specialized display for tool outputs
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Shared layout ─────────────────────────────────────────── */
+
+.rendererBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.rendererHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.rendererTitle {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* ── Status badge ──────────────────────────────────────────── */
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.statusSuccess {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.statusError {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+/* ── Path pill ─────────────────────────────────────────────── */
+
+.pathPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-secondary);
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pathFull {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+/* ── Code block ────────────────────────────────────────────── */
+
+.codeBlock {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  overflow-x: auto;
+  max-height: 240px;
+  overflow-y: auto;
+  white-space: pre;
+}
+
+.codeBlock code {
+  color: inherit;
+}
+
+/* ── Inline code ───────────────────────────────────────────── */
+
+.inlineCode {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--bg-tertiary);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--accent-color);
+}
+
+/* ── Diff block ────────────────────────────────────────────── */
+
+.diffBlock {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  line-height: 1.55;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre;
+}
+
+.diffBlock code {
+  color: var(--text-secondary);
+}
+
+.diffAdded {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  display: inline;
+}
+
+.diffRemoved {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  display: inline;
+}
+
+.diffHunk {
+  color: #60a5fa;
+  opacity: 0.7;
+}
+
+/* ── Error text ────────────────────────────────────────────── */
+
+.errorText {
+  font-size: 11px;
+  color: #f87171;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(248, 113, 113, 0.06);
+}
+
+/* ── Raw result toggle ─────────────────────────────────────── */
+
+.rawToggle {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.rawToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.rawToggleBtn:hover {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.rawContent {
+  margin-top: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+/* ── Grep search ───────────────────────────────────────────── */
+
+.grepList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.grepFile {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.grepFilePath {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  color: var(--accent-color);
+  padding: 2px 0;
+  opacity: 0.9;
+}
+
+.grepLine {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 1px 0 1px 12px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  line-height: 1.5;
+}
+
+.grepLineNum {
+  color: var(--text-muted);
+  min-width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.grepLineContent {
+  color: var(--text-secondary);
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Directory list ────────────────────────────────────────── */
+
+.dirList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.dirEntry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-secondary);
+  border-radius: 3px;
+}
+
+.dirEntry:hover {
+  background: var(--bg-tertiary);
+}
+
+.dirIcon {
+  color: #60a5fa;
+  flex-shrink: 0;
+}
+
+.fileIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Web search results ────────────────────────────────────── */
+
+.searchResults {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.searchResult {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.searchLink {
+  font-size: 12px;
+  font-weight: 500;
+  color: #60a5fa;
+  text-decoration: none;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchLink:hover {
+  text-decoration: underline;
+}
+
+.searchSnippet {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Terminal ──────────────────────────────────────────────── */
+
+.terminalBlock {
+  width: 100%;
+  margin-top: 4px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: #0d1117;
+}
+
+.terminalHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8b949e;
+  background: #161b22;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.terminalLive {
+  color: #3fb950;
+  font-weight: 700;
+  font-size: 10px;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.terminalBody {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-family: var(--font-mono, "Menlo", "Consolas", monospace);
+  line-height: 1.5;
+  color: #c9d1d9;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.terminalInput {
+  color: #3fb950;
+  font-weight: 600;
+}
+
+.terminalCursor {
+  color: #3fb950;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── Git ───────────────────────────────────────────────────── */
+
+.gitStatus {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(96, 165, 250, 0.12);
+  color: #60a5fa;
+  flex-shrink: 0;
+}
+
+.gitLog {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.gitCommit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.gitCommit:hover {
+  background: var(--bg-tertiary);
+}
+
+.gitHash {
+  font-family: var(--font-mono, monospace);
+  color: #f59e0b;
+  font-weight: 600;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.gitMsg {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.gitAuthor {
+  color: var(--text-muted);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Move arrow ────────────────────────────────────────────── */
+
+.moveArrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}

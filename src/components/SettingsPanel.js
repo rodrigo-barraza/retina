@@ -46,6 +46,7 @@ export default function SettingsPanel({
   _inferenceMode,
   readOnly = false,
   hideProviderModel = false,
+  hideSystemPrompt = false,
   onSystemPromptClick,
   showSystemPromptModal = false,
   onCloseSystemPromptModal,
@@ -759,7 +760,7 @@ export default function SettingsPanel({
           </div>
         )}
 
-        {!isSpecialModel && !readOnly && (
+        {!isSpecialModel && !readOnly && !hideSystemPrompt && (
           <button
             className={`${styles.systemPromptBtn} ${settings.systemPrompt ? styles.systemPromptActive : ""}`}
             onClick={() => onSystemPromptClick?.()}
@@ -769,7 +770,7 @@ export default function SettingsPanel({
           </button>
         )}
 
-        {readOnly && settings.systemPrompt && (
+        {readOnly && !hideSystemPrompt && settings.systemPrompt && (
             <div className={styles.formGroup}>
               <label>
                 <Edit3 size={12} /> System Prompt

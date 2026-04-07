@@ -1,0 +1,624 @@
+"use client";
+
+import React, { useState, useRef, useEffect } from "react";
+import {
+  ChevronRight,
+  Check,
+  XCircle,
+  FileText,
+  FolderTree,
+  Terminal,
+  Globe,
+  Search,
+  GitBranch,
+  Trash2,
+  ArrowRight,
+  File,
+  Folder,
+} from "lucide-react";
+import MarkdownContent from "./MarkdownContent";
+import styles from "./ToolResultRenderers.module.css";
+
+// ─── Helpers ──────────────────────────────────────────────────────────
+
+function basename(filePath) {
+  if (!filePath) return "";
+  return filePath.split("/").pop() || filePath;
+}
+
+function extensionOf(filePath) {
+  const base = basename(filePath);
+  const dot = base.lastIndexOf(".");
+  return dot > 0 ? base.substring(dot + 1).toLowerCase() : "";
+}
+
+function tryParse(result) {
+  if (typeof result === "object" && result !== null) return result;
+  if (typeof result === "string") {
+    try { return JSON.parse(result); } catch { return null; }
+  }
+  return null;
+}
+
+/**
+ * Language hint for syntax highlighting based on file extension.
+ */
+const EXT_LANG = {
+  js: "javascript", jsx: "javascript", ts: "typescript", tsx: "typescript",
+  py: "python", rb: "ruby", go: "go", rs: "rust", java: "java",
+  css: "css", scss: "scss", html: "html", json: "json", yaml: "yaml",
+  yml: "yaml", md: "markdown", sh: "bash", bash: "bash", sql: "sql",
+  xml: "xml", toml: "toml", lua: "lua", c: "c", cpp: "cpp", h: "c",
+};
+
+// ─── Status Badge ─────────────────────────────────────────────────────
+
+function StatusBadge({ success, label }) {
+  return (
+    <span className={`${styles.statusBadge} ${success ? styles.statusSuccess : styles.statusError}`}>
+      {success ? <Check size={10} /> : <XCircle size={10} />}
+      {label}
+    </span>
+  );
+}
+
+// ─── File Path Pill ───────────────────────────────────────────────────
+
+function PathPill({ path, icon }) {
+  const Icon = icon || FileText;
+  return (
+    <span className={styles.pathPill}>
+      <Icon size={11} />
+      <span className={styles.pathFull}>{path}</span>
+    </span>
+  );
+}
+
+// ─── Collapsible Raw Result ───────────────────────────────────────────
+
+function RawResultToggle({ result }) {
+  const [show, setShow] = useState(false);
+  if (!result) return null;
+
+  const formatted = typeof result === "string"
+    ? (() => {
+        try { return "```json\n" + JSON.stringify(JSON.parse(result), null, 2) + "\n```"; }
+        catch { return "```\n" + result + "\n```"; }
+      })()
+    : "```json\n" + JSON.stringify(result, null, 2) + "\n```";
+
+  return (
+    <div className={styles.rawToggle}>
+      <button className={styles.rawToggleBtn} onClick={() => setShow(v => !v)}>
+        <ChevronRight size={11} className={show ? styles.chevronOpen : ""} />
+        <span>Raw Response</span>
+      </button>
+      {show && (
+        <div className={styles.rawContent}>
+          <MarkdownContent content={formatted} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// RENDERERS
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── 1. File Read ──────────────────────────────────────────────────────
+
+function FileReadRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const filePath = parsed.path || args?.path || "";
+  const content = parsed.content || "";
+  const _lang = EXT_LANG[extensionOf(filePath)] || "";
+  const lineCount = content ? content.split("\n").length : 0;
+  const startLine = parsed.startLine || args?.startLine;
+  const lineRange = startLine ? `L${startLine}–${startLine + lineCount - 1}` : `${lineCount} lines`;
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <PathPill path={filePath} icon={FileText} />
+        <span className={styles.meta}>{lineRange}</span>
+      </div>
+      {content && (
+        <pre className={styles.codeBlock}>
+          <code>{content.length > 3000 ? content.slice(0, 3000) + "\n…" : content}</code>
+        </pre>
+      )}
+    </div>
+  );
+}
+
+// ── 2. File Write ─────────────────────────────────────────────────────
+
+function FileWriteRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const filePath = parsed.path || args?.path || "";
+  const success = !parsed.error;
+  const bytesWritten = parsed.bytesWritten;
+  const created = parsed.created;
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <PathPill path={filePath} icon={FileText} />
+        <StatusBadge success={success} label={created ? "Created" : "Written"} />
+        {bytesWritten != null && <span className={styles.meta}>{bytesWritten.toLocaleString()} bytes</span>}
+      </div>
+      {parsed.error && <div className={styles.errorText}>{parsed.error}</div>}
+    </div>
+  );
+}
+
+// ── 3. String Replace ─────────────────────────────────────────────────
+
+function StrReplaceRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const filePath = parsed.path || args?.path || "";
+  const success = !parsed.error;
+  const replacements = parsed.replacements || parsed.count || 1;
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <PathPill path={filePath} icon={FileText} />
+        <StatusBadge success={success} label={`${replacements} replacement${replacements !== 1 ? "s" : ""}`} />
+      </div>
+      {args?.oldStr && args?.newStr && (
+        <pre className={styles.diffBlock}>
+          <code>
+            <span className={styles.diffRemoved}>- {args.oldStr.length > 200 ? args.oldStr.slice(0, 200) + "…" : args.oldStr}</span>
+            {"\n"}
+            <span className={styles.diffAdded}>+ {args.newStr.length > 200 ? args.newStr.slice(0, 200) + "…" : args.newStr}</span>
+          </code>
+        </pre>
+      )}
+      {parsed.error && <div className={styles.errorText}>{parsed.error}</div>}
+    </div>
+  );
+}
+
+// ── 4. Grep Search ────────────────────────────────────────────────────
+
+function GrepSearchRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const matches = parsed.matches || parsed.results || [];
+  const totalMatches = parsed.totalMatches ?? parsed.count ?? matches.length;
+  const pattern = args?.pattern || "";
+
+  // Group by file
+  const grouped = {};
+  for (const m of matches.slice(0, 30)) {
+    const file = m.file || m.path || "unknown";
+    if (!grouped[file]) grouped[file] = [];
+    grouped[file].push(m);
+  }
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <Search size={13} />
+        <span className={styles.rendererTitle}>
+          {totalMatches} match{totalMatches !== 1 ? "es" : ""} for <code className={styles.inlineCode}>{pattern}</code>
+        </span>
+      </div>
+      <div className={styles.grepList}>
+        {Object.entries(grouped).map(([file, fileMatches]) => (
+          <div key={file} className={styles.grepFile}>
+            <span className={styles.grepFilePath}>{file}</span>
+            {fileMatches.map((m, i) => (
+              <div key={i} className={styles.grepLine}>
+                {m.line != null && <span className={styles.grepLineNum}>{m.line}</span>}
+                <span className={styles.grepLineContent}>{m.content || m.text || m.match || ""}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+        {totalMatches > 30 && (
+          <div className={styles.meta}>… and {totalMatches - 30} more matches</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── 5. Directory List ─────────────────────────────────────────────────
+
+function DirectoryListRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const entries = parsed.entries || parsed.items || parsed.files || [];
+  const dirPath = parsed.path || args?.path || "";
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <FolderTree size={13} />
+        <span className={styles.rendererTitle}>{basename(dirPath) || "Directory"}</span>
+        <span className={styles.meta}>{entries.length} entries</span>
+      </div>
+      <div className={styles.dirList}>
+        {entries.slice(0, 40).map((entry, i) => {
+          const name = typeof entry === "string" ? entry : (entry.name || entry.path || "");
+          const isDir = typeof entry === "object" && (entry.type === "directory" || entry.isDirectory);
+          return (
+            <div key={i} className={styles.dirEntry}>
+              {isDir ? <Folder size={11} className={styles.dirIcon} /> : <File size={11} className={styles.fileIcon} />}
+              <span>{name}</span>
+            </div>
+          );
+        })}
+        {entries.length > 40 && <div className={styles.meta}>… and {entries.length - 40} more</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── 6. Glob Files ─────────────────────────────────────────────────────
+
+function GlobFilesRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const files = parsed.files || parsed.matches || [];
+  const pattern = args?.pattern || "";
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <Search size={13} />
+        <span className={styles.rendererTitle}>
+          {files.length} file{files.length !== 1 ? "s" : ""} matching <code className={styles.inlineCode}>{pattern}</code>
+        </span>
+      </div>
+      <div className={styles.dirList}>
+        {files.slice(0, 40).map((f, i) => {
+          const path = typeof f === "string" ? f : f.path || f.name || "";
+          return (
+            <div key={i} className={styles.dirEntry}>
+              <File size={11} className={styles.fileIcon} />
+              <span>{path}</span>
+            </div>
+          );
+        })}
+        {files.length > 40 && <div className={styles.meta}>… and {files.length - 40} more</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── 7. Web Search ─────────────────────────────────────────────────────
+
+function WebSearchRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const results = parsed.results || parsed.items || [];
+  const query = args?.query || "";
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <Globe size={13} />
+        <span className={styles.rendererTitle}>
+          {results.length} result{results.length !== 1 ? "s" : ""} for &ldquo;{query}&rdquo;
+        </span>
+      </div>
+      <div className={styles.searchResults}>
+        {results.slice(0, 8).map((r, i) => (
+          <div key={i} className={styles.searchResult}>
+            <a href={r.url || r.link} target="_blank" rel="noopener noreferrer" className={styles.searchLink}>
+              {r.title || r.name || r.url}
+            </a>
+            {r.snippet && <p className={styles.searchSnippet}>{r.snippet}</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── 8. Fetch URL ──────────────────────────────────────────────────────
+
+function FetchUrlRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const url = parsed.url || args?.url || "";
+  const title = parsed.title || "";
+  const content = parsed.content || parsed.text || parsed.markdown || "";
+  const charCount = content.length;
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <Globe size={13} />
+        <a href={url} target="_blank" rel="noopener noreferrer" className={styles.searchLink}>
+          {title || url}
+        </a>
+        <span className={styles.meta}>{charCount.toLocaleString()} chars</span>
+      </div>
+      {content && (
+        <pre className={styles.codeBlock}>
+          <code>{content.length > 2000 ? content.slice(0, 2000) + "\n…" : content}</code>
+        </pre>
+      )}
+    </div>
+  );
+}
+
+// ── 9. Terminal (Shell/Python/JS) ─────────────────────────────────────
+
+const PROMPT_PREFIXES = { bash: "$ ", python: ">>> ", javascript: "> " };
+const CONTINUATION_PREFIXES = { python: "... ", javascript: ".. " };
+const DEFAULT_CWD = { bash: "/tmp", python: "python3", javascript: "node" };
+
+function formatInputPrompt(input, language, cwd) {
+  if (!input) return "";
+  const prompt = PROMPT_PREFIXES[language] || "$ ";
+  const contPrompt = CONTINUATION_PREFIXES[language] || "  ";
+  const lines = input.split("\n");
+  const resolvedCwd = cwd || DEFAULT_CWD[language] || "";
+  const pathPrefix = resolvedCwd ? `${resolvedCwd} ` : "";
+  return lines.map((line, i) => `${i === 0 ? pathPrefix + prompt : contPrompt}${line}`).join("\n");
+}
+
+function TerminalRenderer({ result, args, streamingOutput, language }) {
+  const preRef = useRef(null);
+  const input = args?.command || args?.code || null;
+  const cwd = args?.cwd || null;
+  const isStreaming = !result;
+  const output = streamingOutput || "";
+
+  useEffect(() => {
+    if (preRef.current) preRef.current.scrollTop = preRef.current.scrollHeight;
+  }, [output]);
+
+  // Parse final result for exit code
+  const parsed = tryParse(result);
+  const exitCode = parsed?.exitCode ?? parsed?.exit_code;
+  const stdout = parsed?.stdout || parsed?.output || "";
+  const stderr = parsed?.stderr || "";
+  const displayOutput = isStreaming ? output : (stdout || stderr || output);
+
+  const formattedInput = formatInputPrompt(input, language, cwd);
+
+  if (!displayOutput && !formattedInput) return <RawResultToggle result={result} />;
+
+  return (
+    <div className={styles.terminalBlock}>
+      <div className={styles.terminalHeader}>
+        <Terminal size={11} />
+        <span>{language || "terminal"}</span>
+        {isStreaming && <span className={styles.terminalLive}>● live</span>}
+        {exitCode != null && (
+          <StatusBadge success={exitCode === 0} label={`exit ${exitCode}`} />
+        )}
+      </div>
+      <pre ref={preRef} className={styles.terminalBody}>
+        {formattedInput && (
+          <span className={styles.terminalInput}>{formattedInput}{"\n"}</span>
+        )}
+        {displayOutput}
+        {isStreaming && <span className={styles.terminalCursor}>▊</span>}
+      </pre>
+    </div>
+  );
+}
+
+// ── 10. Git Operations ────────────────────────────────────────────────
+
+function GitStatusRenderer({ result }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const files = parsed.files || parsed.status || [];
+  const branch = parsed.branch || "";
+  const clean = parsed.clean || files.length === 0;
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <GitBranch size={13} />
+        <span className={styles.rendererTitle}>{branch || "git status"}</span>
+        <StatusBadge success={clean} label={clean ? "Clean" : `${files.length} changed`} />
+      </div>
+      {!clean && (
+        <div className={styles.dirList}>
+          {files.slice(0, 30).map((f, i) => {
+            const name = typeof f === "string" ? f : f.path || f.file || "";
+            const status = typeof f === "object" ? (f.status || f.state || "") : "";
+            return (
+              <div key={i} className={styles.dirEntry}>
+                {status && <span className={styles.gitStatus}>{status}</span>}
+                <span>{name}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GitDiffRenderer({ result }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const diff = parsed.diff || parsed.output || (typeof result === "string" ? result : "");
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <GitBranch size={13} />
+        <span className={styles.rendererTitle}>git diff</span>
+      </div>
+      {diff && (
+        <pre className={styles.diffBlock}>
+          <code>
+            {diff.split("\n").slice(0, 80).map((line, i) => {
+              let cls = "";
+              if (line.startsWith("+") && !line.startsWith("+++")) cls = styles.diffAdded;
+              else if (line.startsWith("-") && !line.startsWith("---")) cls = styles.diffRemoved;
+              else if (line.startsWith("@@")) cls = styles.diffHunk;
+              return <span key={i} className={cls}>{line}{"\n"}</span>;
+            })}
+          </code>
+        </pre>
+      )}
+    </div>
+  );
+}
+
+function GitLogRenderer({ result }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const commits = parsed.commits || parsed.log || [];
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <GitBranch size={13} />
+        <span className={styles.rendererTitle}>{commits.length} commit{commits.length !== 1 ? "s" : ""}</span>
+      </div>
+      <div className={styles.gitLog}>
+        {commits.slice(0, 15).map((c, i) => (
+          <div key={i} className={styles.gitCommit}>
+            <span className={styles.gitHash}>{(c.hash || c.sha || "").slice(0, 7)}</span>
+            <span className={styles.gitMsg}>{c.message || c.subject || ""}</span>
+            {c.author && <span className={styles.gitAuthor}>{c.author}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── 11. File Delete / Move ────────────────────────────────────────────
+
+function FileDeleteRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+  const filePath = parsed.path || args?.path || "";
+  const success = !parsed.error;
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <Trash2 size={13} />
+        <PathPill path={filePath} />
+        <StatusBadge success={success} label={success ? "Deleted" : "Failed"} />
+      </div>
+      {parsed.error && <div className={styles.errorText}>{parsed.error}</div>}
+    </div>
+  );
+}
+
+function FileMoveRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+  const source = parsed.source || args?.source || "";
+  const destination = parsed.destination || args?.destination || "";
+  const success = !parsed.error;
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <ArrowRight size={13} />
+        <PathPill path={source} />
+        <ArrowRight size={10} className={styles.moveArrow} />
+        <PathPill path={destination} />
+        <StatusBadge success={success} label={success ? "Moved" : "Failed"} />
+      </div>
+      {parsed.error && <div className={styles.errorText}>{parsed.error}</div>}
+    </div>
+  );
+}
+
+// ── 12. Generic Fallback ──────────────────────────────────────────────
+
+function GenericRenderer({ result }) {
+  return <RawResultToggle result={result} />;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// REGISTRY
+// ═══════════════════════════════════════════════════════════════════════
+
+const TOOL_RESULT_REGISTRY = {
+  // File operations
+  read_file:        { Renderer: FileReadRenderer },
+  write_file:       { Renderer: FileWriteRenderer },
+  str_replace_file: { Renderer: StrReplaceRenderer },
+  patch_file:       { Renderer: FileWriteRenderer },
+  read_multi_file:  { Renderer: GenericRenderer },
+  file_info:        { Renderer: GenericRenderer },
+  file_diff:        { Renderer: GitDiffRenderer },     // reuses diff renderer
+  move_file:        { Renderer: FileMoveRenderer },
+  delete_file:      { Renderer: FileDeleteRenderer },
+
+  // Search
+  grep_search:      { Renderer: GrepSearchRenderer },
+  glob_files:       { Renderer: GlobFilesRenderer },
+  list_directory:   { Renderer: DirectoryListRenderer },
+
+  // Web
+  web_search:       { Renderer: WebSearchRenderer },
+  fetch_url:        { Renderer: FetchUrlRenderer },
+
+  // Execution
+  execute_shell:      { Renderer: TerminalRenderer, language: "bash" },
+  execute_python:     { Renderer: TerminalRenderer, language: "python" },
+  execute_javascript: { Renderer: TerminalRenderer, language: "javascript" },
+
+  // Git
+  git_status:       { Renderer: GitStatusRenderer },
+  git_diff:         { Renderer: GitDiffRenderer },
+  git_log:          { Renderer: GitLogRenderer },
+
+  // Project
+  project_summary:  { Renderer: GenericRenderer },
+};
+
+/**
+ * Resolve the appropriate result renderer for a tool call.
+ *
+ * @param {string} toolName - Raw tool function name
+ * @returns {{ Renderer: React.Component, language?: string }}
+ */
+export function resolveToolResultRenderer(toolName) {
+  return TOOL_RESULT_REGISTRY[toolName] || { Renderer: GenericRenderer };
+}
+
+/**
+ * Render a tool call's result using the registry.
+ *
+ * @param {object} props
+ * @param {object} props.toolCall - The tool call object { name, args, result, id }
+ * @param {string} [props.streamingOutput] - Live streaming output for compute tools
+ */
+export function ToolResultView({ toolCall, streamingOutput }) {
+  const { Renderer, language } = resolveToolResultRenderer(toolCall.name);
+
+  return (
+    <Renderer
+      result={toolCall.result}
+      args={toolCall.args}
+      streamingOutput={streamingOutput}
+      language={language}
+    />
+  );
+}

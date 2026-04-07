@@ -27,23 +27,13 @@ import StreamingCursorComponent from "./StreamingCursorComponent";
 import IconButtonComponent from "./IconButtonComponent";
 import CopyButtonComponent from "./CopyButtonComponent";
 import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
+import { ToolResultView } from "./ToolResultRenderers";
 import styles from "./MessageList.module.css";
 import { DateTime } from "luxon";
 import PrismService from "../services/PrismService";
 import { formatCost, getTotalInputTokens } from "../utils/utilities";
 
-// Tools that support real-time output streaming
-const STREAMABLE_TOOL_NAMES = new Set([
-  "execute_shell",
-  "execute_python",
-  "execute_javascript",
-]);
 
-const TOOL_LANGUAGE = {
-  execute_shell: "bash",
-  execute_python: "python",
-  execute_javascript: "javascript",
-};
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 
@@ -226,143 +216,6 @@ function resolveToolVisuals(rawName) {
   };
 }
 
-function ToolCallResultBlock({ result }) {
-  const [showResult, setShowResult] = useState(false);
-
-  if (!result) return null;
-
-  // Parse the result to extract special renderable fields
-  let parsed = null;
-  if (typeof result === "string") {
-    try {
-      parsed = JSON.parse(result);
-    } catch {
-      /* not JSON */
-    }
-  } else if (typeof result === "object") {
-    parsed = result;
-  }
-
-  const mapEmbedUrl = parsed?.mapEmbedUrl || null;
-  const staticMapUrl = !mapEmbedUrl ? parsed?.staticMapUrl || null : null;
-
-  const formatted =
-    typeof result === "string"
-      ? (() => {
-          try {
-            const p = JSON.parse(result);
-            return "```json\n" + JSON.stringify(p, null, 2) + "\n```";
-          } catch {
-            return "```\n" + result + "\n```";
-          }
-        })()
-      : "```json\n" + JSON.stringify(result, null, 2) + "\n```";
-
-  return (
-    <div className={styles.toolCallResultWrapper}>
-      {mapEmbedUrl && (
-        <div className={styles.toolCallMapPreview}>
-          <iframe
-            src={mapEmbedUrl}
-            className={styles.toolCallMapEmbed}
-            title="Map"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-      )}
-      {staticMapUrl && (
-        <div className={styles.toolCallMapPreview}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={staticMapUrl}
-            alt="Map"
-            className={styles.toolCallMapImage}
-            loading="lazy"
-          />
-        </div>
-      )}
-      <button
-        className={styles.toolCallResultToggle}
-        onClick={() => setShowResult((v) => !v)}
-      >
-        <ChevronRight
-          size={12}
-          className={showResult ? styles.toolCallChevronOpen : ""}
-        />
-        <span>View Response</span>
-      </button>
-      {showResult && (
-        <div className={styles.toolCallResult}>
-          <MarkdownContent content={formatted} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Inline Terminal Output ──────────────────────────────────────────────
-
-const PROMPT_PREFIXES = {
-  bash: "$ ",
-  python: ">>> ",
-  javascript: "> ",
-};
-
-const CONTINUATION_PREFIXES = {
-  python: "... ",
-  javascript: ".. ",
-};
-
-const DEFAULT_CWD = {
-  bash: "/tmp",
-  python: "python3",
-  javascript: "node",
-};
-
-function formatInputPrompt(input, language, cwd) {
-  if (!input) return "";
-  const prompt = PROMPT_PREFIXES[language] || "$ ";
-  const contPrompt = CONTINUATION_PREFIXES[language] || "  ";
-  const lines = input.split("\n");
-  const resolvedCwd = cwd || DEFAULT_CWD[language] || "";
-  const pathPrefix = resolvedCwd ? `${resolvedCwd} ` : "";
-
-  return lines
-    .map((line, i) => `${i === 0 ? pathPrefix + prompt : contPrompt}${line}`)
-    .join("\n");
-}
-
-function InlineTerminalOutput({ output, language, isStreaming, input, cwd }) {
-  const preRef = useRef(null);
-
-  useEffect(() => {
-    if (preRef.current) {
-      preRef.current.scrollTop = preRef.current.scrollHeight;
-    }
-  }, [output]);
-
-  if (!output && !input) return null;
-
-  const formattedInput = formatInputPrompt(input, language, cwd);
-
-  return (
-    <div className={styles.terminalContainer}>
-      <div className={styles.terminalHeader}>
-        <Terminal size={10} />
-        <span>{language || "output"}</span>
-        {isStreaming && <span className={styles.terminalLive}>● live</span>}
-      </div>
-      <pre ref={preRef} className={styles.terminalBody}>
-        {formattedInput && (
-          <span className={styles.terminalInput}>{formattedInput}{"\n"}</span>
-        )}
-        {output}
-        {isStreaming && <span className={styles.terminalCursor}>▊</span>}
-      </pre>
-    </div>
-  );
-}
 
 function ToolCallsBlock({ toolCalls, streamingOutputs }) {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
@@ -426,25 +279,11 @@ function ToolCallsBlock({ toolCalls, streamingOutputs }) {
                   </span>
                 )}
 
-                {/* Expandable result — wraps to next line */}
-                <ToolCallResultBlock result={tc.result} />
-
-                {/* Inline terminal for compute tools */}
-                {STREAMABLE_TOOL_NAMES.has(tc.name) && (() => {
-                  const output = streamingOutputs?.get(tc.id);
-                  const input = tc.args?.command || tc.args?.code || null;
-                  const cwd = tc.args?.cwd || null;
-                  if (!output && !input) return null;
-                  return (
-                    <InlineTerminalOutput
-                      output={output || ""}
-                      language={TOOL_LANGUAGE[tc.name]}
-                      isStreaming={!tc.result}
-                      input={input}
-                      cwd={cwd}
-                    />
-                  );
-                })()}
+                {/* Tool-specific result renderer (registry pattern) */}
+                <ToolResultView
+                  toolCall={tc}
+                  streamingOutput={streamingOutputs?.get(tc.id)}
+                />
               </div>
             );
           })}
@@ -962,7 +801,7 @@ export default function MessageList({
                 </div>
               )}
             </div>
-            <div className={styles.text}>{systemPrompt}</div>
+            <MarkdownContent content={systemPrompt} />
           </div>
         </div>
       )}

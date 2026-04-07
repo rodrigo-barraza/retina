@@ -898,6 +898,7 @@ export default function AgentComponent() {
           onChange={(updates) => setSettings((s) => ({ ...s, ...updates, functionCallingEnabled: true }))}
           hasAssistantImages={false}
           lockedTools={AGENT_LOCKED_TOOLS}
+          hideSystemPrompt
           conversationStats={
             messages.length > 0
               ? {
