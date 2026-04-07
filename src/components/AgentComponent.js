@@ -62,44 +62,70 @@ const AGENTIC_TOOL_NAMES = new Set([
   "project_summary",
 ]);
 
-// ── Coding-focused quick prompts
+// ── Coding-focused quick prompts (reflect the full toolset)
 const AGENT_PROMPTS = [
-  "Read the README.md and summarize the project structure",
-  "Search for all TODO comments across the codebase",
-  "List the directory tree recursively",
-  "Find all files that import PrismService",
-  "Fetch the Node.js 22 changelog from the docs",
-  "Find and fix any unused imports in the services/ folder",
-  "Create a new utility function for date formatting",
+  "Scan this project with project_summary and explain the architecture",
+  "Search for all TODO and FIXME comments across the codebase",
+  "Show me the git status and a diff of uncommitted changes",
+  "Find all files that import PrismService and summarize usage",
   "Grep for console.log statements and suggest cleanups",
+  "Run npm test and report any failures with context",
+  "Read the last 5 git commits and summarize what changed",
+  "Compare two files side-by-side with file_diff",
+  "Find all .env and secrets files and check they're gitignored",
+  "List the directory tree and identify the largest files",
 ];
 
 // Tools that are always on and non-toggleable in the agent view
 const AGENT_LOCKED_TOOLS = new Set(["Function Calling"]);
 
-// ── Default system prompt for coding agent
-const AGENT_SYSTEM_PROMPT = `You are a highly capable coding agent with access to file system tools (read, write, edit, search) and web tools (fetch URLs, search).
+/**
+ * Build the agent system prompt dynamically from the loaded tool schemas.
+ * Groups tools by their `domain` field (sourced from tools-api via Prism).
+ * Falls back to tool names only if descriptions are missing.
+ */
+function buildAgentSystemPrompt(tools) {
+  // Group tools by domain, preserving insertion order
+  const groups = new Map();
+  for (const tool of tools) {
+    // Strip "Agentic: " prefix for cleaner headings in the prompt
+    const domain = (tool.domain || "Other").replace(/^Agentic:\s*/i, "");
+    if (!groups.has(domain)) groups.set(domain, []);
+    groups.get(domain).push(tool);
+  }
 
-## Available Capabilities
-- **read_file**: Read files with optional line ranges
-- **write_file**: Create or overwrite files
-- **str_replace_file**: Make targeted edits to existing files (preferred for modifications)
-- **patch_file**: Apply unified diffs for multi-hunk edits
-- **list_directory**: Explore directory structure
-- **grep_search**: Search for patterns across files
-- **glob_files**: Find files by name pattern
-- **fetch_url**: Fetch web pages and documentation
-- **web_search**: Search the web for information
+  // Build categorised capability list
+  const sections = [];
+  for (const [domain, domainTools] of groups) {
+    const entries = domainTools.map((t) => {
+      // Use first sentence of description for brevity
+      const desc = (t.description || "").split(/\.\s/)[0];
+      return `- **${t.name}**: ${desc}`;
+    });
+    sections.push(`### ${domain}\n${entries.join("\n")}`);
+  }
+
+  const capabilitiesBlock = sections.length > 0
+    ? `## Available Capabilities (${tools.length} tools)\n\n${sections.join("\n\n")}`
+    : "## Available Capabilities\nNo tools loaded.";
+
+  return `You are a highly capable coding agent with access to file system, git, command execution, and web tools.
+
+${capabilitiesBlock}
 
 ## Coding Guidelines
 1. Always read relevant files before making edits to understand context
 2. Prefer str_replace_file over write_file for editing existing code — it's safer and preserves unchanged content
-3. After making changes, verify them by reading the modified section
-4. Keep your explanations concise and technical
-5. When searching, use includes filters to narrow results (e.g. ["*.js", "*.ts"])
-6. Current date/time: {{CURRENT_DATE_TIME}}
+3. Use multi_file_read when you need to inspect several files at once
+4. After making changes, verify them by reading the modified section
+5. Use project_summary to understand unfamiliar codebases before diving in
+6. Check git_status before and after edits to track your changes
+7. When searching, use includes filters to narrow results (e.g. ["*.js", "*.ts"])
+8. Keep your explanations concise and technical
+9. Current date/time: {{CURRENT_DATE_TIME}}
 
 Your workspace root is: {{WORKSPACE_ROOT}}`;
+}
 
 export default function AgentComponent() {
   // ── State ────────────────────────────────────────────────────
@@ -124,7 +150,7 @@ export default function AgentComponent() {
     ...SETTINGS_DEFAULTS,
     maxTokens: 16384,
     functionCallingEnabled: true,
-    systemPrompt: AGENT_SYSTEM_PROMPT,
+    systemPrompt: "", // Derived from builtInTools once loaded
   });
 
   const [favoriteKeys, setFavoriteKeys] = useState([]);
@@ -290,6 +316,22 @@ export default function AgentComponent() {
     }
     loadAgenticTools().catch(console.error);
   }, []);
+
+  // ── Derived system prompt from loaded tools ────────────────
+  const agentSystemPrompt = useMemo(
+    () => {
+      const enabledTools = builtInTools.filter((t) => !disabledBuiltIns.has(t.name));
+      return buildAgentSystemPrompt(enabledTools);
+    },
+    [builtInTools, disabledBuiltIns],
+  );
+
+  // Sync derived prompt into settings whenever it changes
+  useEffect(() => {
+    if (agentSystemPrompt) {
+      setSettings((s) => ({ ...s, systemPrompt: agentSystemPrompt }));
+    }
+  }, [agentSystemPrompt]);
 
   // ── Conversation stats for SettingsPanel ──────────────────
   const uniqueModels = useMemo(() => getUniqueModels(messages), [messages]);
