@@ -50,7 +50,7 @@ const TYPE_BADGE_CLASSES = {
  * (user, feedback, project, reference). These are extracted automatically
  * by the SessionSummarizer and stored via AgentMemoryService.
  */
-export default function MemoriesPanel({ project }) {
+export default function MemoriesPanel({ project, refreshKey }) {
   const [memories, setMemories] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,7 @@ export default function MemoriesPanel({ project }) {
 
   useEffect(() => {
     loadMemories();
-  }, [loadMemories]);
+  }, [loadMemories, refreshKey]);
 
   // ── Loading ─────────────────────────────────────────────────
   if (loading) {

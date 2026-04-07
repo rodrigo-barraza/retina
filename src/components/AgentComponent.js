@@ -102,6 +102,7 @@ export default function AgentComponent() {
   const [skills, setSkills] = useState([]);
   const [injectedSkills, setInjectedSkills] = useState([]);
   const [mcpServers, setMcpServers] = useState([]);
+  const [memoriesRefreshKey, setMemoriesRefreshKey] = useState(0);
   const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
     useToolToggles(builtInTools);
   const [settings, setSettings] = useState({
@@ -699,6 +700,8 @@ export default function AgentComponent() {
               });
             } else if (statusData?.message === "skills_injected") {
               setInjectedSkills(statusData.skills || []);
+            } else if (statusData?.message === "memories_updated") {
+              setMemoriesRefreshKey((k) => k + 1);
             }
           },
           onDone: (data) => {
@@ -965,7 +968,7 @@ export default function AgentComponent() {
       )}
 
       {leftTab === "memories" && (
-        <MemoriesPanel project={PROJECT_AGENT} />
+        <MemoriesPanel project={PROJECT_AGENT} refreshKey={memoriesRefreshKey} />
       )}
 
       {leftTab === "mcp" && (
