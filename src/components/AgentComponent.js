@@ -27,6 +27,7 @@ import {
 } from "../utils/utilities.js";
 import { getModalities } from "./HistoryPanel.js";
 import { PROJECT_AGENT, SETTINGS_DEFAULTS } from "../constants.js";
+import { WORKSPACE_ROOT } from "../../secrets.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./AgentComponent.module.css";
 import ChatInputButton from "./ChatInputButton.js";
@@ -98,7 +99,7 @@ const AGENT_SYSTEM_PROMPT = `You are a highly capable coding agent with access t
 5. When searching, use includes filters to narrow results (e.g. ["*.js", "*.ts"])
 6. Current date/time: {{CURRENT_DATE_TIME}}
 
-Your workspace root is: /home/rodrigo/development/sun`;
+Your workspace root is: {{WORKSPACE_ROOT}}`;
 
 export default function AgentComponent() {
   // ── State ────────────────────────────────────────────────────
@@ -414,7 +415,9 @@ export default function AgentComponent() {
       );
 
       await new Promise((resolve, reject) => {
-        const systemPromptText = settings.systemPrompt.replace("{{CURRENT_DATE_TIME}}", new Date().toLocaleString());
+        const systemPromptText = settings.systemPrompt
+          .replace("{{CURRENT_DATE_TIME}}", new Date().toLocaleString())
+          .replace("{{WORKSPACE_ROOT}}", WORKSPACE_ROOT || "");
         const payload = {
           provider: settings.provider,
           model: settings.model,

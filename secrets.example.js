@@ -14,3 +14,6 @@ export const PRISM_WS_URL = "ws://localhost:7777";
 
 // Sun Tools API (unified)
 export const TOOLS_API_URL = "http://localhost:5590";
+
+// Workspace root — must match tools-api and prism secrets
+export const WORKSPACE_ROOT = "";
