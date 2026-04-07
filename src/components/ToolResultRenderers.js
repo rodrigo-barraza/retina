@@ -15,8 +15,10 @@ import {
   ArrowRight,
   File,
   Folder,
+  Monitor,
 } from "lucide-react";
 import MarkdownContent from "./MarkdownContent";
+import PrismService from "../services/PrismService";
 import styles from "./ToolResultRenderers.module.css";
 
 // ─── Helpers ──────────────────────────────────────────────────────────
@@ -549,7 +551,93 @@ function FileMoveRenderer({ result, args }) {
   );
 }
 
-// ── 12. Generic Fallback ──────────────────────────────────────────────
+// ── 12. Browser Action ──────────────────────────────────────────────────────
+
+const BROWSER_ACTION_LABELS = {
+  navigate: "Navigate",
+  screenshot: "Screenshot",
+  click: "Click",
+  type: "Type",
+  scroll: "Scroll",
+  evaluate: "Evaluate JS",
+  get_content: "Get Content",
+  wait: "Wait",
+  close: "Close",
+};
+
+function BrowserActionRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const action = parsed.action || args?.action || "";
+  const label = BROWSER_ACTION_LABELS[action] || action;
+  const hasError = !!parsed.error;
+
+  // Resolve screenshot ref (minio:// or base64 fallback)
+  let screenshotSrc = null;
+  if (parsed.screenshotRef) {
+    screenshotSrc = PrismService.getFileUrl(parsed.screenshotRef);
+  } else if (parsed.screenshot) {
+    screenshotSrc = `data:${parsed.mimeType || "image/png"};base64,${parsed.screenshot}`;
+  }
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <Monitor size={13} />
+        <span className={styles.rendererTitle}>{label}</span>
+        {parsed.url && (
+          <a href={parsed.url} target="_blank" rel="noopener noreferrer" className={styles.searchLink}>
+            {parsed.title || parsed.url}
+          </a>
+        )}
+        {parsed.status && <span className={styles.meta}>{parsed.status}</span>}
+        {hasError && <StatusBadge success={false} label="Error" />}
+        {parsed.sessionId && <span className={styles.meta}>session: {parsed.sessionId}</span>}
+      </div>
+
+      {hasError && <div className={styles.errorText}>{parsed.error}</div>}
+
+      {screenshotSrc && (
+        <div className={styles.browserScreenshot}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={screenshotSrc}
+            alt={`Screenshot of ${parsed.url || "page"}`}
+            className={styles.browserScreenshotImg}
+          />
+        </div>
+      )}
+
+      {parsed.content && (
+        <pre className={styles.codeBlock}>
+          <code>{parsed.content.length > 3000 ? parsed.content.slice(0, 3000) + "\n\u2026" : parsed.content}</code>
+        </pre>
+      )}
+
+      {parsed.result !== undefined && action === "evaluate" && (
+        <pre className={styles.codeBlock}>
+          <code>{String(parsed.result)}</code>
+        </pre>
+      )}
+
+      {action === "click" && parsed.selector && (
+        <div className={styles.meta}>Clicked: <code className={styles.inlineCode}>{parsed.selector}</code></div>
+      )}
+      {action === "type" && parsed.text && (
+        <div className={styles.meta}>
+          Typed into <code className={styles.inlineCode}>{parsed.selector}</code>: &ldquo;{parsed.text}&rdquo;
+          {parsed.pressEnter && " + Enter"}
+        </div>
+      )}
+      {action === "wait" && parsed.waited_for && (
+        <div className={styles.meta}>Waited for: {parsed.waited_for}</div>
+      )}
+    </div>
+  );
+}
+
+// ── 13. Generic Fallback ────────────────────────────────────────────────────
 
 function GenericRenderer({ result }) {
   return <RawResultToggle result={result} />;
@@ -592,6 +680,9 @@ const TOOL_RESULT_REGISTRY = {
 
   // Project
   project_summary:  { Renderer: GenericRenderer },
+
+  // Browser
+  browser_action:   { Renderer: BrowserActionRenderer },
 };
 
 /**

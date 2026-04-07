@@ -63,6 +63,8 @@ const AGENTIC_TOOL_NAMES = new Set([
   "git_log",
   // Project intelligence
   "project_summary",
+  // Browser automation
+  "browser_action",
 ]);
 
 // ── Coding-focused quick prompts (reflect the full toolset)
