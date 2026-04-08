@@ -785,7 +785,16 @@ export default function HomePage({ initialConversationId = null }) {
             model: settings.model,
             messages: [
               { role: "system", content: systemPromptText },
-              ...currentMessages,
+              ...currentMessages
+                .filter((m) => !m.deleted)
+                .map((m) => ({
+                  role: m.role,
+                  content: m.content,
+                  ...(m.images ? { images: m.images } : {}),
+                  ...(m.video ? { video: m.video } : {}),
+                  ...(m.audio ? { audio: m.audio } : {}),
+                  ...(m.pdf ? { pdf: m.pdf } : {}),
+                })),
             ],
             functionCallingEnabled: true,
             enabledTools: allToolSchemas.map(t => t.name),
@@ -803,7 +812,7 @@ export default function HomePage({ initialConversationId = null }) {
           let streamedText = "";
           let streamedThinking = "";
 
-          abortRef.current = PrismService.streamAgentText(payload, {
+          abortRef.current = PrismService.streamText(payload, {
             onChunk: (chunk) => {
               streamedText += chunk;
               setMessages((prev) => {
@@ -1547,7 +1556,16 @@ export default function HomePage({ initialConversationId = null }) {
             model: settings.model,
             messages: [
               { role: "system", content: systemPromptText },
-              ...currentMessages,
+              ...currentMessages
+                .filter((m) => !m.deleted)
+                .map((m) => ({
+                  role: m.role,
+                  content: m.content,
+                  ...(m.images ? { images: m.images } : {}),
+                  ...(m.video ? { video: m.video } : {}),
+                  ...(m.audio ? { audio: m.audio } : {}),
+                  ...(m.pdf ? { pdf: m.pdf } : {}),
+                })),
             ],
             functionCallingEnabled: true,
             enabledTools: allToolSchemas.map(t => t.name),
@@ -1565,7 +1583,7 @@ export default function HomePage({ initialConversationId = null }) {
           let streamedText = "";
           let streamedThinking = "";
 
-          abortRef.current = PrismService.streamAgentText(payload, {
+          abortRef.current = PrismService.streamText(payload, {
             onChunk: (chunk) => {
               streamedText += chunk;
               setMessages((prev) => {

@@ -35,7 +35,6 @@ export const SK_TOOL_MEMORY_BENCHMARKS = "toolMemory:benchmarks";
 
 // ── Application constants ────────────────────────────────────────
 export const MAX_TOOL_ITERATIONS = 25;
-export const PROJECT_CONSOLE = "retina-console";
 export const PROJECT_AGENT = "retina-agent";
 
 // ── Raw localStorage keys (no namespace prefix) ─────────────────
@@ -49,7 +48,7 @@ export const LS_WORKFLOW_VIEWS = "workflow-views";
 export const LS_ADMIN_PROJECT_FILTER = "admin:projectFilter";
 export const LS_DATE_RANGE = "retina-date-range";
 
-// ── Settings defaults (shared by HomePage, Console, admin) ──────
+// ── Settings defaults (shared by HomePage, Agent, admin) ──────
 export const SETTINGS_DEFAULTS = {
   provider: "",
   model: "",

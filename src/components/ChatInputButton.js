@@ -73,7 +73,7 @@ const ICON_MAP = {
 };
 
 /**
- * Unified input button for the ChatArea / ConsoleComponent input row.
+ * Unified input button for the ChatArea input row.
  *
  * @param {"button"|"submit"} [variant="button"] — "submit" renders the accent-colored send/stop button.
  * @param {boolean} [isGenerating] — When variant="submit", shows the stop icon with a conic-gradient spinner.

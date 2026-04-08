@@ -19,7 +19,6 @@ import MessageList from "./MessageList";
 import LiveSessionService from "../services/LiveSessionService";
 
 import styles from "./ChatArea.module.css";
-import consoleStyles from "./ConsoleComponent.module.css";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import { useEffect, useRef, useState } from "react";
 import PrismService from "../services/PrismService";
@@ -852,7 +851,7 @@ export default function ChatArea({
             {fcRandomPrompts.map((prompt) => (
               <button
                 key={prompt}
-                className={consoleStyles.quickPrompt}
+                className={styles.quickPrompt}
                 onClick={() => {
                   setInput(prompt);
                   textareaRef.current?.focus();

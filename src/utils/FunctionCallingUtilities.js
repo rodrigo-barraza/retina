@@ -1,7 +1,7 @@
 /**
  * Shared utilities for function calling (FC) message expansion.
  *
- * Both HomePage.js and ConsoleComponent.js need to expand assistant messages
+ * Both HomePage.js and ChatArea.js need to expand assistant messages
  * with toolCalls into the [assistant(tool_calls), tool(result), ...] format
  * expected by the OpenAI Chat Completions spec. This module centralises that
  * logic to avoid duplication.
@@ -23,7 +23,7 @@ export function sanitizeToolName(name) {
 
 /**
  * Build a merged array of tool schemas from built-in and custom tools.
- * Shared between HomePage and ConsoleComponent.
+ * Shared between HomePage and ChatArea.
  *
  * @param {Array}  builtInTools     — server-provided built-in tool schemas
  * @param {Set}    disabledBuiltIns — names of disabled built-in tools
