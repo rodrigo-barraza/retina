@@ -561,6 +561,7 @@ const BROWSER_ACTION_LABELS = {
   scroll: "Scroll",
   evaluate: "Evaluate JS",
   get_content: "Get Content",
+  get_elements: "Get Elements",
   wait: "Wait",
   close: "Close",
 };
@@ -632,6 +633,22 @@ function BrowserActionRenderer({ result, args }) {
       )}
       {action === "wait" && parsed.waited_for && (
         <div className={styles.meta}>Waited for: {parsed.waited_for}</div>
+      )}
+      {action === "get_elements" && parsed.elements && (
+        <div className={styles.dirList}>
+          {parsed.elements.slice(0, 30).map((el, i) => (
+            <div key={i} className={styles.dirEntry}>
+              <code className={styles.inlineCode}>{el.selector}</code>
+              <span className={styles.meta}>{el.tag}</span>
+              {el.text && <span>{el.text}</span>}
+              {el.placeholder && <span className={styles.meta}>placeholder: {el.placeholder}</span>}
+              {el.type && <span className={styles.meta}>type={el.type}</span>}
+            </div>
+          ))}
+          {parsed.elements.length > 30 && (
+            <div className={styles.meta}>… and {parsed.elements.length - 30} more elements</div>
+          )}
+        </div>
       )}
     </div>
   );
