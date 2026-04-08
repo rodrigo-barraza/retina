@@ -114,7 +114,7 @@ export default function AgentComponent() {
   const { saveModel, restoreModel } = useModelMemory(SK_MODEL_MEMORY_AGENT);
   const [settings, setSettings] = useState({
     ...SETTINGS_DEFAULTS,
-    maxTokens: 16384,
+    maxTokens: 64000,
     functionCallingEnabled: true,
   });
 
