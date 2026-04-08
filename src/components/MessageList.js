@@ -645,7 +645,7 @@ export default function MessageList({
       observer.disconnect();
       setIsUserMsgScrolledPast(false);
     };
-  }, [lastUserMsgIndex, messages]);
+  }, [lastUserMsgIndex]);
 
   // Derive sticky message data from the boolean flag
   const stickyUserMsg = useMemo(() => {
