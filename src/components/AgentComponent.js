@@ -28,8 +28,9 @@ import {
   getConversationCost,
   getConversationTokenStats,
   getUsedTools,
+  shuffleArray,
 } from "../utils/utilities.js";
-import { getModalities } from "./HistoryPanel.js";
+import { getModalities } from "../utils/utilities.js";
 import { PROJECT_AGENT, SETTINGS_DEFAULTS, SK_MODEL_MEMORY_AGENT, SK_TOOL_MEMORY_AGENT } from "../constants.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./AgentComponent.module.css";
@@ -340,11 +341,7 @@ export default function AgentComponent() {
   const [randomPrompts, setRandomPrompts] = useState([]);
 
   useEffect(() => {
-    const pool = [...AGENT_PROMPTS];
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
+    const pool = shuffleArray(AGENT_PROMPTS);
     setRandomPrompts(pool.slice(0, 5));
   }, [conversationId]);
 

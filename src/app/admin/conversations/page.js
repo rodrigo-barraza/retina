@@ -23,7 +23,8 @@ import MessageList, {
 } from "../../../components/MessageList";
 import SettingsPanel from "../../../components/SettingsPanel";
 import ParametersPanelComponent from "../../../components/ParametersPanelComponent";
-import HistoryPanel, { getModalities } from "../../../components/HistoryPanel";
+import HistoryPanel from "../../../components/HistoryPanel";
+import { getModalities } from "../../../utils/utilities";
 
 import ThreePanelLayout from "../../../components/ThreePanelLayout";
 import SelectDropdown from "../../../components/SelectDropdown";

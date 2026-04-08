@@ -6,7 +6,7 @@ import styles from "../app/page.module.css";
 import PrismService from "../services/PrismService";
 import AudioPlayerService from "../services/AudioPlayerService";
 import { prepareDisplayMessages } from "./MessageList";
-import { getModalities } from "./HistoryPanel";
+import { getModalities } from "../utils/utilities";
 import StorageService from "../services/StorageService";
 import {
   buildToolSchemas,
@@ -427,53 +427,60 @@ export default function HomePage({ initialConversationId = null }) {
     [loadCustomTools],
   );
 
+  // ── Shared conversation restore logic ────────────────────────
+  // Used by URL-load and history-click to avoid duplicating the
+  // message preparation, settings detection, and toggle restoration.
+  const restoreConversation = useCallback((full) => {
+    setActiveId(full.id);
+    setTitle(full.title);
+    const displayMessages = prepareDisplayMessages(full.messages);
+    setMessages(displayMessages);
+    setOriginalMessageCount(displayMessages.length);
+    setOriginalTotalCost(
+      full.totalCost ||
+        displayMessages.reduce((s, m) => s + (m.estimatedCost || 0), 0),
+    );
+    skipSystemPromptSave.current = true;
+
+    // Restore settings — use saved settings, or fall back to
+    // provider/model from the last assistant message (for older conversations).
+    let restoredSettings = full.settings || {};
+    if (!restoredSettings.provider && full.messages?.length) {
+      const lastAssistant = [...(full.messages || [])]
+        .reverse()
+        .find((m) => m.role === "assistant");
+      if (lastAssistant) {
+        restoredSettings = {
+          ...restoredSettings,
+          provider: lastAssistant.provider || "",
+          model: lastAssistant.model || "",
+        };
+      }
+    }
+
+    const detectedToggles = detectToolTogglesFromMessages(full.messages);
+    setSettings((s) => ({
+      ...s,
+      ...TOOL_TOGGLE_DEFAULTS,
+      ...restoredSettings,
+      ...detectedToggles,
+      systemPrompt: full.systemPrompt ?? "",
+    }));
+  }, []);
+
   // Load conversation from URL path on mount
   const urlLoadedRef = useRef(false);
   useEffect(() => {
     if (initialConversationId && !urlLoadedRef.current) {
       urlLoadedRef.current = true;
       PrismService.getConversation(initialConversationId)
-        .then((full) => {
-          setActiveId(full.id);
-          setTitle(full.title);
-          const displayMessages = prepareDisplayMessages(full.messages);
-          setMessages(displayMessages);
-          setOriginalMessageCount(displayMessages.length);
-          setOriginalTotalCost(
-            full.totalCost ||
-              displayMessages.reduce((s, m) => s + (m.estimatedCost || 0), 0),
-          );
-          skipSystemPromptSave.current = true;
-
-          let restoredSettings = full.settings || {};
-          if (!restoredSettings.provider && full.messages?.length) {
-            const lastAssistant = [...(full.messages || [])]
-              .reverse()
-              .find((m) => m.role === "assistant");
-            if (lastAssistant) {
-              restoredSettings = {
-                ...restoredSettings,
-                provider: lastAssistant.provider || "",
-                model: lastAssistant.model || "",
-              };
-            }
-          }
-
-          const detectedToggles = detectToolTogglesFromMessages(full.messages);
-          setSettings((s) => ({
-            ...s,
-            ...TOOL_TOGGLE_DEFAULTS,
-            ...restoredSettings,
-            ...detectedToggles,
-            systemPrompt: full.systemPrompt ?? "",
-          }));
-        })
+        .then((full) => restoreConversation(full))
         .catch(() => {
           setActiveId(null);
           updateUrl(null);
         });
     }
-  }, [initialConversationId]);
+  }, [initialConversationId, restoreConversation]);
 
   const loadConversations = async () => {
     try {
@@ -528,45 +535,11 @@ export default function HomePage({ initialConversationId = null }) {
     if (conv.id === activeId) return;
     try {
       const full = await PrismService.getConversation(conv.id);
-      setActiveId(full.id);
       liveConvIdRef.current = full.id;
       liveConvCreatedRef.current = true; // Doc exists in DB
       livePersistChainRef.current = Promise.resolve();
       updateUrl(full.id);
-      setTitle(full.title);
-      const displayMessages = prepareDisplayMessages(full.messages);
-      setMessages(displayMessages);
-      setOriginalMessageCount(displayMessages.length);
-      setOriginalTotalCost(
-        full.totalCost ||
-          displayMessages.reduce((s, m) => s + (m.estimatedCost || 0), 0),
-      );
-      skipSystemPromptSave.current = true;
-
-      // Restore settings — use saved settings, or fall back to
-      // provider/model from the last assistant message (for older conversations).
-      let restoredSettings = full.settings || {};
-      if (!restoredSettings.provider && full.messages?.length) {
-        const lastAssistant = [...(full.messages || [])]
-          .reverse()
-          .find((m) => m.role === "assistant");
-        if (lastAssistant) {
-          restoredSettings = {
-            ...restoredSettings,
-            provider: lastAssistant.provider || "",
-            model: lastAssistant.model || "",
-          };
-        }
-      }
-
-      const detectedToggles = detectToolTogglesFromMessages(full.messages);
-      setSettings((s) => ({
-        ...s,
-        ...TOOL_TOGGLE_DEFAULTS,
-        ...restoredSettings,
-        ...detectedToggles,
-        systemPrompt: full.systemPrompt ?? "",
-      }));
+      restoreConversation(full);
     } catch (err) {
       console.error(err);
     }

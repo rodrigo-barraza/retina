@@ -1,5 +1,19 @@
 import { DateTime } from "luxon";
 
+/**
+ * Build the JSON body for LM Studio load requests.
+ * Maps camelCase options to the snake_case API contract.
+ * Used by PrismService.loadLmStudioModel, loadLmStudioModelStream,
+ * and IrisService.loadLmStudioModel.
+ */
+export function buildLmStudioLoadBody(model, options = {}) {
+  const body = { model };
+  if (options.contextLength != null) body.context_length = options.contextLength;
+  if (options.flashAttention != null) body.flash_attention = options.flashAttention;
+  if (options.offloadKvCache != null) body.offload_kv_cache_to_gpu = options.offloadKvCache;
+  return body;
+}
+
 export function formatNumber(n) {
   if (n === null || n === undefined) return "0";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
@@ -208,3 +222,133 @@ export function getUsedTools(messages) {
   }
   return [...counts.entries()].map(([name, count]) => ({ name, count }));
 }
+
+/**
+ * Shuffle an array in-place using the Fisher–Yates algorithm.
+ * Returns a new shuffled copy — does not mutate the original.
+ */
+export function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * Derive modality flags from a conversation's messages array.
+ * Returns an object with boolean flags for each modality
+ * (textIn, textOut, imageIn, imageOut, audioIn, audioOut,
+ * videoIn, docIn, webSearch, codeExecution, functionCalling, thinking).
+ */
+export function getModalities(messages) {
+  const modalities = {
+    textIn: false,
+    textOut: false,
+    imageIn: false,
+    imageOut: false,
+    audioIn: false,
+    audioOut: false,
+    videoIn: false,
+    docIn: false,
+    webSearch: false,
+    codeExecution: false,
+    functionCalling: false,
+    thinking: false,
+  };
+
+  const WEB_SEARCH_NAMES = new Set(["web_search", "web_search_preview"]);
+  const CODE_EXEC_NAMES = new Set(["code_execution"]);
+
+  for (const m of messages || []) {
+    const isUser = m.role === "user";
+    const isAssistant = m.role === "assistant";
+    if (m.content && (isUser || isAssistant)) {
+      if (isUser && !m.liveTranscription) modalities.textIn = true;
+      if (isAssistant) modalities.textOut = true;
+    }
+    // Tool calls are structured text output
+    if (isAssistant && m.toolCalls?.length > 0) {
+      modalities.textOut = true;
+    }
+    if (m.audio) {
+      if (isUser) modalities.audioIn = true;
+      if (isAssistant) modalities.audioOut = true;
+    }
+    if (m.images?.length > 0) {
+      for (const ref of m.images) {
+        if (typeof ref !== "string") continue;
+        const isDoc =
+          ref.startsWith("data:application/") ||
+          ref.startsWith("data:text/") ||
+          ref.endsWith(".pdf") ||
+          ref.endsWith(".txt");
+        const isVideo =
+          ref.startsWith("data:video/") ||
+          [".mp4", ".mov", ".avi", ".webm"].some((ext) => ref.endsWith(ext));
+        if (isDoc) {
+          modalities.docIn = true;
+        } else if (isVideo) {
+          if (isUser) modalities.videoIn = true;
+        } else {
+          // Actual image ref
+          if (isUser) modalities.imageIn = true;
+          if (isAssistant) modalities.imageOut = true;
+        }
+      }
+    }
+    // Standalone image field (not from images array)
+    if (m.image && !m.images?.length) {
+      if (isUser) modalities.imageIn = true;
+      if (isAssistant) modalities.imageOut = true;
+    }
+    if (m.documents?.length > 0) {
+      modalities.docIn = true;
+    }
+
+    // Classify tool calls by type
+    if (m.toolCalls?.length > 0) {
+      for (const tc of m.toolCalls) {
+        const name = (tc.name || "").toLowerCase();
+        if (WEB_SEARCH_NAMES.has(name)) {
+          modalities.webSearch = true;
+        } else if (CODE_EXEC_NAMES.has(name)) {
+          modalities.codeExecution = true;
+        } else {
+          modalities.functionCalling = true;
+        }
+      }
+    }
+
+    // Detect inline web search results (from streaming)
+    if (
+      isAssistant &&
+      typeof m.content === "string" &&
+      m.content.includes("> **Sources:**")
+    ) {
+      modalities.webSearch = true;
+    }
+
+    // Detect inline code execution blocks (from streaming)
+    if (
+      isAssistant &&
+      typeof m.content === "string" &&
+      m.content.includes("```exec-")
+    ) {
+      modalities.codeExecution = true;
+    }
+
+    // Tool result messages → function calling
+    if (m.role === "tool") {
+      modalities.functionCalling = true;
+    }
+
+    // Detect thinking / reasoning
+    if (isAssistant && m.thinking) {
+      modalities.thinking = true;
+    }
+  }
+  return modalities;
+}
+

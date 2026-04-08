@@ -1,5 +1,6 @@
 import { PRISM_URL, PROJECT_NAME } from "../../config.js";
 import { subscribe as sseSubscribe } from "./SSEManager";
+import { buildLmStudioLoadBody } from "../utils/utilities.js";
 
 const API_BASE = PRISM_URL;
 
@@ -160,10 +161,7 @@ export default class IrisService {
   }
 
   static async loadLmStudioModel(model, options = {}) {
-    const body = { model };
-    if (options.contextLength != null) body.context_length = options.contextLength;
-    if (options.flashAttention != null) body.flash_attention = options.flashAttention;
-    if (options.offloadKvCache != null) body.offload_kv_cache_to_gpu = options.offloadKvCache;
+    const body = buildLmStudioLoadBody(model, options);
     return fetchJSON("/lm-studio/load", {
       method: "POST",
       body: JSON.stringify(body),

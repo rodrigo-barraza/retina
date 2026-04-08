@@ -22,7 +22,7 @@ import styles from "./ChatArea.module.css";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import { useEffect, useRef, useState } from "react";
 import PrismService from "../services/PrismService";
-import { formatContextTokens } from "../utils/utilities";
+import { shuffleArray } from "../utils/utilities";
 
 import ToggleSwitchComponent from "./ToggleSwitch";
 import ChatInputButton from "./ChatInputButton";
@@ -134,56 +134,6 @@ function MediaPreview({ dataUrl: rawDataUrl, onClick, compact = false }) {
   );
 }
 
-function getAllModelsFromConfig(config) {
-  if (!config) return [];
-  const seen = new Map();
-  const sections = ["textToText", "textToImage", "textToSpeech", "audioToText"];
-  for (const section of sections) {
-    const modelsMap = config[section]?.models || {};
-    for (const [provider, models] of Object.entries(modelsMap)) {
-      for (const model of models) {
-        const key = `${provider}-${model.name}`;
-        if (!seen.has(key)) {
-          seen.set(key, { ...model, provider });
-        }
-      }
-    }
-  }
-  return [...seen.values()];
-}
-
-function _getOutputTypesForInput(config, inputType) {
-  const allModels = getAllModelsFromConfig(config);
-  const outputSet = new Set();
-  for (const m of allModels) {
-    if (m.inputTypes?.includes(inputType)) {
-      for (const out of m.outputTypes || []) {
-        outputSet.add(out);
-      }
-    }
-  }
-  return [...outputSet];
-}
-
-function _formatContextLength(tokens) {
-  return formatContextTokens(tokens);
-}
-
-const ARENA_COLUMNS = [
-  { key: "text", label: "Text" },
-  { key: "code", label: "Code" },
-  { key: "vision", label: "Vision" },
-  { key: "document", label: "Document" },
-  { key: "image", label: "Image" },
-  { key: "imageEdit", label: "Image Edit" },
-  { key: "search", label: "Search" },
-];
-
-function _getVisibleArenaColumns(models) {
-  return ARENA_COLUMNS.filter((col) =>
-    models.some((m) => m.arena && m.arena[col.key] != null),
-  );
-}
 
 export default function ChatArea({
   messages,
@@ -332,7 +282,6 @@ export default function ChatArea({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showToolsBubble]);
-  const [_modelSort, _setModelSort] = useState({ key: null, dir: "desc" });
   const nonTextTypes = supportedInputTypes.filter((t) => t !== "text");
   const hasFileInput = !isTTSModel && nonTextTypes.length > 0;
   const imageOnly = nonTextTypes.length === 1 && nonTextTypes[0] === "image";
@@ -616,11 +565,7 @@ export default function ChatArea({
   // Shuffle FC prompt suggestions on new chat
   useEffect(() => {
     if (functionCallingEnabled) {
-      const pool = [...ALL_CONSOLE_PROMPTS];
-      for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-      }
+      const pool = shuffleArray(ALL_CONSOLE_PROMPTS);
       setFcRandomPrompts(pool.slice(0, 5));
     }
   }, [functionCallingEnabled, newChatKey]);

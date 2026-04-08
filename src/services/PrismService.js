@@ -1,6 +1,7 @@
 // API Service for communicating with Prism AI Gateway
 
 import { PRISM_URL, PROJECT_NAME } from "../../config.js";
+import { buildLmStudioLoadBody } from "../utils/utilities.js";
 
 const API_BASE = PRISM_URL;
 
@@ -572,33 +573,29 @@ export default class PrismService {
    * @param {object} callbacks - { onChunk, onThinking, onImage(data, mimeType, minioRef), onExecutableCode, onCodeExecutionResult, onWebSearchResult, onStatus, onDone, onError }
    * @returns {Function} abort - Call to cancel the stream early
    */
-  static streamText(payload, callbacks) {
-    const {
-      onChunk,
-      onThinking,
-      onImage,
-      onAudio,
-      onExecutableCode,
-      onCodeExecutionResult,
-      onWebSearchResult,
-      onToolCall,
-      onToolExecution,
-      onToolOutput,
-      onApprovalRequired,
-      onPlanProposal,
-      onStatus,
-      onDone,
-      onError,
-    } = callbacks;
-
+  /**
+   * Generic SSE stream helper — handles fetch, ReadableStream parsing, and
+   * callback dispatch for any SSE endpoint.  All public stream* methods
+   * delegate here so the protocol logic lives in exactly one place.
+   *
+   * @param {string}  endpoint  - URL path (e.g. "/chat", "/agent")
+   * @param {object}  [options]
+   * @param {string}  [options.method="POST"]
+   * @param {object}  [options.body]       - JSON payload (omit for GET)
+   * @param {object}  callbacks            - Map of event handlers
+   * @param {Function} callbacks.onError   - Required for error delivery
+   * @returns {Function} abort — call to cancel the stream
+   */
+  static _streamSSE(endpoint, { method = "POST", body } = {}, callbacks = {}) {
+    const { onError } = callbacks;
     const controller = new AbortController();
 
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/chat`, {
-          method: "POST",
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+          method,
           headers: getHeaders(),
-          body: JSON.stringify(payload),
+          ...(body && { body: JSON.stringify(body) }),
           signal: controller.signal,
         });
 
@@ -624,180 +621,12 @@ export default class PrismService {
 
           for (const line of lines) {
             if (!line.startsWith("data: ")) continue;
-            const json = line.slice(6); // Remove "data: " prefix
-            if (!json) continue;
-
-            try {
-              const data = JSON.parse(json);
-              if (data.type === "chunk" && onChunk) {
-                onChunk(data.content);
-              } else if (data.type === "thinking" && onThinking) {
-                onThinking(data.content);
-              } else if (data.type === "image" && onImage) {
-                onImage(data.data, data.mimeType, data.minioRef);
-              } else if (data.type === "executableCode" && onExecutableCode) {
-                onExecutableCode(data.code, data.language);
-              } else if (
-                data.type === "codeExecutionResult" &&
-                onCodeExecutionResult
-              ) {
-                onCodeExecutionResult(data.output, data.outcome);
-              } else if (data.type === "webSearchResult" && onWebSearchResult) {
-                onWebSearchResult(data.results);
-              } else if (data.type === "audio" && onAudio) {
-                onAudio(data.data, data.mimeType);
-              } else if (data.type === "toolCall" && onToolCall) {
-                onToolCall({
-                  id: data.id,
-                  name: data.name,
-                  args: data.args,
-                  result: data.result,
-                  status: data.status,
-                  thoughtSignature: data.thoughtSignature,
-                });
-              } else if (data.type === "tool_execution" && onToolExecution) {
-                onToolExecution(data);
-              } else if (data.type === "tool_output" && onToolOutput) {
-                onToolOutput(data);
-              } else if (data.type === "approval_required" && onApprovalRequired) {
-                onApprovalRequired(data);
-              } else if (data.type === "plan_proposal" && onPlanProposal) {
-                onPlanProposal(data);
-              } else if (data.type === "status" && onStatus) {
-                onStatus(data);
-              } else if (data.type === "done" && onDone) {
-                onDone(data);
-              } else if (data.type === "error" && onError) {
-                onError(new Error(data.message));
-              }
-            } catch (parseErr) {
-              // Log parse errors on non-empty data lines for diagnosis
-              if (json.length > 0) {
-                console.warn(
-                  `[PrismService] SSE JSON parse failed (${json.length} chars):`,
-                  parseErr.message,
-                  json.slice(0, 120),
-                );
-              }
-            }
-          }
-        }
-      } catch (err) {
-        if (err.name === "AbortError") return; // Cancelled by caller
-        if (onError) onError(err);
-      }
-    })();
-
-    // Return abort function (same interface as the old ws.close())
-    return () => controller.abort();
-  }
-
-  /**
-   * Stream agentic text generation via SSE — hits the /agent endpoint
-   * which enables the AgenticLoopService (tool orchestration, planning,
-   * approval gates, etc.). Identical callback interface to streamText().
-   *
-   * @param {object} payload - { provider, model, messages, enabledTools?, temperature?, maxTokens?, conversationId?, ... }
-   * @param {object} callbacks - { onChunk, onThinking, onToolExecution, onToolOutput, onApprovalRequired, onPlanProposal, onStatus, onDone, onError }
-   * @returns {Function} abort - Call to cancel the stream early
-   */
-  static streamAgentText(payload, callbacks) {
-    const {
-      onChunk,
-      onThinking,
-      onImage,
-      onAudio,
-      onExecutableCode,
-      onCodeExecutionResult,
-      onWebSearchResult,
-      onToolCall,
-      onToolExecution,
-      onToolOutput,
-      onApprovalRequired,
-      onPlanProposal,
-      onStatus,
-      onDone,
-      onError,
-    } = callbacks;
-
-    const controller = new AbortController();
-
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/agent`, {
-          method: "POST",
-          headers: getHeaders(),
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          if (onError) onError(new Error(err.message || `HTTP ${res.status}`));
-          return;
-        }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-
-          const lines = buffer.split("\n");
-          buffer = lines.pop();
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
             const json = line.slice(6);
             if (!json) continue;
 
             try {
               const data = JSON.parse(json);
-              if (data.type === "chunk" && onChunk) {
-                onChunk(data.content);
-              } else if (data.type === "thinking" && onThinking) {
-                onThinking(data.content);
-              } else if (data.type === "image" && onImage) {
-                onImage(data.data, data.mimeType, data.minioRef);
-              } else if (data.type === "executableCode" && onExecutableCode) {
-                onExecutableCode(data.code, data.language);
-              } else if (
-                data.type === "codeExecutionResult" &&
-                onCodeExecutionResult
-              ) {
-                onCodeExecutionResult(data.output, data.outcome);
-              } else if (data.type === "webSearchResult" && onWebSearchResult) {
-                onWebSearchResult(data.results);
-              } else if (data.type === "audio" && onAudio) {
-                onAudio(data.data, data.mimeType);
-              } else if (data.type === "toolCall" && onToolCall) {
-                onToolCall({
-                  id: data.id,
-                  name: data.name,
-                  args: data.args,
-                  result: data.result,
-                  status: data.status,
-                  thoughtSignature: data.thoughtSignature,
-                });
-              } else if (data.type === "tool_execution" && onToolExecution) {
-                onToolExecution(data);
-              } else if (data.type === "tool_output" && onToolOutput) {
-                onToolOutput(data);
-              } else if (data.type === "approval_required" && onApprovalRequired) {
-                onApprovalRequired(data);
-              } else if (data.type === "plan_proposal" && onPlanProposal) {
-                onPlanProposal(data);
-              } else if (data.type === "status" && onStatus) {
-                onStatus(data);
-              } else if (data.type === "done" && onDone) {
-                onDone(data);
-              } else if (data.type === "error" && onError) {
-                onError(new Error(data.message));
-              }
+              PrismService._dispatchSSE(data, callbacks);
             } catch (parseErr) {
               if (json.length > 0) {
                 console.warn(
@@ -816,6 +645,115 @@ export default class PrismService {
     })();
 
     return () => controller.abort();
+  }
+
+  /**
+   * Dispatch a single parsed SSE event object to the matching callback.
+   * Centralises the type → handler mapping shared by chat, agent, and
+   * benchmark streams.
+   */
+  static _dispatchSSE(data, callbacks) {
+    const {
+      onChunk, onThinking, onImage, onAudio,
+      onExecutableCode, onCodeExecutionResult, onWebSearchResult,
+      onToolCall, onToolExecution, onToolOutput,
+      onApprovalRequired, onPlanProposal,
+      onRunInfo, onModelStart, onModelComplete, onRunComplete,
+      onStatus, onDone, onError,
+    } = callbacks;
+
+    switch (data.type) {
+      case "chunk":
+        onChunk?.(data.content);
+        break;
+      case "thinking":
+        onThinking?.(data.content);
+        break;
+      case "image":
+        onImage?.(data.data, data.mimeType, data.minioRef);
+        break;
+      case "audio":
+        onAudio?.(data.data, data.mimeType);
+        break;
+      case "executableCode":
+        onExecutableCode?.(data.code, data.language);
+        break;
+      case "codeExecutionResult":
+        onCodeExecutionResult?.(data.output, data.outcome);
+        break;
+      case "webSearchResult":
+        onWebSearchResult?.(data.results);
+        break;
+      case "toolCall":
+        onToolCall?.({
+          id: data.id,
+          name: data.name,
+          args: data.args,
+          result: data.result,
+          status: data.status,
+          thoughtSignature: data.thoughtSignature,
+        });
+        break;
+      case "tool_execution":
+        onToolExecution?.(data);
+        break;
+      case "tool_output":
+        onToolOutput?.(data);
+        break;
+      case "approval_required":
+        onApprovalRequired?.(data);
+        break;
+      case "plan_proposal":
+        onPlanProposal?.(data);
+        break;
+      // Benchmark-specific events
+      case "run_info":
+        onRunInfo?.(data);
+        break;
+      case "model_start":
+        onModelStart?.(data);
+        break;
+      case "model_complete":
+        onModelComplete?.(data);
+        break;
+      case "run_complete":
+        onRunComplete?.(data);
+        break;
+      case "status":
+        onStatus?.(data);
+        break;
+      case "done":
+        onDone?.(data);
+        break;
+      case "error":
+        onError?.(new Error(data.message));
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Stream text generation via SSE (Server-Sent Events).
+   * @param {object} payload - { provider, model, messages, temperature?, maxTokens?, tools?, conversationId?, conversationMeta? }
+   * @param {object} callbacks - { onChunk, onThinking, onImage(data, mimeType, minioRef), onExecutableCode, onCodeExecutionResult, onWebSearchResult, onStatus, onDone, onError }
+   * @returns {Function} abort - Call to cancel the stream early
+   */
+  static streamText(payload, callbacks) {
+    return PrismService._streamSSE("/chat", { body: payload }, callbacks);
+  }
+
+  /**
+   * Stream agentic text generation via SSE — hits the /agent endpoint
+   * which enables the AgenticLoopService (tool orchestration, planning,
+   * approval gates, etc.). Identical callback interface to streamText().
+   *
+   * @param {object} payload - { provider, model, messages, enabledTools?, temperature?, maxTokens?, conversationId?, ... }
+   * @param {object} callbacks - { onChunk, onThinking, onToolExecution, onToolOutput, onApprovalRequired, onPlanProposal, onStatus, onDone, onError }
+   * @returns {Function} abort - Call to cancel the stream early
+   */
+  static streamAgentText(payload, callbacks) {
+    return PrismService._streamSSE("/agent", { body: payload }, callbacks);
   }
 
   /**
@@ -1043,11 +981,7 @@ export default class PrismService {
    * @returns {Promise<object>}
    */
   static async loadLmStudioModel(model, options = {}) {
-    const body = { model };
-    if (options.contextLength != null) body.context_length = options.contextLength;
-    if (options.flashAttention != null) body.flash_attention = options.flashAttention;
-    if (options.offloadKvCache != null) body.offload_kv_cache_to_gpu = options.offloadKvCache;
-    return PrismService._request("/lm-studio/load", { body });
+    return PrismService._request("/lm-studio/load", { body: buildLmStudioLoadBody(model, options) });
   }
 
   /**
@@ -1084,10 +1018,7 @@ export default class PrismService {
     const { onProgress, onComplete, onError } = callbacks;
     const controller = new AbortController();
 
-    const body = { model };
-    if (options.contextLength != null) body.context_length = options.contextLength;
-    if (options.flashAttention != null) body.flash_attention = options.flashAttention;
-    if (options.offloadKvCache != null) body.offload_kv_cache_to_gpu = options.offloadKvCache;
+    const body = buildLmStudioLoadBody(model, options);
 
     (async () => {
       // Client-side synthetic progress (asymptotic: approaches 95% over ~15s)
@@ -1206,75 +1137,15 @@ export default class PrismService {
    * Stream a benchmark run via SSE, receiving per-model progress events.
    * @param {string} id - Benchmark ID
    * @param {Array}  [models] - Optional array of { provider, model }
-   * @param {object} callbacks - { onModelStart, onModelComplete, onRunComplete, onError }
+   * @param {object} callbacks - { onRunInfo, onModelStart, onModelComplete, onRunComplete, onError }
    * @returns {Function} abort — call to cancel the stream
    */
   static streamBenchmarkRun(id, models, callbacks = {}) {
-    const { onRunInfo, onModelStart, onModelComplete, onRunComplete, onError } = callbacks;
-    const controller = new AbortController();
-
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/benchmark/${id}/run`, {
-          method: "POST",
-          headers: getHeaders(),
-          body: JSON.stringify(models ? { models } : {}),
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          if (onError) onError(new Error(err.message || `HTTP ${res.status}`));
-          return;
-        }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop();
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const json = line.slice(6);
-            if (!json) continue;
-
-            try {
-              const data = JSON.parse(json);
-              if (data.type === "run_info" && onRunInfo) {
-                onRunInfo(data);
-              } else if (data.type === "model_start" && onModelStart) {
-                onModelStart(data);
-              } else if (data.type === "model_complete" && onModelComplete) {
-                onModelComplete(data);
-              } else if (data.type === "run_complete" && onRunComplete) {
-                onRunComplete(data);
-              } else if (data.type === "error" && onError) {
-                onError(new Error(data.message));
-              }
-            } catch (parseErr) {
-              if (json.length > 0) {
-                console.warn(
-                  `[PrismService] Benchmark SSE parse failed:`,
-                  parseErr.message,
-                );
-              }
-            }
-          }
-        }
-      } catch (err) {
-        if (err.name === "AbortError") return;
-        if (onError) onError(err);
-      }
-    })();
-
-    return () => controller.abort();
+    return PrismService._streamSSE(
+      `/benchmark/${id}/run`,
+      { body: models ? { models } : {} },
+      callbacks,
+    );
   }
 
   /**
@@ -1331,74 +1202,15 @@ export default class PrismService {
    * Follow an in-progress benchmark run via SSE.
    * Replays completed results first, then streams live events.
    * @param {string} id - Benchmark ID
-   * @param {object} callbacks - { onModelStart, onModelComplete, onRunComplete, onError }
+   * @param {object} callbacks - { onRunInfo, onModelStart, onModelComplete, onRunComplete, onError }
    * @returns {Function} abort — call to disconnect
    */
   static followBenchmarkRun(id, callbacks = {}) {
-    const { onRunInfo, onModelStart, onModelComplete, onRunComplete, onError } = callbacks;
-    const controller = new AbortController();
-
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/benchmark/${id}/follow`, {
-          method: "GET",
-          headers: getHeaders(),
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          // No active run or server error
-          if (onError) onError(new Error(`HTTP ${res.status}`));
-          return;
-        }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop();
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const json = line.slice(6);
-            if (!json) continue;
-
-            try {
-              const data = JSON.parse(json);
-              if (data.type === "run_info" && onRunInfo) {
-                onRunInfo(data);
-              } else if (data.type === "model_start" && onModelStart) {
-                onModelStart(data);
-              } else if (data.type === "model_complete" && onModelComplete) {
-                onModelComplete(data);
-              } else if (data.type === "run_complete" && onRunComplete) {
-                onRunComplete(data);
-              } else if (data.type === "error" && onError) {
-                onError(new Error(data.message));
-              }
-            } catch (parseErr) {
-              if (json.length > 0) {
-                console.warn(
-                  `[PrismService] Benchmark follow SSE parse failed:`,
-                  parseErr.message,
-                );
-              }
-            }
-          }
-        }
-      } catch (err) {
-        if (err.name === "AbortError") return;
-        if (onError) onError(err);
-      }
-    })();
-
-    return () => controller.abort();
+    return PrismService._streamSSE(
+      `/benchmark/${id}/follow`,
+      { method: "GET" },
+      callbacks,
+    );
   }
 
   // ---------------------------------------------------------------------------
