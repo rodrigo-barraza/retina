@@ -224,7 +224,7 @@ async function executeModelNode(node, inputData, { onNodeContentUpdate, toolSche
       }),
     };
 
-    // Route through /agents for tool-enabled runs, /chat for simple text
+    // Route through /agent for tool-enabled runs, /chat for simple text
     const result = toolSchemas !== null
       ? await PrismService.generateAgentText(generatePayload)
       : await PrismService.generateText(generatePayload);

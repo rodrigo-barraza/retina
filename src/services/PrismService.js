@@ -543,13 +543,13 @@ export default class PrismService {
 
   /**
    * Generate text via the agentic endpoint (non-streaming).
-   * Routes through /agents which enables the AgenticLoopService
+   * Routes through /agent which enables the AgenticLoopService
    * (tool orchestration, planning, approval, etc.).
    * @param {object} payload - Same as generateText, plus enabledTools?, autoApprove?, planFirst?
    * @returns {Promise<object>}
    */
   static async generateAgentText(payload) {
-    return PrismService._request("/agents?stream=false", { body: payload });
+    return PrismService._request("/agent?stream=false", { body: payload });
   }
 
   /**
@@ -561,7 +561,7 @@ export default class PrismService {
    * @returns {Promise<{ ok: boolean, approved: boolean }>}
    */
   static async sendApprovalResponse(conversationId, approved, { approveAll } = {}) {
-    return PrismService._request("/agents/approve", {
+    return PrismService._request("/agent/approve", {
       body: { conversationId, approved, ...(approveAll && { approveAll }) },
     });
   }
@@ -693,7 +693,7 @@ export default class PrismService {
   }
 
   /**
-   * Stream agentic text generation via SSE — hits the /agents endpoint
+   * Stream agentic text generation via SSE — hits the /agent endpoint
    * which enables the AgenticLoopService (tool orchestration, planning,
    * approval gates, etc.). Identical callback interface to streamText().
    *
@@ -724,7 +724,7 @@ export default class PrismService {
 
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/agents`, {
+        const res = await fetch(`${API_BASE}/agent`, {
           method: "POST",
           headers: getHeaders(),
           body: JSON.stringify(payload),
