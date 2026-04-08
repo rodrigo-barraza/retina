@@ -489,7 +489,7 @@ export default function AgentComponent() {
             ...(s.toolIds ? { toolIds: [...s.toolIds] } : {}),
           }));
 
-        abortRef.current = PrismService.streamText(payload, {
+        abortRef.current = PrismService.streamAgentText(payload, {
           onChunk: (content) => {
             streamedText += content;
 

@@ -530,13 +530,24 @@ export default class PrismService {
   }
 
   /**
+   * Generate text via the agentic endpoint (non-streaming).
+   * Routes through /agents which enables the AgenticLoopService
+   * (tool orchestration, planning, approval, etc.).
+   * @param {object} payload - Same as generateText, plus enabledTools?, autoApprove?, planFirst?
+   * @returns {Promise<object>}
+   */
+  static async generateAgentText(payload) {
+    return PrismService._request("/agents?stream=false", { body: payload });
+  }
+
+  /**
    * Send an approval/rejection response for a pending agentic tool or plan.
    * @param {string} conversationId - The conversation awaiting approval
    * @param {boolean} approved - true to approve, false to reject
    * @returns {Promise<{ ok: boolean, approved: boolean }>}
    */
   static async sendApprovalResponse(conversationId, approved) {
-    return PrismService._request("/chat/approve", {
+    return PrismService._request("/agents/approve", {
       body: { conversationId, approved },
     });
   }
@@ -664,6 +675,132 @@ export default class PrismService {
     })();
 
     // Return abort function (same interface as the old ws.close())
+    return () => controller.abort();
+  }
+
+  /**
+   * Stream agentic text generation via SSE — hits the /agents endpoint
+   * which enables the AgenticLoopService (tool orchestration, planning,
+   * approval gates, etc.). Identical callback interface to streamText().
+   *
+   * @param {object} payload - { provider, model, messages, enabledTools?, temperature?, maxTokens?, conversationId?, ... }
+   * @param {object} callbacks - { onChunk, onThinking, onToolExecution, onToolOutput, onApprovalRequired, onPlanProposal, onStatus, onDone, onError }
+   * @returns {Function} abort - Call to cancel the stream early
+   */
+  static streamAgentText(payload, callbacks) {
+    const {
+      onChunk,
+      onThinking,
+      onImage,
+      onAudio,
+      onExecutableCode,
+      onCodeExecutionResult,
+      onWebSearchResult,
+      onToolCall,
+      onToolExecution,
+      onToolOutput,
+      onApprovalRequired,
+      onPlanProposal,
+      onStatus,
+      onDone,
+      onError,
+    } = callbacks;
+
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/agents`, {
+          method: "POST",
+          headers: getHeaders(),
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          if (onError) onError(new Error(err.message || `HTTP ${res.status}`));
+          return;
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split("\n");
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const json = line.slice(6);
+            if (!json) continue;
+
+            try {
+              const data = JSON.parse(json);
+              if (data.type === "chunk" && onChunk) {
+                onChunk(data.content);
+              } else if (data.type === "thinking" && onThinking) {
+                onThinking(data.content);
+              } else if (data.type === "image" && onImage) {
+                onImage(data.data, data.mimeType, data.minioRef);
+              } else if (data.type === "executableCode" && onExecutableCode) {
+                onExecutableCode(data.code, data.language);
+              } else if (
+                data.type === "codeExecutionResult" &&
+                onCodeExecutionResult
+              ) {
+                onCodeExecutionResult(data.output, data.outcome);
+              } else if (data.type === "webSearchResult" && onWebSearchResult) {
+                onWebSearchResult(data.results);
+              } else if (data.type === "audio" && onAudio) {
+                onAudio(data.data, data.mimeType);
+              } else if (data.type === "toolCall" && onToolCall) {
+                onToolCall({
+                  id: data.id,
+                  name: data.name,
+                  args: data.args,
+                  result: data.result,
+                  status: data.status,
+                  thoughtSignature: data.thoughtSignature,
+                });
+              } else if (data.type === "tool_execution" && onToolExecution) {
+                onToolExecution(data);
+              } else if (data.type === "tool_output" && onToolOutput) {
+                onToolOutput(data);
+              } else if (data.type === "approval_required" && onApprovalRequired) {
+                onApprovalRequired(data);
+              } else if (data.type === "plan_proposal" && onPlanProposal) {
+                onPlanProposal(data);
+              } else if (data.type === "status" && onStatus) {
+                onStatus(data);
+              } else if (data.type === "done" && onDone) {
+                onDone(data);
+              } else if (data.type === "error" && onError) {
+                onError(new Error(data.message));
+              }
+            } catch (parseErr) {
+              if (json.length > 0) {
+                console.warn(
+                  `[PrismService] SSE JSON parse failed (${json.length} chars):`,
+                  parseErr.message,
+                  json.slice(0, 120),
+                );
+              }
+            }
+          }
+        }
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        if (onError) onError(err);
+      }
+    })();
+
     return () => controller.abort();
   }
 

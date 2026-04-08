@@ -313,7 +313,7 @@ export default function ConsoleComponent() {
         let streamedText = "";
         let streamedThinking = "";
 
-        abortRef.current = PrismService.streamText(payload, {
+        abortRef.current = PrismService.streamAgentText(payload, {
           onChunk: (content) => {
             streamedText += content;
             setMessages((prev) => {

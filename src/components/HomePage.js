@@ -803,7 +803,7 @@ export default function HomePage({ initialConversationId = null }) {
           let streamedText = "";
           let streamedThinking = "";
 
-          abortRef.current = PrismService.streamText(payload, {
+          abortRef.current = PrismService.streamAgentText(payload, {
             onChunk: (chunk) => {
               streamedText += chunk;
               setMessages((prev) => {
@@ -1565,7 +1565,7 @@ export default function HomePage({ initialConversationId = null }) {
           let streamedText = "";
           let streamedThinking = "";
 
-          abortRef.current = PrismService.streamText(payload, {
+          abortRef.current = PrismService.streamAgentText(payload, {
             onChunk: (chunk) => {
               streamedText += chunk;
               setMessages((prev) => {

@@ -213,15 +213,21 @@ async function executeModelNode(node, inputData, { onNodeContentUpdate, toolSche
       finalMessages = [...systemMsg, userMsg];
     }
 
-    const result = await PrismService.generateText({
+    const generatePayload = {
       provider: node.provider,
       model: node.modelName,
       messages: finalMessages,
       conversationId,
       conversationMeta,
-      functionCallingEnabled: toolSchemas !== null,
-      enabledTools: toolSchemas ? toolSchemas.map(t => t.name || t.function?.name) : [],
-    });
+      ...(toolSchemas !== null && {
+        enabledTools: toolSchemas.map(t => t.name || t.function?.name),
+      }),
+    };
+
+    // Route through /agents for tool-enabled runs, /chat for simple text
+    const result = toolSchemas !== null
+      ? await PrismService.generateAgentText(generatePayload)
+      : await PrismService.generateText(generatePayload);
 
     const currentResult = result;
 
