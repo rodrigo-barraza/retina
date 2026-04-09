@@ -67,7 +67,7 @@ export default function AgentComponent() {
   const [conversationId, setConversationId] = useState(() =>
     crypto.randomUUID(),
   );
-  const [sessionId, setSessionId] = useState(null);
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [config, setConfig] = useState(null);
@@ -433,8 +433,8 @@ export default function AgentComponent() {
           conversationMeta: {
             title: resolvedTitle,
           },
-          // Session tracking — mirrors Lupos session lifecycle
-          ...(sessionId ? { sessionId } : { createSession: true }),
+          // Session tracking — generated client-side
+          sessionId,
           // Phase 1: Agentic controls
           autoApprove,
           planFirst,
@@ -691,10 +691,6 @@ export default function AgentComponent() {
             }
           },
           onDone: (data) => {
-            // Capture sessionId from Prism on first response
-            if (data.sessionId && !sessionId) {
-              setSessionId(data.sessionId);
-            }
             setMessages((prev) => {
               const updated = [...prev];
               const last = updated[updated.length - 1];

@@ -89,9 +89,7 @@ export default function SessionsPage() {
     loadSessions();
 
     // Subscribe to change stream SSE for real-time updates.
-    // Session data is aggregated from sessions + requests + conversations
-    // via $lookup, so we need to refresh on changes to all three collections.
-    // Debounce to batch rapid request-level changes during streaming.
+    // Sessions are derived from requests, so we refresh on request changes.
     let pollInterval = null;
     let debounceTimer = null;
     const debouncedLoad = () => {
@@ -108,15 +106,8 @@ export default function SessionsPage() {
         }
       },
       onChange: (event) => {
-        if (event.collection === "sessions") {
-          // Session created/updated — immediate refresh
-          loadSessions();
-        } else if (
-          event.collection === "requests" ||
-          event.collection === "conversations"
-        ) {
-          // Request/conversation changes update aggregated session data
-          // (tokens, cost, models, etc.) — debounce to batch streaming updates
+        if (event.collection === "requests") {
+          // Request changes update session data — debounce to batch streaming updates
           debouncedLoad();
         }
       },
@@ -346,7 +337,7 @@ export default function SessionsPage() {
                               title: s.id.slice(0, 8),
                               tags: [
                                 {
-                                  label: `${s.conversationCount} conversation${s.conversationCount !== 1 ? "s" : ""}`,
+                                  label: `${s.requestCount} request${s.requestCount !== 1 ? "s" : ""}`,
                                   style: {
                                     background: "var(--bg-tertiary)",
                                     color: "var(--text-muted)",
