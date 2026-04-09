@@ -249,7 +249,7 @@ export default function ProvidersPage() {
                   <TableComponent
                     columns={modelColumns}
                     data={p.models}
-                    getRowKey={(m) => m.model}
+                    getRowKey={(m, i) => `${m.model}-${i}`}
                   />
                 </div>
               )}
