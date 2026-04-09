@@ -38,36 +38,6 @@ import ChatInputButton from "./ChatInputButton.js";
 import useToolToggles from "../hooks/useToolToggles.js";
 import useModelMemory from "../hooks/useModelMemory.js";
 
-// ── Agentic tool names — these are the 9 tools we built in tools-api
-const AGENTIC_TOOL_NAMES = new Set([
-  // File operations (original)
-  "read_file",
-  "write_file",
-  "str_replace_file",
-  "patch_file",
-  "list_directory",
-  "grep_search",
-  "glob_files",
-  // File operations (extended)
-  "multi_file_read",
-  "file_info",
-  "file_diff",
-  "move_file",
-  "delete_file",
-  // Web
-  "fetch_url",
-  "web_search",
-  // Command execution
-  "run_command",
-  // Git operations
-  "git_status",
-  "git_diff",
-  "git_log",
-  // Project intelligence
-  "project_summary",
-  // Browser automation
-  "browser_action",
-]);
 
 // ── Coding-focused quick prompts (reflect the full toolset)
 const AGENT_PROMPTS = [
@@ -302,7 +272,7 @@ export default function AgentComponent() {
     loadMCPServers();
   }, [loadMCPServers]);
 
-  // Fetch built-in tools — refresh Prism cache first, then filter to agentic tools
+  // Fetch built-in tools for the CODING agent (filtered server-side by persona)
   useEffect(() => {
     async function loadAgenticTools() {
       // Trigger Prism to re-fetch from tools-api (picks up newly added tools)
@@ -312,9 +282,8 @@ export default function AgentComponent() {
         // Non-fatal — Prism may still have a stale cache
       }
 
-      const allTools = await PrismService.getBuiltInToolSchemas();
-      const agenticTools = allTools.filter((t) => AGENTIC_TOOL_NAMES.has(t.name));
-      setBuiltInTools(agenticTools);
+      const tools = await PrismService.getBuiltInToolSchemas("CODING");
+      setBuiltInTools(tools);
     }
     loadAgenticTools().catch(console.error);
   }, []);

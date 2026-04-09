@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronRight,
   Globe,
+  Globe2,
   LayoutGrid,
   Cpu,
   Shield,
@@ -34,9 +35,14 @@ import {
   Wrench,
   Layers,
   Terminal,
+  TerminalSquare,
   Radio,
   Ship,
   Fuel,
+  FolderOpen,
+  Search,
+  GitBranch,
+  MonitorSmartphone,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ButtonComponent from "./ButtonComponent.js";
@@ -98,10 +104,37 @@ const DOMAIN_ICONS = {
   Utilities: Wrench,
   Maritime: Ship,
   Energy: Fuel,
+  Compute: Cpu,
+  Communication: Radio,
+  // Agentic domains
+  "Agentic: File Operations": FolderOpen,
+  "Agentic: Search & Discovery": Search,
+  "Agentic: Web": Globe2,
+  "Agentic: Command Execution": TerminalSquare,
+  "Agentic: Git": GitBranch,
+  "Agentic: Browser": MonitorSmartphone,
   Other: Layers,
 };
 
+/** Clean display labels for domains (strips 'Agentic: ' prefix) */
+const DOMAIN_LABELS = {
+  "Agentic: File Operations": "File Operations",
+  "Agentic: Search & Discovery": "Search & Discovery",
+  "Agentic: Web": "Web",
+  "Agentic: Command Execution": "Command Execution",
+  "Agentic: Git": "Git",
+  "Agentic: Browser": "Browser",
+};
+
 const DOMAIN_ORDER = [
+  // Agentic domains first (most relevant in /agent)
+  "Agentic: File Operations",
+  "Agentic: Search & Discovery",
+  "Agentic: Web",
+  "Agentic: Command Execution",
+  "Agentic: Git",
+  "Agentic: Browser",
+  // Data domains
   "Weather & Environment",
   "Events",
   "Markets & Commodities",
@@ -111,6 +144,8 @@ const DOMAIN_ORDER = [
   "Knowledge",
   "Movies & TV",
   "Health",
+  "Compute",
+  "Communication",
   "Transit",
   "Utilities",
   "Maritime",
@@ -547,7 +582,7 @@ export default function CustomToolsPanel({
     if (groupMode === "domain") {
       return {
         Icon: DOMAIN_ICONS[key] || Layers,
-        label: key,
+        label: DOMAIN_LABELS[key] || key,
       };
     }
     return {

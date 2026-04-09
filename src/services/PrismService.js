@@ -136,11 +136,14 @@ export default class PrismService {
   }
 
   /**
-   * Fetch all built-in tool schemas from Prism.
+   * Fetch built-in tool schemas from Prism.
+   * Optionally filter by agent persona (e.g. "CODING" returns only agent-enabled tools).
+   * @param {string} [agent] - Agent persona ID
    * @returns {Promise<Array>}
    */
-  static async getBuiltInToolSchemas() {
-    return PrismService._request("/config/tools", { method: "GET" });
+  static async getBuiltInToolSchemas(agent) {
+    const qs = agent ? `?agent=${encodeURIComponent(agent)}` : "";
+    return PrismService._request(`/config/tools${qs}`, { method: "GET" });
   }
 
   /**
