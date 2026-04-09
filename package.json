@@ -17,17 +17,17 @@
     "gifuct-js": "^2.1.2",
     "lucide-react": "^0.577.0",
     "luxon": "^3.7.2",
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "next": "16.2.3",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.1",
-    "recharts": "^3.8.0",
+    "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.2.3",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.1"
   }
