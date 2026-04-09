@@ -97,6 +97,7 @@ export default function AgentComponent() {
   const [conversationId, setConversationId] = useState(() =>
     crypto.randomUUID(),
   );
+  const [sessionId, setSessionId] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [config, setConfig] = useState(null);
@@ -463,6 +464,8 @@ export default function AgentComponent() {
           conversationMeta: {
             title: resolvedTitle,
           },
+          // Session tracking — mirrors Lupos session lifecycle
+          ...(sessionId ? { sessionId } : { createSession: true }),
           // Phase 1: Agentic controls
           autoApprove,
           planFirst,
@@ -719,6 +722,10 @@ export default function AgentComponent() {
             }
           },
           onDone: (data) => {
+            // Capture sessionId from Prism on first response
+            if (data.sessionId && !sessionId) {
+              setSessionId(data.sessionId);
+            }
             setMessages((prev) => {
               const updated = [...prev];
               const last = updated[updated.length - 1];
@@ -772,6 +779,7 @@ export default function AgentComponent() {
       settings.reasoningEffort,
       settings.thinkingBudget,
       conversationId,
+      sessionId,
       allToolSchemas,
       autoApprove,
       planFirst,
@@ -867,6 +875,7 @@ export default function AgentComponent() {
     setToolActivity([]);
     setPendingImages([]);
     setConversationId(crypto.randomUUID());
+    setSessionId(null);
     setActiveId(null);
     setTitle("Agent");
     textareaRef.current?.focus();
@@ -883,6 +892,7 @@ export default function AgentComponent() {
         const displayMessages = prepareDisplayMessages(full.messages || []);
         setMessages(displayMessages);
         setConversationId(conv.id);
+        setSessionId(full.sessionId || null);
         setActiveId(conv.id);
         setTitle(full.title || "Agent");
         setToolActivity([]);
