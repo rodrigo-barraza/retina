@@ -6,6 +6,7 @@ import {
   modalitiesColumn,
   endpointColumn,
   operationColumn,
+  agentColumn,
   tokenColumns,
   costColumns,
   statusColumn,
@@ -33,6 +34,7 @@ export const getRequestsColumns = ({ totalCost = 1, totalDuration = 1, mini = fa
   modalitiesColumn({ mini }),
   endpointColumn(),
   operationColumn(),
+  agentColumn(),
   providerColumn(),
   modelColumn(),
   {

@@ -542,6 +542,20 @@ export const operationColumn = () => ({
   ),
 });
 
+/* ·· Agent ·· */
+
+export const agentColumn = () => ({
+  key: "agent",
+  label: "Agent",
+  description: "The originating agent that made this request (e.g. CODING, LUPOS)",
+  render: (r) =>
+    r.agent ? (
+      <BadgeComponent variant="provider">{r.agent}</BadgeComponent>
+    ) : (
+      emptyDash()
+    ),
+});
+
 /* ·· Status ·· */
 
 export const statusColumn = () => ({

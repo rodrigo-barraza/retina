@@ -9,6 +9,7 @@ function getHeaders() {
   return {
     "Content-Type": "application/json",
     "x-project": PROJECT_NAME,
+    "x-agent": "CODING",
   };
 }
 
