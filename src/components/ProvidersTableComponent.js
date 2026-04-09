@@ -79,7 +79,7 @@ export default function ProvidersTableComponent({
       maxHeight={maxHeight}
       columns={columns}
       data={providers}
-      getRowKey={(p) => p.provider}
+      getRowKey={(p, i) => `${p.provider}-${i}`}
       emptyText={emptyText}
       storageKey="providers"
     />

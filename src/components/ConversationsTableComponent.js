@@ -83,7 +83,7 @@ export default function ConversationsTableComponent({
       sortKey={sortKey}
       sortDir={sortDir}
       onSort={onSort}
-      getRowKey={(c) => c.id || c._id}
+      getRowKey={(c, i) => c.id || c._id || `conv-${i}`}
       onRowClick={(c) => {
         const sessionQs = sessionId ? `?session=${sessionId}` : "";
         router.push(`/admin/conversations/${c.id}${sessionQs}`);

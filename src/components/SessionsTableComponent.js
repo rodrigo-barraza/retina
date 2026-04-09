@@ -80,7 +80,7 @@ export default function SessionsTableComponent({
     <TableComponent
       columns={columns}
       data={sessions}
-      getRowKey={(s) => s.id}
+      getRowKey={(s, i) => s.id || `session-${i}`}
       sortKey={sortKey}
       sortDir={sortDir}
       onSort={onSort}

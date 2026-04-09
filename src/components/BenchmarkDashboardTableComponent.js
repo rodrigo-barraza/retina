@@ -69,7 +69,7 @@ export default function BenchmarkDashboardTableComponent({
       maxHeight={maxHeight}
       columns={columns}
       data={models}
-      getRowKey={(m) => `${m.provider}:${m.model}`}
+      getRowKey={(m, i) => `${m.provider}:${m.model}:${i}`}
       onRowClick={onRowClick}
       getRowClassName={getRowClassName}
       emptyText={emptyText}

@@ -68,7 +68,7 @@ export default function ProjectsTableComponent({
       maxHeight={maxHeight}
       columns={columns}
       data={projects}
-      getRowKey={(p, i) => p.project || i}
+      getRowKey={(p, i) => `${p.project || "none"}-${i}`}
       emptyText={emptyText}
       storageKey="projects"
     />
