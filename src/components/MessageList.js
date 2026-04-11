@@ -15,6 +15,7 @@ import {
   Zap,
   Undo2,
   AlertTriangle,
+  Loader,
   Wrench,
   User,
   Bot,
@@ -222,6 +223,7 @@ function ToolCallsBlock({ toolCalls, streamingOutputs }) {
   if (!toolCalls || toolCalls.length === 0) return null;
 
   const hasActiveCalls = toolCalls.some((tc) => tc.status === "calling");
+  const doneCount = toolCalls.filter((tc) => tc.status === "done" || tc.status === "error").length;
 
   const formatName = (raw) => {
     if (raw === "googleSearch") return "Google Search";
@@ -231,6 +233,20 @@ function ToolCallsBlock({ toolCalls, streamingOutputs }) {
       .replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
+  // Build header text with active tense awareness
+  const headerText = (() => {
+    if (toolCalls.length === 1) {
+      const name = formatName(toolCalls[0].name);
+      if (hasActiveCalls) return `Calling ${name}…`;
+      return `Used tool: ${name}`;
+    }
+    if (hasActiveCalls) {
+      const progress = doneCount > 0 ? ` (${doneCount}/${toolCalls.length} done)` : "";
+      return `Running ${toolCalls.length} tools${progress}…`;
+    }
+    return `Used ${toolCalls.length} tools`;
+  })();
+
   return (
     <div className={`${styles.toolCallsBlock}${hasActiveCalls ? ` ${styles.toolCallsStreaming}` : ""}`}>
       {/* ── Header toggle ── */}
@@ -239,11 +255,7 @@ function ToolCallsBlock({ toolCalls, streamingOutputs }) {
         onClick={() => setHeaderCollapsed((c) => !c)}
       >
         <Zap size={13} />
-        <span>
-          {toolCalls.length === 1
-            ? `Used tool: ${formatName(toolCalls[0].name)}`
-            : `Used ${toolCalls.length} tools`}
-        </span>
+        <span>{headerText}</span>
         {headerCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
       </button>
 
@@ -255,9 +267,20 @@ function ToolCallsBlock({ toolCalls, streamingOutputs }) {
             const { Icon, color } = resolveToolVisuals(tc.name);
             const summary = tc.result ? extractResultSummary(tc.result) : null;
             const argEntries = tc.args ? Object.entries(tc.args) : [];
+            const isCalling = tc.status === "calling";
+            const isError = tc.status === "error";
 
             return (
               <div key={j} className={styles.toolCallItem}>
+                {/* Status indicator */}
+                <span className={`${styles.toolCallStatusIcon}${isCalling ? ` ${styles.toolCallStatusCalling}` : ""}${isError ? ` ${styles.toolCallStatusError}` : ""}`}>
+                  {isCalling
+                    ? <Loader size={12} className={styles.toolCallSpinner} />
+                    : isError
+                      ? <AlertTriangle size={12} />
+                      : <Check size={12} />}
+                </span>
+
                 <span className={styles.toolCallIcon} style={{ color }}>
                   <Icon size={13} />
                 </span>
