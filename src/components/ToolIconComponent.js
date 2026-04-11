@@ -11,18 +11,34 @@ import styles from "./ToolIconComponent.module.css";
  * canonical "Function Calling" icon.
  *
  * Props:
- *   toolNames  — string[] of canonical tool names (e.g. "Web Search", "Thinking")
- *   size       — icon size in px (default 12)
- *   className  — extra root class name
+ *   toolNames      — string[] of canonical tool names (e.g. "Web Search", "Thinking")
+ *   toolCallNames  — string[] of raw tool function names (e.g. "get_web_content", "generate_image")
+ *   size           — icon size in px (default 12)
+ *   className      — extra root class name
  */
 export default function ToolIconComponent({
   toolNames,
+  toolCallNames,
   size = 12,
   className,
 }) {
   if (!toolNames || toolNames.length === 0) {
     return <span style={{ color: "var(--text-muted)" }}>—</span>;
   }
+
+  // Collect raw names that don't map to known canonical icons → shown in FC tooltip
+  const functionCallRawNames = [];
+  for (const raw of toolNames) {
+    if (!TOOL_ICON_MAP[raw]) {
+      functionCallRawNames.push(raw);
+    }
+  }
+
+  // If toolCallNames provided, use those for the Function Calling tooltip
+  // (they're the actual function names like get_web_content, generate_image)
+  const fcRawDisplay = toolCallNames?.length
+    ? toolCallNames
+    : functionCallRawNames;
 
   // De-duplicate and resolve unknown tools → "Function Calling"
   const resolved = new Map();
@@ -39,16 +55,24 @@ export default function ToolIconComponent({
 
   return (
     <span className={`${styles.toolPills} ${className || ""}`}>
-      {[...resolved.entries()].map(([label, Icon]) => (
-        <TooltipComponent key={label} label={label} position="top">
-          <span className={styles.toolPill}>
-            <Icon
-              size={size}
-              style={{ color: TOOL_COLORS[label] || "#f97316" }}
-            />
-          </span>
-        </TooltipComponent>
-      ))}
+      {[...resolved.entries()].map(([label, Icon]) => {
+        // Build rich tooltip for "Function Calling" showing actual tool names
+        const tooltipLabel =
+          label === "Function Calling" && fcRawDisplay.length > 0
+            ? `Function Calling: ${fcRawDisplay.join(", ")}`
+            : label;
+
+        return (
+          <TooltipComponent key={label} label={tooltipLabel} position="top">
+            <span className={styles.toolPill}>
+              <Icon
+                size={size}
+                style={{ color: TOOL_COLORS[label] || "#f97316" }}
+              />
+            </span>
+          </TooltipComponent>
+        );
+      })}
     </span>
   );
 }

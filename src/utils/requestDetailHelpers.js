@@ -15,6 +15,7 @@ import {
 import BadgeComponent from "../components/BadgeComponent";
 import ModalityIconComponent from "../components/ModalityIconComponent";
 import CostBadgeComponent from "../components/CostBadgeComponent";
+import ToolIconComponent from "../components/ToolIconComponent";
 import { prepareDisplayMessages } from "../components/MessageList";
 
 /* ── Media extraction ──────────────────────────────────────────── */
@@ -151,15 +152,26 @@ export function buildRequestDetailSections(req) {
           ),
         },
         {
-          label: "Tools Used",
-          value: (
-            <BadgeComponent
-              variant={req.toolsUsed ? "endpoint" : "info"}
-            >
-              {req.toolsUsed ? "Yes" : "No"}
-            </BadgeComponent>
+          label: "Tools",
+          value: req.toolNames?.length ? (
+            <ToolIconComponent
+              toolNames={req.toolNames}
+              toolCallNames={req.toolCallNames}
+              size={14}
+            />
+          ) : (
+            <BadgeComponent variant="info">No</BadgeComponent>
           ),
         },
+        ...(req.toolCallNames?.length
+          ? [
+              {
+                label: "Tool Calls",
+                value: req.toolCallNames.join(", "),
+                mono: true,
+              },
+            ]
+          : []),
         ...(req.errorMessage
           ? [
               {

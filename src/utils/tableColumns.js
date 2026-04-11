@@ -237,7 +237,7 @@ export const toolsColumn = ({ mini = false, configModels } = {}) => ({
       if (!tools?.length) return emptyDash();
       return <ToolIconComponent toolNames={tools} size={mini ? 10 : undefined} />;
     }
-    return <ToolIconComponent toolNames={row.toolNames} size={mini ? 10 : undefined} />;
+    return <ToolIconComponent toolNames={row.toolNames} toolCallNames={row.toolCallNames} size={mini ? 10 : undefined} />;
   },
 });
 
