@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   ChevronRight,
   Check,
@@ -98,6 +98,131 @@ function RawResultToggle({ result }) {
       {show && (
         <div className={styles.rawContent}>
           <MarkdownContent content={formatted} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Collapsible Input Arguments ──────────────────────────────────────
+
+/**
+ * Truncate long string values for display in the input args view.
+ */
+function truncateValue(val, maxLen = 300) {
+  if (typeof val !== "string") return val;
+  return val.length > maxLen ? val.slice(0, maxLen) + "…" : val;
+}
+
+/**
+ * Collapsible panel that shows all input arguments passed to a tool call.
+ * Renders key-value pairs in a clean, readable format.
+ */
+function InputArgsToggle({ args }) {
+  const [show, setShow] = useState(false);
+
+  const entries = useMemo(() => {
+    if (!args || typeof args !== "object") return [];
+    return Object.entries(args).filter(([, v]) => v !== undefined && v !== null);
+  }, [args]);
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className={styles.inputArgsToggle}>
+      <button className={styles.rawToggleBtn} onClick={() => setShow(v => !v)}>
+        <ChevronRight size={11} className={show ? styles.chevronOpen : ""} />
+        <span>Input</span>
+        <span className={styles.inputArgsCount}>{entries.length}</span>
+      </button>
+      {show && (
+        <div className={styles.inputArgsContent}>
+          {entries.map(([key, val]) => {
+            const isLong = typeof val === "string" && val.length > 80;
+            const display = typeof val === "string"
+              ? truncateValue(val)
+              : JSON.stringify(val, null, 2);
+
+            return (
+              <div key={key} className={styles.inputArgRow}>
+                <span className={styles.inputArgKey}>{key}</span>
+                <span className={`${styles.inputArgValue} ${isLong ? styles.inputArgValueLong : ""}`}>
+                  {display}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Collapsible Output Result (what the model sees) ─────────────────
+
+/**
+ * Collapsible panel that shows the raw result returned to the model.
+ * Helps users understand exactly what the agent receives back.
+ */
+function OutputResultToggle({ result }) {
+  const [show, setShow] = useState(false);
+
+  const display = useMemo(() => {
+    if (result === undefined || result === null) return null;
+    if (typeof result === "string") {
+      try {
+        const parsed = JSON.parse(result);
+        return { type: "object", data: parsed, raw: JSON.stringify(parsed, null, 2) };
+      } catch {
+        return { type: "string", data: result, raw: result };
+      }
+    }
+    if (typeof result === "object") {
+      return { type: "object", data: result, raw: JSON.stringify(result, null, 2) };
+    }
+    return { type: "string", data: result, raw: String(result) };
+  }, [result]);
+
+  if (!display) return null;
+
+  // Count meaningful entries for the badge
+  const entryCount = display.type === "object" && !Array.isArray(display.data)
+    ? Object.keys(display.data).length
+    : null;
+
+  return (
+    <div className={styles.outputResultToggle}>
+      <button className={styles.rawToggleBtn} onClick={() => setShow(v => !v)}>
+        <ChevronRight size={11} className={show ? styles.chevronOpen : ""} />
+        <span>Output</span>
+        {entryCount != null && (
+          <span className={styles.outputResultCount}>{entryCount}</span>
+        )}
+      </button>
+      {show && (
+        <div className={styles.outputResultContent}>
+          {display.type === "object" && !Array.isArray(display.data) ? (
+            Object.entries(display.data)
+              .filter(([, v]) => v !== undefined && v !== null)
+              .map(([key, val]) => {
+                const isComplex = typeof val === "object";
+                const valStr = isComplex
+                  ? JSON.stringify(val, null, 2)
+                  : truncateValue(String(val), 500);
+                const isLong = valStr.length > 80;
+
+                return (
+                  <div key={key} className={styles.outputArgRow}>
+                    <span className={styles.outputArgKey}>{key}</span>
+                    <span className={`${styles.outputArgValue} ${isLong ? styles.outputArgValueLong : ""}`}>
+                      {valStr}
+                    </span>
+                  </div>
+                );
+              })
+          ) : (
+            <pre className={styles.outputRawPre}>{display.raw}</pre>
+          )}
         </div>
       )}
     </div>
@@ -392,9 +517,13 @@ function TerminalRenderer({ result, args, streamingOutput, language }) {
   // Parse final result for exit code
   const parsed = tryParse(result);
   const exitCode = parsed?.exitCode ?? parsed?.exit_code;
+  const success = parsed?.success;
   const stdout = parsed?.stdout || parsed?.output || "";
   const stderr = parsed?.stderr || "";
-  const displayOutput = isStreaming ? output : (stdout || stderr || output);
+  const parsedError = parsed?.error || "";
+  const displayOutput = isStreaming
+    ? output
+    : (stdout || stderr || parsedError || output);
 
   const formattedInput = formatInputPrompt(input, language, cwd);
 
@@ -409,12 +538,18 @@ function TerminalRenderer({ result, args, streamingOutput, language }) {
         {exitCode != null && (
           <StatusBadge success={exitCode === 0} label={`exit ${exitCode}`} />
         )}
+        {exitCode == null && success === false && (
+          <StatusBadge success={false} label="error" />
+        )}
       </div>
       <pre ref={preRef} className={styles.terminalBody}>
         {formattedInput && (
           <span className={styles.terminalInput}>{formattedInput}{"\n"}</span>
         )}
-        {displayOutput}
+        {!isStreaming && !stdout && !stderr && parsedError && (
+          <span className={styles.terminalError}>{parsedError}</span>
+        )}
+        {(stdout || stderr || (isStreaming && output)) && displayOutput}
         {isStreaming && <span className={styles.terminalCursor}>▊</span>}
       </pre>
     </div>
@@ -723,11 +858,15 @@ export function ToolResultView({ toolCall, streamingOutput }) {
   const { Renderer, language } = resolveToolResultRenderer(toolCall.name);
 
   return (
-    <Renderer
-      result={toolCall.result}
-      args={toolCall.args}
-      streamingOutput={streamingOutput}
-      language={language}
-    />
+    <>
+      <InputArgsToggle args={toolCall.args} />
+      <Renderer
+        result={toolCall.result}
+        args={toolCall.args}
+        streamingOutput={streamingOutput}
+        language={language}
+      />
+      <OutputResultToggle result={toolCall.result} />
+    </>
   );
 }

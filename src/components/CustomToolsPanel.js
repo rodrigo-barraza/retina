@@ -44,6 +44,7 @@ import {
   GitBranch,
   MonitorSmartphone,
   Code2,
+  Sparkles,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ButtonComponent from "./ButtonComponent.js";
@@ -115,6 +116,7 @@ const DOMAIN_ICONS = {
   "Agentic: Git": GitBranch,
   "Agentic: Browser": MonitorSmartphone,
   "Agentic: Code Intelligence": Code2,
+  Creative: Sparkles,
   Other: Layers,
 };
 
@@ -154,6 +156,7 @@ const DOMAIN_ORDER = [
   "Utilities",
   "Maritime",
   "Energy",
+  "Creative",
   "Other",
 ];
 

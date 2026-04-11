@@ -840,7 +840,7 @@ export default function HomePage({ initialConversationId = null }) {
                       (tc.id && activity.id === tc.id) ||
                       (!tc.id && activity.name === tc.name && activity.status === "calling")
                     ) {
-                      return { ...activity, status: data.status, result: tc.result };
+                      return { ...activity, status: data.status, result: tc.result, ...(tc.args && Object.keys(tc.args).length > 0 ? { args: tc.args } : {}) };
                     }
                     return activity;
                   });
@@ -1611,7 +1611,7 @@ export default function HomePage({ initialConversationId = null }) {
                       (tc.id && activity.id === tc.id) ||
                       (!tc.id && activity.name === tc.name && activity.status === "calling")
                     ) {
-                      return { ...activity, status: data.status, result: tc.result };
+                      return { ...activity, status: data.status, result: tc.result, ...(tc.args && Object.keys(tc.args).length > 0 ? { args: tc.args } : {}) };
                     }
                     return activity;
                   });
@@ -1962,7 +1962,7 @@ export default function HomePage({ initialConversationId = null }) {
                     (tc.id && activity.id === tc.id) ||
                     (!tc.id && activity.name === tc.name && activity.status === "calling")
                   ) {
-                    return { ...activity, status: data.status, result: tc.result };
+                    return { ...activity, status: data.status, result: tc.result, ...(tc.args && Object.keys(tc.args).length > 0 ? { args: tc.args } : {}) };
                   }
                   return activity;
                 });
