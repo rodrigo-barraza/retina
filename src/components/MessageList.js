@@ -1183,18 +1183,19 @@ export default function MessageList({
                       if (seg.type === "text") {
                         const fragmentText = msg.textFragments?.[seg.fragmentIndex]?.trim();
                         const isLastTextSeg = si === lastTextSegIdx;
+                        const showCursor = !opts.insideThinking && !opts.suppressCursor;
                         if (fragmentText) {
                           return (
                             <MarkdownContent
                               key={`seg-x-${si}`}
                               content={fragmentText}
-                              className={isStreaming && isLastTextSeg && !opts.insideThinking ? styles.streamingText : ""}
+                              className={isStreaming && isLastTextSeg && showCursor ? styles.streamingText : ""}
                             >
-                              {isLastTextSeg && !opts.insideThinking && <StreamingCursorComponent active={isStreaming} />}
+                              {isLastTextSeg && showCursor && <StreamingCursorComponent active={isStreaming} />}
                             </MarkdownContent>
                           );
                         }
-                        if (isStreaming && isLastTextSeg && !opts.insideThinking) {
+                        if (isStreaming && isLastTextSeg && showCursor) {
                           return <span key={`seg-x-${si}`} className={styles.streamingCursor} />;
                         }
                         return null;
@@ -1268,8 +1269,17 @@ export default function MessageList({
                                 </ThinkingBlock>
                               );
                             }
-                            // Standalone text segment between thinking groups
-                            return <React.Fragment key={`tg-${gi}`}>{renderSeg(group.seg, group.origIdx)}</React.Fragment>;
+                            // Standalone text segment between thinking groups —
+                            // When the last group is thinking, suppress all text cursors
+                            // (the explicit cursor after the groups handles it).
+                            // Otherwise only the very last group gets the cursor.
+                            const isLastGroup = gi === groups.length - 1;
+                            const suppress = lastGroupIsThinking || !isLastGroup;
+                            return (
+                              <React.Fragment key={`tg-${gi}`}>
+                                {renderSeg(group.seg, group.origIdx, { suppressCursor: suppress })}
+                              </React.Fragment>
+                            );
                           })}
                           {/* Streaming cursor when the last group is thinking (answer hasn't started) */}
                           {isStreaming && lastGroupIsThinking && (
