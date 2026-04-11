@@ -90,7 +90,11 @@ export default function HistoryPanel({
         tags,
         username: conv.username,
         modelNames,
-        searchText: (conv.messages || []).map((m) => m.content || "").join(" "),
+        searchText: [
+          conv.project || "",
+          conv.username || "",
+          ...(conv.messages || []).map((m) => m.content || ""),
+        ].join(" "),
       };
     });
   }, [conversations, showProject]);
