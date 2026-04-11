@@ -290,7 +290,7 @@
 }
 
 .toolDisabled {
-  opacity: 0.5;
+  opacity: 1;
 }
 
 .toolCardHeader {
@@ -331,6 +331,17 @@
   font-weight: 600;
   color: var(--text-primary);
   font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolCardSlug {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  opacity: 0.7;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

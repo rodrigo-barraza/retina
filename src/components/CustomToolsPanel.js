@@ -43,6 +43,7 @@ import {
   Search,
   GitBranch,
   MonitorSmartphone,
+  Code2,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ButtonComponent from "./ButtonComponent.js";
@@ -113,6 +114,7 @@ const DOMAIN_ICONS = {
   "Agentic: Command Execution": TerminalSquare,
   "Agentic: Git": GitBranch,
   "Agentic: Browser": MonitorSmartphone,
+  "Agentic: Code Intelligence": Code2,
   Other: Layers,
 };
 
@@ -124,6 +126,7 @@ const DOMAIN_LABELS = {
   "Agentic: Command Execution": "Command Execution",
   "Agentic: Git": "Git",
   "Agentic: Browser": "Browser",
+  "Agentic: Code Intelligence": "Code Intelligence",
 };
 
 const DOMAIN_ORDER = [
@@ -134,6 +137,7 @@ const DOMAIN_ORDER = [
   "Agentic: Command Execution",
   "Agentic: Git",
   "Agentic: Browser",
+  "Agentic: Code Intelligence",
   // Data domains
   "Weather & Environment",
   "Events",
@@ -1251,6 +1255,9 @@ export default function CustomToolsPanel({
                         <div className={styles.toolCardInfo}>
                           <span className={styles.toolCardName}>
                             {renderToolName(tool.name)}
+                          </span>
+                          <span className={styles.toolCardSlug}>
+                            {tool.name}
                           </span>
                           <span className={styles.toolCardMeta}>
                             {isOffline ? (
