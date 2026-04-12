@@ -408,6 +408,17 @@
   }
 }
 
+.taskProjectBadge {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text-muted) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  border-radius: 4px;
+  padding: 0 5px;
+  font-family: var(--font-mono, "JetBrains Mono", "Fira Code", monospace);
+}
+
 .expandBtn {
   display: flex;
   align-items: center;

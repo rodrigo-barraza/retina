@@ -64,6 +64,19 @@ export default class ToolsApiService {
   }
 
   /**
+   * List all tasks across all projects (admin view).
+   * @param {object} [options]
+   * @param {string} [options.status]
+   * @returns {Promise<{ tasks, summary }>}
+   */
+  static async getAllAgenticTasks({ status } = {}) {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    const query = params.toString();
+    return ToolsApiService._fetch(`/agentic/task/list-all${query ? `?${query}` : ""}`);
+  }
+
+  /**
    * Create a new task.
    * @param {string} project
    * @param {object} data - { subject, description, status?, metadata? }
