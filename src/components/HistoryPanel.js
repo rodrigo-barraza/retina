@@ -60,15 +60,6 @@ export default function HistoryPanel({
           },
         });
       }
-      if (conv.isWorker) {
-        tags.push({
-          label: `WORKER${conv.workerNumber ? ` #${conv.workerNumber}` : ""}`,
-          style: {
-            background: "rgba(251, 146, 60, 0.12)",
-            color: "rgb(251, 146, 60)",
-          },
-        });
-      }
 
       // Extract unique model names used in this conversation
       const msgs = conv.messages || [];

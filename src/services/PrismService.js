@@ -598,15 +598,15 @@ export default class PrismService {
 
   /**
    * Send an approval/rejection response for a pending agentic tool or plan.
-   * @param {string} conversationId - The conversation awaiting approval
+   * @param {string} agentSessionId - The agent session awaiting approval
    * @param {boolean} approved - true to approve, false to reject
    * @param {object} [options]
    * @param {boolean} [options.approveAll] - If true, auto-approve all future tool calls in this session
    * @returns {Promise<{ ok: boolean, approved: boolean }>}
    */
-  static async sendApprovalResponse(conversationId, approved, { approveAll } = {}) {
+  static async sendApprovalResponse(agentSessionId, approved, { approveAll } = {}) {
     return PrismService._request("/agent/approve", {
-      body: { conversationId, approved, ...(approveAll && { approveAll }) },
+      body: { agentSessionId, approved, ...(approveAll && { approveAll }) },
     });
   }
 

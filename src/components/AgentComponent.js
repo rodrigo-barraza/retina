@@ -65,7 +65,7 @@ export default function AgentComponent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [toolActivity, setToolActivity] = useState([]);
   const [streamingOutputs, setStreamingOutputs] = useState(new Map());
-  const [conversationId, setConversationId] = useState(() =>
+  const [agentSessionId, setAgentSessionId] = useState(() =>
     crypto.randomUUID(),
   );
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
@@ -316,7 +316,7 @@ export default function AgentComponent() {
   useEffect(() => {
     const pool = shuffleArray(AGENT_PROMPTS);
     setRandomPrompts(pool.slice(0, 5));
-  }, [conversationId]);
+  }, [agentSessionId]);
 
   // ── Image handlers ──────────────────────────────────────────
   const handleImageSelect = useCallback((e) => {
@@ -432,7 +432,7 @@ export default function AgentComponent() {
           // Local models need enough context for MCP tool schemas + conversation
           minContextLength: 150000,
           project: PROJECT_AGENT,
-          conversationId,
+          conversationId: agentSessionId,
           conversationMeta: {
             title: resolvedTitle,
           },
@@ -761,7 +761,7 @@ export default function AgentComponent() {
       settings.thinkingEnabled,
       settings.reasoningEffort,
       settings.thinkingBudget,
-      conversationId,
+      agentSessionId,
       sessionId,
       allToolSchemas,
       autoApprove,
@@ -858,7 +858,7 @@ export default function AgentComponent() {
     setMessages([]);
     setToolActivity([]);
     setPendingImages([]);
-    setConversationId(crypto.randomUUID());
+    setAgentSessionId(crypto.randomUUID());
     setSessionId(null);
     setActiveId(null);
     setTitle("Agent");
@@ -875,7 +875,7 @@ export default function AgentComponent() {
         );
         const displayMessages = prepareDisplayMessages(full.messages || []);
         setMessages(displayMessages);
-        setConversationId(conv.id);
+        setAgentSessionId(conv.id);
         setSessionId(full.sessionId || null);
         setActiveId(conv.id);
         setTitle(full.title || "Agent");
@@ -1013,7 +1013,7 @@ export default function AgentComponent() {
       )}
 
       {leftTab === "tasks" && (
-        <TasksPanel project={PROJECT_AGENT} refreshKey={tasksRefreshKey} agentSessionId={conversationId} />
+        <TasksPanel project={PROJECT_AGENT} refreshKey={tasksRefreshKey} agentSessionId={agentSessionId} />
       )}
 
       {leftTab === "mcp" && (
@@ -1072,11 +1072,11 @@ export default function AgentComponent() {
             status={planProposal.status}
             onApprove={() => {
               setPlanProposal((p) => p ? { ...p, status: "approved" } : null);
-              PrismService.sendApprovalResponse(conversationId, true).catch(console.error);
+              PrismService.sendApprovalResponse(agentSessionId, true).catch(console.error);
             }}
             onReject={() => {
               setPlanProposal((p) => p ? { ...p, status: "rejected" } : null);
-              PrismService.sendApprovalResponse(conversationId, false).catch(console.error);
+              PrismService.sendApprovalResponse(agentSessionId, false).catch(console.error);
             }}
           />
         )}
@@ -1092,20 +1092,20 @@ export default function AgentComponent() {
               setPendingApprovals((prev) =>
                 prev.map((a) => a.id === approval.id ? { ...a, status: "approved" } : a),
               );
-              PrismService.sendApprovalResponse(conversationId, true).catch(console.error);
+              PrismService.sendApprovalResponse(agentSessionId, true).catch(console.error);
             }}
             onReject={() => {
               setPendingApprovals((prev) =>
                 prev.map((a) => a.id === approval.id ? { ...a, status: "rejected" } : a),
               );
-              PrismService.sendApprovalResponse(conversationId, false).catch(console.error);
+              PrismService.sendApprovalResponse(agentSessionId, false).catch(console.error);
             }}
             onApproveAll={() => {
               setPendingApprovals((prev) =>
                 prev.map((a) => a.status === "pending" ? { ...a, status: "approved" } : a),
               );
               setAutoApprove(true);
-              PrismService.sendApprovalResponse(conversationId, true, { approveAll: true }).catch(console.error);
+              PrismService.sendApprovalResponse(agentSessionId, true, { approveAll: true }).catch(console.error);
             }}
           />
         ))}
