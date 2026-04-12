@@ -15,6 +15,7 @@ import {
   Brain,
   Wrench,
   Copy,
+  Bot,
 } from "lucide-react";
 import BadgeComponent from "./BadgeComponent";
 import ChatPreviewComponent from "./ChatPreviewComponent";
@@ -53,6 +54,9 @@ export default function RunHistorySidebarComponent({
   // Tools toggle props
   toolsMap = {},
   onToggleTools,
+  // Agent instance props
+  agentInstances = [],
+  onRemoveAgent,
 }) {
   // Derive assertions array (backward compat)
   const assertions = useMemo(() => {
@@ -157,15 +161,48 @@ export default function RunHistorySidebarComponent({
         )}
 
         {/* Clear action */}
-        {selectedModels.length > 0 && (
-          <div className={styles.modelActions}>
-            <button
-              className={styles.clearModelsBtn}
-              onClick={onClearSelection}
-            >
-              Clear all
-            </button>
-          </div>
+        {(selectedModels.length > 0 || agentInstances.length > 0) && (
+          <>
+            {/* Agent instance cards */}
+            {agentInstances.length > 0 && (
+              <div className={styles.modelCards}>
+                {agentInstances.map((a) => (
+                  <div key={a.instanceId} className={`${styles.modelCard} ${styles.agentCard}`}>
+                    <div className={styles.modelCardHeader}>
+                      <Bot size={14} className={styles.agentBotIcon} />
+                      <span className={styles.modelCardName} title={a.name}>
+                        {a.name}
+                      </span>
+                      <span className={styles.agentBadge}>Agent</span>
+                      <button
+                        className={styles.modelCardRemove}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemoveAgent?.(a.instanceId);
+                        }}
+                        title="Remove"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
+                    <div className={styles.modelCardFooter}>
+                      <span className={styles.modelCardProvider}>
+                        {a.description}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className={styles.modelActions}>
+              <button
+                className={styles.clearModelsBtn}
+                onClick={onClearSelection}
+              >
+                Clear all
+              </button>
+            </div>
+          </>
         )}
       </div>
 

@@ -22,6 +22,7 @@ import ModalDialogComponent from "./ModalDialogComponent";
 import BenchmarkFormComponent from "./BenchmarkFormComponent";
 import SummaryBarComponent from "./SummaryBarComponent";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent";
+import AgentPickerPopoverComponent from "./AgentPickerPopoverComponent";
 import BenchmarksTableComponent from "./BenchmarksTableComponent";
 import ChatPreviewComponent from "./ChatPreviewComponent";
 import ProviderLogo from "./ProviderLogos";
@@ -108,9 +109,16 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
 
   // Per-model thinking toggle: Map<"provider:name", boolean>
   const [thinkingMap, setThinkingMap] = useState({});
-
-  // Per-model tools toggle: Map<"provider:name", boolean>
   const [toolsMap, setToolsMap] = useState({});
+
+  // Agent instances — same instance-based pattern as models
+  const [agentInstances, setAgentInstances] = useState(() => {
+    const saved = StorageService.get(SK_MODEL_MEMORY_BENCHMARKS);
+    if (saved?.agents && Array.isArray(saved.agents)) {
+      return saved.agents;
+    }
+    return [];
+  });
 
   // Compute the active row key for table highlight
   const getActiveKey = useCallback((results) => {
@@ -399,14 +407,32 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     setActiveModel(null);
     setLatestRun(null);
 
-    if (selectedModels.length === 0) return;
-    const models = selectedModels.map((m) => ({
+    if (selectedModels.length === 0 && agentInstances.length === 0) return;
+
+    // Build model targets from selected model instances
+    const modelTargets = selectedModels.map((m) => ({
       provider: m.provider,
       model: m.name,
       display_name: m.display_name || m.label || m.name,
       thinkingEnabled: !!thinkingMap[m.instanceId],
       toolsEnabled: !!toolsMap[m.instanceId],
     }));
+
+    // Append agent instances — each agent rides on a backing model
+    // (the first selected model, or a default cloud model)
+    const agentTargets = agentInstances.map((a) => {
+      const backingModel = selectedModels[0];
+      return {
+        provider: backingModel?.provider || "anthropic",
+        model: backingModel?.name || "claude-sonnet-4-20250514",
+        display_name: `🤖 ${a.name} (${backingModel?.label || backingModel?.name || "claude-sonnet-4"})`,
+        thinkingEnabled: !!thinkingMap[a.instanceId],
+        toolsEnabled: true,
+        agent: a.agentId,
+      };
+    });
+
+    const models = [...modelTargets, ...agentTargets];
 
     abortRef.current = PrismService.streamBenchmarkRun(benchmarkId, models, {
       onRunInfo: (data) => {
@@ -511,7 +537,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
         abortRef.current = null;
       },
     });
-  }, [benchmark, selectedModels, benchmarkId, thinkingMap, toolsMap]);
+  }, [benchmark, selectedModels, agentInstances, benchmarkId, thinkingMap, toolsMap]);
 
   // ── Stop benchmark ─────────────────────────────────────────
   const handleStop = useCallback(async () => {
@@ -567,6 +593,36 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     setSelectedResult(null);
   }, []);
 
+  const handleAddAgent = useCallback((agentDef) => {
+    const instance = {
+      instanceId: crypto.randomUUID(),
+      agentId: agentDef.id,
+      name: agentDef.name,
+      description: agentDef.description,
+    };
+    setAgentInstances((prev) => {
+      const next = [...prev, instance];
+      // Persist both model + agent instances together
+      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, {
+        instances: selectedInstances,
+        agents: next,
+      });
+      return next;
+    });
+  }, [selectedInstances]);
+
+  const removeAgent = useCallback((instanceId) => {
+    setAgentInstances((prev) => {
+      const next = prev.filter((i) => i.instanceId !== instanceId);
+      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, {
+        instances: selectedInstances,
+        agents: next,
+      });
+      return next;
+    });
+    setThinkingMap((prev) => { const n = { ...prev }; delete n[instanceId]; return n; });
+  }, [selectedInstances]);
+
   // ── Add model instance to selection (always adds, never toggles) ────
   const handleModelSelect = useCallback((rawModel) => {
     const instance = {
@@ -576,27 +632,34 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     };
     setSelectedInstances((prev) => {
       const next = [...prev, instance];
-      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { instances: next });
+      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, {
+        instances: next,
+        agents: agentInstances,
+      });
       return next;
     });
-  }, []);
+  }, [agentInstances]);
 
   const removeModel = useCallback((instanceId) => {
     setSelectedInstances((prev) => {
       const next = prev.filter((i) => i.instanceId !== instanceId);
-      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { instances: next });
+      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, {
+        instances: next,
+        agents: agentInstances,
+      });
       return next;
     });
     // Clean up thinking/tools state for removed instance
     setThinkingMap((prev) => { const n = { ...prev }; delete n[instanceId]; return n; });
     setToolsMap((prev) => { const n = { ...prev }; delete n[instanceId]; return n; });
-  }, []);
+  }, [agentInstances]);
 
   const clearModelSelection = useCallback(() => {
     setSelectedInstances([]);
+    setAgentInstances([]);
     setThinkingMap({});
     setToolsMap({});
-    StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { instances: [] });
+    StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { instances: [], agents: [] });
   }, []);
 
   // ── Toggle thinking per instance ──────────────────────────
@@ -682,6 +745,8 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           onToggleThinking={handleToggleThinking}
           toolsMap={toolsMap}
           onToggleTools={handleToggleTools}
+          agentInstances={agentInstances}
+          onRemoveAgent={removeAgent}
         />
       }
       leftTitle="Run History"
@@ -689,21 +754,27 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
       rightTitle="Benchmarks"
       headerTitle={benchmark.name}
       headerCenter={
-        <ModelPickerPopoverComponent
-          config={prismConfig}
-          multiSelect
-          selectedKeys={selectedModelKeys}
-          onSelectModel={handleModelSelect}
-          favorites={favoriteKeys}
-          onToggleFavorite={handleToggleFavorite}
-          triggerLabel={
-            selectedInstances.length === 0
-              ? "Select Models"
-              : selectedInstances.length === 1
-                ? "1 Model Selected"
-                : `${selectedInstances.length} Models Selected`
-          }
-        />
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <ModelPickerPopoverComponent
+            config={prismConfig}
+            multiSelect
+            selectedKeys={selectedModelKeys}
+            onSelectModel={handleModelSelect}
+            favorites={favoriteKeys}
+            onToggleFavorite={handleToggleFavorite}
+            triggerLabel={
+              selectedInstances.length === 0
+                ? "Select Models"
+                : selectedInstances.length === 1
+                  ? "1 Model Selected"
+                  : `${selectedInstances.length} Models Selected`
+            }
+          />
+          <AgentPickerPopoverComponent
+            agentCount={agentInstances.length}
+            onAddAgent={handleAddAgent}
+          />
+        </div>
       }
       headerControls={
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -729,12 +800,12 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             icon={running ? Square : Play}
             onClick={running ? handleStop : handleRun}
             loading={running}
-            disabled={!running && selectedModels.length === 0}
+            disabled={!running && selectedModels.length === 0 && agentInstances.length === 0}
           >
             {running
               ? "Stop"
-              : selectedModels.length > 0
-                ? `Run ${selectedModels.length} Model${selectedModels.length > 1 ? "s" : ""}`
+              : (selectedModels.length + agentInstances.length) > 0
+                ? `Run ${selectedModels.length + agentInstances.length} Model${(selectedModels.length + agentInstances.length) > 1 ? "s" : ""}`
                 : "Select Models"}
           </ButtonComponent>
         </div>
