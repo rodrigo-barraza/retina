@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Bot, Paperclip, X, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain, Plug, GitBranch, Scissors, Repeat, ListChecks, BookOpen, Users } from "lucide-react";
+import { Bot, Paperclip, X, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain, Plug, GitBranch, Scissors, Repeat, ListChecks, BookOpen, Users, Cpu } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ToolsApiService from "../services/ToolsApiService.js";
 import ThreePanelLayout from "./ThreePanelLayout.js";
@@ -1390,6 +1390,15 @@ export default function AgentComponent() {
             <Repeat size={10} />
             {Number.isFinite(maxIterations) ? maxIterations : "∞"}
           </button>
+          {config?.localModelConcurrency > 1 && (
+            <span
+              className={`${styles.headerToggle} ${styles.headerToggleInfo}`}
+              title={`Local GPU concurrency: ${config.localModelConcurrency} slots — ${config.localModelConcurrency - 1} available for workers`}
+            >
+              <Cpu size={10} />
+              ×{config.localModelConcurrency - 1}
+            </span>
+          )}
 
         </div>
       }
