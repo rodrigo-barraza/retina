@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Cpu,
   X,
+  Brain,
 } from "lucide-react";
 import BadgeComponent from "./BadgeComponent";
 import ChatPreviewComponent from "./ChatPreviewComponent";
@@ -30,6 +31,8 @@ import styles from "./RunHistorySidebarComponent.module.css";
  *   onViewRun          — callback(run) to switch to a run
  *   running            — whether a run is currently in progress
  *   streamingCompleted — number of completed models in the current streaming run
+ *   thinkingMap        — Map<"provider:model", boolean> per-model thinking toggle state
+ *   onToggleThinking   — callback(key) to toggle thinking for a model
  */
 export default function RunHistorySidebarComponent({
   benchmark,
@@ -42,6 +45,9 @@ export default function RunHistorySidebarComponent({
   selectedModels = [],
   onRemoveModel,
   onClearSelection,
+  // Thinking toggle props
+  thinkingMap = {},
+  onToggleThinking,
 }) {
   // Derive assertions array (backward compat)
   const assertions = useMemo(() => {
@@ -68,28 +74,50 @@ export default function RunHistorySidebarComponent({
           </span>
         </div>
 
-        {/* Selected model chips */}
+        {/* Selected model cards */}
         {selectedModels.length > 0 ? (
-          <div className={styles.modelChips}>
+          <div className={styles.modelCards}>
             {selectedModels.map((m) => {
               const key = `${m.provider}:${m.name}`;
               const label = m.display_name || m.label || m.name;
+              const isThinking = !!thinkingMap[key];
+              const supportsThinking = !!m.thinking;
               return (
-                <div key={key} className={styles.modelChip}>
-                  <ProviderLogo provider={m.provider} size={12} />
-                  <span className={styles.modelChipName} title={label}>
-                    {label}
-                  </span>
-                  <button
-                    className={styles.modelChipRemove}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemoveModel?.(key);
-                    }}
-                    title="Remove"
-                  >
-                    <X size={10} />
-                  </button>
+                <div key={key} className={styles.modelCard}>
+                  <div className={styles.modelCardHeader}>
+                    <ProviderLogo provider={m.provider} size={14} />
+                    <span className={styles.modelCardName} title={label}>
+                      {label}
+                    </span>
+                    <button
+                      className={styles.modelCardRemove}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveModel?.(key);
+                      }}
+                      title="Remove"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                  <div className={styles.modelCardFooter}>
+                    <span className={styles.modelCardProvider}>
+                      {m.provider}
+                    </span>
+                    {supportsThinking && (
+                      <button
+                        className={`${styles.thinkingToggle} ${isThinking ? styles.thinkingToggleActive : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleThinking?.(key);
+                        }}
+                        title={isThinking ? "Disable thinking" : "Enable thinking"}
+                      >
+                        <Brain size={10} />
+                        <span>{isThinking ? "On" : "Off"}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}

@@ -32,6 +32,135 @@
   margin-left: auto;
 }
 
+/* ── Model Cards ─────────────────────────────────────────── */
+
+.modelCards {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modelCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  animation: fadeIn 0.15s ease-out;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--accent-color) 40%, transparent);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--accent-color) 8%, transparent);
+  }
+}
+
+.modelCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.modelCardHeader > svg:first-child {
+  flex-shrink: 0;
+}
+
+.modelCardName {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.modelCardRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  opacity: 0.4;
+
+  &:hover {
+    background: var(--danger-subtle);
+    color: var(--danger);
+    opacity: 1;
+  }
+}
+
+.modelCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.modelCardProvider {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+
+/* ── Thinking Toggle ─────────────────────────────────────── */
+
+.thinkingToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+
+  & svg {
+    flex-shrink: 0;
+    transition: color 0.2s ease;
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--accent-color) 40%, transparent);
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--accent-color) 6%, transparent);
+  }
+}
+
+.thinkingToggleActive {
+  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent-color) 50%, transparent);
+  color: var(--accent-color);
+
+  & svg {
+    color: var(--accent-color);
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--accent-color) 18%, transparent);
+    border-color: var(--accent-color);
+  }
+}
+
+/* ── Legacy model chips (kept for compat) ────────────────── */
+
 .modelChips {
   display: flex;
   flex-wrap: wrap;

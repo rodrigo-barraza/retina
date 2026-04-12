@@ -1181,7 +1181,7 @@ export default function AgentComponent() {
           />
         ))}
 
-        <div ref={endRef} />
+        <div ref={endRef} style={{ minHeight: 24 }} />
       </div>
 
       {/* Input area */}

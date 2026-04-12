@@ -96,6 +96,9 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   // Selected result (for chat preview)
   const [selectedResult, setSelectedResult] = useState(null);
 
+  // Per-model thinking toggle: Map<"provider:name", boolean>
+  const [thinkingMap, setThinkingMap] = useState({});
+
   // Compute the active row key for table highlight
   const getActiveKey = useCallback((results) => {
     if (!selectedResult) return undefined;
@@ -376,7 +379,12 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     setLatestRun(null);
 
     if (selectedModels.length === 0) return;
-    const models = selectedModels.map((m) => ({ provider: m.provider, model: m.name, display_name: m.display_name || m.label || m.name }));
+    const models = selectedModels.map((m) => ({
+      provider: m.provider,
+      model: m.name,
+      display_name: m.display_name || m.label || m.name,
+      thinkingEnabled: !!thinkingMap[`${m.provider}:${m.name}`],
+    }));
 
     abortRef.current = PrismService.streamBenchmarkRun(benchmarkId, models, {
       onRunInfo: (data) => {
@@ -481,7 +489,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
         abortRef.current = null;
       },
     });
-  }, [benchmark, selectedModels, benchmarkId]);
+  }, [benchmark, selectedModels, benchmarkId, thinkingMap]);
 
   // ── Stop benchmark ─────────────────────────────────────────
   const handleStop = useCallback(async () => {
@@ -566,6 +574,11 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { selectedKeys: [] });
   }, []);
 
+  // ── Toggle thinking per model ─────────────────────────────
+  const handleToggleThinking = useCallback((key) => {
+    setThinkingMap((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
   // ── Delete benchmark ──────────────────────────────────────
   const handleDelete = useCallback(async () => {
     setDeleting(true);
@@ -635,6 +648,8 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           selectedModels={selectedModels}
           onRemoveModel={removeModel}
           onClearSelection={clearModelSelection}
+          thinkingMap={thinkingMap}
+          onToggleThinking={handleToggleThinking}
         />
       }
       leftTitle="Run History"
@@ -920,6 +935,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
               ...(selectedResult?.response ? [{
                 role: "assistant",
                 content: selectedResult.response,
+                thinking: selectedResult.thinking || undefined,
                 model: selectedResult.label || selectedResult.model,
                 provider: selectedResult.provider,
               }] : []),
