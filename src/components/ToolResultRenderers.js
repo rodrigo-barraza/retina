@@ -16,6 +16,9 @@ import {
   File,
   Folder,
   Monitor,
+  Users,
+  MessageSquare,
+  StopCircle,
 } from "lucide-react";
 import MarkdownContent from "./MarkdownContent";
 import PrismService from "../services/PrismService";
@@ -789,7 +792,82 @@ function BrowserActionRenderer({ result, args }) {
   );
 }
 
-// ── 13. Generic Fallback ────────────────────────────────────────────────────
+// ── 13. Coordinator Tools ───────────────────────────────────────────────────
+
+function SpawnAgentRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const agentId = parsed.agent_id || "";
+  const description = args?.description || parsed.description || "";
+  const status = parsed.status || "unknown";
+  const hasError = !!parsed.error;
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <Users size={13} />
+        <span className={styles.rendererTitle}>
+          Spawned worker: <strong>{description}</strong>
+        </span>
+        <StatusBadge success={!hasError} label={status} />
+      </div>
+      {agentId && (
+        <div className={styles.meta} style={{ marginTop: 4 }}>
+          Agent ID: <code className={styles.inlineCode}>{agentId}</code>
+          {parsed.branch && <> · Branch: <code className={styles.inlineCode}>{parsed.branch}</code></>}
+        </div>
+      )}
+      {hasError && <div className={styles.errorText}>{parsed.error}</div>}
+    </div>
+  );
+}
+
+function SendMessageRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const agentId = args?.to || parsed.agent_id || "";
+  const status = parsed.status || "unknown";
+  const hasError = !!parsed.error;
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <MessageSquare size={13} />
+        <span className={styles.rendererTitle}>
+          Message → <code className={styles.inlineCode}>{agentId}</code>
+        </span>
+        <StatusBadge success={!hasError} label={status} />
+      </div>
+      {parsed.message && <div className={styles.meta}>{parsed.message}</div>}
+      {hasError && <div className={styles.errorText}>{parsed.error}</div>}
+    </div>
+  );
+}
+
+function StopAgentRenderer({ result, args }) {
+  const parsed = tryParse(result);
+  if (!parsed) return <RawResultToggle result={result} />;
+
+  const agentId = args?.agent_id || parsed.agent_id || "";
+  const hasError = !!parsed.error;
+
+  return (
+    <div className={styles.rendererBlock}>
+      <div className={styles.rendererHeader}>
+        <StopCircle size={13} />
+        <span className={styles.rendererTitle}>
+          Stopped: <code className={styles.inlineCode}>{agentId}</code>
+        </span>
+        <StatusBadge success={!hasError} label={hasError ? "Failed" : "Stopped"} />
+      </div>
+      {hasError && <div className={styles.errorText}>{parsed.error}</div>}
+    </div>
+  );
+}
+
+// ── 14. Generic Fallback ────────────────────────────────────────────────────
 
 function GenericRenderer({ result }) {
   return <RawResultToggle result={result} />;
@@ -835,6 +913,11 @@ const TOOL_RESULT_REGISTRY = {
 
   // Browser
   browser_action:   { Renderer: BrowserActionRenderer },
+
+  // Coordinator
+  spawn_agent:      { Renderer: SpawnAgentRenderer },
+  send_message:     { Renderer: SendMessageRenderer },
+  stop_agent:       { Renderer: StopAgentRenderer },
 };
 
 /**

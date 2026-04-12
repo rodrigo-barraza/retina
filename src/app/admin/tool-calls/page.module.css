@@ -1,0 +1,203 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-bottom: 40px;
+}
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ── Summary Cards ────────────────────────────────────────── */
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: var(--border-color);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.statIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--accent-subtle);
+  color: var(--accent-color);
+  flex-shrink: 0;
+}
+
+.successIcon {
+  background: hsla(145, 65%, 42%, 0.12);
+  color: hsl(145, 65%, 42%);
+}
+
+.latencyIcon {
+  background: hsla(35, 90%, 55%, 0.12);
+  color: hsl(35, 90%, 55%);
+}
+
+.domainIcon {
+  background: hsla(270, 60%, 55%, 0.12);
+  color: hsl(270, 60%, 55%);
+}
+
+.statContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.statValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Sections ─────────────────────────────────────────────── */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.errorTitle {
+  color: hsl(0, 70%, 60%);
+}
+
+/* ── Cell styles ──────────────────────────────────────────── */
+
+.errorCount {
+  color: hsl(0, 70%, 60%);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.highErrorRate {
+  color: hsl(0, 80%, 55%);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.zeroErrors {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Error Cards ──────────────────────────────────────────── */
+
+.errorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.errorCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid hsla(0, 60%, 50%, 0.2);
+  border-radius: 10px;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: hsla(0, 60%, 50%, 0.4);
+  }
+}
+
+.errorCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.errorCardCount {
+  font-size: 13px;
+  font-weight: 600;
+  color: hsl(0, 70%, 60%);
+  white-space: nowrap;
+}
+
+.errorCardMessage {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono, monospace);
+  line-height: 1.5;
+  word-break: break-all;
+  max-height: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: var(--bg-tertiary);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.errorCardTime {
+  font-size: 11px;
+  color: var(--text-muted);
+}

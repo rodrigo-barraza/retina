@@ -249,7 +249,7 @@ export default function RequestsPage() {
             options={[
               { value: "", label: "All" },
               { value: "/chat", label: "/chat" },
-              { value: "/agent", label: "/agent" },
+              { value: "/agent", label: "/coding-agent" },
               { value: "/embed", label: "/embed" },
               { value: "/live", label: "/live" },
             ]}

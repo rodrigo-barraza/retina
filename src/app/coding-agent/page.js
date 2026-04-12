@@ -3,7 +3,7 @@
 import AgentComponent from "../../components/AgentComponent";
 import styles from "./page.module.css";
 
-export default function AgentPage() {
+export default function CodingAgentPage() {
   return (
     <main className={styles.container}>
       <AgentComponent />

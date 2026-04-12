@@ -27,6 +27,7 @@ import {
   Bot,
   MemoryStick,
   Wrench,
+  BarChart3,
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import SpinningCatComponent from "./SpinningCatComponent";
@@ -55,7 +56,7 @@ const USER_NAV_ITEMS = [
 ];
 
 const USER_EXPERIMENT_ITEMS = [
-  { href: "/agent", label: "Agent", icon: Bot },
+  { href: "/coding-agent", label: "Coding Agent", icon: Bot },
   { href: "/benchmarks", label: "Benchmarks", icon: Target },
   { href: "/vram-benchmark", label: "VRAM Bench", icon: MemoryStick },
   { href: "/synthesis", label: "Synthesis", icon: FlaskConical },
@@ -66,6 +67,7 @@ const ADMIN_NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/requests", label: "Requests", icon: ScrollText, showBadge: "requests" },
   { href: "/admin/tool-requests", label: "Tool Requests", icon: Wrench },
+  { href: "/admin/tool-calls", label: "Tool Calls", icon: BarChart3 },
   {
     href: "/admin/conversations",
     label: "Conversations",
