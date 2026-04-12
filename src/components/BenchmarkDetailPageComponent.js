@@ -82,14 +82,24 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     onRunningChange?.(running);
   }, [running, onRunningChange]);
 
-  // Model selection
+  // Model selection — instance-based: each entry has a unique instanceId
+  // so the same model can be selected multiple times with different settings.
   const [prismConfig, setPrismConfig] = useState(null);
-  const [selectedModelKeys, setSelectedModelKeys] = useState(() => {
+  const [selectedInstances, setSelectedInstances] = useState(() => {
     const saved = StorageService.get(SK_MODEL_MEMORY_BENCHMARKS);
+    // Migration: if saved data uses the old Set-based selectedKeys format,
+    // convert each key into an instance object.
     if (saved?.selectedKeys && Array.isArray(saved.selectedKeys)) {
-      return new Set(saved.selectedKeys);
+      return saved.selectedKeys.map((key) => {
+        const [provider, ...rest] = key.split(":");
+        return { instanceId: crypto.randomUUID(), provider, name: rest.join(":") };
+      });
     }
-    return new Set();
+    // New format: array of instance objects
+    if (saved?.instances && Array.isArray(saved.instances)) {
+      return saved.instances;
+    }
+    return [];
   });
   const [favoriteKeys, setFavoriteKeys] = useState([]);
 
@@ -317,12 +327,20 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   );
 
   // ── Selected model objects (derived) ───────────────────────
-  const selectedModels = useMemo(
-    () =>
-      allModels.filter((m) =>
-        selectedModelKeys.has(`${m.provider}:${m.name}`),
-      ),
-    [allModels, selectedModelKeys],
+  // Each instance is enriched with full model config data.
+  const selectedModels = useMemo(() => {
+    const configMap = new Map();
+    for (const m of allModels) configMap.set(`${m.provider}:${m.name}`, m);
+    return selectedInstances.map((inst) => {
+      const cfg = configMap.get(`${inst.provider}:${inst.name}`) || {};
+      return { ...cfg, ...inst };
+    });
+  }, [allModels, selectedInstances]);
+
+  // Derive a selectedKeys Set for the model picker checkmarks
+  const selectedModelKeys = useMemo(
+    () => new Set(selectedInstances.map((i) => `${i.provider}:${i.name}`)),
+    [selectedInstances],
   );
 
   // Build provider:name → config lookup for size column
@@ -386,8 +404,8 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
       provider: m.provider,
       model: m.name,
       display_name: m.display_name || m.label || m.name,
-      thinkingEnabled: !!thinkingMap[`${m.provider}:${m.name}`],
-      toolsEnabled: !!toolsMap[`${m.provider}:${m.name}`],
+      thinkingEnabled: !!thinkingMap[m.instanceId],
+      toolsEnabled: !!toolsMap[m.instanceId],
     }));
 
     abortRef.current = PrismService.streamBenchmarkRun(benchmarkId, models, {
@@ -549,43 +567,46 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     setSelectedResult(null);
   }, []);
 
-  // ── Toggle model in selection ──────────────────────────────
+  // ── Add model instance to selection (always adds, never toggles) ────
   const handleModelSelect = useCallback((rawModel) => {
-    const key = `${rawModel.provider}:${rawModel.name}`;
-    setSelectedModelKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { selectedKeys: [...next] });
+    const instance = {
+      instanceId: crypto.randomUUID(),
+      provider: rawModel.provider,
+      name: rawModel.name,
+    };
+    setSelectedInstances((prev) => {
+      const next = [...prev, instance];
+      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { instances: next });
       return next;
     });
   }, []);
 
-  const removeModel = useCallback((key) => {
-    setSelectedModelKeys((prev) => {
-      const next = new Set(prev);
-      next.delete(key);
-      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { selectedKeys: [...next] });
+  const removeModel = useCallback((instanceId) => {
+    setSelectedInstances((prev) => {
+      const next = prev.filter((i) => i.instanceId !== instanceId);
+      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { instances: next });
       return next;
     });
+    // Clean up thinking/tools state for removed instance
+    setThinkingMap((prev) => { const n = { ...prev }; delete n[instanceId]; return n; });
+    setToolsMap((prev) => { const n = { ...prev }; delete n[instanceId]; return n; });
   }, []);
 
   const clearModelSelection = useCallback(() => {
-    setSelectedModelKeys(new Set());
-    StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { selectedKeys: [] });
+    setSelectedInstances([]);
+    setThinkingMap({});
+    setToolsMap({});
+    StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { instances: [] });
   }, []);
 
-  // ── Toggle thinking per model ─────────────────────────────
-  const handleToggleThinking = useCallback((key) => {
-    setThinkingMap((prev) => ({ ...prev, [key]: !prev[key] }));
+  // ── Toggle thinking per instance ──────────────────────────
+  const handleToggleThinking = useCallback((instanceId) => {
+    setThinkingMap((prev) => ({ ...prev, [instanceId]: !prev[instanceId] }));
   }, []);
 
-  // ── Toggle tools per model ────────────────────────────────
-  const handleToggleTools = useCallback((key) => {
-    setToolsMap((prev) => ({ ...prev, [key]: !prev[key] }));
+  // ── Toggle tools per instance ─────────────────────────────
+  const handleToggleTools = useCallback((instanceId) => {
+    setToolsMap((prev) => ({ ...prev, [instanceId]: !prev[instanceId] }));
   }, []);
 
   // ── Delete benchmark ──────────────────────────────────────
@@ -675,6 +696,13 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           onSelectModel={handleModelSelect}
           favorites={favoriteKeys}
           onToggleFavorite={handleToggleFavorite}
+          triggerLabel={
+            selectedInstances.length === 0
+              ? "Select Models"
+              : selectedInstances.length === 1
+                ? "1 Model Selected"
+                : `${selectedInstances.length} Models Selected`
+          }
         />
       }
       headerControls={

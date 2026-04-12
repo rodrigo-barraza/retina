@@ -14,6 +14,7 @@ import {
   X,
   Brain,
   Wrench,
+  Copy,
 } from "lucide-react";
 import BadgeComponent from "./BadgeComponent";
 import ChatPreviewComponent from "./ChatPreviewComponent";
@@ -82,23 +83,32 @@ export default function RunHistorySidebarComponent({
         {selectedModels.length > 0 ? (
           <div className={styles.modelCards}>
             {selectedModels.map((m) => {
-              const key = `${m.provider}:${m.name}`;
               const label = m.display_name || m.label || m.name;
-              const isThinking = !!thinkingMap[key];
-              const isTools = !!toolsMap[key];
+              const isThinking = !!thinkingMap[m.instanceId];
+              const isTools = !!toolsMap[m.instanceId];
               const supportsThinking = !!m.thinking;
+              // Count how many instances of this same model exist
+              const dupeCount = selectedModels.filter(
+                (s) => s.provider === m.provider && s.name === m.name
+              ).length;
               return (
-                <div key={key} className={styles.modelCard}>
+                <div key={m.instanceId} className={styles.modelCard}>
                   <div className={styles.modelCardHeader}>
                     <ProviderLogo provider={m.provider} size={14} />
                     <span className={styles.modelCardName} title={label}>
                       {label}
                     </span>
+                    {dupeCount > 1 && (
+                      <span className={styles.dupeBadge} title={`${dupeCount} instances of this model`}>
+                        <Copy size={8} />
+                        {dupeCount}
+                      </span>
+                    )}
                     <button
                       className={styles.modelCardRemove}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onRemoveModel?.(key);
+                        onRemoveModel?.(m.instanceId);
                       }}
                       title="Remove"
                     >
@@ -114,7 +124,7 @@ export default function RunHistorySidebarComponent({
                         className={`${styles.toolsToggle} ${isTools ? styles.toolsToggleActive : ""}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onToggleTools?.(key);
+                          onToggleTools?.(m.instanceId);
                         }}
                         title={isTools ? "Disable tools" : "Enable tools (calculator)"}
                       >
@@ -126,7 +136,7 @@ export default function RunHistorySidebarComponent({
                           className={`${styles.thinkingToggle} ${isThinking ? styles.thinkingToggleActive : ""}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            onToggleThinking?.(key);
+                            onToggleThinking?.(m.instanceId);
                           }}
                           title={isThinking ? "Disable thinking" : "Enable thinking"}
                         >
