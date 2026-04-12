@@ -385,7 +385,9 @@ export function getModalities(messages) {
 /**
  * Compute cumulative wall-clock elapsed time across all user→assistant turns.
  * Each user message with a `timestamp` paired with a subsequent assistant
- * message's `completedAt` constitutes one turn.
+ * message's `completedAt` (or `timestamp`) constitutes one turn.
+ * Works for both live sessions (client-side `completedAt`) and restored
+ * sessions from the DB (server-side `timestamp` on assistant messages).
  * Returns total elapsed seconds.
  */
 export function getSessionElapsedTime(messages) {
@@ -395,12 +397,14 @@ export function getSessionElapsedTime(messages) {
     if (m.role !== "user" || !m.timestamp) continue;
     // Find the next assistant message that completed
     for (let j = i + 1; j < messages.length; j++) {
-      if (messages[j].role === "assistant" && messages[j].completedAt) {
-        const start = new Date(m.timestamp).getTime();
-        const end = new Date(messages[j].completedAt).getTime();
-        if (end > start) total += (end - start) / 1000;
-        break;
-      }
+      const a = messages[j];
+      if (a.role !== "assistant") continue;
+      const endTs = a.completedAt || a.timestamp;
+      if (!endTs) break;
+      const start = new Date(m.timestamp).getTime();
+      const end = new Date(endTs).getTime();
+      if (end > start) total += (end - start) / 1000;
+      break;
     }
   }
   return total;
