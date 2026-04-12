@@ -25,21 +25,6 @@
   flex-shrink: 0;
 }
 
-.headerBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-radius: 999px;
-  background: color-mix(in srgb, #10b981 15%, transparent);
-  color: #10b981;
-  border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
-}
-
 .headerToggle {
   display: inline-flex;
   align-items: center;

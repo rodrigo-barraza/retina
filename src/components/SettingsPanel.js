@@ -53,7 +53,9 @@ export default function SettingsPanel({
   workflows = [],
   conversationStats = null,
   lockedTools,
+  sessionType = "conversation",
 }) {
+  const sessionLabel = sessionType === "agent" ? "Session" : "Conversation";
   const { _providers = {}, textToText = {} } = config || {};
   const textModelsMap = textToText.models || {};
   const audioToTextModelsMap = config?.audioToText?.models || {};
@@ -206,7 +208,7 @@ export default function SettingsPanel({
         {conversationStats && (
           <div className={styles.conversationStats}>
             <div className={styles.statsHeader}>
-              <Layers size={12} style={{ marginRight: 4 }} /> Conversation
+              <Layers size={12} style={{ marginRight: 4 }} /> {sessionLabel}
             </div>
             <div className={styles.statsBadges}>
               <span className={styles.statBadge}>

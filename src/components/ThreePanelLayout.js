@@ -31,13 +31,15 @@ export default function ThreePanelLayout({
   leftPanel,
   leftTitle = "Settings",
   rightPanel,
-  rightTitle = "Conversations",
+  rightTitle,
+  sessionType = "conversation",
   headerTitle = "",
   headerMeta = null,
   headerControls = null,
   headerCenter = null,
   children,
 }) {
+  const resolvedRightTitle = rightTitle ?? (sessionType === "agent" ? "Sessions" : "Conversations");
   // Start with panels visible (matches SSR), then sync from localStorage after mount
   const [showLeft, setShowLeft] = useState(true);
   const [showRight, setShowRight] = useState(true);
@@ -168,8 +170,8 @@ export default function ThreePanelLayout({
               onClick={toggleRight}
               title={
                 showRight
-                  ? `Hide ${rightTitle.toLowerCase()}`
-                  : `Show ${rightTitle.toLowerCase()}`
+                  ? `Hide ${resolvedRightTitle.toLowerCase()}`
+                  : `Show ${resolvedRightTitle.toLowerCase()}`
               }
             >
               {showRight ? (
@@ -229,7 +231,7 @@ export default function ThreePanelLayout({
               style={transitionStyle}
               onClick={handleSidebarClick(toggleRight)}
             >
-              <div className={styles.sidebarHeader}>{rightTitle}</div>
+              <div className={styles.sidebarHeader}>{resolvedRightTitle}</div>
               {rightPanel}
             </aside>
           )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Bot, Paperclip, X, Code2, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain, Plug, GitBranch, Scissors, Repeat, ListChecks } from "lucide-react";
+import { Bot, Paperclip, X, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain, Plug, GitBranch, Scissors, Repeat, ListChecks } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ThreePanelLayout from "./ThreePanelLayout.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
@@ -69,7 +69,7 @@ export default function AgentComponent() {
     crypto.randomUUID(),
   );
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
-  const [conversations, setConversations] = useState([]);
+  const [sessions, setSessions] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [config, setConfig] = useState(null);
   const [title, setTitle] = useState("Agent");
@@ -219,19 +219,19 @@ export default function AgentComponent() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load agent session history
-  const loadConversations = useCallback(async () => {
+  const loadSessions = useCallback(async () => {
     try {
-      const convs =
+      const list =
         await PrismService.getAgentSessions(PROJECT_AGENT);
-      setConversations(convs);
+      setSessions(list);
     } catch (err) {
       console.error("Failed to load agent sessions:", err);
     }
   }, []);
 
   useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+    loadSessions();
+  }, [loadSessions]);
 
   // Load custom tools
   const loadCustomTools = useCallback(async () => {
@@ -815,7 +815,7 @@ export default function AgentComponent() {
           resolvedTitle,
         );
         // Messages are already updated by the streaming callbacks — just reload history
-        loadConversations();
+        loadSessions();
       } catch (err) {
         setMessages((prev) => [
           ...prev,
@@ -838,7 +838,7 @@ export default function AgentComponent() {
       messages,
       title,
       runOrchestrationLoop,
-      loadConversations,
+      loadSessions,
     ],
   );
 
@@ -865,7 +865,7 @@ export default function AgentComponent() {
     textareaRef.current?.focus();
   }, [isGenerating]);
 
-  const handleSelectConversation = useCallback(
+  const handleSelectSession = useCallback(
     async (conv) => {
       if (isGenerating) return;
       try {
@@ -905,11 +905,11 @@ export default function AgentComponent() {
     [isGenerating],
   );
 
-  const handleDeleteConversation = useCallback(
+  const handleDeleteSession = useCallback(
     async (convId) => {
       try {
         await PrismService.deleteAgentSession(convId, PROJECT_AGENT);
-        setConversations((prev) => prev.filter((c) => c.id !== convId));
+        setSessions((prev) => prev.filter((c) => c.id !== convId));
         if (activeId === convId) {
           handleNewChat();
         }
@@ -970,6 +970,7 @@ export default function AgentComponent() {
           hasAssistantImages={false}
           lockedTools={AGENT_LOCKED_TOOLS}
           hideSystemPrompt
+          sessionType="agent"
           conversationStats={
             messages.length > 0
               ? {
@@ -1251,18 +1252,19 @@ export default function AgentComponent() {
       leftTitle={null}
       rightPanel={
         <HistoryPanel
-          conversations={conversations}
+          conversations={sessions}
           activeId={activeId}
-          onSelect={handleSelectConversation}
+          onSelect={handleSelectSession}
           onNew={handleNewChat}
-          onDelete={handleDeleteConversation}
+          onDelete={handleDeleteSession}
           disableNew={messages.length === 0 && !activeId}
           newLabel="New Session"
           emptyText="No recent sessions"
           searchText="Search sessions..."
         />
       }
-      rightTitle={`${conversations.length} Sessions`}
+      rightTitle={`${sessions.length} Sessions`}
+      sessionType="agent"
       headerTitle={title}
       headerCenter={
         <ModelPickerPopoverComponent
@@ -1342,10 +1344,7 @@ export default function AgentComponent() {
             <Repeat size={10} />
             {Number.isFinite(maxIterations) ? maxIterations : "∞"}
           </button>
-          <span className={styles.headerBadge}>
-            <Code2 size={10} />
-            Agentic
-          </span>
+
         </div>
       }
     >
