@@ -13,6 +13,10 @@ import {
   FileText,
   Terminal,
   GitBranch,
+  Dog,
+  Image,
+  CloudSun,
+  TrendingUp,
 } from "lucide-react";
 import CloseButtonComponent from "./CloseButtonComponent";
 import styles from "./AgentPickerPopoverComponent.module.css";
@@ -33,6 +37,20 @@ const AVAILABLE_AGENTS = [
       { name: "Terminal", icon: Terminal },
       { name: "Git", icon: GitBranch },
       { name: "Web", icon: Globe },
+      { name: "Compute", icon: Brain },
+    ],
+  },
+  {
+    id: "LUPOS",
+    name: "Lupos",
+    description: "Image generation, web search, trends, media, and weather",
+    icon: Dog,
+    tools: [
+      { name: "Image Gen", icon: Image },
+      { name: "Web Search", icon: Search },
+      { name: "Trends", icon: TrendingUp },
+      { name: "Weather", icon: CloudSun },
+      { name: "Media", icon: Globe },
       { name: "Compute", icon: Brain },
     ],
   },
