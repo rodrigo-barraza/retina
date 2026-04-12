@@ -83,7 +83,6 @@ export default function AgentComponent() {
   const [mcpServers, setMcpServers] = useState([]);
   const [memoriesRefreshKey, setMemoriesRefreshKey] = useState(0);
   const [tasksRefreshKey, setTasksRefreshKey] = useState(0);
-  const [newMemoriesCount, setNewMemoriesCount] = useState(0);
   const [totalMemoriesCount, setTotalMemoriesCount] = useState(0);
   const [workersCount, setWorkersCount] = useState(0);
   const [tasksCount, setTasksCount] = useState(0);
@@ -768,7 +767,6 @@ export default function AgentComponent() {
                   if (total > baselineCount) {
                     clearInterval(pollInterval);
                     setMemoriesRefreshKey((k) => k + 1);
-                    setNewMemoriesCount((c) => c + (total - baselineCount));
                   }
                 } catch { /* ignore */ }
                 if (pollAttempts >= 10) clearInterval(pollInterval);
@@ -950,6 +948,9 @@ export default function AgentComponent() {
   );
 
   // ── Left sidebar: tab bar + content ──────────────────────────
+  // Badge helper — 0 = greyed-out, >0 = lit
+  const badgeProps = (count) => ({ badge: count, badgeDisabled: count === 0 });
+
   const leftPanel = (
     <>
       <TabBarComponent
@@ -958,40 +959,37 @@ export default function AgentComponent() {
           {
             key: "tools",
             icon: <Wrench size={14} />,
-            badge: allToolSchemas.length,
+            ...badgeProps(allToolSchemas.length),
             tooltip: "Tools",
           },
           {
             key: "skills",
             icon: <BookOpen size={14} />,
-            badge: skills.filter((s) => s.enabled).length || undefined,
+            ...badgeProps(skills.filter((s) => s.enabled).length),
             tooltip: "Skills",
           },
           {
             key: "memories",
             icon: <Brain size={14} />,
-            badge: totalMemoriesCount,
-            badgeDisabled: !newMemoriesCount,
+            ...badgeProps(totalMemoriesCount),
             tooltip: "Memories",
           },
           {
             key: "tasks",
             icon: <ListChecks size={14} />,
-            badge: tasksCount,
-            badgeDisabled: true,
+            ...badgeProps(tasksCount),
             tooltip: "Tasks",
           },
           {
             key: "mcp",
             icon: <Plug size={14} />,
-            badge: mcpServers.filter((s) => s.connected).length || undefined,
+            ...badgeProps(mcpServers.filter((s) => s.connected).length),
             tooltip: "MCP Servers",
           },
           {
             key: "workers",
             icon: <Users size={14} />,
-            badge: workersCount,
-            badgeDisabled: true,
+            ...badgeProps(workersCount),
             tooltip: "Workers",
           },
           {
@@ -1003,7 +1001,6 @@ export default function AgentComponent() {
         activeTab={leftTab}
         onChange={(tab) => {
           setLeftTab(tab);
-          if (tab === "memories") setNewMemoriesCount(0);
         }}
       />
 
