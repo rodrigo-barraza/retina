@@ -16,11 +16,6 @@
   width: 80px;
   height: 80px;
   border-radius: var(--border-radius-sm);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--accent-color) 12%, transparent),
-    color-mix(in srgb, var(--accent-color) 5%, transparent)
-  );
   color: var(--accent-color);
   margin-bottom: 20px;
   animation: pulseScale 3s ease-in-out infinite;
