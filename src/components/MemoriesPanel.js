@@ -144,12 +144,16 @@ export default function MemoriesPanel({ project, refreshKey, consolidationEvent,
       await PrismService.deleteAgentMemory(memoryId);
       // Optimistic removal from local state
       setMemories((prev) => prev.filter((m) => (m.id || m._id) !== memoryId));
-      setTotal((prev) => Math.max(0, prev - 1));
+      setTotal((prev) => {
+        const next = Math.max(0, prev - 1);
+        onCountChange?.(next);
+        return next;
+      });
       setConfirmingDeleteId(null);
     } catch (err) {
       console.error("Failed to delete memory:", err);
     }
-  }, []);
+  }, [onCountChange]);
 
   const handleConsolidate = useCallback(async () => {
     setConsolidating(true);

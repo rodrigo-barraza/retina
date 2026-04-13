@@ -763,6 +763,10 @@ export default function AgentComponent() {
               // Auto-expand memories panel when agent saves a memory
               setLeftTab("memories");
               setMemoriesRefreshKey((k) => k + 1);
+              // Re-fetch count for the tab badge (MemoriesPanel may not be mounted yet)
+              PrismService.getAgentMemories(PROJECT_AGENT, 1)
+                .then((r) => setTotalMemoriesCount(r.total || 0))
+                .catch(() => {});
             }
           },
           onDone: (data) => {
