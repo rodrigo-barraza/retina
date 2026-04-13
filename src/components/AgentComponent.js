@@ -785,6 +785,19 @@ export default function AgentComponent() {
               PrismService.getAgentMemories(PROJECT_AGENT, 1)
                 .then((r) => setTotalMemoriesCount(r.total || 0))
                 .catch(() => {});
+            } else if (statusData?.message === "worker_notification" && statusData.agentNotification) {
+              // Inject worker notification as a user-role message so
+              // MessageList detects <task-notification> XML and renders
+              // the live notification card (same as on session reload).
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "user",
+                  content: statusData.agentNotification,
+                  timestamp: new Date().toISOString(),
+                  _isNotification: true,
+                },
+              ]);
             }
           },
           onDone: (data) => {
