@@ -38,6 +38,7 @@ export default class PrismService {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       method,
       headers: getHeaders(),
+      cache: "no-store",
       ...(body && { body: JSON.stringify(body) }),
     });
 
