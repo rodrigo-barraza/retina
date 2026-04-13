@@ -3,6 +3,9 @@ import { Coins } from "lucide-react";
 import { formatCost } from "../utils/utilities";
 import styles from "./CostBadgeComponent.module.css";
 
+/** Pixel height of each digit cell — must match --cell-h in the CSS module. */
+const CELL_H_PX = 16;
+
 /**
  * RollingDigit — single odometer column that slides between 0–9.
  * Uses translateY on a strip of stacked digits for GPU-accelerated animation.
@@ -13,7 +16,7 @@ const RollingDigit = memo(function RollingDigit({ digit, delay, animate }) {
       <span
         className={`${styles.digitStrip} ${animate ? styles.animated : ""}`}
         style={{
-          transform: `translateY(${-digit}em)`,
+          transform: `translateY(${-digit * CELL_H_PX}px)`,
           transitionDelay: animate ? `${delay}ms` : "0ms",
         }}
       >

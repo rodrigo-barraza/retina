@@ -36,19 +36,23 @@
 
 /* ── Rolling / Odometer ─────────────────────────── */
 
+/*
+ * --cell-h: pixel height of each digit cell.
+ * Defined here so slot, cell, and strip all stay in sync.
+ * Must also match CELL_H_PX in the JS component.
+ */
 .rollingWrap {
+  --cell-h: 16px;
   display: inline-flex;
-  align-items: baseline;
-  line-height: 1;
+  align-items: center;
 }
 
-/* Fixed-height mask that clips the digit strip overflow */
+/* Fixed-height mask — clips the 0–9 strip to show one digit */
 .digitSlot {
   display: inline-block;
-  height: 1em;
+  height: var(--cell-h);
   overflow: hidden;
-  line-height: 1;
-  width: 0.56em;
+  width: 0.6em;
 }
 
 /* Vertical strip of 0–9 — no transition by default (snap on mount) */
@@ -65,14 +69,16 @@
 
 /* Individual digit cell inside the strip */
 .digitCell {
-  display: block;
-  height: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--cell-h);
   line-height: 1;
-  text-align: center;
 }
 
-/* Static glyphs ($ and .) sit inline, no clipping */
+/* Static glyphs ($ and .) — vertically centered to match digit cells */
 .staticChar {
-  display: inline-block;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  height: var(--cell-h);
 }
