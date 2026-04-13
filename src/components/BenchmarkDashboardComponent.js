@@ -151,6 +151,10 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
         provider: s.provider,
         // Use config display_name if available, otherwise humanize the raw path
         display_name: configModel?.display_name || humanizeModelPath(s.label || s.model),
+        // Benchmark config flags (thinking / tools / agent)
+        _benchThinkingEnabled: s.thinkingEnabled || false,
+        _benchToolsEnabled: s.toolsEnabled || false,
+        _benchAgent: s.agent || null,
         // Benchmark-specific data (read by benchmark columns via _raw)
         _benchTotal: s.total,
         _benchPassed: s.passed,
@@ -165,21 +169,21 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
     });
   }, [stats, configLookup]);
 
+  // ── Composite stat identity (model + config flags) ─────────
+  const statId = (s) =>
+    `${s?.provider}:${s?.model}:${s?.thinkingEnabled || false}:${s?.toolsEnabled || false}:${s?.agent || ""}`;
+
   // ── Row click → select model for sidebar detail ───────────
   const handleRowClick = useCallback((stat) => {
     setSelectedModel((prev) =>
-      prev?.model === stat.model && prev?.provider === stat.provider ? null : stat,
+      statId(prev) === statId(stat) ? null : stat,
     );
   }, []);
 
   // ── Row class for selected highlight ──────────────────────
   const getRowClassName = useCallback(
     (stat) => {
-      if (
-        selectedModel &&
-        stat?.model === selectedModel.model &&
-        stat?.provider === selectedModel.provider
-      ) {
+      if (selectedModel && statId(stat) === statId(selectedModel)) {
         return styles.selectedRow;
       }
       return "";
@@ -297,7 +301,7 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
             {/* ── Summary Bar ──────────────────────── */}
             <SummaryBarComponent
               items={[
-                { value: stats.totalModels, label: "Models Tested" },
+                { value: stats.totalModels, label: "Configs Tested" },
                 { value: stats.totalBenchmarks, label: "Benchmarks" },
                 { value: totals.total, label: "Total Tests" },
                 { value: totals.passed, label: "Passed", color: "var(--success)" },

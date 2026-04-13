@@ -204,6 +204,16 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             setActiveProgress(0);
             setActivePhase(data.isLocal ? "Loading model" : "Connecting");
 
+            // Reset live text for new model
+            liveTextRef.current = "";
+            liveThinkingRef.current = "";
+            setLiveSnapshot({ text: "", thinking: "" });
+            // Start periodic flush of live text to state (100ms batches)
+            if (liveFlushRef.current) clearInterval(liveFlushRef.current);
+            liveFlushRef.current = setInterval(() => {
+              setLiveSnapshot({ text: liveTextRef.current, thinking: liveThinkingRef.current });
+            }, 100);
+
             if (progressRef.current) clearInterval(progressRef.current);
 
             const startTime = Date.now();
@@ -240,13 +250,26 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
               }
             }, 60);
           },
+          onChunk: (content) => {
+            liveTextRef.current += content;
+          },
+          onThinking: (content) => {
+            liveThinkingRef.current += content;
+          },
           onModelComplete: (result) => {
             if (progressRef.current) {
               clearInterval(progressRef.current);
               progressRef.current = null;
             }
+            if (liveFlushRef.current) {
+              clearInterval(liveFlushRef.current);
+              liveFlushRef.current = null;
+            }
             setActiveProgress(0);
             setActivePhase("");
+            liveTextRef.current = "";
+            liveThinkingRef.current = "";
+            setLiveSnapshot({ text: "", thinking: "" });
             setStreamingResults((prev) => [...prev, result]);
             setActiveModel(null);
           },
@@ -255,8 +278,15 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
               clearInterval(progressRef.current);
               progressRef.current = null;
             }
+            if (liveFlushRef.current) {
+              clearInterval(liveFlushRef.current);
+              liveFlushRef.current = null;
+            }
             setActiveProgress(0);
             setActivePhase("");
+            liveTextRef.current = "";
+            liveThinkingRef.current = "";
+            setLiveSnapshot({ text: "", thinking: "" });
             setLatestRun(run);
             setActiveRunId(run.id);
             setRunning(false);
@@ -276,8 +306,15 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
               clearInterval(progressRef.current);
               progressRef.current = null;
             }
+            if (liveFlushRef.current) {
+              clearInterval(liveFlushRef.current);
+              liveFlushRef.current = null;
+            }
             setActiveProgress(0);
             setActivePhase("");
+            liveTextRef.current = "";
+            liveThinkingRef.current = "";
+            setLiveSnapshot({ text: "", thinking: "" });
             setRunning(false);
             setActiveModel(null);
             abortRef.current = null;
@@ -1118,13 +1155,13 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                   model: selectedResult.label || selectedResult.model,
                   provider: selectedResult.provider,
                 }] : []),
-                ...(activeModel && !selectedResult && liveSnapshot.text ? [{
+                ...(!selectedResult && activeModel ? [{
                   role: "assistant",
-                  content: liveSnapshot.text,
+                  content: liveSnapshot.text || "",
                   thinking: liveSnapshot.thinking || undefined,
                   model: activeModel.label || activeModel.model,
                   provider: activeModel.provider,
-                  streaming: true,
+                  _liveStreaming: true,
                 }] : []),
               ]}
             />

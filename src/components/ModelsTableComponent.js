@@ -18,6 +18,8 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Bot,
+  Wrench,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import {
@@ -217,6 +219,10 @@ function buildRow(rawModel, favorites = []) {
     requests: rawModel.usageCount || 0,
     totalInputTokens: rawModel.totalInputTokens || 0,
     totalOutputTokens: rawModel.totalOutputTokens || 0,
+    // Benchmark config flags
+    _benchThinking: rawModel._benchThinkingEnabled || false,
+    _benchTools: rawModel._benchToolsEnabled || false,
+    _benchAgent: rawModel._benchAgent || null,
   };
   // Arena columns
   for (const col of ARENA_COLUMNS) {
@@ -701,7 +707,34 @@ function ModelsTableInner({
       },
     });
 
-    // 2. NAME — provider icon + display name + loaded badge + actions
+    // 2. TYPE — Agent vs Model badge (benchmark mode only)
+    if (isBenchmark) {
+      cols.push({
+        key: "benchType",
+        label: "Type",
+        description: "Whether this entry is a direct model call or an agentic run",
+        sortable: true,
+        align: "center",
+        sortValue: (row) => (row._benchAgent ? 1 : 0),
+        render: (row) => {
+          if (row._benchAgent) {
+            return (
+              <span className={styles.benchAgentBadge}>
+                <Bot size={12} />
+                Agent
+              </span>
+            );
+          }
+          return (
+            <span className={styles.benchModelBadge}>
+              Model
+            </span>
+          );
+        },
+      });
+    }
+
+    // 3. NAME — provider icon + display name + loaded badge + actions
     cols.push({
       key: "name",
       label: "Name",
@@ -740,7 +773,7 @@ function ModelsTableInner({
       },
     });
 
-    // 3. MODEL — model key (monospace identifier)
+    // 5. MODEL — model key (monospace identifier)
     cols.push({
       key: "model",
       label: "Model",
@@ -751,7 +784,7 @@ function ModelsTableInner({
       ),
     });
 
-    // 4. PROVIDER — provider badge
+    // 6. PROVIDER — provider badge
     cols.push({
       key: "provider",
       label: "Provider",
@@ -763,7 +796,7 @@ function ModelsTableInner({
       ),
     });
 
-    // 5. TYPE — model type badge (conversation / audio / embed)
+    // 7. TYPE — model type badge (conversation / audio / embed)
     if (hasModelType) {
       cols.push({
         key: "modelType",
@@ -784,6 +817,36 @@ function ModelsTableInner({
         align: "right",
         render: (row) => row._raw.year || "—",
         ...benchmarkHide,
+      });
+    }
+
+    // ── Benchmark config columns (Thinking, Tools) ──
+    if (isBenchmark) {
+      cols.push({
+        key: "benchThinking",
+        label: "Thinking",
+        description: "Whether thinking/reasoning mode was enabled for this run",
+        sortable: true,
+        align: "center",
+        sortValue: (row) => (row._benchThinking ? 1 : 0),
+        render: (row) => (
+          row._benchThinking
+            ? <span className={styles.benchThinkingOn}><Brain size={12} /> On</span>
+            : <span className={styles.benchFlagOff}>—</span>
+        ),
+      });
+      cols.push({
+        key: "benchToolsEnabled",
+        label: "Tools",
+        description: "Whether tool/function calling was enabled for this run",
+        sortable: true,
+        align: "center",
+        sortValue: (row) => (row._benchTools ? 1 : 0),
+        render: (row) => (
+          row._benchTools
+            ? <span className={styles.benchToolsOn}><Wrench size={12} /> On</span>
+            : <span className={styles.benchFlagOff}>—</span>
+        ),
       });
     }
 
@@ -1217,7 +1280,16 @@ function ModelsTableInner({
         maxHeight={maxHeight}
         columns={columns}
         data={tableData}
-        getRowKey={(row) => `${row._model.provider}-${row._model.key}`}
+        getRowKey={(row) => {
+          if (isBenchmark) {
+            // Composite key: same model with different thinking/tools/agent configs must be separate rows
+            const t = row._benchThinking ? "T" : "";
+            const f = row._benchTools ? "F" : "";
+            const a = row._benchAgent || "";
+            return `${row._model.provider}-${row._model.key}-${t}${f}${a}`;
+          }
+          return `${row._model.provider}-${row._model.key}`;
+        }}
         onRowClick={onSelect ? (row) => onSelect(isBenchmark ? row._raw._benchStat : row._raw) : undefined}
         emptyText={
           emptyText || (searchQuery.trim() ? "No matching models" : "No models found")
