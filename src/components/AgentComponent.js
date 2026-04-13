@@ -653,6 +653,15 @@ export default function AgentComponent() {
             if (data.status !== "calling" && tc.name?.startsWith("task_")) {
               setTasksRefreshKey((k) => k + 1);
             }
+
+            // Auto-refresh memories panel when upsert_memory completes
+            if (data.status !== "calling" && tc.name === "upsert_memory") {
+              setLeftTab("memories");
+              setMemoriesRefreshKey((k) => k + 1);
+              PrismService.getAgentMemories(PROJECT_AGENT, 1)
+                .then((r) => setTotalMemoriesCount(r.total || 0))
+                .catch(() => {});
+            }
           },
           // LM Studio native MCP tool calls (toolCall events)
           onToolCall: (tc) => {
@@ -705,6 +714,15 @@ export default function AgentComponent() {
             // Auto-refresh tasks panel when any task tool completes (MCP path)
             if (tc.status !== "calling" && tc.name?.startsWith("task_")) {
               setTasksRefreshKey((k) => k + 1);
+            }
+
+            // Auto-refresh memories panel when upsert_memory completes (MCP path)
+            if (tc.status !== "calling" && tc.name === "upsert_memory") {
+              setLeftTab("memories");
+              setMemoriesRefreshKey((k) => k + 1);
+              PrismService.getAgentMemories(PROJECT_AGENT, 1)
+                .then((r) => setTotalMemoriesCount(r.total || 0))
+                .catch(() => {});
             }
           },
           onToolOutput: (data) => {
