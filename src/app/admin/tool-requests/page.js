@@ -21,6 +21,7 @@ import {
   formatNumber,
   formatLatency,
   formatDateTime,
+  formatFileSize,
   buildDateRangeParams,
 } from "../../../utils/utilities";
 import { getToolRequestsColumns } from "./toolRequestsColumns";
@@ -200,11 +201,11 @@ export default function ToolRequestsPage() {
           },
           {
             label: "Request Size",
-            value: tc.inBytes > 0 ? `${(tc.inBytes / 1024).toFixed(1)} KB` : "—",
+            value: tc.inBytes > 0 ? formatFileSize(tc.inBytes) : "—",
           },
           {
             label: "Response Size",
-            value: tc.outBytes > 0 ? `${(tc.outBytes / 1024).toFixed(1)} KB` : "—",
+            value: tc.outBytes > 0 ? formatFileSize(tc.outBytes) : "—",
           },
         ],
       },

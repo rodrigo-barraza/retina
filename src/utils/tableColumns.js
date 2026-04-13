@@ -859,7 +859,7 @@ export const benchmarkCostColumn = () => ({
   align: "right",
   render: (r) =>
     r.estimatedCost != null ? (
-      <span className={styles.monoCell}>${r.estimatedCost.toFixed(6)}</span>
+      <span className={styles.monoCell}>{formatCost(r.estimatedCost)}</span>
     ) : (
       emptyDash()
     ),

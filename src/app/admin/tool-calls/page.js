@@ -18,6 +18,7 @@ import {
   formatNumber,
   formatLatency,
   formatDateTime,
+  formatFileSize,
   buildDateRangeParams,
 } from "../../../utils/utilities";
 import styles from "./page.module.css";
@@ -102,10 +103,7 @@ function getToolColumns() {
       align: "right",
       render: (r) => {
         if (!r.totalTransferBytes || r.totalTransferBytes <= 0) return "—";
-        if (r.totalTransferBytes > 1_048_576) {
-          return `${(r.totalTransferBytes / 1_048_576).toFixed(1)} MB`;
-        }
-        return `${(r.totalTransferBytes / 1024).toFixed(1)} KB`;
+        return formatFileSize(r.totalTransferBytes);
       },
     },
   ];

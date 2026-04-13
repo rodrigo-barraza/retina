@@ -289,6 +289,24 @@
   border-top: 1px solid var(--border-color);
 }
 
+/* ── Streaming chunk fade-in for thinking content ── */
+.thinkingStreaming .thinkingContent p,
+.thinkingStreaming .thinkingContent li,
+.thinkingStreaming .thinkingContent h1,
+.thinkingStreaming .thinkingContent h2,
+.thinkingStreaming .thinkingContent h3,
+.thinkingStreaming .thinkingContent h4,
+.thinkingStreaming .thinkingContent blockquote,
+.thinkingStreaming .thinkingContent pre {
+  animation: streamChunkFadeIn 1s ease-out both;
+}
+
+/* Only the last block-level child animates — previous ones are already visible */
+.thinkingStreaming .thinkingContent > div > :last-child p:last-of-type,
+.thinkingStreaming .thinkingContent > div > :last-child li:last-of-type {
+  animation: streamChunkFadeIn 1s ease-out both;
+}
+
 /* ── Active thinking streaming state ── */
 .thinkingStreaming {
   border-color: transparent;
@@ -1000,6 +1018,29 @@
      and make it inline so the cursor sits at the end of the text. */
   & > :nth-last-child(2) {
     display: inline;
+  }
+}
+
+/* ── Streaming chunk fade-in for markdown text ── */
+.streamingText p,
+.streamingText li,
+.streamingText h1,
+.streamingText h2,
+.streamingText h3,
+.streamingText h4,
+.streamingText blockquote,
+.streamingText pre {
+  animation: streamChunkFadeIn 1s ease-out both;
+}
+
+@keyframes streamChunkFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   getUniqueModels,
-  getConversationCost,
-  getConversationTokenStats,
+  getSessionCost,
+  getSessionTokenStats,
   getUsedTools,
   buildDateRangeParams,
 } from "../../../utils/utilities";
@@ -359,12 +359,12 @@ export default function ConversationsPage({ initialId = null, traceId = null }) 
   );
 
   const totalCost = useMemo(
-    () => getConversationCost(msgs),
+    () => getSessionCost(msgs),
     [msgs],
   );
 
   const { totalTokens, requestCount } = useMemo(
-    () => getConversationTokenStats(msgs),
+    () => getSessionTokenStats(msgs),
     [msgs],
   );
 

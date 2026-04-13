@@ -209,8 +209,6 @@ export function getUniqueModels(messages) {
 export function getSessionCost(messages) {
   return messages.reduce((sum, m) => sum + (m.estimatedCost || 0), 0);
 }
-/** @deprecated Use getSessionCost */
-export const getConversationCost = getSessionCost;
 
 /**
  * Aggregate input/output tokens and request count from assistant messages.
@@ -231,8 +229,6 @@ export function getSessionTokenStats(messages) {
     requestCount: requests,
   };
 }
-/** @deprecated Use getSessionTokenStats */
-export const getConversationTokenStats = getSessionTokenStats;
 
 /**
  * Count tool invocations across all messages.

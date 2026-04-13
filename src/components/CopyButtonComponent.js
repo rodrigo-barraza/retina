@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Copy, Check } from "lucide-react";
+import { copyToClipboard } from "../utils/utilities";
 import styles from "./CopyButtonComponent.module.css";
 
 /**
@@ -29,12 +30,10 @@ export default function CopyButtonComponent({
   const handleCopy = useCallback(
     async (e) => {
       e.stopPropagation();
-      try {
-        await navigator.clipboard.writeText(text);
+      const ok = await copyToClipboard(text);
+      if (ok) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-      } catch {
-        // clipboard API unavailable
       }
     },
     [text],

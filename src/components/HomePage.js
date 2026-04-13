@@ -13,8 +13,8 @@ import {
 } from "../utils/FunctionCallingUtilities";
 import {
   getUniqueModels,
-  getConversationCost,
-  getConversationTokenStats,
+  getSessionCost,
+  getSessionTokenStats,
   getUsedTools,
 } from "../utils/utilities";
 import {
@@ -261,12 +261,12 @@ export default function HomePage({ initialConversationId = null }) {
   );
 
   const totalCost = useMemo(
-    () => getConversationCost(messages),
+    () => getSessionCost(messages),
     [messages],
   );
 
   const { totalTokens, requestCount } = useMemo(
-    () => getConversationTokenStats(messages),
+    () => getSessionTokenStats(messages),
     [messages],
   );
 

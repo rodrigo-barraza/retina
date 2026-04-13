@@ -57,14 +57,3 @@ export function buildToolSchemas(builtInTools, disabledBuiltIns, customTools) {
   return [...builtIn, ...custom];
 }
 
-/**
- * Build a name → schema Map from built-in tools.
- * Build a name → schema Map for data source badge lookups.
- */
-export function buildToolSchemaMap(builtInTools) {
-  const map = new Map();
-  for (const t of builtInTools) {
-    map.set(t.name, t);
-  }
-  return map;
-}

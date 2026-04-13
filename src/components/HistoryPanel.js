@@ -4,11 +4,8 @@ import { useMemo } from "react";
 import { MessageSquare, Plus } from "lucide-react";
 import HistoryList from "./HistoryList";
 import ButtonComponent from "./ButtonComponent";
+import { getModalities } from "../utils/utilities";
 import styles from "./HistoryPanel.module.css";
-
-// Re-export from canonical location so existing imports don't break
-export { getModalities } from "../utils/utilities";
-
 
 export default function HistoryPanel({
   sessions = [],

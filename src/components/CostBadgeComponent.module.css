@@ -33,3 +33,46 @@
   padding: 1px 4px;
   gap: 2px;
 }
+
+/* ── Rolling / Odometer ─────────────────────────── */
+
+.rollingWrap {
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+}
+
+/* Fixed-height mask that clips the digit strip overflow */
+.digitSlot {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  line-height: 1;
+  width: 0.56em;
+}
+
+/* Vertical strip of 0–9 — no transition by default (snap on mount) */
+.digitStrip {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+/* Transition enabled after mount via JS-toggled class */
+.digitStrip.animated {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Individual digit cell inside the strip */
+.digitCell {
+  display: block;
+  height: 1em;
+  line-height: 1;
+  text-align: center;
+}
+
+/* Static glyphs ($ and .) sit inline, no clipping */
+.staticChar {
+  display: inline-block;
+  line-height: 1;
+}

@@ -5,7 +5,7 @@ import {
   statusColumn,
   emptyDash,
 } from "../../../utils/tableColumns";
-import { formatLatency } from "../../../utils/utilities";
+import { formatLatency, formatFileSize } from "../../../utils/utilities";
 
 /**
  * getToolRequestsColumns — column definitions for the tool-call telemetry table.
@@ -103,7 +103,7 @@ export const getToolRequestsColumns = ({ totalDuration = 1 } = {}) => [
     align: "right",
     render: (r) =>
       r.inBytes > 0
-        ? `${(r.inBytes / 1024).toFixed(1)} KB`
+        ? formatFileSize(r.inBytes)
         : emptyDash(),
   },
   {
@@ -114,7 +114,7 @@ export const getToolRequestsColumns = ({ totalDuration = 1 } = {}) => [
     align: "right",
     render: (r) =>
       r.outBytes > 0
-        ? `${(r.outBytes / 1024).toFixed(1)} KB`
+        ? formatFileSize(r.outBytes)
         : emptyDash(),
   },
   {

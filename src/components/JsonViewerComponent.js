@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { ChevronRight, Copy, Check } from "lucide-react";
+import { copyToClipboard } from "../utils/utilities";
 import styles from "./JsonViewerComponent.module.css";
 
 /**
@@ -23,10 +24,12 @@ export default function JsonViewerComponent({
 }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  const handleCopy = useCallback(async () => {
+    const ok = await copyToClipboard(JSON.stringify(data, null, 2));
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
   }, [data]);
 
   return (

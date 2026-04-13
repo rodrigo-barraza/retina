@@ -1,36 +1,24 @@
-import { PRISM_URL, PROJECT_NAME } from "../../config.js";
+import { PRISM_URL } from "../../config.js";
+import { getBaseHeaders } from "./serviceHeaders.js";
 import { subscribe as sseSubscribe } from "./SSEManager";
 import { buildLmStudioLoadBody } from "../utils/utilities.js";
 
 const API_BASE = PRISM_URL;
 
-function getHeaders() {
-  return {
-    "Content-Type": "application/json",
-    "x-project": PROJECT_NAME,
-    "x-username": "admin",
-  };
-}
-
-async function fetchJSON(path, options = {}) {
-  const res = await fetch(`${API_BASE}/admin${path}`, {
-    headers: getHeaders(),
-    ...options,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `Request failed: ${res.status}`);
-  }
-  return res.json();
+function getAdminHeaders() {
+  return { ...getBaseHeaders(), "x-username": "admin" };
 }
 
 /**
- * Fetch a user-scoped route with admin identity.
- * Used for routes like /config that don't live under /admin.
+ * Shared fetch helper for IrisService.
+ * @param {string} path  — URL path relative to API_BASE (or API_BASE/admin)
+ * @param {object} [options] — fetch overrides
+ * @param {boolean} [admin=true] — when true, prefixes path with /admin
  */
-async function fetchUserRouteAsAdmin(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: getHeaders(),
+async function fetchJSON(path, options = {}, admin = true) {
+  const prefix = admin ? "/admin" : "";
+  const res = await fetch(`${API_BASE}${prefix}${path}`, {
+    headers: getAdminHeaders(),
     ...options,
   });
   if (!res.ok) {
@@ -39,6 +27,7 @@ async function fetchUserRouteAsAdmin(path, options = {}) {
   }
   return res.json();
 }
+
 
 export default class IrisService {
   // ── Requests ──────────────────────────────────────────────
@@ -102,7 +91,7 @@ export default class IrisService {
   }
 
   static async getConversationWorkflows(id) {
-    return fetchUserRouteAsAdmin(`/conversations/${id}/workflows`);
+    return fetchJSON(`/conversations/${id}/workflows`, {}, false);
   }
 
   // ── Live ──────────────────────────────────────────────────
@@ -216,15 +205,15 @@ export default class IrisService {
 
   // ── Config (user route, admin identity) ───────────────────
   static async getConfig() {
-    return fetchUserRouteAsAdmin("/config");
+    return fetchJSON("/config", {}, false);
   }
 
   static async getLocalConfig() {
-    return fetchUserRouteAsAdmin("/config-local");
+    return fetchJSON("/config-local", {}, false);
   }
 
   // ── Rate Limits ───────────────────────────────────────────
   static async getRateLimits() {
-    return fetchUserRouteAsAdmin("/config/rate-limits");
+    return fetchJSON("/config/rate-limits", {}, false);
   }
 }
