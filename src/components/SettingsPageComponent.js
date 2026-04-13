@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Brain, RotateCcw, Loader2, Check } from "lucide-react";
+import { Brain, Network, RotateCcw, Loader2, Check } from "lucide-react";
 import PrismService from "../services/PrismService";
 import PageHeaderComponent from "./PageHeaderComponent";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent";
@@ -10,8 +10,9 @@ import styles from "./SettingsPageComponent.module.css";
 /**
  * SettingsPageComponent — server-side settings management.
  *
- * Currently exposes the "Memory" section, allowing users to configure
- * the models used for extraction, consolidation, and embedding.
+ * Exposes:
+ *   - "Memory Models" section for extraction, consolidation, and embedding
+ *   - "Agent Defaults" section for subagent/worker model configuration
  */
 export default function SettingsPageComponent() {
   const [config, setConfig] = useState(null);
@@ -56,7 +57,7 @@ export default function SettingsPageComponent() {
     [],
   );
 
-  // ── Model change handlers ──────────────────────────────────────────
+  // ── Memory model change handlers ───────────────────────────────────
   const handleExtractionModelSelect = useCallback(
     (provider, model) => {
       const updated = {
@@ -102,10 +103,33 @@ export default function SettingsPageComponent() {
     [settings, persistSettings],
   );
 
+  // ── Agent model change handlers ────────────────────────────────────
+  const handleSubagentModelSelect = useCallback(
+    (provider, model) => {
+      const updated = {
+        agents: {
+          ...settings?.agents,
+          subagentProvider: provider || "",
+          subagentModel: model || "",
+        },
+      };
+      setSettings((s) => ({ ...s, ...updated }));
+      persistSettings(updated);
+    },
+    [settings, persistSettings],
+  );
+
   // ── Reset to defaults ──────────────────────────────────────────────
   const handleResetMemory = useCallback(async () => {
     if (!defaults?.memory) return;
     const updated = { memory: { ...defaults.memory } };
+    setSettings((s) => ({ ...s, ...updated }));
+    await persistSettings(updated);
+  }, [defaults, persistSettings]);
+
+  const handleResetAgents = useCallback(async () => {
+    if (!defaults?.agents) return;
+    const updated = { agents: { ...defaults.agents } };
     setSettings((s) => ({ ...s, ...updated }));
     await persistSettings(updated);
   }, [defaults, persistSettings]);
@@ -127,6 +151,7 @@ export default function SettingsPageComponent() {
   }
 
   const mem = settings.memory || {};
+  const agents = settings.agents || {};
 
   return (
     <div className={styles.container}>
@@ -225,6 +250,55 @@ export default function SettingsPageComponent() {
             onClick={handleResetMemory}
             disabled={saving}
             title="Reset memory models to defaults"
+          >
+            <RotateCcw size={12} />
+            Reset to Defaults
+          </button>
+        </div>
+      </div>
+
+      {/* ── Agent Defaults Section ─────────────────────────────────── */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <Network size={16} className={styles.sectionIcon} />
+          <span className={styles.sectionTitle}>Agent Defaults</span>
+          <span className={styles.sectionSubtitle}>
+            Default model for subagent workers spawned by the coordinator
+          </span>
+        </div>
+
+        <div className={styles.sectionBody}>
+          {/* Subagent Model */}
+          <div className={styles.row}>
+            <div className={styles.rowLabel}>
+              <span className={styles.rowTitle}>Subagent Model</span>
+              <span className={styles.rowDescription}>
+                Cloud model used when local GPU slots are full or unavailable.
+                Workers queue on the local provider if not configured.
+              </span>
+            </div>
+            <div className={styles.rowControl}>
+              <ModelPickerPopoverComponent
+                config={config}
+                settings={{
+                  provider: agents.subagentProvider || "",
+                  model: agents.subagentModel || "",
+                }}
+                onSelectModel={handleSubagentModelSelect}
+                modelTypeFilter="conversation"
+                allowDeselect
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Reset */}
+        <div className={styles.resetRow}>
+          <button
+            className={styles.resetBtn}
+            onClick={handleResetAgents}
+            disabled={saving}
+            title="Reset agent defaults"
           >
             <RotateCcw size={12} />
             Reset to Defaults
