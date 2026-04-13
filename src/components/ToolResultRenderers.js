@@ -107,15 +107,6 @@ function RawResultToggle({ result }) {
   );
 }
 
-// ─── Collapsible Input Arguments ──────────────────────────────────────
-
-/**
- * Truncate long string values for display in the input args view.
- */
-function truncateValue(val, maxLen = 300) {
-  if (typeof val !== "string") return val;
-  return val.length > maxLen ? val.slice(0, maxLen) + "…" : val;
-}
 
 /**
  * Collapsible panel that shows all input arguments passed to a tool call.
@@ -143,7 +134,7 @@ function InputArgsToggle({ args }) {
           {entries.map(([key, val]) => {
             const isLong = typeof val === "string" && val.length > 80;
             const display = typeof val === "string"
-              ? truncateValue(val)
+              ? val
               : JSON.stringify(val, null, 2);
 
             return (
@@ -211,7 +202,7 @@ function OutputResultToggle({ result }) {
                 const isComplex = typeof val === "object";
                 const valStr = isComplex
                   ? JSON.stringify(val, null, 2)
-                  : truncateValue(String(val), 500);
+                  : String(val);
                 const isLong = valStr.length > 80;
 
                 return (

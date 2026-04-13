@@ -7,7 +7,7 @@ import {
 import PrismService from "../services/PrismService.js";
 import CostBadgeComponent from "./CostBadgeComponent.js";
 import ModelBadgeComponent from "./ModelBadgeComponent.js";
-import ModalityIconComponent from "./ModalityIconComponent.js";
+import ModalityIconComponent from "./ModalityIconComponent";
 import styles from "./WorkersPanel.module.css";
 
 

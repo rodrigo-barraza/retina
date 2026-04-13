@@ -1,13 +1,13 @@
-/* ── ModalityIconComponent ── */
+/* ── ModelToolsComponent ── */
 
-.modalitiesRow {
+.toolsRow {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
 }
 
-.modalityBadge {
+.toolBadge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -23,24 +23,11 @@
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
-.modalityBadge:hover {
+.toolBadge:hover {
   border-color: color-mix(in srgb, var(--accent-color) 40%, transparent);
   color: var(--text-primary);
 }
 
-.modalityBadge svg {
+.toolBadge svg {
   flex-shrink: 0;
-}
-
-.modalityIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modalityArrow {
-  font-size: 9px;
-  color: var(--text-secondary);
-  opacity: 0.4;
-  margin: 0 1px;
 }

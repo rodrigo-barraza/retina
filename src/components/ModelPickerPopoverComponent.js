@@ -13,6 +13,8 @@ import { ChevronDown, Search, X, Loader2 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import PrismService from "../services/PrismService";
 import ModelsTableComponent from "./ModelsTableComponent";
+import ModalityIconComponent from "./ModalityIconComponent";
+import ModelToolsComponent from "./ModelToolsComponent";
 import CloseButtonComponent from "./CloseButtonComponent";
 import styles from "./ModelPickerPopoverComponent.module.css";
 
@@ -359,6 +361,36 @@ export default function ModelPickerPopoverComponent({
     return `${providerName}'s ${rawLabel}`;
   })();
 
+  // Build modalities object for the currently selected model
+  const triggerModalities = useMemo(() => {
+    if (!currentModel || multiSelect) return null;
+    const INPUT_MAP = { text: "textIn", image: "imageIn", audio: "audioIn", video: "videoIn", pdf: "docIn" };
+    const OUTPUT_MAP = { text: "textOut", image: "imageOut", audio: "audioOut", embedding: "embeddingOut" };
+    const TOOL_MAP = {
+      Thinking: "thinking",
+      "Function Calling": "functionCalling",
+      "Web Search": "webSearch",
+      "Google Search": "webSearch",
+      "Web Fetch": "webSearch",
+      "Code Execution": "codeExecution",
+      "Computer Use": "computerUse",
+      "File Search": "fileSearch",
+      "URL Context": "urlContext",
+      "Image Generation": "imageGeneration",
+    };
+    const mod = {};
+    for (const t of currentModel.inputTypes || []) {
+      if (INPUT_MAP[t]) mod[INPUT_MAP[t]] = true;
+    }
+    for (const t of currentModel.outputTypes || []) {
+      if (OUTPUT_MAP[t]) mod[OUTPUT_MAP[t]] = true;
+    }
+    for (const t of currentModel.tools || []) {
+      if (TOOL_MAP[t]) mod[TOOL_MAP[t]] = true;
+    }
+    return Object.keys(mod).length > 0 ? mod : null;
+  }, [currentModel, multiSelect]);
+
   // Trigger icon
   const triggerIconElement = (() => {
     if (triggerIconProp) return triggerIconProp;
@@ -402,6 +434,20 @@ export default function ModelPickerPopoverComponent({
               ? `Loading… ${Math.round((loadingProgress ?? 0) * 100)}%`
               : displayLabel}
           </span>
+          {triggerModalities && loadingProgress == null && (
+            <>
+              <ModalityIconComponent
+                modalities={triggerModalities}
+                size={10}
+                className={styles.triggerModalities}
+              />
+              <ModelToolsComponent
+                tools={triggerModalities}
+                size={10}
+                className={styles.triggerModalities}
+              />
+            </>
+          )}
         </span>
         {!readOnly && loadingProgress == null && (
           <ChevronDown

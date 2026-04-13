@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import IconButtonComponent from "./IconButtonComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
+import ModelToolsComponent from "./ModelToolsComponent";
 import { DateTime } from "luxon";
 import styles from "./HistoryItemComponent.module.css";
 import CostBadgeComponent from "./CostBadgeComponent";
@@ -54,6 +55,8 @@ export default function HistoryItemComponent({
 }) {
   const dt = DateTime.fromISO(item.updatedAt || item.createdAt).toRelative();
   const mod = item.modalities || {};
+  const hasModalities = mod && Object.keys(mod).length > 0;
+  const hasModel = item.modelNames?.length > 0 || item.modelName;
 
   return (
     <div
@@ -79,29 +82,44 @@ export default function HistoryItemComponent({
         </button>
       )}
       <div className={styles.content}>
+        {/* Row 1: time + tags (left) · cost (right) */}
+        <div className={styles.topRow}>
+          <div className={styles.topLeft}>
+            <span className={styles.time}>{dt}</span>
+            {admin && item.username && item.username !== "unknown" && (
+              <span className={styles.usernameTag}>{item.username}</span>
+            )}
+            {item.tags?.map((tag) => (
+              <span key={tag.label} className={styles.tag} style={tag.style}>
+                {tag.label}
+              </span>
+            ))}
+          </div>
+          <CostBadgeComponent cost={item.totalCost} mini showIcon={false} />
+        </div>
+
+        {/* Row 2: title */}
         <div className={styles.title}>
           {item.title || "Untitled"}
           {isNew && <span className={styles.newBadge}>NEW</span>}
         </div>
-        <div className={styles.meta}>
-          {admin && item.username && item.username !== "unknown" && (
-            <span className={styles.usernameTag}>{item.username}</span>
-          )}
-          {item.tags?.map((tag) => (
-            <span key={tag.label} className={styles.tag} style={tag.style}>
-              {tag.label}
-            </span>
-          ))}
-          <span className={styles.time}>{dt}</span>
-          <CostBadgeComponent cost={item.totalCost} mini showIcon={false} />
-        </div>
-        {(item.modelNames?.length > 0 || item.modelName) && (
+
+        {/* Row 3: model badge */}
+        {hasModel && (
           <ModelBadgeComponent
             models={item.modelNames?.length > 0 ? item.modelNames : [item.modelName]}
             className={styles.modelBadge}
           />
         )}
-        <ModalityIconComponent modalities={mod} />
+
+        {/* Row 4: modalities (left) · tools (right) */}
+        {hasModalities && (
+          <div className={styles.bottomRow}>
+            <ModalityIconComponent modalities={mod} />
+            <ModelToolsComponent tools={mod} />
+          </div>
+        )}
+
         {children}
       </div>
       {/* Actions */}

@@ -25,6 +25,7 @@ import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import SelectDropdown from "./SelectDropdown";
 import ToggleSwitch from "./ToggleSwitch";
 import ModalityIconComponent from "./ModalityIconComponent";
+import ModelToolsComponent from "./ModelToolsComponent";
 import SystemPromptModal from "./SystemPromptModal";
 import styles from "./SettingsPanel.module.css";
 import CostBadgeComponent from "./CostBadgeComponent";
@@ -304,9 +305,14 @@ export default function SettingsPanel({
               {/* Modality icons: input → output */}
               {sessionStats.modalities &&
                 Object.values(sessionStats.modalities).some(Boolean) && (
-                  <ModalityIconComponent
-                    modalities={sessionStats.modalities}
-                  />
+                  <>
+                    <ModalityIconComponent
+                      modalities={sessionStats.modalities}
+                    />
+                    <ModelToolsComponent
+                      tools={sessionStats.modalities}
+                    />
+                  </>
                 )}
             </div>
           </div>
