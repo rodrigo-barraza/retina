@@ -91,16 +91,14 @@ export default function MemoriesPanel({ project, refreshKey, consolidationEvent,
       }
 
       setMemories(fetched);
-      const fetchedTotal = result.total || 0;
-      setTotal(fetchedTotal);
-      onCountChange?.(fetchedTotal);
+      setTotal(result.total || 0);
     } catch (err) {
       console.error("Failed to load memories:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [project, onCountChange]);
+  }, [project]);
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -113,6 +111,11 @@ export default function MemoriesPanel({ project, refreshKey, consolidationEvent,
       setHistoryLoading(false);
     }
   }, [project]);
+
+  // Propagate count changes to parent via effect (avoids setState-during-render)
+  useEffect(() => {
+    onCountChange?.(total);
+  }, [total, onCountChange]);
 
   useEffect(() => {
     loadMemories();
@@ -144,16 +147,12 @@ export default function MemoriesPanel({ project, refreshKey, consolidationEvent,
       await PrismService.deleteAgentMemory(memoryId);
       // Optimistic removal from local state
       setMemories((prev) => prev.filter((m) => (m.id || m._id) !== memoryId));
-      setTotal((prev) => {
-        const next = Math.max(0, prev - 1);
-        onCountChange?.(next);
-        return next;
-      });
+      setTotal((prev) => Math.max(0, prev - 1));
       setConfirmingDeleteId(null);
     } catch (err) {
       console.error("Failed to delete memory:", err);
     }
-  }, [onCountChange]);
+  }, []);
 
   const handleConsolidate = useCallback(async () => {
     setConsolidating(true);
