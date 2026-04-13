@@ -87,6 +87,7 @@ export default function AgentComponent() {
   const [totalMemoriesCount, setTotalMemoriesCount] = useState(0);
   const [workersCount, setWorkersCount] = useState(0);
   const [tasksCount, setTasksCount] = useState(0);
+  const [memoryConfigured, setMemoryConfigured] = useState(false);
   const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
     useToolToggles(builtInTools, SK_TOOL_MEMORY_AGENT);
 
@@ -296,6 +297,27 @@ export default function AgentComponent() {
     }
     loadAgenticTools().catch(console.error);
   }, []);
+
+  // ── Fetch memory settings to determine if memories are configured ──
+  useEffect(() => {
+    PrismService.getSettings()
+      .then((s) => {
+        const mem = s?.memory || {};
+        setMemoryConfigured(
+          Boolean(mem.extractionProvider && mem.extractionModel &&
+                  mem.consolidationProvider && mem.consolidationModel &&
+                  mem.embeddingProvider && mem.embeddingModel),
+        );
+      })
+      .catch(() => setMemoryConfigured(false));
+  }, []);
+
+  // Tools that are force-disabled because a prerequisite isn't met
+  const lockedOffTools = useMemo(() => {
+    const set = new Set();
+    if (!memoryConfigured) set.add("upsert_memory");
+    return set;
+  }, [memoryConfigured]);
 
   // ── Eager-fetch tab badge counts (fires on mount / session change) ──
 
@@ -1064,6 +1086,7 @@ export default function AgentComponent() {
           disabledBuiltIns={disabledBuiltIns}
           onToggleBuiltIn={handleToggleBuiltIn}
           onToggleAllBuiltIn={handleToggleAllBuiltIn}
+          lockedOffTools={lockedOffTools}
         />
       )}
 
@@ -1076,7 +1099,7 @@ export default function AgentComponent() {
       )}
 
       {leftTab === "memories" && (
-        <MemoriesPanel project={PROJECT_AGENT} refreshKey={memoriesRefreshKey} onCountChange={setTotalMemoriesCount} />
+        <MemoriesPanel project={PROJECT_AGENT} refreshKey={memoriesRefreshKey} onCountChange={setTotalMemoriesCount} memoryConfigured={memoryConfigured} />
       )}
 
       {leftTab === "tasks" && (

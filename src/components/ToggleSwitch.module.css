@@ -37,6 +37,15 @@
 .track.active {
   background: var(--accent-color);
   border-color: var(--accent-color);
+  filter: hue-rotate(0deg);
+  animation: rainbowHue 4s linear infinite;
+  will-change: filter;
+}
+
+@keyframes rainbowHue {
+  to {
+    filter: hue-rotate(360deg);
+  }
 }
 
 /* Knob */

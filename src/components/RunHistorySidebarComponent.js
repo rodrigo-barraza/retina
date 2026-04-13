@@ -401,7 +401,7 @@ export default function RunHistorySidebarComponent({
                           {formatCost(totalCost)}
                         </span>
                       )}
-                      <div className={styles.miniPassBar}>
+                      <div className={`${styles.miniPassBar} ${passRate === 0 && run.summary.total > 0 ? styles.miniPassBarAllFailed : ""}`}>
                         <div
                           className={styles.miniPassBarFill}
                           style={{ width: `${passRate}%` }}

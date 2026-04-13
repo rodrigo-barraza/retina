@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import PrismService from "../services/PrismService.js";
 import {
   LayoutDashboard,
   ScrollText,
@@ -28,6 +29,7 @@ import {
   MemoryStick,
   Wrench,
   BarChart3,
+  AlertCircle,
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import SpinningCatComponent from "./SpinningCatComponent";
@@ -111,6 +113,22 @@ export default function NavigationSidebarComponent({
   const [isMobile, setIsMobile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isLocal, setIsLocal] = useState(false);
+  const [memoryConfigured, setMemoryConfigured] = useState(true);
+
+  // Fetch memory settings to determine if action is needed on /settings
+  useEffect(() => {
+    if (mode !== "user") return;
+    PrismService.getSettings()
+      .then((s) => {
+        const mem = s?.memory || {};
+        setMemoryConfigured(
+          Boolean(mem.extractionProvider && mem.extractionModel &&
+                  mem.consolidationProvider && mem.consolidationModel &&
+                  mem.embeddingProvider && mem.embeddingModel),
+        );
+      })
+      .catch(() => {});
+  }, [mode]);
 
   useEffect(() => {
     // Resolve on client only — prevents SSR hydration flash of admin link
@@ -202,6 +220,11 @@ export default function NavigationSidebarComponent({
                     >
                       <Icon className={styles.navIcon} />
                       <span className={styles.navLabel}>{item.label}</span>
+                      {item.href === "/settings" && !memoryConfigured && (
+                        <span className={styles.attentionDot} title="Memory models need to be configured">
+                          <AlertCircle size={13} />
+                        </span>
+                      )}
                       {item.showBadge && badgeCounts[item.showBadge] > 0 && (
                         <span className={`${styles.badge} ${styles.live}`}>
                           {badgeCounts[item.showBadge]}
@@ -332,6 +355,11 @@ export default function NavigationSidebarComponent({
               >
                 <Icon className={styles.navIcon} />
                 <span className={styles.navLabel}>{item.label}</span>
+                {item.href === "/settings" && !memoryConfigured && (
+                  <span className={styles.attentionDot} title="Memory models need to be configured">
+                    <AlertCircle size={13} />
+                  </span>
+                )}
                 {item.showBadge && badgeCounts[item.showBadge] > 0 && (
                   <span className={`${styles.badge} ${styles.live}`}>
                     {badgeCounts[item.showBadge]}

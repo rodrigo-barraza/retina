@@ -629,6 +629,10 @@
   transition: width 0.3s ease-out;
 }
 
+.miniPassBarAllFailed {
+  background: var(--danger);
+}
+
 /* ── Running Indicator ───────────────────────────────────── */
 
 .runningBanner {

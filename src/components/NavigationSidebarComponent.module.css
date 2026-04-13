@@ -227,6 +227,24 @@
   }
 }
 
+/* ── Attention Indicator ── */
+
+.attentionDot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  color: #f59e0b;
+  flex-shrink: 0;
+  animation: attentionPulse 2.5s ease-in-out infinite;
+  cursor: help;
+}
+
+@keyframes attentionPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
 /* ── Badge ── */
 
 .badge {

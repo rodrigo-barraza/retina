@@ -62,8 +62,8 @@ export default function SettingsPageComponent() {
       const updated = {
         memory: {
           ...settings?.memory,
-          extractionProvider: provider,
-          extractionModel: model,
+          extractionProvider: provider || "",
+          extractionModel: model || "",
         },
       };
       setSettings((s) => ({ ...s, ...updated }));
@@ -77,8 +77,8 @@ export default function SettingsPageComponent() {
       const updated = {
         memory: {
           ...settings?.memory,
-          consolidationProvider: provider,
-          consolidationModel: model,
+          consolidationProvider: provider || "",
+          consolidationModel: model || "",
         },
       };
       setSettings((s) => ({ ...s, ...updated }));
@@ -92,8 +92,8 @@ export default function SettingsPageComponent() {
       const updated = {
         memory: {
           ...settings?.memory,
-          embeddingProvider: provider,
-          embeddingModel: model,
+          embeddingProvider: provider || "",
+          embeddingModel: model || "",
         },
       };
       setSettings((s) => ({ ...s, ...updated }));
@@ -167,6 +167,8 @@ export default function SettingsPageComponent() {
                   model: mem.extractionModel || "",
                 }}
                 onSelectModel={handleExtractionModelSelect}
+                modelTypeFilter="conversation"
+                allowDeselect
               />
             </div>
           </div>
@@ -187,6 +189,8 @@ export default function SettingsPageComponent() {
                   model: mem.consolidationModel || "",
                 }}
                 onSelectModel={handleConsolidationModelSelect}
+                modelTypeFilter="conversation"
+                allowDeselect
               />
             </div>
           </div>
@@ -207,6 +211,8 @@ export default function SettingsPageComponent() {
                   model: mem.embeddingModel || "",
                 }}
                 onSelectModel={handleEmbeddingModelSelect}
+                modelTypeFilter="embed"
+                allowDeselect
               />
             </div>
           </div>

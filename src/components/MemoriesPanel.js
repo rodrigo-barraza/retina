@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Brain, RefreshCw, User, MessageSquare, FolderKanban, ExternalLink, Trash2, Sparkles, History, GitMerge } from "lucide-react";
+import { Brain, RefreshCw, User, MessageSquare, FolderKanban, ExternalLink, Trash2, Sparkles, History, GitMerge, Settings } from "lucide-react";
+import Link from "next/link";
 import PrismService from "../services/PrismService.js";
 import { formatTimeAgo } from "../utils/utilities";
 import styles from "./MemoriesPanel.module.css";
@@ -50,7 +51,7 @@ const TRIGGER_LABELS = {
  * @param {number} props.refreshKey - External refresh trigger
  * @param {object} [props.consolidationEvent] - Real-time consolidation event from WebSocket
  */
-export default function MemoriesPanel({ project, refreshKey, consolidationEvent, onCountChange }) {
+export default function MemoriesPanel({ project, refreshKey, consolidationEvent, onCountChange, memoryConfigured = true }) {
   const [memories, setMemories] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -177,6 +178,29 @@ export default function MemoriesPanel({ project, refreshKey, consolidationEvent,
       setTimeout(() => setToast(null), 5000);
     }
   }, [project, loadMemories, loadHistory, historyOpen]);
+
+  // ── Not configured ──────────────────────────────────────────
+  if (!memoryConfigured) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.emptyState}>
+          <div className={`${styles.emptyIcon} ${styles.emptyIconDisabled}`}>
+            <Brain size={24} />
+          </div>
+          <div className={styles.emptyTitle}>Memories Not Available</div>
+          <div className={styles.emptySubtitle}>
+            Memory models need to be configured before memories can be
+            extracted and stored. Set the extraction, consolidation, and
+            embedding models in Settings.
+          </div>
+          <Link href="/settings" className={styles.settingsLink}>
+            <Settings size={13} />
+            Go to Settings
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // ── Loading ─────────────────────────────────────────────────
   if (loading) {

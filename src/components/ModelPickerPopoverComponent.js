@@ -74,6 +74,9 @@ function useSharedModelSearch() {
  *   renderActions   — (rawModel) => ReactNode — per-row actions
  *   triggerLabel    — string — override the trigger label text
  *   triggerIcon     — ReactNode — override the trigger icon
+ *   modelTypeFilter — string — if set, only models whose modelType matches are shown
+ *                     (e.g. "conversation" or "embed")
+ *   allowDeselect   — boolean — if true, clicking the selected model clears it
  */
 export default function ModelPickerPopoverComponent({
   config,
@@ -89,6 +92,8 @@ export default function ModelPickerPopoverComponent({
   renderActions,
   triggerLabel: triggerLabelProp,
   triggerIcon: triggerIconProp,
+  modelTypeFilter,
+  allowDeselect = false,
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useSharedModelSearch();
@@ -104,7 +109,7 @@ export default function ModelPickerPopoverComponent({
   }, []);
 
   // ── Build unified model list across all sections ─────────────────────
-  const baseModels = buildAllModels(config);
+  const baseModels = buildAllModels(config, modelTypeFilter);
 
   // ── Fetch usage stats and enrich models ──────────────────────────────
   const [usageMap, setUsageMap] = useState(null);
@@ -236,6 +241,14 @@ export default function ModelPickerPopoverComponent({
       const provider = rawModel.provider || "lm-studio";
       const name = rawModel.name || rawModel.key;
 
+      // Deselect: clicking the already-selected model clears the selection
+      if (allowDeselect && provider === settings?.provider && name === settings?.model) {
+        onSelectModel("", "");
+        setOpen(false);
+        setHighlightIndex(-1);
+        return;
+      }
+
       // Intercept lm-studio models → show config panel first
       if (provider === "lm-studio" && onLmStudioSelect) {
         onLmStudioSelect(rawModel);
@@ -248,7 +261,7 @@ export default function ModelPickerPopoverComponent({
       setOpen(false);
       setHighlightIndex(-1);
     },
-    [onSelectModel, onLmStudioSelect, multiSelect],
+    [onSelectModel, onLmStudioSelect, multiSelect, allowDeselect, settings?.provider, settings?.model],
   );
 
   // Keyboard navigation (Escape / ArrowUp / ArrowDown / Enter)
@@ -469,7 +482,7 @@ export default function ModelPickerPopoverComponent({
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-function buildAllModels(config) {
+function buildAllModels(config, modelTypeFilter) {
   if (!config) return [];
   const seen = new Map();
 
@@ -478,6 +491,7 @@ function buildAllModels(config) {
     { key: "textToImage", suffix: " (Image)" },
     { key: "audioToText", suffix: " (Transcribe)" },
     { key: "textToSpeech", suffix: " (TTS)" },
+    { key: "embedding", suffix: " (Embed)" },
   ];
 
   for (const { key, suffix } of sections) {
@@ -498,7 +512,14 @@ function buildAllModels(config) {
     }
   }
 
-  return [...seen.values()];
+  let result = [...seen.values()];
+
+  // Apply modelType filter if specified
+  if (modelTypeFilter) {
+    result = result.filter((m) => m.modelType === modelTypeFilter);
+  }
+
+  return result;
 }
 
 const ORG_MAP = [

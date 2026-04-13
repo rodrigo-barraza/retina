@@ -45,6 +45,7 @@ import {
   MonitorSmartphone,
   Code2,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ButtonComponent from "./ButtonComponent.js";
@@ -202,6 +203,7 @@ export default function CustomToolsPanel({
   onToggleBuiltIn,
   onToggleAllBuiltIn,
   offlineTools = new Set(),
+  lockedOffTools = new Set(),
 }) {
   const [editingTool, setEditingTool] = useState(null);
   const [isNew, setIsNew] = useState(false);
@@ -1292,11 +1294,16 @@ export default function CustomToolsPanel({
                           </span>
                         </div>
                         <div className={styles.toolCardActions}>
+                          {lockedOffTools.has(tool.name) && (
+                            <div className={styles.lockedIcon} title="Requires memory model configuration in Settings">
+                              <Lock size={10} />
+                            </div>
+                          )}
                           <ToggleSwitchComponent
-                            checked={!isDisabled}
+                            checked={!isDisabled && !lockedOffTools.has(tool.name)}
                             onChange={() => onToggleBuiltIn?.(tool.name)}
                             size="small"
-                            disabled={isOffline}
+                            disabled={isOffline || lockedOffTools.has(tool.name)}
                           />
                         </div>
                       </div>

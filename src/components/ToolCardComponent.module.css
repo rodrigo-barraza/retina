@@ -159,6 +159,15 @@
   flex-shrink: 0;
   white-space: nowrap;
   transition: all 0.25s ease;
+  filter: hue-rotate(0deg);
+  animation: rainbowHue 4s linear infinite;
+  will-change: filter;
+}
+
+@keyframes rainbowHue {
+  to {
+    filter: hue-rotate(360deg);
+  }
 }
 
 .badgeDisabled {

@@ -885,6 +885,20 @@
   }
 }
 
+/* ── Locked Icon (force-disabled tools) ───────────────────── */
+
+.lockedIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
 /* ── Group-by Segmented Toggle ────────────────────────────── */
 
 .groupByBar {
