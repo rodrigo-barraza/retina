@@ -3,15 +3,9 @@ import { useState, useEffect } from "react";
 import {
   Cpu,
   Edit3,
-  Type,
-  Image as ImageIcon,
   Mic,
-  Volume2,
-  Video,
-  FileText,
   Wrench,
   Brain,
-  DollarSign,
   GitBranch,
   ExternalLink,
   AudioLines,
@@ -23,19 +17,15 @@ import {
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
 import SelectDropdown from "./SelectDropdown";
-import ToggleSwitch from "./ToggleSwitch";
 import ModalityIconComponent from "./ModalityIconComponent";
 import ModelToolsComponent from "./ModelToolsComponent";
 import SystemPromptModal from "./SystemPromptModal";
 import styles from "./SettingsPanel.module.css";
 import CostBadgeComponent from "./CostBadgeComponent";
-import ModelTypeBadgeComponent from "./ModelTypeBadgeComponent";
 import { formatCost, formatElapsedTime } from "../utils/utilities";
 import {
-  MODALITY_COLORS,
   TOOL_COLORS,
   TOOL_ICON_MAP,
-  TOGGLEABLE_TOOLS,
 } from "./WorkflowNodeConstants";
 
 
@@ -54,7 +44,7 @@ export default function SettingsPanel({
   onCloseSystemPromptModal,
   workflows = [],
   sessionStats = null,
-  lockedTools,
+  _lockedTools,
   sessionType = "conversation",
 }) {
   const sessionLabel = sessionType === "agent" ? "Session" : "Conversation";
@@ -103,8 +93,6 @@ export default function SettingsPanel({
 
   const _handleSystemPromptChange = (e) =>
     onChange({ systemPrompt: e.target.value });
-  const handleThinkingEnabledChange = (val) =>
-    onChange({ thinkingEnabled: val });
 
   const currentProviderModels = modelsMap[settings.provider] || [];
   const selectedModelDef = currentProviderModels.find(
@@ -114,96 +102,6 @@ export default function SettingsPanel({
   const isTranscription = selectedModelDef?._isTranscription === true;
   const isTTS = selectedModelDef?._isTTS === true;
   const isSpecialModel = isTranscription || isTTS;
-
-  // Provider-aware display labels for generic tool names
-  const TOOL_LABELS = {
-    google: { "Web Search": "Google Search" },
-    anthropic: selectedModelDef?.webFetch ? { "Web Search": "Web Fetch" } : {},
-  };
-  const providerToolLabels = TOOL_LABELS[settings.provider] || {};
-  const getToolLabel = (tool) => providerToolLabels[tool] || tool;
-
-  // Get toggle state/handler for a tool
-  const getToolToggle = (tool) => {
-    switch (tool) {
-      case "Thinking": {
-        const isLmStudio = settings.provider === "lm-studio";
-        const isLive = selectedModelDef?.liveAPI;
-        const canDisable =
-          !selectedModelDef?.thinkingLevels ||
-          selectedModelDef.thinkingLevels.includes("minimal");
-        const alwaysOn = !canDisable && settings.provider === "google";
-
-        // LM Studio: allow toggling for models with explicit reasoning capability.
-        // Fall back to name-based detection when selectedModelDef hasn't loaded yet.
-        const modelName = (settings.model || "").toLowerCase();
-        const nameBasedThinking = ["qwen3", "deepseek-r1", "deepseek-v3", "gpt-oss", "gemma-4"]
-          .some((p) => modelName.includes(p));
-        const lmCanToggle = isLmStudio && (selectedModelDef?.thinking || nameBasedThinking);
-        const lmLocked = isLmStudio && !lmCanToggle;
-
-        return {
-          checked: isLive
-            ? (settings.liveThinkingLevel || "none") !== "none"
-            : lmLocked || alwaysOn
-              ? true
-              : isLmStudio
-                ? (settings.thinkingEnabled !== false)
-                : (settings.thinkingEnabled || false),
-          onChange: isLive
-            ? (val) =>
-                onChange({
-                  liveThinkingLevel: val ? "low" : "none",
-                })
-            : (lmLocked || alwaysOn)
-              ? () => {} // can't disable
-              : handleThinkingEnabledChange,
-          disabled: lmLocked || alwaysOn,
-        };
-      }
-      case "Web Search":
-      case "Google Search":
-      case "Web Fetch":
-        return {
-          checked: settings.webSearchEnabled || false,
-          onChange: (val) => onChange({ webSearchEnabled: val }),
-          disabled: settings.codeExecutionEnabled,
-        };
-      case "Code Execution":
-        return {
-          checked: settings.codeExecutionEnabled || false,
-          onChange: (val) => {
-            const updates = { codeExecutionEnabled: val };
-            if (val) {
-              updates.webSearchEnabled = false;
-              updates.urlContextEnabled = false;
-            }
-            onChange(updates);
-          },
-          disabled: false,
-        };
-      case "URL Context":
-        return {
-          checked: settings.urlContextEnabled || false,
-          onChange: (val) => onChange({ urlContextEnabled: val }),
-          disabled: settings.codeExecutionEnabled,
-        };
-      case "Function Calling":
-        return {
-          checked: lockedTools?.has("Function Calling") || settings.functionCallingEnabled || false,
-          onChange: lockedTools?.has("Function Calling") ? () => {} : (val) => onChange({ functionCallingEnabled: val }),
-          disabled: !!lockedTools?.has("Function Calling"),
-        };
-      case "Image Generation":
-        return {
-          checked: settings.forceImageGeneration || false,
-          onChange: (val) => onChange({ forceImageGeneration: val }),
-          disabled: false,
-        };
-      default:
-        return null;
-    }
-  };
 
   // ── Live elapsed time ticker ──────────────────────────────────
   // Store current time in state so render stays pure (no Date.now() calls)
@@ -390,243 +288,7 @@ export default function SettingsPanel({
           </div>
         )}
 
-        {selectedModelDef?.modelType && (
-          <ModelTypeBadgeComponent modelType={selectedModelDef.modelType} />
-        )}
-        {selectedModelDef &&
-          (() => {
-            const allTypes = ["text", "image", "audio", "video", "pdf"];
-            const inputs = selectedModelDef.inputTypes || [];
-            const outputs = selectedModelDef.outputTypes || [];
-            const iconMap = {
-              text: <Type size={12} />,
-              image: <ImageIcon size={12} />,
-              audio: <Volume2 size={12} />,
-              video: <Video size={12} />,
-              pdf: <FileText size={12} />,
-            };
-            const modalities = allTypes
-              .map((t) => {
-                const isIn = inputs.includes(t);
-                const isOut = outputs.includes(t);
-                let status = null;
-                if (isIn && isOut) status = "Input & Output";
-                else if (isIn) status = "Input only";
-                else if (isOut) status = "Output only";
-                return { type: t, status, supported: isIn || isOut };
-              })
-              .filter((m) => m.supported);
-            if (modalities.length === 0) return null;
-            return (
-              <div className={styles.modalities}>
-                <div className={styles.modalitiesHeader}>Modalities</div>
-                {modalities.map((m) => (
-                  <div key={m.type} className={styles.modalityRow}>
-                    <span
-                      className={styles.modalityIcon}
-                      style={{ color: MODALITY_COLORS[m.type] }}
-                    >
-                      {iconMap[m.type]}
-                    </span>
-                    <span className={styles.modalityName}>{m.type}</span>
-                    <span
-                      className={`${styles.modalityStatus} ${styles.modalityActive}`}
-                    >
-                      {m.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
-        {(selectedModelDef?.contextLength || selectedModelDef?.maxOutputTokens) && (
-          <div className={styles.modalities}>
-            <div className={styles.modalitiesHeader}>Token Limits</div>
-            {selectedModelDef.contextLength && (
-              <div className={styles.modalityRow}>
-                <span className={styles.modalityName}>Context Window</span>
-                <span className={`${styles.modalityStatus} ${styles.modalityActive}`}>
-                  {selectedModelDef.contextLength.toLocaleString()} tokens
-                </span>
-              </div>
-            )}
-            {selectedModelDef.maxOutputTokens && (
-              <div className={styles.modalityRow}>
-                <span className={styles.modalityName}>Max Output</span>
-                <span className={`${styles.modalityStatus} ${styles.modalityActive}`}>
-                  {selectedModelDef.maxOutputTokens.toLocaleString()} tokens
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-        {selectedModelDef?.pricing &&
-          (() => {
-            const PRICING_LABELS = {
-              inputPerMillion: { label: "Input", unit: "/ 1M tokens" },
-              cachedInputPerMillion: {
-                label: "Cached Input",
-                unit: "/ 1M tokens",
-              },
-              outputPerMillion: { label: "Output", unit: "/ 1M tokens" },
-              inputOver272kPerMillion: {
-                label: "Input >272K",
-                unit: "/ 1M tokens",
-              },
-              outputOver272kPerMillion: {
-                label: "Output >272K",
-                unit: "/ 1M tokens",
-              },
-              audioInputPerMillion: {
-                label: "Audio Input",
-                unit: "/ 1M tokens",
-              },
-              audioOutputPerMillion: {
-                label: "Audio Output",
-                unit: "/ 1M tokens",
-              },
-              imageInputPerMillion: {
-                label: "Image Input",
-                unit: "/ 1M tokens",
-              },
-              cachedImageInputPerMillion: {
-                label: "Cached Img Input",
-                unit: "/ 1M tokens",
-              },
-              imageOutputPerMillion: {
-                label: "Image Output",
-                unit: "/ 1M tokens",
-              },
-              perCharacter: { label: "Per Character", unit: "" },
-              perMinute: { label: "Per Minute", unit: "" },
-              webSearchPer1kCalls: {
-                label: "Web Search",
-                unit: "/ 1K calls",
-              },
-            };
-            const entries = Object.entries(selectedModelDef.pricing)
-              .filter(([key]) => PRICING_LABELS[key])
-              .map(([key, value]) => ({ ...PRICING_LABELS[key], value }));
-            return entries.length > 0 ? (
-              <div className={styles.modalities}>
-                <div className={styles.modalitiesHeader}>Pricing</div>
-                {entries.map((e) => (
-                  <div key={e.label} className={styles.modalityRow}>
-                    <span className={styles.modalityIcon}>
-                      <DollarSign size={12} />
-                    </span>
-                    <span className={styles.modalityName}>{e.label}</span>
-                    <span
-                      className={`${styles.modalityStatus} ${styles.pricingValue}`}
-                    >
-                      ${e.value} {e.unit}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : null;
-          })()}
-        {(() => {
-          const arena = selectedModelDef?.arena;
-          if (!arena) return null;
-          const arenaLabels = {
-            text: "Text",
-            code: "Code",
-            vision: "Vision",
-            document: "Document",
-            textToImage: "Text to Image",
-            imageEdit: "Image Edit",
-            search: "Search",
-          };
-          const entries = Object.entries(arena).filter(([, v]) => v != null);
-          if (entries.length === 0) return null;
-          return (
-            <div className={styles.modalities}>
-              <div className={styles.modalitiesHeader}>Arena Scores</div>
-              {entries.map(([key, value]) => (
-                <div key={key} className={styles.modalityRow}>
-                  <span className={styles.modalityIcon}>
-                    <Brain size={12} />
-                  </span>
-                  <span className={styles.modalityName}>
-                    {arenaLabels[key] || key}
-                  </span>
-                  <span
-                    className={`${styles.modalityStatus} ${styles.arenaValue}`}
-                  >
-                    {value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
-        {selectedModelDef?.tools && selectedModelDef.tools.length > 0 && (
-          <div className={styles.modalities}>
-            <div className={styles.modalitiesHeader}>Tools</div>
-            {selectedModelDef.tools.map((tool) => {
-              const toggle = TOGGLEABLE_TOOLS.has(tool)
-                ? getToolToggle(tool)
-                : null;
-              return (
-                <div
-                  key={tool}
-                  className={`${styles.modalityRow} ${toggle ? styles.toolToggleRow : ""}`}
-                >
-                  <span className={styles.modalityIcon}>
-                    {(() => {
-                      const ToolIcon = TOOL_ICON_MAP[tool];
-                      return ToolIcon ? (
-                        <ToolIcon
-                          size={12}
-                          style={{ color: TOOL_COLORS[tool] }}
-                        />
-                      ) : (
-                        <Wrench
-                          size={12}
-                          style={{ color: TOOL_COLORS[tool] }}
-                        />
-                      );
-                    })()}
-                  </span>
-                  <span className={styles.modalityName}>
-                    {getToolLabel(tool)}
-                  </span>
-                  {readOnly ? (
-                    toggle ? (
-                      <span
-                        className={`${styles.modalityStatus} ${toggle.checked ? styles.modalityActive : ""}`}
-                      >
-                        {tool === "Image Generation"
-                          ? (toggle.checked ? "Forced" : "Default")
-                          : (toggle.checked ? "On" : "Off")}
-                      </span>
-                    ) : (
-                      <span
-                        className={`${styles.modalityStatus} ${styles.modalityActive}`}
-                      >
-                        Supported
-                      </span>
-                    )
-                  ) : toggle ? (
-                    <ToggleSwitch
-                      checked={toggle.checked}
-                      onChange={toggle.onChange}
-                      disabled={toggle.disabled}
-                      size="small"
-                    />
-                  ) : (
-                    <span
-                      className={`${styles.modalityStatus} ${styles.modalityActive}`}
-                    >
-                      Supported
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+
 
         {isTTS &&
           (() => {

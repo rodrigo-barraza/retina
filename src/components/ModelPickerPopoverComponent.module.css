@@ -110,20 +110,8 @@
 
 .triggerModalities {
   flex-shrink: 0;
-  opacity: 0.7;
-  gap: 3px;
   padding-left: 6px;
   border-left: 1px solid color-mix(in srgb, var(--text-secondary) 20%, transparent);
-  transition: opacity 0.2s;
-}
-
-/* Compact badge overrides inside the trigger */
-.triggerModalities > span {
-  padding: 1px 4px;
-  font-size: 0;
-  gap: 3px;
-  border: none;
-  background: none;
 }
 
 .trigger:hover .triggerModalities {

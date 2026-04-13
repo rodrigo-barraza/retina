@@ -34,33 +34,64 @@ export default function TooltipComponent({
   const showTimerRef = useRef(null);
   const unmountTimerRef = useRef(null);
 
-  /** Calculate fixed position based on wrapper rect + desired position */
+  const [resolvedPosition, setResolvedPosition] = useState(position);
+
+  /** Calculate fixed position based on wrapper rect + desired position,
+   *  flipping to the opposite side when there isn't enough viewport space. */
   const updateCoords = useCallback(() => {
     if (!wrapperRef.current) return;
     const rect = wrapperRef.current.getBoundingClientRect();
     const GAP = 8;
+    const TOOLTIP_HEIGHT_EST = 32; // approximate tooltip height for flip check
     let top, left;
+    let resolved = position;
 
     switch (position) {
+      case "top":
+        // Flip to bottom if not enough room above
+        if (rect.top - GAP - TOOLTIP_HEIGHT_EST < 0) {
+          resolved = "bottom";
+          top = rect.bottom + GAP;
+        } else {
+          top = rect.top - GAP;
+        }
+        left = rect.left + rect.width / 2;
+        break;
       case "bottom":
-        top = rect.bottom + GAP;
+        // Flip to top if not enough room below
+        if (rect.bottom + GAP + TOOLTIP_HEIGHT_EST > window.innerHeight) {
+          resolved = "top";
+          top = rect.top - GAP;
+        } else {
+          top = rect.bottom + GAP;
+        }
         left = rect.left + rect.width / 2;
         break;
       case "left":
         top = rect.top + rect.height / 2;
-        left = rect.left - GAP;
+        if (rect.left - GAP < 100) {
+          resolved = "right";
+          left = rect.right + GAP;
+        } else {
+          left = rect.left - GAP;
+        }
         break;
       case "right":
         top = rect.top + rect.height / 2;
-        left = rect.right + GAP;
+        if (rect.right + GAP + 100 > window.innerWidth) {
+          resolved = "left";
+          left = rect.left - GAP;
+        } else {
+          left = rect.right + GAP;
+        }
         break;
-      case "top":
       default:
         top = rect.top - GAP;
         left = rect.left + rect.width / 2;
         break;
     }
 
+    setResolvedPosition(resolved);
     setCoords({ top, left });
   }, [position]);
 
@@ -134,7 +165,7 @@ export default function TooltipComponent({
   const bubble = mounted
     ? createPortal(
         <span
-          className={`${styles.bubble} ${styles[position]} ${visible ? styles.visible : ""}`}
+          className={`${styles.bubble} ${styles[resolvedPosition]} ${visible ? styles.visible : ""}`}
           style={{ top: coords.top, left: coords.left }}
         >
           {label}

@@ -25,9 +25,10 @@ import {
   SK_TOOL_MEMORY_CONVERSATIONS,
   SETTINGS_DEFAULTS,
 } from "../constants";
-import { Send, Settings, Parentheses, SlidersHorizontal } from "lucide-react";
+import { Send, Settings, Parentheses, SlidersHorizontal, Info } from "lucide-react";
 import NavigationSidebarComponent from "../components/NavigationSidebarComponent";
 import SettingsPanel from "../components/SettingsPanel";
+import ModelInfoPanel from "../components/ModelInfoPanel";
 import ParametersPanelComponent from "../components/ParametersPanelComponent";
 import CustomToolsPanel from "../components/CustomToolsPanel";
 import ChatArea from "../components/ChatArea";
@@ -2060,6 +2061,11 @@ export default function HomePage({ initialConversationId = null }) {
                   icon: <SlidersHorizontal size={14} />,
                   tooltip: "Parameters",
                 },
+                {
+                  key: "info",
+                  icon: <Info size={14} />,
+                  tooltip: "Info",
+                },
               ]}
               activeTab={leftTab}
               onChange={setLeftTab}
@@ -2117,6 +2123,15 @@ export default function HomePage({ initialConversationId = null }) {
                   setSettings((s) => ({ ...s, ...updates }))
                 }
                 config={config}
+              />
+            )}
+            {leftTab === "info" && (
+              <ModelInfoPanel
+                config={config}
+                settings={settings}
+                onChange={(updates) =>
+                  setSettings((s) => ({ ...s, ...updates }))
+                }
               />
             )}
           </>

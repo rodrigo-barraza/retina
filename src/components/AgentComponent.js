@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Bot, Paperclip, X, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain, Plug, GitBranch, Scissors, Repeat, ListChecks, BookOpen, Users, Cpu } from "lucide-react";
+import { Bot, Paperclip, X, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain, Plug, GitBranch, Scissors, Repeat, ListChecks, BookOpen, Users, Cpu, Info } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ToolsApiService from "../services/ToolsApiService.js";
 import ThreePanelLayout from "./ThreePanelLayout.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
 import HistoryPanel from "./HistoryPanel.js";
 import SettingsPanel from "./SettingsPanel.js";
+import ModelInfoPanel from "./ModelInfoPanel.js";
 import CustomToolsPanel from "./CustomToolsPanel.js";
 import SkillsPanel from "./SkillsPanel.js";
 import MemoriesPanel from "./MemoriesPanel.js";
@@ -1036,6 +1037,11 @@ export default function AgentComponent() {
         tabs={[
           { key: "settings", icon: <Settings size={14} />, tooltip: "Settings" },
           {
+            key: "info",
+            icon: <Info size={14} />,
+            tooltip: "Info",
+          },
+          {
             key: "tools",
             icon: <Wrench size={14} />,
             ...badgeProps(allToolSchemas.length),
@@ -1109,6 +1115,15 @@ export default function AgentComponent() {
                 }
               : null
           }
+        />
+      )}
+
+      {leftTab === "info" && (
+        <ModelInfoPanel
+          config={filteredConfig}
+          settings={settings}
+          onChange={(updates) => setSettings((s) => ({ ...s, ...updates, functionCallingEnabled: true }))}
+          lockedTools={AGENT_LOCKED_TOOLS}
         />
       )}
 

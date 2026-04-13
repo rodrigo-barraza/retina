@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Settings,
   SlidersHorizontal,
+  Info,
 } from "lucide-react";
 
 import IrisService from "../../../services/IrisService";
@@ -22,6 +23,7 @@ import MessageList, {
   prepareDisplayMessages,
 } from "../../../components/MessageList";
 import SettingsPanel from "../../../components/SettingsPanel";
+import ModelInfoPanel from "../../../components/ModelInfoPanel";
 import ParametersPanelComponent from "../../../components/ParametersPanelComponent";
 import HistoryPanel from "../../../components/HistoryPanel";
 import { getModalities } from "../../../utils/utilities";
@@ -445,6 +447,11 @@ export default function ConversationsPage({ initialId = null, traceId = null }) 
                       icon: <SlidersHorizontal size={14} />,
                       tooltip: "Parameters",
                     },
+                    {
+                      key: "info",
+                      icon: <Info size={14} />,
+                      tooltip: "Info",
+                    },
                   ]}
                   activeTab={leftTab}
                   onChange={setLeftTab}
@@ -482,6 +489,13 @@ export default function ConversationsPage({ initialId = null, traceId = null }) 
                   <ParametersPanelComponent
                     settings={settingsWithDefaults}
                     config={config}
+                    readOnly
+                  />
+                )}
+                {leftTab === "info" && (
+                  <ModelInfoPanel
+                    config={config}
+                    settings={settingsWithDefaults}
                     readOnly
                   />
                 )}

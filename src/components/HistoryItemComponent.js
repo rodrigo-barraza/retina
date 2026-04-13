@@ -95,7 +95,7 @@ export default function HistoryItemComponent({
               </span>
             ))}
           </div>
-          <CostBadgeComponent cost={item.totalCost} mini showIcon={false} />
+          <CostBadgeComponent cost={item.totalCost} showIcon={false} />
         </div>
 
         {/* Row 2: title */}
