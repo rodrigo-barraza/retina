@@ -185,6 +185,12 @@ export function buildRequestDetailSections(req) {
               },
             ]
           : []),
+        ...(req.agentSessionId
+          ? [{ label: "Agent Session", value: req.agentSessionId, mono: true }]
+          : []),
+        ...(req.conversationId
+          ? [{ label: "Conversation", value: req.conversationId, mono: true }]
+          : []),
       ],
     },
     {
