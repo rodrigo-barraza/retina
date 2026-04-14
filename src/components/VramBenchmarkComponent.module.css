@@ -212,6 +212,81 @@
   margin-left: 2px;
 }
 
+/* ─── Chart search highlight input ─── */
+.chartSearchGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  min-width: 160px;
+}
+
+.chartSearchGroup:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px var(--accent-glow, rgba(99, 102, 241, 0.1));
+}
+
+.chartSearchIcon {
+  color: var(--text-muted);
+  opacity: 0.5;
+  flex-shrink: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.chartSearchGroup:focus-within .chartSearchIcon {
+  opacity: 1;
+  color: var(--accent-color);
+}
+
+.chartSearchInput {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.chartSearchInput::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+  opacity: 0.5;
+}
+
+.chartSearchClear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.chartSearchClear:hover {
+  background: var(--accent-color);
+  color: #fff;
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
   .content {

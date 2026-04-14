@@ -23,6 +23,7 @@ import {
   ThumbsDown,
   AlertTriangle,
   Ruler,
+  Search,
 } from "lucide-react";
 import Chart from "chart.js/auto";
 import PrismService from "../services/PrismService";
@@ -512,6 +513,7 @@ export default function VramBenchmarkComponent() {
   const [scatterClipXMin, setScatterClipXMin] = useState("");
   const [scatterClipXMax, setScatterClipXMax] = useState("");
   const [activeView, setActiveView] = useState("scatter");
+  const [chartSearch, setChartSearch] = useState("");
 
   // Parsed clip values — undefined means "auto" (Chart.js default)
   const clipMin = useMemo(() => {
@@ -583,6 +585,7 @@ export default function VramBenchmarkComponent() {
     context: useRef(null),
   };
   const chartInstances = useRef({});
+  const searchOrigColors = useRef({});
 
   // ── Fetch data ───────────────────────────────────────────
 
@@ -2647,6 +2650,8 @@ export default function VramBenchmarkComponent() {
     const prev = prevViewRef.current;
     if (prev !== activeView) {
       destroyChart(prev);
+      // Clear cached original colors for the destroyed chart
+      delete searchOrigColors.current[prev];
       prevViewRef.current = activeView;
     }
     return () => destroyChart(activeView);
@@ -2659,6 +2664,9 @@ export default function VramBenchmarkComponent() {
     Chart.defaults.color = "#6b728e";
     Chart.defaults.borderColor = "rgba(255,255,255,0.04)";
     Chart.defaults.font.family = CHART_FONT;
+
+    // Clear cached colors so search highlight re-snapshots after rebuild
+    delete searchOrigColors.current[activeView];
 
     // Render the active view
     const renderMap = {
@@ -2680,6 +2688,141 @@ export default function VramBenchmarkComponent() {
     renderQuantDist,
     renderCtxLeaderboard,
     renderContext,
+  ]);
+
+  // ── Search highlight — dims non-matching chart elements ──
+
+  const applySearchHighlight = useCallback((term) => {
+    const chart = chartInstances.current[activeView];
+    if (!chart) return;
+
+    // ── Color utility helpers ──
+    function dimColor(color, targetAlpha) {
+      if (!color || typeof color !== "string") return color;
+      // rgba(r, g, b, a)
+      const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/);
+      if (rgbaMatch) {
+        return `rgba(${rgbaMatch[1]}, ${rgbaMatch[2]}, ${rgbaMatch[3]}, ${targetAlpha})`;
+      }
+      // hsla(h, s%, l%, a) or hsl(...)
+      const hslaMatch = color.match(/hsla?\(([^)]+)\)/);
+      if (hslaMatch) {
+        const parts = hslaMatch[1].split(",").map((s) => s.trim());
+        if (parts.length >= 3) {
+          return `hsla(${parts[0]}, ${parts[1]}, ${parts[2]}, ${targetAlpha})`;
+        }
+      }
+      // #hex
+      if (color.startsWith("#")) {
+        const h = color.replace("#", "");
+        const r = parseInt(h.substring(0, 2), 16);
+        const g = parseInt(h.substring(2, 4), 16);
+        const b = parseInt(h.substring(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, ${targetAlpha})`;
+      }
+      return color;
+    }
+
+    // Extract searchable model name from various chart data shapes
+    function getSearchableName(raw, label, dsLabel) {
+      if (raw?.model?.displayName) return raw.model.displayName;
+      if (raw?.entry?.displayName) return raw.entry.displayName;
+      if (raw?.ctx?.displayName) return raw.ctx.displayName;
+      if (label) return String(label);
+      if (dsLabel) return String(dsLabel);
+      return "";
+    }
+
+    const datasets = chart.data.datasets;
+    const cacheKey = activeView;
+
+    // ── Restore originals if search is cleared ──
+    if (!term) {
+      const cache = searchOrigColors.current[cacheKey];
+      if (cache) {
+        for (let di = 0; di < datasets.length; di++) {
+          if (cache[di]) {
+            datasets[di].backgroundColor = cache[di].bg;
+            datasets[di].borderColor = cache[di].border;
+          }
+        }
+        delete searchOrigColors.current[cacheKey];
+      }
+      chart.update("none");
+      return;
+    }
+
+    const needle = term.toLowerCase();
+
+    // ── Snapshot original colors on first search ──
+    if (!searchOrigColors.current[cacheKey]) {
+      const snapshot = {};
+      for (let di = 0; di < datasets.length; di++) {
+        const ds = datasets[di];
+        snapshot[di] = {
+          bg: Array.isArray(ds.backgroundColor)
+            ? [...ds.backgroundColor]
+            : ds.backgroundColor,
+          border: Array.isArray(ds.borderColor)
+            ? [...ds.borderColor]
+            : ds.borderColor,
+        };
+      }
+      searchOrigColors.current[cacheKey] = snapshot;
+    }
+
+    const cache = searchOrigColors.current[cacheKey];
+
+    // ── Apply per-element dimming ──
+    for (let di = 0; di < datasets.length; di++) {
+      const ds = datasets[di];
+      // Skip connector lines
+      if (ds.label === "_connector" || (ds.type === "line" && ds.label === "_connector")) continue;
+
+      const orig = cache[di];
+      if (!orig) continue;
+
+      const data = ds.data;
+      const labels = chart.data.labels;
+      const origBg = orig.bg;
+      const origBorder = orig.border;
+
+      const newBg = [];
+      const newBorder = [];
+
+      for (let i = 0; i < data.length; i++) {
+        const raw = data[i];
+        const name = getSearchableName(raw, labels?.[i], ds.label);
+        const matches = name.toLowerCase().includes(needle);
+
+        const bg = Array.isArray(origBg) ? origBg[i] : origBg;
+        const border = Array.isArray(origBorder) ? origBorder[i] : origBorder;
+
+        if (matches) {
+          newBg.push(bg);
+          newBorder.push(border);
+        } else {
+          newBg.push(dimColor(bg, 0.06));
+          newBorder.push(dimColor(border, 0.1));
+        }
+      }
+
+      ds.backgroundColor = newBg;
+      ds.borderColor = newBorder;
+    }
+
+    chart.update("none");
+  }, [activeView]);
+
+  // Re-apply search highlight after chart renders or search term changes
+  useEffect(() => {
+    if (loading || error) return;
+    // Small delay to ensure chart render completed first
+    const timer = setTimeout(() => applySearchHighlight(chartSearch), 50);
+    return () => clearTimeout(timer);
+  }, [chartSearch, activeView, loading, error, applySearchHighlight,
+    renderScatter, renderBar, renderEfficiency, renderQuantDist,
+    renderCtxLeaderboard, renderContext,
   ]);
 
   // ── Subtitle for header ──────────────────────────────────
@@ -2859,6 +3002,25 @@ export default function VramBenchmarkComponent() {
         <div className={styles.chartCard}>
           {/* Per-tab filters */}
           <FilterBarComponent>
+            <div className={styles.chartSearchGroup}>
+              <Search size={13} className={styles.chartSearchIcon} />
+              <input
+                type="text"
+                className={styles.chartSearchInput}
+                placeholder="Highlight model…"
+                value={chartSearch}
+                onChange={(e) => setChartSearch(e.target.value)}
+              />
+              {chartSearch && (
+                <button
+                  className={styles.chartSearchClear}
+                  onClick={() => setChartSearch("")}
+                  aria-label="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <SelectDropdown
               value={settingsFilter}
               onChange={(val) => {

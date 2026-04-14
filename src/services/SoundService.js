@@ -292,6 +292,7 @@ const SoundService = {
 
     const source = audio.createBufferSource();
     source.buffer = buffer;
+    source.playbackRate.value = 0.85 + Math.random() * 0.30; // ±15% pitch variation
 
     connectStereo(source, left ?? spatial.left, right ?? spatial.right);
     source.start(0);
@@ -336,6 +337,7 @@ const SoundService = {
 
     const source = audio.createBufferSource();
     source.buffer = buffer;
+    source.playbackRate.value = 0.85 + Math.random() * 0.30; // ±15% pitch variation
 
     connectStereo(source, left ?? spatial.left, right ?? spatial.right);
     source.start(0);

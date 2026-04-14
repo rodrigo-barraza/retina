@@ -9,10 +9,7 @@ import {
   GitBranch,
   ExternalLink,
   AudioLines,
-  MessageSquare,
   Layers,
-  Zap,
-  Hash,
   Timer,
 } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
@@ -24,6 +21,9 @@ import ModelToolsComponent from "./ModelToolsComponent";
 import SystemPromptModal from "./SystemPromptModal";
 import styles from "./SettingsPanel.module.css";
 import CostBadgeComponent from "./CostBadgeComponent";
+import TokenCountBadgeComponent from "./TokenCountBadgeComponent";
+import RequestCountBadgeComponent from "./RequestCountBadgeComponent";
+import MessageCountBadgeComponent from "./MessageCountBadgeComponent";
 import { formatCost, formatElapsedTime } from "../utils/utilities";
 import {
   TOOL_COLORS,
@@ -134,21 +134,13 @@ export default function SettingsPanel({
               <Layers size={12} style={{ marginRight: 4 }} /> {sessionLabel}
             </div>
             <div className={styles.statsBadges}>
-              <span className={styles.statBadge}>
-                <MessageSquare size={11} />
-                {sessionStats.messageCount} message{sessionStats.messageCount !== 1 ? "s" : ""}
-                {sessionStats.deletedCount > 0 && (
-                  <span className={styles.statBadgeSub}>
-                    ({sessionStats.deletedCount} deleted)
-                  </span>
-                )}
-              </span>
-              {sessionStats.requestCount > 0 && (
-                <span className={styles.statBadge}>
-                  <Zap size={11} />
-                  {sessionStats.requestCount} request{sessionStats.requestCount !== 1 ? "s" : ""}
-                </span>
-              )}
+              <MessageCountBadgeComponent
+                count={sessionStats.messageCount}
+                deletedCount={sessionStats.deletedCount}
+              />
+              <RequestCountBadgeComponent
+                count={sessionStats.requestCount}
+              />
               {sessionStats.uniqueModels.length > 0 && (
                 <span className={styles.statBadge}>
                   <Cpu size={11} />
@@ -159,18 +151,18 @@ export default function SettingsPanel({
               )}
               {sessionStats.totalTokens.total > 0 && (
                 <>
-                  <span className={styles.statBadge}>
-                    <Hash size={11} />
-                    {sessionStats.totalTokens.input.toLocaleString()} tokens in
-                  </span>
-                  <span className={styles.statBadge}>
-                    <Hash size={11} />
-                    {sessionStats.totalTokens.output.toLocaleString()} tokens out
-                  </span>
-                  <span className={styles.statBadge}>
-                    <Hash size={11} />
-                    {sessionStats.totalTokens.total.toLocaleString()} tokens total
-                  </span>
+                  <TokenCountBadgeComponent
+                    value={sessionStats.totalTokens.input}
+                    label="tokens in"
+                  />
+                  <TokenCountBadgeComponent
+                    value={sessionStats.totalTokens.output}
+                    label="tokens out"
+                  />
+                  <TokenCountBadgeComponent
+                    value={sessionStats.totalTokens.total}
+                    label="tokens total"
+                  />
                 </>
               )}
               <CostBadgeComponent cost={sessionStats.totalCost} />
