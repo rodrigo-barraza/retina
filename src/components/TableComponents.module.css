@@ -149,13 +149,19 @@
   background: color-mix(in srgb, var(--success) 10%, transparent);
   padding: 1px 5px;
   border-radius: 2px;
-  align-self: flex-start;
+  margin-left: 4px;
 }
 
 .benchmarkModelCell {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/* Keep provider + progress badge on a single row */
+.benchmarkModelProviderRow {
+  display: flex;
+  align-items: center;
 }
 
 .benchmarkModelName {

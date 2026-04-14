@@ -960,8 +960,9 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           />
         </div>
       }
-      headerControls={
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+    >
+      <div className={styles.contentMain}>
+        <div className={styles.contentMainHeader}>
           <ButtonComponent
             variant="ghost"
             size="sm"
@@ -993,9 +994,6 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                 : "Select Models"}
           </ButtonComponent>
         </div>
-      }
-    >
-      <div className={styles.contentMain}>
 
           <div className={styles.detailPanel}>
           {/* ── Benchmark Info ── */}

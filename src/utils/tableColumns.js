@@ -626,12 +626,14 @@ export const benchmarkModelColumn = () => ({
   render: (r) => (
     <span className={styles.benchmarkModelCell}>
       <span className={styles.benchmarkModelName}>{r.label}</span>
-      <span className={styles.benchmarkModelProvider}>{r.provider}</span>
-      {r._running && r._progress > 0 && (
-        <span className={styles.benchmarkProgressPct}>
-          {Math.round(r._progress * 100)}%
-        </span>
-      )}
+      <span className={styles.benchmarkModelProviderRow}>
+        <span className={styles.benchmarkModelProvider}>{r.provider}</span>
+        {r._running && r._progress > 0 && (
+          <span className={styles.benchmarkProgressPct}>
+            {Math.round(r._progress * 100)}%
+          </span>
+        )}
+      </span>
     </span>
   ),
 });
