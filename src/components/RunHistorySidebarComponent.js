@@ -11,17 +11,13 @@ import {
   ListChecks,
   AlertTriangle,
   Cpu,
-  X,
-  Brain,
-  Wrench,
-  Copy,
   Settings,
 } from "lucide-react";
 import AgentCardComponent from "./AgentCardComponent";
+import ModelCardComponent from "./ModelCardComponent";
 import BadgeComponent from "./BadgeComponent";
 import ChatPreviewComponent from "./ChatPreviewComponent";
 import TabBarComponent from "./TabBarComponent";
-import ProviderLogo from "./ProviderLogos";
 import { formatCost } from "../utils/utilities";
 import styles from "./RunHistorySidebarComponent.module.css";
 
@@ -55,6 +51,7 @@ export default function RunHistorySidebarComponent({
   // Model selection props
   selectedModels = [],
   onRemoveModel,
+  onChangeModel,
   onClearSelection,
   // Thinking toggle props
   thinkingMap = {},
@@ -170,70 +167,26 @@ export default function RunHistorySidebarComponent({
             {selectedModels.length > 0 ? (
               <div className={styles.modelCards}>
                 {selectedModels.map((m) => {
-                  const label = m.display_name || m.label || m.name;
                   const isThinking = !!thinkingMap[m.instanceId];
                   const isTools = !!toolsMap[m.instanceId];
                   const supportsThinking = !!m.thinking;
-                  // Count how many instances of this same model exist
                   const dupeCount = selectedModels.filter(
                     (s) => s.provider === m.provider && s.name === m.name
                   ).length;
                   return (
-                    <div key={m.instanceId} className={styles.modelCard}>
-                      <div className={styles.modelCardHeader}>
-                        <ProviderLogo provider={m.provider} size={14} />
-                        <span className={styles.modelCardName} title={label}>
-                          {label}
-                        </span>
-                        {dupeCount > 1 && (
-                          <span className={styles.dupeBadge} title={`${dupeCount} instances of this model`}>
-                            <Copy size={8} />
-                            {dupeCount}
-                          </span>
-                        )}
-                        <button
-                          className={styles.modelCardRemove}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRemoveModel?.(m.instanceId);
-                          }}
-                          title="Remove"
-                        >
-                          <X size={10} />
-                        </button>
-                      </div>
-                      <div className={styles.modelCardFooter}>
-                        <span className={styles.modelCardProvider}>
-                          {m.provider}
-                        </span>
-                        <div className={styles.modelCardToggles}>
-                          <button
-                            className={`${styles.toolsToggle} ${isTools ? styles.toolsToggleActive : ""}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onToggleTools?.(m.instanceId);
-                            }}
-                            title={isTools ? "Disable tools" : "Enable tools (calculator)"}
-                          >
-                            <Wrench size={10} />
-                            <span>Tools</span>
-                          </button>
-                          {supportsThinking && (
-                            <button
-                              className={`${styles.thinkingToggle} ${isThinking ? styles.thinkingToggleActive : ""}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onToggleThinking?.(m.instanceId);
-                              }}
-                              title={isThinking ? "Disable thinking" : "Enable thinking"}
-                            >
-                              <Brain size={10} />
-                              <span>Think</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <ModelCardComponent
+                      key={m.instanceId}
+                      model={m}
+                      dupeCount={dupeCount}
+                      isThinking={isThinking}
+                      supportsThinking={supportsThinking}
+                      isTools={isTools}
+                      config={config}
+                      onRemove={onRemoveModel}
+                      onChangeModel={onChangeModel}
+                      onToggleThinking={onToggleThinking}
+                      onToggleTools={onToggleTools}
+                    />
                   );
                 })}
               </div>

@@ -1,5 +1,5 @@
 /* ============================================================
-   AgentCardComponent — individual agent instance card
+   ModelCardComponent — individual model instance card
    ============================================================ */
 
 .card {
@@ -10,14 +10,12 @@
   border-radius: var(--border-radius-sm);
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-left: 2px solid color-mix(in srgb, var(--success) 60%, transparent);
   transition: border-color 0.2s, box-shadow 0.2s;
   animation: fadeIn 0.15s ease-out;
 
   &:hover {
-    border-color: color-mix(in srgb, var(--success) 50%, transparent);
-    border-left-color: var(--success);
-    box-shadow: 0 1px 4px color-mix(in srgb, var(--success) 8%, transparent);
+    border-color: color-mix(in srgb, var(--accent-color) 40%, transparent);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--accent-color) 8%, transparent);
   }
 }
 
@@ -30,8 +28,7 @@
   min-width: 0;
 }
 
-.botIcon {
-  color: var(--success);
+.header > svg:first-child {
   flex-shrink: 0;
 }
 
@@ -46,20 +43,24 @@
   min-width: 0;
 }
 
-.badge {
+.dupeBadge {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 8px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--success);
-  background: color-mix(in srgb, var(--success) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
-  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 1px 5px;
   border-radius: 3px;
   flex-shrink: 0;
+  letter-spacing: 0.2px;
+
+  & svg {
+    opacity: 0.6;
+  }
 }
 
 .removeBtn {
@@ -90,13 +91,7 @@
   gap: 6px;
 }
 
-.description {
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: var(--text-muted);
-}
+
 
 /* ── Toggles (right-aligned) ────────────────────────────── */
 

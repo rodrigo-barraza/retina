@@ -823,6 +823,21 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     setToolsMap((prev) => { const n = { ...prev }; delete n[instanceId]; return n; });
   }, [agentInstances, thinkingMap, toolsMap]);
 
+  const handleChangeModel = useCallback((instanceId, provider, modelName) => {
+    setSelectedInstances((prev) => {
+      const next = prev.map((i) =>
+        i.instanceId === instanceId ? { ...i, provider, name: modelName } : i
+      );
+      StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, {
+        instances: next,
+        agents: agentInstances,
+        thinkingMap,
+        toolsMap,
+      });
+      return next;
+    });
+  }, [agentInstances, thinkingMap, toolsMap]);
+
   const clearModelSelection = useCallback(() => {
     setSelectedInstances([]);
     setAgentInstances([]);
@@ -922,6 +937,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           streamingCompleted={streamingResults.length}
           selectedModels={selectedModels}
           onRemoveModel={removeModel}
+          onChangeModel={handleChangeModel}
           onClearSelection={clearModelSelection}
           thinkingMap={thinkingMap}
           onToggleThinking={handleToggleThinking}

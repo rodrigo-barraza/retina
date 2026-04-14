@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Bot, X, Brain } from "lucide-react";
+import ToggleButtonComponent from "./ToggleButtonComponent";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent";
 import styles from "./AgentCardComponent.module.css";
 
@@ -73,8 +74,8 @@ export default function AgentCardComponent({
     <div className={styles.card}>
       <div className={styles.header}>
         <Bot size={14} className={styles.botIcon} />
-        <span className={styles.name} title={agent.name}>
-          {agent.name}
+        <span className={styles.name} title={`Agent: ${agent.name}`}>
+          Agent: {agent.name}
         </span>
         <span className={styles.badge}>Agent</span>
         <button
@@ -102,17 +103,16 @@ export default function AgentCardComponent({
         </span>
         <div className={styles.toggles}>
           {supportsThinking && (
-            <button
-              className={`${styles.thinkingToggle} ${isThinking ? styles.thinkingToggleActive : ""}`}
+            <ToggleButtonComponent
+              icon={<Brain size={10} />}
+              label="Think"
+              active={isThinking}
+              title={isThinking ? "Disable thinking" : "Enable thinking"}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleThinking?.(agent.instanceId);
               }}
-              title={isThinking ? "Disable thinking" : "Enable thinking"}
-            >
-              <Brain size={10} />
-              <span>Think</span>
-            </button>
+            />
           )}
         </div>
       </div>
