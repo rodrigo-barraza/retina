@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Plus } from "lucide-react";
 import HistoryList from "./HistoryList";
+import ButtonComponent from "./ButtonComponent";
 import { getModalities } from "../utils/utilities";
 import styles from "./HistoryPanel.module.css";
 
@@ -10,7 +11,7 @@ export default function HistoryPanel({
   sessions = [],
   activeId,
   onSelect,
-  onNew: _onNew,
+  onNew,
   onDelete,
   readOnly = false,
   showProject = false,
@@ -20,9 +21,9 @@ export default function HistoryPanel({
   onToggleFavorite,
   initialProviders,
   initialSearch = "",
-  disableNew: _disableNew,
+  disableNew,
   // Customisable labels — defaults match conversation-session context
-  newLabel: _newLabel = "New Conversation",
+  newLabel = "New Conversation",
   emptyText = "No recent chats",
   searchText = "Search conversations...",
   itemIcon,
@@ -97,6 +98,19 @@ export default function HistoryPanel({
 
   return (
     <div className={styles.container}>
+      {!readOnly && onNew && (
+        <ButtonComponent
+          variant="primary"
+          size="sm"
+          icon={Plus}
+          onClick={onNew}
+          disabled={disableNew !== undefined ? disableNew : !activeId}
+          className={styles.newBtn}
+          data-panel-close
+        >
+          {newLabel}
+        </ButtonComponent>
+      )}
       <HistoryList
         items={items}
         activeId={activeId}

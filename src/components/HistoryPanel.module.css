@@ -5,3 +5,17 @@
   min-height: 0;
   overflow: hidden;
 }
+
+.newBtn {
+  margin: 12px;
+  width: calc(100% - 24px);
+  height: var(--button-height);
+  min-height: var(--button-height);
+  flex-shrink: 0;
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 4px 12px var(--accent-glow);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+}
