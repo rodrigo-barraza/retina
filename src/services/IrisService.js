@@ -195,6 +195,20 @@ export default class IrisService {
     return fetchJSON(`/sessions/${agentSessionId}/stats`);
   }
 
+  static async getSessionRequests(agentSessionId) {
+    return fetchJSON(`/sessions/${agentSessionId}/requests`);
+  }
+
+  // ── Agent Sessions (admin) ────────────────────────────────
+  static async getAgentSessions(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return fetchJSON(`/agent-sessions${query ? `?${query}` : ""}`);
+  }
+
+  static async getAgentSession(id) {
+    return fetchJSON(`/agent-sessions/${id}`);
+  }
+
   // ── Media ─────────────────────────────────────────────────
   static async getMedia(params = {}) {
     const query = new URLSearchParams(params).toString();

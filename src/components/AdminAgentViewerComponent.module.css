@@ -1,0 +1,177 @@
+/* ============================================================
+   AdminAgentViewerComponent — 3-column layout within AdminShell
+   ============================================================ */
+
+/* Break out of AdminShell .main padding to occupy the full area */
+.viewer {
+  display: flex;
+  flex-direction: column;
+  margin: -28px -32px;
+  height: calc(100% + 56px);
+  overflow: hidden;
+}
+
+/* ── Mini header ─────────────────────────────────────────────── */
+
+.viewerHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  height: 44px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  flex-shrink: 0;
+}
+
+.viewerTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+}
+
+.panelToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.panelToggle:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.panelToggle.panelToggleHidden {
+  color: var(--accent-color);
+}
+
+/* ── Body — 3-column flex ──────────────────────────────────── */
+
+.viewerBody {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Left panel (settings/tools tabs) ─────────────────────── */
+
+.leftPanel {
+  width: 300px;
+  min-width: 300px;
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-secondary);
+  transition: width 0.25s ease, min-width 0.25s ease, opacity 0.2s ease;
+}
+
+.leftPanel.panelHidden {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-right: none;
+}
+
+/* ── Center panel (messages) ──────────────────────────────── */
+
+.centerPanel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+
+/* ── Right panel (sessions list) ──────────────────────────── */
+
+.rightPanel {
+  width: 320px;
+  min-width: 320px;
+  border-left: 1px solid var(--border-color);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-secondary);
+  transition: width 0.25s ease, min-width 0.25s ease, opacity 0.2s ease;
+}
+
+.rightPanel.panelHidden {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-left: none;
+}
+
+/* ── Read-only banner ─────────────────────────────────────── */
+
+.readOnlyBanner {
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+
+@media (max-width: 1200px) {
+  .leftPanel {
+    width: 260px;
+    min-width: 260px;
+  }
+  .rightPanel {
+    width: 280px;
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 900px) {
+  .viewer {
+    margin: -16px;
+    height: calc(100% + 32px);
+  }
+
+  .leftPanel,
+  .rightPanel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 10;
+    width: 300px;
+    min-width: 300px;
+  }
+
+  .leftPanel {
+    left: 0;
+  }
+
+  .rightPanel {
+    right: 0;
+  }
+
+  .viewerBody {
+    position: relative;
+  }
+}

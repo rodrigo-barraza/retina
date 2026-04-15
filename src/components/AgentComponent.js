@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Bot, Paperclip, X, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain, Plug, GitBranch, Scissors, Repeat, ListChecks, BookOpen, Users, Info } from "lucide-react";
+import { Bot, Paperclip, X, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain, Plug, GitBranch, Scissors, Repeat, ListChecks, BookOpen, Users, Info, Activity } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import IrisService from "../services/IrisService.js";
 import ToolsApiService from "../services/ToolsApiService.js";
@@ -17,6 +17,7 @@ import TasksPanel from "./TasksPanel.js";
 import MCPServersPanel from "./MCPServersPanel.js";
 import CoordinatorPanel from "./CoordinatorPanel.js";
 import WorkersPanel from "./WorkersPanel.js";
+import SessionRequestsListComponent from "./SessionRequestsListComponent.js";
 import MessageList, { prepareDisplayMessages } from "./MessageList.js";
 import ImagePreviewComponent from "./ImagePreviewComponent.js";
 import TabBarComponent from "./TabBarComponent.js";
@@ -120,6 +121,7 @@ export default function AgentComponent() {
   const [contextTruncated, setContextTruncated] = useState(null); // { strategy, estimatedTokens }
   const [currentTurnStart, setCurrentTurnStart] = useState(null); // Date.now() when user sends
   const [backendSessionStats, setBackendSessionStats] = useState(null); // aggregate from /admin/sessions/:id/stats
+  const [requestsRefreshKey, setRequestsRefreshKey] = useState(0);
 
   const textareaRef = useRef(null);
   const endRef = useRef(null);
@@ -366,12 +368,18 @@ export default function AgentComponent() {
     // embedding) that take longer to flush to the DB.
     const t1 = setTimeout(() => {
       IrisService.getSessionStats(sessionId)
-        .then((stats) => setBackendSessionStats(stats))
+        .then((stats) => {
+          setBackendSessionStats(stats);
+          setRequestsRefreshKey((k) => k + 1);
+        })
         .catch(() => {}); // silently ignore if no requests yet
     }, 2000);
     const t2 = setTimeout(() => {
       IrisService.getSessionStats(sessionId)
-        .then((stats) => setBackendSessionStats(stats))
+        .then((stats) => {
+          setBackendSessionStats(stats);
+          setRequestsRefreshKey((k) => k + 1);
+        })
         .catch(() => {});
     }, 8000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
@@ -1066,13 +1074,20 @@ export default function AgentComponent() {
             ...(gs.thinkingBudget && { thinkingBudget: gs.thinkingBudget }),
           }));
         }
-        // Fetch backend aggregate stats for the loaded session
-        fetchSessionStats(conv.id);
+        // Fetch backend aggregate stats inline — single source of truth on load
+        // (avoids showing stale client-side stats then jumping to backend numbers)
+        try {
+          const stats = await IrisService.getSessionStats(conv.id);
+          setBackendSessionStats(stats);
+        } catch {
+          // No request logs yet (brand-new session) — fall back to client-side
+          setBackendSessionStats(null);
+        }
       } catch (err) {
         console.error("Failed to load session:", err);
       }
     },
-    [isGenerating, fetchSessionStats],
+    [isGenerating],
   );
 
   const handleDeleteSession = useCallback(
@@ -1138,7 +1153,14 @@ export default function AgentComponent() {
             key: "workers",
             icon: <Users size={14} />,
             ...badgeProps(workersCount),
+            badgeRainbow: Object.values(workerToolActivity).some((w) => w.currentTool),
             tooltip: "Workers",
+          },
+          {
+            key: "requests",
+            icon: <Activity size={14} />,
+            ...badgeProps(backendSessionStats?.requestCount || 0),
+            tooltip: "Requests",
           },
           {
             key: "coordinator",
@@ -1193,27 +1215,39 @@ export default function AgentComponent() {
           ]}
           sessionStats={
             messages.length > 0
-              ? {
-                  messageCount: messages.length,
-                  deletedCount: 0,
-                  requestCount: backendSessionStats?.requestCount || requestCount,
-                  uniqueModels: backendSessionStats?.models?.length > uniqueModels.length
-                    ? backendSessionStats.models
-                    : uniqueModels,
-                  totalTokens: backendSessionStats
-                    ? {
-                        input: backendSessionStats.totalInputTokens,
-                        output: backendSessionStats.totalOutputTokens,
-                        total: backendSessionStats.totalTokens,
-                      }
-                    : totalTokens,
-                  totalCost: backendSessionStats?.totalCost ?? totalCost,
-                  originalTotalCost: 0,
-                  usedTools,
-                  modalities: backendSessionStats?.modalities || modalities,
-                  completedElapsedTime: backendSessionStats?.totalElapsedTime || completedElapsedTime,
-                  currentTurnStart,
-                }
+              ? backendSessionStats
+                ? {
+                    // ── Backend is source of truth (all requests incl. background) ──
+                    messageCount: messages.length,
+                    deletedCount: 0,
+                    requestCount: backendSessionStats.requestCount,
+                    uniqueModels: backendSessionStats.models,
+                    totalTokens: {
+                      input: backendSessionStats.totalInputTokens,
+                      output: backendSessionStats.totalOutputTokens,
+                      total: backendSessionStats.totalTokens,
+                    },
+                    totalCost: backendSessionStats.totalCost,
+                    originalTotalCost: 0,
+                    usedTools,
+                    modalities: backendSessionStats.modalities || modalities,
+                    completedElapsedTime: backendSessionStats.totalElapsedTime || completedElapsedTime,
+                    currentTurnStart,
+                  }
+                : {
+                    // ── Client-side fallback (live generation, no backend data yet) ──
+                    messageCount: messages.length,
+                    deletedCount: 0,
+                    requestCount,
+                    uniqueModels,
+                    totalTokens,
+                    totalCost,
+                    originalTotalCost: 0,
+                    usedTools,
+                    modalities,
+                    completedElapsedTime,
+                    currentTurnStart,
+                  }
               : null
           }
         />
@@ -1267,6 +1301,13 @@ export default function AgentComponent() {
 
       {leftTab === "workers" && (
         <WorkersPanel agentSessionId={agentSessionId} refreshKey={tasksRefreshKey} onCountChange={setWorkersCount} workerToolActivity={workerToolActivity} />
+      )}
+
+      {leftTab === "requests" && (
+        <SessionRequestsListComponent
+          agentSessionId={agentSessionId}
+          refreshKey={requestsRefreshKey}
+        />
       )}
 
       {leftTab === "coordinator" && (

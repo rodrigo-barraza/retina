@@ -37,7 +37,7 @@ export default function TabBarComponent({
             {tab.label}
             {tab.badge != null && (
               <span
-                className={`${styles.tabBadge}${tab.badgeDisabled ? ` ${styles.tabBadgeDisabled}` : ""}`}
+                className={`${styles.tabBadge}${tab.badgeDisabled ? ` ${styles.tabBadgeDisabled}` : ""}${tab.badgeRainbow ? ` ${styles.tabBadgeRainbow}` : ""}`}
               >
                 {tab.badge}
               </span>

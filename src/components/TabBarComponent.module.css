@@ -72,6 +72,19 @@
   opacity: 0.5;
 }
 
+.tabBadgeRainbow {
+  background: hsl(0, 90%, 55%);
+  filter: hue-rotate(0deg);
+  animation: badgeRainbowHue 4s linear infinite;
+  will-change: filter;
+}
+
+@keyframes badgeRainbowHue {
+  to {
+    filter: hue-rotate(360deg);
+  }
+}
+
 
 
 .tabDisabled {

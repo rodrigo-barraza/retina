@@ -79,6 +79,7 @@ const ADMIN_NAV_ITEMS = [
     showBadge: "conversations",
   },
   { href: "/admin/traces", label: "Traces", icon: FolderOpen, showBadge: "traces" },
+  { href: "/admin/agent-sessions", label: "Agent Sessions", icon: Bot },
   { href: "/admin/providers", label: "Providers", icon: Layers },
   { href: "/admin/media", label: "Media", icon: ImageIcon, showBadge: "media" },
   { href: "/admin/text", label: "Text", icon: Type, showBadge: "text" },
