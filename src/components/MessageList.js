@@ -1223,27 +1223,6 @@ export default function MessageList({
                     const segs = msg.contentSegments;
                     const hasThinking = segs.some((s) => s.type === "thinking");
 
-                    // Find the boundary between "reasoning" and "answer":
-                    // Everything up to and including the last thinking/tools segment is reasoning.
-                    // Text segments after that are the final answer.
-                    let answerStartIdx = segs.length;
-                    for (let k = segs.length - 1; k >= 0; k--) {
-                      if (segs[k].type !== "text") {
-                        answerStartIdx = k + 1;
-                        break;
-                      }
-                    }
-
-                    const reasoningSegs = segs.slice(0, answerStartIdx);
-
-                    // Find the last text segment index in answerSegs for streaming cursor
-                    const lastTextSegIdx = (() => {
-                      for (let k = segs.length - 1; k >= 0; k--) {
-                        if (segs[k].type === "text") return k;
-                      }
-                      return -1;
-                    })();
-
                     // Helper: render a segment by type
                     const renderSeg = (seg, si, opts = {}) => {
                       if (seg.type === "thinking") {
@@ -1259,7 +1238,7 @@ export default function MessageList({
                       }
                       if (seg.type === "text") {
                         const fragmentText = msg.textFragments?.[seg.fragmentIndex]?.trim();
-                        const isLastTextSeg = si === lastTextSegIdx;
+                        const isLastTextSeg = !!opts.isLastText;
                         const showCursor = !opts.insideThinking && !opts.suppressCursor;
                         if (fragmentText) {
                           return (
@@ -1282,14 +1261,16 @@ export default function MessageList({
 
                     // Edit mode: show reasoning then editable text
                     if (msg.role === "assistant" && !readOnly && editingIndex === i) {
+                      const thinkingOnly = segs.filter((s) => s.type === "thinking");
+                      const nonThinking = segs.filter((s) => s.type !== "thinking");
                       return (
                         <>
-                          {hasThinking && reasoningSegs.length > 0 && (
+                          {hasThinking && thinkingOnly.length > 0 && (
                             <ThinkingBlock isStreaming={false}>
-                              {reasoningSegs.map((seg, si) => renderSeg(seg, si, { insideThinking: true }))}
+                              {thinkingOnly.map((seg, si) => renderSeg(seg, si, { insideThinking: true }))}
                             </ThinkingBlock>
                           )}
-                          {!hasThinking && reasoningSegs.map((seg, si) => renderSeg(seg, si))}
+                          {nonThinking.map((seg, si) => renderSeg(seg, si))}
                           <EditableMessage
                             key="seg-edit"
                             content={msg.content}
@@ -1304,37 +1285,47 @@ export default function MessageList({
                     }
 
                     // ── Normal rendering ──
-                    // If thinking is present: all reasoning segments (thinking + tools +
-                    // intermediate text) are rendered inside a single ThinkingBlock.
-                    // Only text segments after the last thinking/tools boundary render
-                    // outside as the final answer.
+                    // Only thinking segments go inside the ThinkingBlock.
+                    // Tools and text segments render outside in their original
+                    // interleaved order — this matches the post-refresh layout.
                     if (hasThinking) {
-                      // All reasoning segments (thinking + tools + intermediate text)
-                      // go into a single ThinkingBlock. Only the final text after the
-                      // last thinking/tools segment renders outside as the answer.
-                      const thinkingIsStreaming = isStreaming && answerStartIdx >= segs.length;
+                      const thinkingOnly = segs.filter((s) => s.type === "thinking");
+                      const visibleSegs = segs
+                        .map((s, idx) => ({ seg: s, origIdx: idx }))
+                        .filter(({ seg }) => seg.type !== "thinking");
+                      // ThinkingBlock is streaming when thinking is the current
+                      // activity (last segment is thinking)
+                      const lastSeg = segs[segs.length - 1];
+                      const thinkingIsStreaming = isStreaming && lastSeg?.type === "thinking";
+
+                      // Find the last text segment among visible segs for cursor
+                      const lastVisibleTextIdx = (() => {
+                        for (let k = visibleSegs.length - 1; k >= 0; k--) {
+                          if (visibleSegs[k].seg.type === "text") return k;
+                        }
+                        return -1;
+                      })();
 
                       return (
                         <>
-                          {reasoningSegs.length > 0 && (
+                          {thinkingOnly.length > 0 && (
                             <ThinkingBlock isStreaming={thinkingIsStreaming}>
-                              {reasoningSegs.map((seg, si) =>
+                              {thinkingOnly.map((seg, si) =>
                                 renderSeg(seg, si, { insideThinking: true })
                               )}
                             </ThinkingBlock>
                           )}
-                          {/* Final answer text segments (after the last thinking/tools segment) */}
-                          {segs.slice(answerStartIdx).map((seg, si) => {
-                            const origIdx = answerStartIdx + si;
-                            const isLastTextSeg = origIdx === lastTextSegIdx;
+                          {/* Tools and text segments render outside in original order */}
+                          {visibleSegs.map(({ seg, origIdx }, vi) => {
+                            const isLastText = vi === lastVisibleTextIdx;
                             return (
-                              <React.Fragment key={`ans-${si}`}>
-                                {renderSeg(seg, origIdx, { suppressCursor: !isLastTextSeg })}
+                              <React.Fragment key={`vis-${vi}`}>
+                                {renderSeg(seg, origIdx, { isLastText })}
                               </React.Fragment>
                             );
                           })}
-                          {/* Streaming cursor when answer hasn't started yet */}
-                          {isStreaming && answerStartIdx >= segs.length && (
+                          {/* Streaming cursor when no visible content yet */}
+                          {isStreaming && visibleSegs.length === 0 && (
                             <span className={styles.streamingCursor} />
                           )}
                         </>
@@ -1342,7 +1333,14 @@ export default function MessageList({
                     }
 
                     // No thinking — render all segments inline (tools interleaved with text)
-                    return segs.map((seg, si) => renderSeg(seg, si));
+                    // Find the last text segment to place streaming cursor
+                    const lastTextIdx = (() => {
+                      for (let k = segs.length - 1; k >= 0; k--) {
+                        if (segs[k].type === "text") return k;
+                      }
+                      return -1;
+                    })();
+                    return segs.map((seg, si) => renderSeg(seg, si, { isLastText: si === lastTextIdx }));
                   })()
                 ) : (
                   <>
