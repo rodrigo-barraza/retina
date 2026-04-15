@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Bot, Paperclip, X, ClipboardList, Zap, Sparkles, Settings, Wrench, Brain, Plug, GitBranch, Scissors, Repeat, ListChecks, BookOpen, Users, Info, Activity } from "lucide-react";
 import PrismService from "../services/PrismService.js";
-import IrisService from "../services/IrisService.js";
 import ToolsApiService from "../services/ToolsApiService.js";
 import ThreePanelLayout from "./ThreePanelLayout.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
@@ -366,22 +365,17 @@ export default function AgentComponent() {
     // Two-phase fetch: first at 2s catches iteration requests,
     // second at 8s catches background requests (memory extraction,
     // embedding) that take longer to flush to the DB.
-    const t1 = setTimeout(() => {
-      IrisService.getSessionStats(sessionId)
-        .then((stats) => {
-          setBackendSessionStats(stats);
-          setRequestsRefreshKey((k) => k + 1);
+    const refetch = () =>
+      PrismService.getAgentSession(sessionId, PROJECT_AGENT)
+        .then((session) => {
+          if (session?.stats) {
+            setBackendSessionStats(session.stats);
+            setRequestsRefreshKey((k) => k + 1);
+          }
         })
         .catch(() => {}); // silently ignore if no requests yet
-    }, 2000);
-    const t2 = setTimeout(() => {
-      IrisService.getSessionStats(sessionId)
-        .then((stats) => {
-          setBackendSessionStats(stats);
-          setRequestsRefreshKey((k) => k + 1);
-        })
-        .catch(() => {});
-    }, 8000);
+    const t1 = setTimeout(refetch, 2000);
+    const t2 = setTimeout(refetch, 8000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
@@ -961,6 +955,7 @@ export default function AgentComponent() {
         setTitle(resolvedTitle);
       }
 
+      setBackendSessionStats(null); // Clear stale backend stats — client-side fallback provides live preview during generation
       setCurrentTurnStart(Date.now());
       const userMessage = {
         role: "user",
@@ -1074,15 +1069,8 @@ export default function AgentComponent() {
             ...(gs.thinkingBudget && { thinkingBudget: gs.thinkingBudget }),
           }));
         }
-        // Fetch backend aggregate stats inline — single source of truth on load
-        // (avoids showing stale client-side stats then jumping to backend numbers)
-        try {
-          const stats = await IrisService.getSessionStats(conv.id);
-          setBackendSessionStats(stats);
-        } catch {
-          // No request logs yet (brand-new session) — fall back to client-side
-          setBackendSessionStats(null);
-        }
+        // Stats come from the session response itself (aggregated from request logs)
+        setBackendSessionStats(full.stats || null);
       } catch (err) {
         console.error("Failed to load session:", err);
       }
