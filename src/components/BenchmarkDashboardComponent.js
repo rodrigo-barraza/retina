@@ -308,6 +308,8 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
                 { value: totals.failed + totals.errored, label: "Failed", color: "var(--danger)" },
                 {
                   bar: totals.total > 0 ? (totals.passed / totals.total) * 100 : 0,
+                  barPassed: totals.passed,
+                  barTotal: totals.total,
                   label: totals.total > 0 ? `${Math.round((totals.passed / totals.total) * 100)}%` : "—",
                 },
                 ...(totals.cost > 0

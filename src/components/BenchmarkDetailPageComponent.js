@@ -1133,7 +1133,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                   { value: passed, label: "Passed", color: "var(--success)", icon: <CircleCheck size={14} /> },
                   { value: failed, label: "Failed", color: "var(--danger)", icon: <CircleX size={14} /> },
                   ...(errored > 0 ? [{ value: errored, label: "Errors", color: "var(--warning)" }] : []),
-                  { bar: passRate, label: completed > 0 ? `${Math.round(passRate)}%` : "\u2014" },
+                  { bar: passRate, barPassed: passed, barTotal: completed, label: completed > 0 ? `${Math.round(passRate)}%` : "\u2014" },
                   ...(totalCost > 0 ? [{
                     value: formatCost(totalCost),
                     label: "Cost",
@@ -1187,7 +1187,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                   { value: latestRun.summary.passed, label: "Passed", color: "var(--success)", icon: <CircleCheck size={14} /> },
                   { value: latestRun.summary.failed, label: "Failed", color: "var(--danger)", icon: <CircleX size={14} /> },
                   ...(latestRun.summary.errored > 0 ? [{ value: latestRun.summary.errored, label: "Errors", color: "var(--warning)" }] : []),
-                  { bar: (latestRun.summary.passed / latestRun.summary.total) * 100, label: `${Math.round((latestRun.summary.passed / latestRun.summary.total) * 100)}%` },
+                  { bar: (latestRun.summary.passed / latestRun.summary.total) * 100, barPassed: latestRun.summary.passed, barTotal: latestRun.summary.total, label: `${Math.round((latestRun.summary.passed / latestRun.summary.total) * 100)}%` },
                   ...((latestRun.summary.totalCost > 0 || latestRun.models?.some(r => r.estimatedCost > 0)) ? [{
                     value: formatCost(latestRun.summary.totalCost ?? latestRun.models.reduce((s, r) => s + (r.estimatedCost || 0), 0)),
                     label: "Cost",

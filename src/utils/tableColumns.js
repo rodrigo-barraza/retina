@@ -657,7 +657,7 @@ export const benchmarkToolsColumn = () => ({
     );
     if (!toolNames?.length) return badge;
     return (
-      <TooltipComponent content={toolNames.join(", ")}>{badge}</TooltipComponent>
+      <TooltipComponent label={toolNames.join(", ")}>{badge}</TooltipComponent>
     );
   },
 });

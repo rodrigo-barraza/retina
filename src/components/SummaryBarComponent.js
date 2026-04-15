@@ -19,7 +19,9 @@ import BenchmarkBarComponent from "./BenchmarkBarComponent";
  * @property {string}        [label]  — Label text below the value
  * @property {string}        [color]  — CSS color for the value
  * @property {React.ReactNode} [icon] — Optional icon element before the value
- * @property {number}        [bar]    — If set, renders a progress bar (0–100)
+ * @property {number}        [bar]       — If set, renders a progress bar (0–100 percentage)
+ * @property {number}        [barPassed] — Actual passed count for the tooltip
+ * @property {number}        [barTotal]  — Actual total count for the tooltip
  */
 export default function SummaryBarComponent({ items, live = false, className }) {
   if (!items || items.length === 0) return null;
@@ -41,8 +43,8 @@ export default function SummaryBarComponent({ items, live = false, className }) 
             {item.bar != null ? (
               <>
                 <BenchmarkBarComponent
-                  passed={Math.round((Math.min(item.bar, 100) / 100) * 100)}
-                  total={100}
+                  passed={item.barPassed ?? Math.round((Math.min(item.bar, 100) / 100) * 100)}
+                  total={item.barTotal ?? 100}
                 />
                 {item.label && (
                   <span className={styles.label}>{item.label}</span>
