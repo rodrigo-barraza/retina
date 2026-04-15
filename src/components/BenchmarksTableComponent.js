@@ -24,8 +24,13 @@ import styles from "./BenchmarksTableComponent.module.css";
  *
  * Eager row population: when `pendingTargets` is provided, all model
  * rows are shown immediately (as "Queued"). Completed results replace
- * their pending counterparts, the active model shows a progress bar,
- * and remaining targets appear dimmed with a queued indicator.
+ * their pending counterparts, concurrently-running models each show
+ * their own progress bar, and remaining targets appear dimmed with a
+ * queued indicator.
+ *
+ * Supports concurrent model execution: `activeModels` is a Map keyed
+ * by "provider:model" → { model, progress, phase }. Multiple models
+ * from different provider buckets can run simultaneously.
  *
  * @param {Object}   props
  * @param {Array}    props.results           - Array of per-model result objects from a benchmark run
@@ -39,9 +44,7 @@ import styles from "./BenchmarksTableComponent.module.css";
  * @param {string}   [props.expectedValue]   - Expected value to highlight in responses
  * @param {Function} [props.onRowClick]      - (row) => void — called when a row is clicked
  * @param {string}   [props.activeRowKey]    - Key of the currently active/selected row
- * @param {Object}   [props.activeModel]     - Currently running model { provider, model, label, isLocal }
- * @param {number}   [props.activeProgress]  - 0–1 progress of the active model
- * @param {string}   [props.activePhase]     - Phase label ("Connecting", "Generating", etc.)
+ * @param {Map}      [props.activeModels]    - Map<"provider:model", { model, progress, phase }> of all running models
  * @param {Array}    [props.pendingTargets]  - Full list of model targets for the current run
  */
 export default function BenchmarksTableComponent({
@@ -57,9 +60,7 @@ export default function BenchmarksTableComponent({
   onSort,
   onRowClick,
   activeRowKey,
-  activeModel,
-  activeProgress = 0,
-  activePhase = "",
+  activeModels = new Map(),
   pendingTargets = [],
 }) {
   const columns = useMemo(
@@ -82,21 +83,21 @@ export default function BenchmarksTableComponent({
     [expectedValue, modelConfigMap],
   );
 
-  // Build display data: completed results + active running row + queued pending rows
+  // Build display data: completed results + active running rows + queued pending rows
   const displayData = useMemo(() => {
     // No pending targets — fall back to simple results-only mode
     if (!pendingTargets.length) {
-      if (!activeModel) return results;
-      // Legacy path: single synthetic running row
-      const runningRow = {
+      if (activeModels.size === 0) return results;
+      // Append synthetic running rows for all active models
+      const runningRows = [...activeModels.values()].map((entry) => ({
         _running: true,
-        _progress: activeProgress,
-        _phase: activePhase,
-        provider: activeModel.provider,
-        model: activeModel.model,
-        label: activeModel.label || activeModel.model,
-      };
-      return [...results, runningRow];
+        _progress: entry.progress,
+        _phase: entry.phase,
+        provider: entry.model.provider,
+        model: entry.model.model,
+        label: entry.model.label || entry.model.model,
+      }));
+      return [...results, ...runningRows];
     }
 
     // Eager population: build a row for every target
@@ -107,7 +108,7 @@ export default function BenchmarksTableComponent({
     // Map completed results back to their target index by matching provider + model/display_name
     // Results arrive in order, so the i-th result of a given provider:model corresponds
     // to the i-th target with that same provider:model.
-    const targetCounters = new Map(); // "provider:model" → next expected index among targets
+    const targetCounters = new Map(); // "provider:model" → indices among targets
     const resultCounters = new Map(); // "provider:model" → next result index
 
     // First pass: count how many times each target key appears
@@ -138,10 +139,13 @@ export default function BenchmarksTableComponent({
         continue;
       }
 
-      // Check if this is the currently active model
-      if (activeModel && activeModel.provider === target.provider && activeModel.model === target.model) {
+      // Check if this target matches any concurrently-running model
+      const modelKey = `${target.provider}:${target.model}`;
+      const activeEntry = activeModels.get(modelKey);
+
+      if (activeEntry) {
         // Verify it's the right instance (first unfinished one for this key)
-        const rKey = `${target.provider}:${target.model}`;
+        const rKey = modelKey;
         const completedCount = resultCounters.get(rKey) || 0;
         const indices = targetCounters.get(rKey);
         const isActiveInstance = indices && indices.indexOf(i) === completedCount;
@@ -149,11 +153,11 @@ export default function BenchmarksTableComponent({
         if (isActiveInstance) {
           rows.push({
             _running: true,
-            _progress: activeProgress,
-            _phase: activePhase,
-            provider: activeModel.provider,
-            model: activeModel.model,
-            label: activeModel.label || activeModel.model,
+            _progress: activeEntry.progress,
+            _phase: activeEntry.phase,
+            provider: activeEntry.model.provider,
+            model: activeEntry.model.model,
+            label: activeEntry.model.label || activeEntry.model.model,
           });
           continue;
         }
@@ -169,7 +173,7 @@ export default function BenchmarksTableComponent({
     }
 
     return rows;
-  }, [results, activeModel, activeProgress, activePhase, pendingTargets]);
+  }, [results, activeModels, pendingTargets]);
 
   // Assign a CSS class for running/pending rows
   const getRowClassName = useCallback((row) => {
@@ -181,8 +185,8 @@ export default function BenchmarksTableComponent({
   // Build a custom style variable for progress width on running rows
   const getRowStyle = useCallback((row) => {
     if (!row._running) return undefined;
-    return { "--progress": `${activeProgress * 100}%` };
-  }, [activeProgress]);
+    return { "--progress": `${(row._progress || 0) * 100}%` };
+  }, []);
 
   return (
     <TableComponent

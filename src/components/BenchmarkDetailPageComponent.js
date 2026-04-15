@@ -57,6 +57,24 @@ function flattenAllModels(config) {
   return [...seen.values()];
 }
 
+
+/**
+ * Resolve the model key for incoming content events during concurrent execution.
+ * If the event carries a `_sourceModel` tag (provider + model), use that directly.
+ * Otherwise fall back to the last active key in the live data map.
+ */
+function resolveModelKeyForContent(liveDataMap, sourceModel) {
+  // Prefer explicit source tag (set by backend for concurrent benchmark runs)
+  if (sourceModel?.provider && sourceModel?.model) {
+    const key = `${sourceModel.provider}:${sourceModel.model}`;
+    if (liveDataMap.has(key)) return key;
+  }
+  // Fallback: last key in the map (most recently started model)
+  let lastKey = null;
+  for (const key of liveDataMap.keys()) lastKey = key;
+  return lastKey;
+}
+
 export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningChange, navSidebar, rightSidebar }) {
   const router = useRouter();
   // ── State ──────────────────────────────────────────────────
@@ -134,29 +152,68 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     return `${selectedResult.provider}:${selectedResult.label}:${idx}`;
   }, [selectedResult]);
 
-  // Streaming progress
+  // Smart row click: running rows switch the live preview, completed rows set selectedResult
+  const handleStreamingRowClick = useCallback((row) => {
+    if (row._running) {
+      // Switch live preview to this model
+      const key = `${row.provider}:${row.model}`;
+      setViewedModelKey(key);
+      setSelectedResult(null);
+      // Immediately flush this model's accumulated data so the preview updates instantly
+      const d = liveDataRef.current.get(key);
+      if (d) {
+        setLiveSnapshot({ text: d.text, thinking: d.thinking, toolCalls: [...d.toolCalls] });
+      }
+    } else if (row._pending) {
+      // Ignore clicks on queued rows
+      return;
+    } else {
+      // Completed result — show in chat preview
+      setSelectedResult(row);
+    }
+  }, []);
+
+  // Streaming progress — supports concurrent model execution across provider buckets
   const [streamingResults, setStreamingResults] = useState([]);
   const [streamingTotal, setStreamingTotal] = useState(0);
-  const [activeModel, setActiveModel] = useState(null);
-  const [activeProgress, setActiveProgress] = useState(0);
-  const [activePhase, setActivePhase] = useState("");
+  // Map<modelKey, { model, progress, phase }> for all concurrently-running models
+  const [activeModels, setActiveModels] = useState(new Map());
   const [pendingTargets, setPendingTargets] = useState([]);
   const abortRef = useRef(null);
-  const progressRef = useRef(null);
+  // Per-model progress intervals: Map<modelKey, intervalId>
+  const progressIntervalsRef = useRef(new Map());
 
-  // Live streaming text for the currently-running model
-  const liveTextRef = useRef("");
-  const liveThinkingRef = useRef("");
+  // The model key the user is currently viewing in live preview (sticky — doesn't auto-switch)
+  const [viewedModelKey, setViewedModelKey] = useState(null);
+
+  // Live streaming text for the currently-viewed model
+  // Map<modelKey, { text, thinking, toolCalls }> — accumulates per model
+  const liveDataRef = useRef(new Map());
   const liveFlushRef = useRef(null);
-  const [liveSnapshot, setLiveSnapshot] = useState({ text: "", thinking: "" });
+  const [liveSnapshot, setLiveSnapshot] = useState({ text: "", thinking: "", toolCalls: [] });
 
   // Cleanup intervals on unmount
   useEffect(() => {
+    const intervals = progressIntervalsRef.current;
     return () => {
-      if (progressRef.current) clearInterval(progressRef.current);
+      for (const id of intervals.values()) clearInterval(id);
+      intervals.clear();
       if (liveFlushRef.current) clearInterval(liveFlushRef.current);
     };
   }, []);
+
+  // Derive the "viewed" active model from the Map (for chat preview)
+  const viewedActiveModel = useMemo(() => {
+    if (activeModels.size === 0) return null;
+    if (viewedModelKey && activeModels.has(viewedModelKey)) {
+      return activeModels.get(viewedModelKey).model;
+    }
+    // Fallback: first active model
+    return activeModels.values().next().value?.model || null;
+  }, [activeModels, viewedModelKey]);
+
+  // For backward compat: expose a single activeModel for summary counts
+  const activeModelCount = activeModels.size;
 
   // ── Load benchmark detail ──────────────────────────────────
   const loadBenchmark = useCallback(async () => {
@@ -186,6 +243,192 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     loadBenchmark();
   }, [loadBenchmark]);
 
+  // ── Shared live-state helpers (single source of truth) ─────
+
+  /** Reset all live streaming refs and state. Called on run complete, error, and stop. */
+  const resetLiveState = useCallback(() => {
+    for (const id of progressIntervalsRef.current.values()) clearInterval(id);
+    progressIntervalsRef.current.clear();
+    if (liveFlushRef.current) { clearInterval(liveFlushRef.current); liveFlushRef.current = null; }
+    setActiveModels(new Map());
+    setViewedModelKey(null);
+    liveDataRef.current = new Map();
+    setLiveSnapshot({ text: "", thinking: "", toolCalls: [] });
+  }, []);
+
+  /** Reset live state for a single model on completion. */
+  const resetModelLiveState = useCallback((modelKey) => {
+    const intervalId = progressIntervalsRef.current.get(modelKey);
+    if (intervalId) { clearInterval(intervalId); progressIntervalsRef.current.delete(modelKey); }
+    liveDataRef.current.delete(modelKey);
+  }, []);
+
+  /**
+   * Build the unified SSE callbacks object shared by both `streamBenchmarkRun`
+   * and `followBenchmarkRun`. Identical event handling — no duplication.
+   *
+   * @param {object} overrides - Extra callbacks merged on top (e.g. onRunComplete, onError)
+   */
+  const buildBenchmarkSSECallbacks = useCallback((overrides = {}) => ({
+    onRunInfo: (data) => {
+      setStreamingTotal(data.totalModels || 0);
+    },
+
+    // ── Model lifecycle — supports concurrent models across providers ──
+    onModelStart: (data) => {
+      const modelKey = `${data.provider}:${data.model}`;
+
+      // Initialize live data refs for this model
+      liveDataRef.current.set(modelKey, { text: "", thinking: "", toolCalls: [] });
+
+      // Set this as the viewed model only if nothing is currently being viewed
+      setViewedModelKey((prev) => {
+        if (prev) return prev; // Don't auto-switch
+        return modelKey;
+      });
+
+      // Start periodic flush of the VIEWED model's refs → React state
+      if (!liveFlushRef.current) {
+        liveFlushRef.current = setInterval(() => {
+          setViewedModelKey((currentKey) => {
+            if (!currentKey) return currentKey;
+            const d = liveDataRef.current.get(currentKey);
+            if (d) {
+              setLiveSnapshot({ text: d.text, thinking: d.thinking, toolCalls: [...d.toolCalls] });
+            }
+            return currentKey;
+          });
+        }, 100);
+      }
+
+      // Add to active models map
+      const initialPhase = data.isLocal ? "Loading model" : "Connecting";
+      setActiveModels((prev) => {
+        const next = new Map(prev);
+        next.set(modelKey, { model: data, progress: 0, phase: initialPhase });
+        return next;
+      });
+
+      // Asymptotic progress simulation — per model
+      const oldInterval = progressIntervalsRef.current.get(modelKey);
+      if (oldInterval) clearInterval(oldInterval);
+
+      const startTime = Date.now();
+      const phases = data.isLocal
+        ? [
+            { end: 0.30, duration: 5000,  label: "Loading model" },
+            { end: 0.60, duration: 2000,  label: "Processing prompt" },
+            { end: 0.95, duration: 8000,  label: "Generating" },
+          ]
+        : [
+            { end: 0.40, duration: 3000,  label: "Processing" },
+            { end: 0.95, duration: 5000,  label: "Generating" },
+          ];
+      let phaseIndex = 0;
+      let phaseStart = startTime;
+
+      const intervalId = setInterval(() => {
+        const now = Date.now();
+        const phase = phases[phaseIndex];
+        const prevEnd = phaseIndex > 0 ? phases[phaseIndex - 1].end : 0;
+        const elapsed = now - phaseStart;
+        const phaseProgress = elapsed / (elapsed + phase.duration);
+        const totalProgress = prevEnd + (phase.end - prevEnd) * phaseProgress;
+        setActiveModels((prev) => {
+          const next = new Map(prev);
+          const entry = next.get(modelKey);
+          if (entry) {
+            next.set(modelKey, { ...entry, progress: totalProgress, phase: phase.label });
+          }
+          return next;
+        });
+        if (phaseProgress > 0.9 && phaseIndex < phases.length - 1) {
+          phaseIndex++;
+          phaseStart = now;
+        }
+      }, 60);
+      progressIntervalsRef.current.set(modelKey, intervalId);
+    },
+
+    onModelComplete: (result) => {
+      const modelKey = `${result.provider}:${result.model}`;
+      resetModelLiveState(modelKey);
+
+      // Remove from active models
+      setActiveModels((prev) => {
+        const next = new Map(prev);
+        next.delete(modelKey);
+        return next;
+      });
+
+      // If the completed model was the viewed one, move view to next active
+      setViewedModelKey((prev) => {
+        if (prev === modelKey) return null; // Will auto-pick next active via useMemo
+        return prev;
+      });
+
+      setStreamingResults((prev) => [...prev, result]);
+
+      // Stop live flush if no active models remain
+      setActiveModels((latest) => {
+        if (latest.size === 0 && liveFlushRef.current) {
+          clearInterval(liveFlushRef.current);
+          liveFlushRef.current = null;
+          setLiveSnapshot({ text: "", thinking: "", toolCalls: [] });
+        }
+        return latest;
+      });
+    },
+
+    // ── Live content events — route to the correct model via _sourceModel tag ──
+    onChunk: (content, sourceModel) => {
+      const key = resolveModelKeyForContent(liveDataRef.current, sourceModel);
+      if (key) {
+        const d = liveDataRef.current.get(key);
+        if (d) d.text += content;
+      }
+    },
+    onThinking: (content, sourceModel) => {
+      const key = resolveModelKeyForContent(liveDataRef.current, sourceModel);
+      if (key) {
+        const d = liveDataRef.current.get(key);
+        if (d) d.thinking += content;
+      }
+    },
+
+    // ── Tool call events (same pattern as /coding-agent) ───
+    onToolCall: (tc) => {
+      const key = resolveModelKeyForContent(liveDataRef.current, tc._sourceModel);
+      if (!key) return;
+      const d = liveDataRef.current.get(key);
+      if (!d) return;
+      if (tc.status === "calling") {
+        d.toolCalls = [...d.toolCalls, { id: tc.id, name: tc.name, args: tc.args, status: "calling" }];
+      } else {
+        d.toolCalls = d.toolCalls.map((t) =>
+          t.id === tc.id ? { ...t, status: tc.status, result: tc.result, ...(tc.args && { args: tc.args }) } : t
+        );
+      }
+    },
+    onToolExecution: (data) => {
+      const key = resolveModelKeyForContent(liveDataRef.current, data._sourceModel);
+      if (!key) return;
+      const d = liveDataRef.current.get(key);
+      if (!d) return;
+      const tool = data.tool || {};
+      if (data.status === "calling") {
+        d.toolCalls = [...d.toolCalls, { id: tool.id, name: tool.name, args: tool.args, status: "calling" }];
+      } else {
+        d.toolCalls = d.toolCalls.map((t) =>
+          t.id === tool.id ? { ...t, status: data.status, result: tool.result, ...(tool.args && { args: tool.args }) } : t
+        );
+      }
+    },
+
+    // Merge caller-specific overrides (onRunComplete, onError)
+    ...overrides,
+  }), [resetModelLiveState]);
+
   // ── Reconnect to an in-progress run on mount ──────────────
   useEffect(() => {
     let cancelled = false;
@@ -195,113 +438,24 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
         const status = await PrismService.getBenchmarkActive(benchmarkId);
         if (cancelled || !status?.active) return;
 
-        // Don't pre-populate streamingResults or activeModel here —
+        // Don't pre-populate streamingResults or activeModels here —
         // the follow SSE replays all completed results and sends the
-        // active model_start event, keeping a single source of truth.
+        // active model_start events, keeping a single source of truth.
         setRunning(true);
         setLatestRun(null);
 
         // Connect to the follow SSE for live updates
-        abortRef.current = PrismService.followBenchmarkRun(benchmarkId, {
-          onRunInfo: (data) => {
-            setStreamingTotal(data.totalModels || 0);
-          },
-          onModelStart: (data) => {
-            setActiveModel(data);
-            setActiveProgress(0);
-            setActivePhase(data.isLocal ? "Loading model" : "Connecting");
-
-            // Reset live text for new model
-            liveTextRef.current = "";
-            liveThinkingRef.current = "";
-            setLiveSnapshot({ text: "", thinking: "" });
-            // Start periodic flush of live text to state (100ms batches)
-            if (liveFlushRef.current) clearInterval(liveFlushRef.current);
-            liveFlushRef.current = setInterval(() => {
-              setLiveSnapshot({ text: liveTextRef.current, thinking: liveThinkingRef.current });
-            }, 100);
-
-            if (progressRef.current) clearInterval(progressRef.current);
-
-            const startTime = Date.now();
-            const isLocal = !!data.isLocal;
-            const phases = isLocal
-              ? [
-                  { end: 0.30, duration: 5000,  label: "Loading model" },
-                  { end: 0.60, duration: 2000,  label: "Processing prompt" },
-                  { end: 0.95, duration: 8000,  label: "Generating" },
-                ]
-              : [
-                  { end: 0.40, duration: 3000,  label: "Processing" },
-                  { end: 0.95, duration: 5000,  label: "Generating" },
-                ];
-
-            let phaseIndex = 0;
-            let phaseStart = startTime;
-
-            progressRef.current = setInterval(() => {
-              const now = Date.now();
-              const phase = phases[phaseIndex];
-              const prevEnd = phaseIndex > 0 ? phases[phaseIndex - 1].end : 0;
-              const phaseRange = phase.end - prevEnd;
-              const elapsed = now - phaseStart;
-              const phaseProgress = elapsed / (elapsed + phase.duration);
-              const totalProgress = prevEnd + phaseRange * phaseProgress;
-
-              setActiveProgress(totalProgress);
-              setActivePhase(phase.label);
-
-              if (phaseProgress > 0.9 && phaseIndex < phases.length - 1) {
-                phaseIndex++;
-                phaseStart = now;
-              }
-            }, 60);
-          },
-          onChunk: (content) => {
-            liveTextRef.current += content;
-          },
-          onThinking: (content) => {
-            liveThinkingRef.current += content;
-          },
-          onModelComplete: (result) => {
-            if (progressRef.current) {
-              clearInterval(progressRef.current);
-              progressRef.current = null;
-            }
-            if (liveFlushRef.current) {
-              clearInterval(liveFlushRef.current);
-              liveFlushRef.current = null;
-            }
-            setActiveProgress(0);
-            setActivePhase("");
-            liveTextRef.current = "";
-            liveThinkingRef.current = "";
-            setLiveSnapshot({ text: "", thinking: "" });
-            setStreamingResults((prev) => [...prev, result]);
-            setActiveModel(null);
-          },
+        abortRef.current = PrismService.followBenchmarkRun(benchmarkId, buildBenchmarkSSECallbacks({
           onRunComplete: async (run) => {
-            if (progressRef.current) {
-              clearInterval(progressRef.current);
-              progressRef.current = null;
-            }
-            if (liveFlushRef.current) {
-              clearInterval(liveFlushRef.current);
-              liveFlushRef.current = null;
-            }
-            setActiveProgress(0);
-            setActivePhase("");
-            liveTextRef.current = "";
-            liveThinkingRef.current = "";
-            setLiveSnapshot({ text: "", thinking: "" });
+            resetLiveState();
             setLatestRun(run);
             setActiveRunId(run.id);
             setRunning(false);
             setStreamingResults([]);
-            setActiveModel(null);
+            setActiveModels(new Map());
+            setViewedModelKey(null);
             setStreamingTotal(0);
             abortRef.current = null;
-
             try {
               const { runs } = await PrismService.getBenchmarkRuns(benchmarkId);
               setRunHistory(runs || []);
@@ -309,24 +463,13 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           },
           onError: (err) => {
             if (err?.name === "AbortError" || err?.message?.includes("abort")) return;
-            if (progressRef.current) {
-              clearInterval(progressRef.current);
-              progressRef.current = null;
-            }
-            if (liveFlushRef.current) {
-              clearInterval(liveFlushRef.current);
-              liveFlushRef.current = null;
-            }
-            setActiveProgress(0);
-            setActivePhase("");
-            liveTextRef.current = "";
-            liveThinkingRef.current = "";
-            setLiveSnapshot({ text: "", thinking: "" });
+            resetLiveState();
             setRunning(false);
-            setActiveModel(null);
+            setActiveModels(new Map());
+            setViewedModelKey(null);
             abortRef.current = null;
           },
-        });
+        }));
       } catch {
         // No active run or server unreachable — ignore
       }
@@ -335,7 +478,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     return () => {
       cancelled = true;
     };
-  }, [benchmarkId]);
+  }, [benchmarkId, buildBenchmarkSSECallbacks, resetLiveState]);
 
   // ── Load Prism config (drives model picker + size column) ──
   useEffect(() => {
@@ -396,6 +539,8 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     });
   }, [allModels, selectedInstances]);
 
+
+
   // Derive a selectedKeys Set for the model picker checkmarks
   const selectedModelKeys = useMemo(
     () => new Set(selectedInstances.map((i) => `${i.provider}:${i.name}`)),
@@ -455,7 +600,8 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     if (!benchmark) return;
     setRunning(true);
     setStreamingResults([]);
-    setActiveModel(null);
+    setActiveModels(new Map());
+    setViewedModelKey(null);
     setLatestRun(null);
 
     if (selectedModels.length === 0 && agentInstances.length === 0) return;
@@ -492,117 +638,18 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     // Notify sidebar to begin polling for active state
     window.dispatchEvent(new Event("benchmark-run-started"));
 
-    abortRef.current = PrismService.streamBenchmarkRun(benchmarkId, models, {
-      onRunInfo: (data) => {
-        setStreamingTotal(data.totalModels || 0);
-      },
-      onModelStart: (data) => {
-        setActiveModel(data);
-        setActiveProgress(0);
-        setActivePhase(data.isLocal ? "Loading model" : "Connecting");
-        // Reset live text for new model
-        liveTextRef.current = "";
-        liveThinkingRef.current = "";
-        setLiveSnapshot({ text: "", thinking: "" });
-        // Start periodic flush of live text to state (60fps → 100ms batches)
-        if (liveFlushRef.current) clearInterval(liveFlushRef.current);
-        liveFlushRef.current = setInterval(() => {
-          setLiveSnapshot({ text: liveTextRef.current, thinking: liveThinkingRef.current });
-        }, 100);
-
-        // Clear any previous interval
-        if (progressRef.current) clearInterval(progressRef.current);
-
-        const startTime = Date.now();
-        const isLocal = !!data.isLocal;
-
-        // Local: 3-phase (load 0–30%, process 30–60%, generate 60–95%)
-        //   Phase 1: ~5s expected load time → fills to 30%
-        //   Phase 2: ~2s expected TTFT  → fills 30–60%
-        //   Phase 3: ~8s expected gen   → fills 60–95%
-        // Cloud: 2-phase (process 0–40%, generate 40–95%)
-        //   Phase 1: ~3s expected TTFT  → fills to 40%
-        //   Phase 2: ~5s expected gen   → fills 40–95%
-        const phases = isLocal
-          ? [
-              { end: 0.30, duration: 5000,  label: "Loading model" },
-              { end: 0.60, duration: 2000,  label: "Processing prompt" },
-              { end: 0.95, duration: 8000,  label: "Generating" },
-            ]
-          : [
-              { end: 0.40, duration: 3000,  label: "Processing" },
-              { end: 0.95, duration: 5000,  label: "Generating" },
-            ];
-
-        let phaseIndex = 0;
-        let phaseStart = startTime;
-
-        progressRef.current = setInterval(() => {
-          const now = Date.now();
-          const phase = phases[phaseIndex];
-          const prevEnd = phaseIndex > 0 ? phases[phaseIndex - 1].end : 0;
-          const phaseRange = phase.end - prevEnd;
-          const elapsed = now - phaseStart;
-          // Asymptotic: elapsed / (elapsed + expected) → approaches 1
-          const phaseProgress = elapsed / (elapsed + phase.duration);
-          const totalProgress = prevEnd + phaseRange * phaseProgress;
-
-          setActiveProgress(totalProgress);
-          setActivePhase(phase.label);
-
-          // Advance to next phase when we're >90% through current
-          if (phaseProgress > 0.9 && phaseIndex < phases.length - 1) {
-            phaseIndex++;
-            phaseStart = now;
-          }
-        }, 60);
-      },
-      onModelComplete: (result) => {
-        if (progressRef.current) {
-          clearInterval(progressRef.current);
-          progressRef.current = null;
-        }
-        if (liveFlushRef.current) {
-          clearInterval(liveFlushRef.current);
-          liveFlushRef.current = null;
-        }
-        setActiveProgress(0);
-        setActivePhase("");
-        liveTextRef.current = "";
-        liveThinkingRef.current = "";
-        setLiveSnapshot({ text: "", thinking: "" });
-        setStreamingResults((prev) => [...prev, result]);
-        setActiveModel(null);
-      },
-      onChunk: (content) => {
-        liveTextRef.current += content;
-      },
-      onThinking: (content) => {
-        liveThinkingRef.current += content;
-      },
+    abortRef.current = PrismService.streamBenchmarkRun(benchmarkId, models, buildBenchmarkSSECallbacks({
       onRunComplete: async (run) => {
-        if (progressRef.current) {
-          clearInterval(progressRef.current);
-          progressRef.current = null;
-        }
-        if (liveFlushRef.current) {
-          clearInterval(liveFlushRef.current);
-          liveFlushRef.current = null;
-        }
-        setActiveProgress(0);
-        setActivePhase("");
-        liveTextRef.current = "";
-        liveThinkingRef.current = "";
-        setLiveSnapshot({ text: "", thinking: "" });
+        resetLiveState();
         setLatestRun(run);
         setActiveRunId(run.id);
         setRunning(false);
         setStreamingResults([]);
-        setActiveModel(null);
+        setActiveModels(new Map());
+        setViewedModelKey(null);
         setStreamingTotal(0);
         setPendingTargets([]);
         abortRef.current = null;
-
         try {
           const { runs } = await PrismService.getBenchmarkRuns(benchmarkId);
           setRunHistory(runs || []);
@@ -610,30 +657,17 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
       },
       onError: (err) => {
         // AbortError means user clicked Stop — handleStop already handled cleanup
-        if (err?.name === "AbortError" || err?.message?.includes("abort")) {
-          return;
-        }
-        if (progressRef.current) {
-          clearInterval(progressRef.current);
-          progressRef.current = null;
-        }
-        if (liveFlushRef.current) {
-          clearInterval(liveFlushRef.current);
-          liveFlushRef.current = null;
-        }
-        setActiveProgress(0);
-        setActivePhase("");
-        liveTextRef.current = "";
-        liveThinkingRef.current = "";
-        setLiveSnapshot({ text: "", thinking: "" });
+        if (err?.name === "AbortError" || err?.message?.includes("abort")) return;
+        resetLiveState();
         console.error("Benchmark run error:", err);
         setRunning(false);
-        setActiveModel(null);
+        setActiveModels(new Map());
+        setViewedModelKey(null);
         setPendingTargets([]);
         abortRef.current = null;
       },
-    });
-  }, [benchmark, selectedModels, agentInstances, allModels, benchmarkId, thinkingMap, toolsMap]);
+    }));
+  }, [benchmark, selectedModels, agentInstances, allModels, benchmarkId, thinkingMap, toolsMap, buildBenchmarkSSECallbacks, resetLiveState]);
 
   // ── Stop benchmark ─────────────────────────────────────────
   const handleStop = useCallback(async () => {
@@ -649,21 +683,10 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     }
 
     // Clean up progress state
-    if (progressRef.current) {
-      clearInterval(progressRef.current);
-      progressRef.current = null;
-    }
-    if (liveFlushRef.current) {
-      clearInterval(liveFlushRef.current);
-      liveFlushRef.current = null;
-    }
-    setActiveProgress(0);
-    setActivePhase("");
-    liveTextRef.current = "";
-    liveThinkingRef.current = "";
-    setLiveSnapshot({ text: "", thinking: "" });
+    resetLiveState();
     setRunning(false);
-    setActiveModel(null);
+    setActiveModels(new Map());
+    setViewedModelKey(null);
     setPendingTargets([]);
     setStreamingTotal(0);
 
@@ -688,7 +711,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
       const { runs } = await PrismService.getBenchmarkRuns(benchmarkId);
       setRunHistory(runs || []);
     } catch { /* noop */ }
-  }, [streamingResults, benchmarkId]);
+  }, [streamingResults, benchmarkId, resetLiveState]);
 
   // ── View a past run ────────────────────────────────────────
   const viewRun = useCallback((run) => {
@@ -1063,7 +1086,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             const passed = streamingResults.filter((r) => r.passed).length;
             const failed = streamingResults.filter((r) => !r.passed && !r.error).length;
             const errored = streamingResults.filter((r) => r.error).length;
-            const runningCount = activeModel ? 1 : 0;
+            const runningCount = activeModelCount;
             const totalCost = streamingResults.reduce((s, r) => s + (r.estimatedCost || 0), 0);
             const passRate = completed > 0 ? (passed / completed) * 100 : 0;
 
@@ -1124,11 +1147,9 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                   results={streamingResults}
                   expectedValue={benchmark.expectedValue}
                   modelConfigMap={modelConfigMap}
-                  onRowClick={setSelectedResult}
+                  onRowClick={handleStreamingRowClick}
                   activeRowKey={getActiveKey(streamingResults)}
-                  activeModel={activeModel}
-                  activeProgress={activeProgress}
-                  activePhase={activePhase}
+                  activeModels={activeModels}
                   pendingTargets={pendingTargets}
                 />
               </div>
@@ -1187,7 +1208,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
           )}
 
           {/* ── Chat Preview: selected result or live streaming ── */}
-          {(selectedResult || activeModel) ? (
+          {(selectedResult || viewedActiveModel) ? (
             <ChatPreviewComponent
               systemPrompt={benchmark.systemPrompt}
               messages={[
@@ -1200,12 +1221,13 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                   model: selectedResult.label || selectedResult.model,
                   provider: selectedResult.provider,
                 }] : []),
-                ...(!selectedResult && activeModel ? [{
+                ...(!selectedResult && viewedActiveModel ? [{
                   role: "assistant",
                   content: liveSnapshot.text || "",
                   thinking: liveSnapshot.thinking || undefined,
-                  model: activeModel.label || activeModel.model,
-                  provider: activeModel.provider,
+                  toolCalls: liveSnapshot.toolCalls?.length > 0 ? liveSnapshot.toolCalls : undefined,
+                  model: viewedActiveModel.label || viewedActiveModel.model,
+                  provider: viewedActiveModel.provider,
                   _liveStreaming: true,
                 }] : []),
               ]}

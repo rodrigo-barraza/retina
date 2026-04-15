@@ -750,10 +750,10 @@ export default class PrismService {
 
     switch (data.type) {
       case "chunk":
-        onChunk?.(data.content);
+        onChunk?.(data.content, data._sourceModel);
         break;
       case "thinking":
-        onThinking?.(data.content);
+        onThinking?.(data.content, data._sourceModel);
         break;
       case "image":
         onImage?.(data.data, data.mimeType, data.minioRef);
@@ -778,10 +778,11 @@ export default class PrismService {
           result: data.result,
           status: data.status,
           thoughtSignature: data.thoughtSignature,
+          _sourceModel: data._sourceModel,
         });
         break;
       case "tool_execution":
-        onToolExecution?.(data);
+        onToolExecution?.({ ...data });
         break;
       case "tool_output":
         onToolOutput?.(data);
