@@ -93,3 +93,45 @@
     filter: hue-rotate(360deg);
   }
 }
+
+/* ── Glitch / scramble phase — chaotic distortion ──────── */
+.glitching {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: hsl(300, 100%, 70%);
+  animation:
+    glitchHue 0.15s linear infinite,
+    glitchJitter 0.05s steps(2) infinite;
+  will-change: filter, transform, text-shadow;
+  text-shadow:
+    1px 0 0 hsl(0, 100%, 60%),
+    -1px 0 0 hsl(180, 100%, 60%);
+  overflow: hidden;
+}
+
+/* Override active colors during glitch */
+.cycleButtonActive.glitching {
+  animation:
+    glitchHue 0.15s linear infinite,
+    glitchJitter 0.05s steps(2) infinite;
+  color: hsl(300, 100%, 85%);
+  background: hsl(280, 80%, 20%);
+  border-color: hsl(300, 100%, 50%);
+}
+
+@keyframes glitchHue {
+  0% { filter: hue-rotate(0deg) brightness(1.2); }
+  25% { filter: hue-rotate(90deg) brightness(1.6); }
+  50% { filter: hue-rotate(180deg) brightness(0.8); }
+  75% { filter: hue-rotate(270deg) brightness(1.4); }
+  100% { filter: hue-rotate(360deg) brightness(1.2); }
+}
+
+@keyframes glitchJitter {
+  0% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-1px, 1px) scale(1.05); }
+  50% { transform: translate(1px, -1px) scale(0.95); }
+  75% { transform: translate(1px, 0) scale(1.02); }
+  100% { transform: translate(-1px, 0) scale(0.98); }
+}

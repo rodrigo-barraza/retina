@@ -364,6 +364,31 @@ const SoundService = {
   },
 
   /**
+   * Returns `{ onClick, onMouseEnter }` event-handler props that play
+   * the appropriate hover/click sounds with spatial stereo, then call
+   * through to optional consumer callbacks.
+   *
+   * Usage:
+   *   <div {...SoundService.interactive(() => navigate(id))}>
+   *
+   * @param {Function} [onClick]      — callback invoked after click sound
+   * @param {Function} [onMouseEnter] — callback invoked after hover sound
+   * @returns {{ onClick: Function, onMouseEnter: Function }}
+   */
+  interactive(onClick, onMouseEnter) {
+    return {
+      onMouseEnter: (e) => {
+        this.playHover({ event: e });
+        onMouseEnter?.(e);
+      },
+      onClick: (e) => {
+        this.playClick({ event: e });
+        onClick?.(e);
+      },
+    };
+  },
+
+  /**
    * Tear down the AudioContext (e.g. on unmount / navigation).
    */
   dispose() {

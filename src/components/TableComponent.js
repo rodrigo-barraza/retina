@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ChevronUp, Columns3, Check } from "lucide-react";
+import SoundService from "@/services/SoundService";
 import tooltipStyles from "./TooltipComponent.module.css";
 import styles from "./TableComponent.module.css";
 
@@ -454,16 +455,14 @@ export default function TableComponent({
                       }
                       className={`${styles.tr} ${clickable ? styles.clickable : ""} ${isExpandable ? styles.expandableRow : ""} ${isActive ? styles.activeRow : ""} ${isHighlighted ? styles.highlightedRow : ""} ${customClass}`}
                       style={customStyle}
-                      onClick={
-                        isExpandable
-                          ? () => toggleExpand(key)
-                          : onRowClick
-                            ? () => onRowClick(row)
-                            : undefined
-                      }
-                      onMouseEnter={
-                        onRowMouseEnter ? () => onRowMouseEnter(row, ri) : undefined
-                      }
+                      {...(clickable
+                        ? SoundService.interactive(
+                            isExpandable ? () => toggleExpand(key) : () => onRowClick(row),
+                            onRowMouseEnter ? () => onRowMouseEnter(row, ri) : undefined
+                          )
+                        : {}
+                      )}
+                      {...(!clickable && onRowMouseEnter ? { onMouseEnter: () => onRowMouseEnter(row, ri) } : {})}
                       onMouseLeave={
                         onRowMouseLeave ? () => onRowMouseLeave(row, ri) : undefined
                       }

@@ -15,6 +15,7 @@ import PrismService from "../services/PrismService";
 import ButtonComponent from "./ButtonComponent";
 import CostBadgeComponent from "./CostBadgeComponent";
 import SearchInputComponent from "./SearchInputComponent";
+import SoundService from "@/services/SoundService";
 import styles from "./BenchmarkSidebarComponent.module.css";
 
 /**
@@ -168,7 +169,7 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
               <div
                 key={b.id}
                 className={`${styles.item} ${isActive ? styles.itemActive : ""} ${isRunning ? styles.itemRunning : ""}`}
-                onClick={() => navigate(b)}
+                {...SoundService.interactive(() => navigate(b))}
                 data-panel-close
               >
                 {/* Row 1: date (left) · cost (right) */}

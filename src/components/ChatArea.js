@@ -18,6 +18,7 @@ import ToolCardComponent from "./ToolCardComponent";
 import MessageList from "./MessageList";
 import LiveSessionService from "../services/LiveSessionService";
 
+import SoundService from "@/services/SoundService";
 import styles from "./ChatArea.module.css";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import { useEffect, useRef, useState } from "react";
@@ -887,6 +888,7 @@ export default function ChatArea({
         <form
           onSubmit={handleSubmit}
           className={`${styles.inputBox} ${isDragging ? styles.inputBoxDragActive : ""} ${isGenerating ? styles.inputBoxGenerating : ""}`}
+          onClick={(e) => { if (e.target === e.currentTarget || e.target.tagName === 'TEXTAREA') SoundService.playClick({ event: e }); }}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}

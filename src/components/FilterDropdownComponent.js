@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import DatePickerComponent from "./DatePickerComponent";
 import { DATE_PRESETS, formatDateDisplay, getActiveDatePreset } from "../utils/datePresets";
+import SoundService from "@/services/SoundService";
 import styles from "./FilterDropdownComponent.module.css";
 
 /**
@@ -131,7 +132,7 @@ export default function FilterDropdownComponent({
           <button
             type="button"
             className={`${styles.dropdownTrigger} ${isOpen ? styles.dropdownTriggerOpen : ""}`}
-            onClick={() => setIsOpen((v) => !v)}
+            {...SoundService.interactive(() => setIsOpen((v) => !v))}
             style={fullWidth ? { width: "100%" } : undefined}
           >
             <span className={styles.triggerContent}>
@@ -163,7 +164,7 @@ export default function FilterDropdownComponent({
                         key={preset.label}
                         type="button"
                         className={`${styles.menuItem} ${isActive ? styles.menuItemActive : ""}`}
-                        onClick={() => onDateChange(preset.getValue())}
+                        {...SoundService.interactive(() => onDateChange(preset.getValue()))}
                       >
                         <Calendar size={13} style={{ color: "#6366f1" }} />
                         <span>{preset.label}</span>
@@ -176,10 +177,10 @@ export default function FilterDropdownComponent({
                   <button
                     type="button"
                     className={`${styles.menuItem} ${!getActiveDatePreset(dateFrom, dateTo) && (dateFrom || dateTo) ? styles.menuItemActive : ""}`}
-                    onClick={() => {
+                    {...SoundService.interactive(() => {
                       setShowCustomDatePicker(true);
                       setIsOpen(false);
-                    }}
+                    })}
                   >
                     <Calendar size={13} style={{ color: "#6366f1" }} />
                     <span>Custom…</span>
@@ -207,7 +208,7 @@ export default function FilterDropdownComponent({
                           key={item.key}
                           type="button"
                           className={`${styles.menuItem} ${isActive ? styles.menuItemActive : ""}`}
-                          onClick={() => onToggle(isSingleSelect && isActive ? null : item.key)}
+                          {...SoundService.interactive(() => onToggle(isSingleSelect && isActive ? null : item.key))}
                         >
                           {Icon && (
                             <Icon

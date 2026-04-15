@@ -1,5 +1,6 @@
 "use client";
 
+import SoundService from "@/services/SoundService";
 import styles from "./ChartTabsComponent.module.css";
 
 /**
@@ -18,7 +19,7 @@ export default function ChartTabsComponent({ tabs = [], activeTab, onChange }) {
           key={tab.key}
           type="button"
           className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ""}`}
-          onClick={() => onChange(tab.key)}
+          {...SoundService.interactive(() => onChange(tab.key))}
           style={
             activeTab === tab.key && tab.color
               ? { color: tab.color, borderColor: tab.color }

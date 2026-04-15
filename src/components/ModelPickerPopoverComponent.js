@@ -16,6 +16,7 @@ import ModelsTableComponent from "./ModelsTableComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
 import ModelToolsComponent from "./ModelToolsComponent";
 import CloseButtonComponent from "./CloseButtonComponent";
+import SoundService from "@/services/SoundService";
 import styles from "./ModelPickerPopoverComponent.module.css";
 
 // ── Shared model-search store ──────────────────────────────────────────
@@ -100,6 +101,7 @@ export default function ModelPickerPopoverComponent({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useSharedModelSearch();
   const [popoverStyle, setPopoverStyle] = useState({});
+  const [flipped, setFlipped] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const triggerRef = useRef(null);
   const bodyRef = useRef(null);
@@ -173,12 +175,21 @@ export default function ModelPickerPopoverComponent({
       })
     : allModels;
 
-  // ── Position the popover below the trigger, centered on the ChatArea ─
+  // ── Position the popover relative to trigger, flipping above when clipped ─
   const positionPopover = useCallback(() => {
     if (!triggerRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
     const popoverW = Math.min(1600, viewportW - 32);
+    const gap = 8;
+
+    // Estimate popover height as its max-height (75dvh)
+    const maxPopoverH = viewportH * 0.75;
+    const spaceBelow = viewportH - triggerRect.bottom - gap;
+    const spaceAbove = triggerRect.top - gap;
+    const shouldFlip = spaceBelow < maxPopoverH && spaceAbove > spaceBelow;
+    setFlipped(shouldFlip);
 
     // Center horizontally relative to the ChatArea (the main content section)
     const chatArea = document.querySelector("[data-chat-area]");
@@ -194,11 +205,20 @@ export default function ModelPickerPopoverComponent({
     if (left < 16) left = 16;
     if (left + popoverW > viewportW - 16) left = viewportW - 16 - popoverW;
 
-    setPopoverStyle({
-      top: triggerRect.bottom + 8,
-      left,
-      width: popoverW,
-    });
+    if (shouldFlip) {
+      // Anchor bottom edge to just above the trigger
+      setPopoverStyle({
+        bottom: viewportH - triggerRect.top + gap,
+        left,
+        width: popoverW,
+      });
+    } else {
+      setPopoverStyle({
+        top: triggerRect.bottom + gap,
+        left,
+        width: popoverW,
+      });
+    }
   }, []);
 
   const openPopover = useCallback(() => {
@@ -206,6 +226,10 @@ export default function ModelPickerPopoverComponent({
     setOpen(true);
     // Preserve the shared search — don't clear it
   }, [positionPopover]);
+
+  const togglePopover = useCallback(() => {
+    open ? setOpen(false) : openPopover();
+  }, [open, openPopover]);
 
   // Focus search when popover opens
   useEffect(() => {
@@ -421,9 +445,7 @@ export default function ModelPickerPopoverComponent({
         <button
           ref={triggerRef}
           className={`${styles.trigger} ${open ? styles.triggerOpen : ""} ${readOnly ? styles.triggerReadOnly : ""} ${loadingProgress != null ? styles.triggerLoading : ""} ${multiSelect && selectedKeys?.size > 0 ? styles.triggerActive : ""}`}
-          onClick={
-            readOnly ? undefined : open ? () => setOpen(false) : openPopover
-          }
+          {...(readOnly ? {} : SoundService.interactive(togglePopover))}
           data-model-picker-trigger
           title={readOnly ? displayLabel : multiSelect ? "Select models" : "Switch model"}
           style={readOnly ? { cursor: "default" } : undefined}
@@ -469,7 +491,7 @@ export default function ModelPickerPopoverComponent({
         typeof document !== "undefined" &&
         createPortal(
           <div
-            className={styles.popover}
+            className={`${styles.popover} ${flipped ? styles.popoverFlipped : ''}`}
             style={popoverStyle}
             data-model-picker-popover
           >

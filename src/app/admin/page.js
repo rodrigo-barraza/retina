@@ -40,6 +40,7 @@ import SelectDropdown from "../../components/SelectDropdown";
 import { ErrorMessage } from "../../components/StateMessageComponent";
 import { useAdminHeader } from "../../components/AdminHeaderContext";
 import useProjectFilter from "../../hooks/useProjectFilter";
+import ResourceCardComponent from "../../components/ResourceCardComponent";
 import styles from "./page.module.css";
 
 export default function DashboardPage() {
@@ -335,48 +336,43 @@ export default function DashboardPage() {
 
       {/* ── Resource Navigation ── */}
       <div className={styles.resourceNav}>
-        <Link href="#" className={styles.resourceCard} onClick={(e) => { e.preventDefault(); document.getElementById('projects-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
-          <Box size={18} className={styles.resourceIcon} />
-          <span className={styles.resourceCount}>
-            {loading ? "—" : formatNumber(projectStats.length)}
-          </span>
-          <span className={styles.resourceLabel}>Projects</span>
-        </Link>
-        <Link href="/admin/providers" className={styles.resourceCard}>
-          <Layers size={18} className={styles.resourceIcon} />
-          <span className={styles.resourceCount}>
-            {loading ? "—" : formatNumber(providerData.length)}
-          </span>
-          <span className={styles.resourceLabel}>Providers</span>
-        </Link>
-        <Link href="/admin/models" className={styles.resourceCard}>
-          <Server size={18} className={styles.resourceIcon} />
-          <span className={styles.resourceCount}>
-            {loading ? "—" : formatNumber(modelStats.length)}
-          </span>
-          <span className={styles.resourceLabel}>Models</span>
-        </Link>
-        <Link href="/admin/traces" className={styles.resourceCard}>
-          <FolderOpen size={18} className={styles.resourceIcon} />
-          <span className={styles.resourceCount}>
-            {loading ? "—" : formatNumber(stats?.sessionCount)}
-          </span>
-          <span className={styles.resourceLabel}>Sessions</span>
-        </Link>
-        <Link href="/admin/conversations" className={styles.resourceCard}>
-          <MessageSquare size={18} className={styles.resourceIcon} />
-          <span className={styles.resourceCount}>
-            {loading ? "—" : formatNumber(stats?.conversationCount)}
-          </span>
-          <span className={styles.resourceLabel}>Conversations</span>
-        </Link>
-        <Link href="/admin/requests" className={styles.resourceCard}>
-          <ScrollText size={18} className={styles.resourceIcon} />
-          <span className={styles.resourceCount}>
-            {loading ? "—" : formatNumber(stats?.totalRequests)}
-          </span>
-          <span className={styles.resourceLabel}>Requests</span>
-        </Link>
+        <ResourceCardComponent
+          href="#"
+          icon={Box}
+          count={loading ? "—" : formatNumber(projectStats.length)}
+          label="Projects"
+          onClick={(e) => { e.preventDefault(); document.getElementById('projects-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+        />
+        <ResourceCardComponent
+          href="/admin/providers"
+          icon={Layers}
+          count={loading ? "—" : formatNumber(providerData.length)}
+          label="Providers"
+        />
+        <ResourceCardComponent
+          href="/admin/models"
+          icon={Server}
+          count={loading ? "—" : formatNumber(modelStats.length)}
+          label="Models"
+        />
+        <ResourceCardComponent
+          href="/admin/traces"
+          icon={FolderOpen}
+          count={loading ? "—" : formatNumber(stats?.sessionCount)}
+          label="Sessions"
+        />
+        <ResourceCardComponent
+          href="/admin/conversations"
+          icon={MessageSquare}
+          count={loading ? "—" : formatNumber(stats?.conversationCount)}
+          label="Conversations"
+        />
+        <ResourceCardComponent
+          href="/admin/requests"
+          icon={ScrollText}
+          count={loading ? "—" : formatNumber(stats?.totalRequests)}
+          label="Requests"
+        />
       </div>
 
       {/* Stats Row */}

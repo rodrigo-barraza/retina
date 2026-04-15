@@ -19,6 +19,7 @@ import BadgeComponent from "./BadgeComponent";
 import ChatPreviewComponent from "./ChatPreviewComponent";
 import TabBarComponent from "./TabBarComponent";
 import { formatCost } from "../utils/utilities";
+import SoundService from "@/services/SoundService";
 import styles from "./RunHistorySidebarComponent.module.css";
 
 /**
@@ -271,7 +272,7 @@ export default function RunHistorySidebarComponent({
                   <div
                     key={run.id}
                     className={`${styles.runItem} ${isActive ? styles.runItemActive : ""} ${run.aborted ? styles.runItemAborted : ""}`}
-                    onClick={() => onViewRun(run)}
+                    {...SoundService.interactive(() => onViewRun(run))}
                     data-panel-close
                   >
                     <div className={styles.runItemHeader}>
