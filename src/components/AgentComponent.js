@@ -89,6 +89,7 @@ export default function AgentComponent() {
   const [tasksRefreshKey, setTasksRefreshKey] = useState(0);
   const [totalMemoriesCount, setTotalMemoriesCount] = useState(0);
   const [workersCount, setWorkersCount] = useState(0);
+  const [workerToolActivity, setWorkerToolActivity] = useState({});
   const [tasksCount, setTasksCount] = useState(0);
   const [memoryConfigured, setMemoryConfigured] = useState(false);
   const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
@@ -822,6 +823,39 @@ export default function AgentComponent() {
               ]);
             }
           },
+          // ── Worker agent live events ─────────────────────────────
+          onWorkerToolExecution: (data) => {
+            setWorkerToolActivity((prev) => {
+              const entry = prev[data.workerId] || { toolCount: 0, currentTool: null, iteration: 0 };
+              if (data.status === "calling") {
+                return {
+                  ...prev,
+                  [data.workerId]: {
+                    ...entry,
+                    currentTool: data.tool?.name || null,
+                    toolCount: entry.toolCount + 1,
+                  },
+                };
+              }
+              // done/error — clear currentTool
+              return {
+                ...prev,
+                [data.workerId]: { ...entry, currentTool: null },
+              };
+            });
+          },
+          onWorkerStatus: (data) => {
+            if (data.message === "iteration_progress") {
+              setWorkerToolActivity((prev) => ({
+                ...prev,
+                [data.workerId]: {
+                  ...(prev[data.workerId] || { toolCount: 0, currentTool: null }),
+                  iteration: data.iteration,
+                  maxIterations: data.maxIterations,
+                },
+              }));
+            }
+          },
           onDone: (data) => {
             setMessages((prev) => {
               const updated = [...prev];
@@ -903,6 +937,7 @@ export default function AgentComponent() {
       setPendingImages([]);
       setIsGenerating(true);
       setToolActivity([]);
+      setWorkerToolActivity({});
       setStreamingOutputs(new Map());
       setPendingApprovals([]);
       setPlanProposal(null);
@@ -987,6 +1022,7 @@ export default function AgentComponent() {
     if (isGenerating) return;
     setMessages([]);
     setToolActivity([]);
+    setWorkerToolActivity({});
     setPendingImages([]);
     setAgentSessionId(crypto.randomUUID());
     setTraceId(null);
@@ -1011,6 +1047,7 @@ export default function AgentComponent() {
         setActiveId(conv.id);
         setTitle(full.title || "Agent");
         setToolActivity([]);
+        setWorkerToolActivity({});
 
         // Restore settings from the last assistant message (source of truth)
         const lastAssistant = [...(full.messages || [])]
@@ -1229,7 +1266,7 @@ export default function AgentComponent() {
       )}
 
       {leftTab === "workers" && (
-        <WorkersPanel agentSessionId={agentSessionId} refreshKey={tasksRefreshKey} onCountChange={setWorkersCount} />
+        <WorkersPanel agentSessionId={agentSessionId} refreshKey={tasksRefreshKey} onCountChange={setWorkersCount} workerToolActivity={workerToolActivity} />
       )}
 
       {leftTab === "coordinator" && (

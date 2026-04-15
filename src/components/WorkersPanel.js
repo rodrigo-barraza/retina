@@ -66,7 +66,7 @@ function getAgentNumber(agentId) {
  * @param {string} [props.agentSessionId] - Current agent session ID to filter workers by
  * @param {number} [props.refreshKey] - External trigger to refresh worker list
  */
-export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange }) {
+export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange, workerToolActivity = {} }) {
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -217,12 +217,17 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
                 </span>
               )}
               <CostBadgeComponent cost={worker.totalCost} mini showIcon={false} />
-              {worker.toolCallCount > 0 && (
-                <span className={styles.metaItem}>
-                  <Wrench size={10} />
-                  {worker.toolCallCount} tool{worker.toolCallCount !== 1 ? "s" : ""}
-                </span>
-              )}
+              {/* Live tool count from SSE (or fallback to API count) */}
+              {(() => {
+                const liveActivity = workerToolActivity[worker.agentId];
+                const toolCount = Math.max(liveActivity?.toolCount || 0, worker.toolCallCount || 0);
+                return toolCount > 0 ? (
+                  <span className={styles.metaItem}>
+                    <Wrench size={10} />
+                    {toolCount} tool{toolCount !== 1 ? "s" : ""}
+                  </span>
+                ) : null;
+              })()}
               {worker.branchName && (
                 <span className={styles.metaItem}>
                   <GitBranch size={10} />
@@ -243,6 +248,22 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
             {/* ── Modality icons ─────────────────────────────── */}
             {isComplete && (
               <ModalityIconComponent modalities={workerModalities} size={10} />
+            )}
+
+            {/* ── Live tool activity (SSE-driven) ────────────── */}
+            {isLive && workerToolActivity[worker.agentId]?.currentTool && (
+              <div className={styles.liveActivity}>
+                <span className={styles.liveDot} />
+                <Wrench size={9} />
+                <span className={styles.liveToolName}>
+                  {workerToolActivity[worker.agentId].currentTool.replace(/_/g, " ")}
+                </span>
+                {workerToolActivity[worker.agentId].iteration > 0 && (
+                  <span className={styles.liveIteration}>
+                    iter {workerToolActivity[worker.agentId].iteration}
+                  </span>
+                )}
+              </div>
             )}
 
             {/* Files */}

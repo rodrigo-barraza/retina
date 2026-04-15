@@ -742,6 +742,7 @@ export default class PrismService {
       onChunk, onThinking, onImage, onAudio,
       onExecutableCode, onCodeExecutionResult, onWebSearchResult,
       onToolCall, onToolExecution, onToolOutput,
+      onWorkerToolExecution, onWorkerToolOutput, onWorkerStatus,
       onApprovalRequired, onPlanProposal,
       onRunInfo, onModelStart, onModelComplete, onRunComplete,
       onStatus, onDone, onError,
@@ -790,6 +791,16 @@ export default class PrismService {
         break;
       case "plan_proposal":
         onPlanProposal?.(data);
+        break;
+      // Worker agent events — forwarded from spawned sub-agents
+      case "worker_tool_execution":
+        onWorkerToolExecution?.(data);
+        break;
+      case "worker_tool_output":
+        onWorkerToolOutput?.(data);
+        break;
+      case "worker_status":
+        onWorkerStatus?.(data);
         break;
       // Benchmark-specific events
       case "run_info":
