@@ -5,89 +5,6 @@
   gap: 24px;
 }
 
-/* ── System Prompt Banner ── */
-.systemPromptBanner {
-  max-width: 800px;
-  margin: 0 auto;
-  width: 100%;
-  border: 1px solid var(--border-color);
-  border-left: 3px solid var(--accent-color);
-  border-radius: 2px;
-  background: var(--bg-secondary);
-  overflow: hidden;
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-.systemPromptEmpty {
-  border-left-color: var(--border-color);
-  border-left-style: dashed;
-  opacity: 0.55;
-  transition: opacity 0.2s ease;
-}
-
-.systemPromptEmpty:hover {
-  opacity: 0.85;
-}
-
-.systemPromptToggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 10px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent-color);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  transition: background 0.15s;
-}
-
-.systemPromptToggle:hover {
-  background: var(--bg-tertiary);
-}
-
-.systemPromptToggle svg {
-  flex-shrink: 0;
-}
-
-.systemPromptLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.systemPromptEditBtn {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  padding: 3px 6px;
-  border-radius: 2px;
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.systemPromptEditBtn:hover {
-  color: var(--accent-color);
-  background: var(--accent-glow);
-}
-
-.systemPromptBody {
-  padding: 0 14px 12px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text-primary);
-  white-space: pre-wrap;
-  word-break: break-word;
-  border-top: 1px solid var(--border-color);
-}
-
 /* ── Per-message row ── */
 .message {
   display: flex;
@@ -96,6 +13,14 @@
   margin: 0 auto;
   width: 100%;
   animation: fadeIn 0.3s ease-out forwards;
+
+  &.userNode {
+    scroll-margin-top: 56px; /* clear the sticky pinned header when scrollIntoView fires */
+  }
+
+  &:hover .actionBtn {
+    opacity: 1;
+  }
 }
 
 /* ── Coalesced continuation messages ── */
@@ -119,10 +44,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.message.userNode {
-  scroll-margin-top: 56px; /* clear the sticky pinned header when scrollIntoView fires */
-}
-
+/* ── Role node avatar variants ── */
 .userNode .avatar {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -162,21 +84,21 @@
 /* ── Task notification card (worker results) ── */
 .notificationNode {
   border-left: 3px solid var(--accent-color, #6366f1);
-  padding: 8px 0 8px 0;
+  padding: 8px 0;
   margin-left: auto;
   margin-right: auto;
   opacity: 0.8;
   transition: opacity 0.2s ease;
-}
 
-.notificationNode:hover {
-  opacity: 1;
-}
+  &:hover {
+    opacity: 1;
+  }
 
-.notificationNode .avatar {
-  background: color-mix(in srgb, var(--accent-color, #6366f1) 10%, transparent);
-  color: var(--accent-color, #6366f1);
-  border: 1px solid color-mix(in srgb, var(--accent-color, #6366f1) 30%, transparent);
+  & .avatar {
+    background: color-mix(in srgb, var(--accent-color, #6366f1) 10%, transparent);
+    color: var(--accent-color, #6366f1);
+    border: 1px solid color-mix(in srgb, var(--accent-color, #6366f1) 30%, transparent);
+  }
 }
 
 /* ── Content column ── */
@@ -221,19 +143,11 @@
   background: none;
   border: none;
   cursor: pointer;
-}
 
-.message:hover .actionBtn {
-  opacity: 1;
-}
-
-.actionBtn:hover {
-  color: var(--accent-color);
-  transform: scale(1.1);
-}
-
-.dangerBtn:hover {
-  color: var(--danger);
+  &:hover {
+    color: var(--accent-color);
+    transform: scale(1.1);
+  }
 }
 
 /* ── Thinking block ── */
@@ -261,10 +175,10 @@
   cursor: pointer;
   letter-spacing: 0.3px;
   transition: background 0.15s;
-}
 
-.thinkingToggle:hover {
-  background: var(--bg-tertiary);
+  &:hover {
+    background: var(--bg-tertiary);
+  }
 }
 
 .thinkingContent {
@@ -282,24 +196,6 @@
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
   border-top: 1px solid var(--border-color);
-}
-
-/* ── Streaming chunk fade-in for thinking content ── */
-.thinkingStreaming .thinkingContent p,
-.thinkingStreaming .thinkingContent li,
-.thinkingStreaming .thinkingContent h1,
-.thinkingStreaming .thinkingContent h2,
-.thinkingStreaming .thinkingContent h3,
-.thinkingStreaming .thinkingContent h4,
-.thinkingStreaming .thinkingContent blockquote,
-.thinkingStreaming .thinkingContent pre {
-  animation: streamChunkFadeIn 1s ease-out both;
-}
-
-/* Only the last block-level child animates — previous ones are already visible */
-.thinkingStreaming .thinkingContent > div > :last-child p:last-of-type,
-.thinkingStreaming .thinkingContent > div > :last-child li:last-of-type {
-  animation: streamChunkFadeIn 1s ease-out both;
 }
 
 /* ── Active thinking streaming state ── */
@@ -336,16 +232,24 @@
       animation: thinkingPulse 1.5s ease-in-out infinite;
     }
   }
+
+  /* Streaming chunk fade-in for thinking content */
+  & .thinkingContent {
+    & p, & li, & h1, & h2, & h3, & h4, & blockquote, & pre {
+      animation: streamChunkFadeIn 1s ease-out both;
+    }
+
+    & > div > :last-child {
+      & p:last-of-type, & li:last-of-type {
+        animation: streamChunkFadeIn 1s ease-out both;
+      }
+    }
+  }
 }
 
 @keyframes thinkingPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 /* ── Tool Calls block ── */
@@ -357,10 +261,10 @@
   overflow: hidden;
   background: color-mix(in srgb, #f97316 3%, var(--bg-primary));
   transition: border-color 0.2s ease;
-}
 
-.toolCallsBlock:hover {
-  border-color: color-mix(in srgb, #f97316 35%, var(--border-color));
+  &:hover {
+    border-color: color-mix(in srgb, #f97316 35%, var(--border-color));
+  }
 }
 
 /* ── Active tool execution streaming state ── */
@@ -421,15 +325,15 @@
   cursor: pointer;
   letter-spacing: 0.3px;
   transition: background 0.2s, color 0.2s;
-}
 
-.toolCallsToggle:hover {
-  background: color-mix(in srgb, #f97316 6%, var(--bg-tertiary));
-  color: #fbbf24;
-}
+  &:hover {
+    background: color-mix(in srgb, #f97316 6%, var(--bg-tertiary));
+    color: #fbbf24;
+  }
 
-.toolCallsToggle svg:first-child {
-  filter: drop-shadow(0 0 3px rgba(249, 115, 22, 0.4));
+  & svg:first-child {
+    filter: drop-shadow(0 0 3px rgba(249, 115, 22, 0.4));
+  }
 }
 
 .toolCallsContent {
@@ -450,10 +354,23 @@
   border-radius: 4px;
   transition: background 0.15s ease;
   animation: toolCardFadeIn 0.25s ease-out both;
-}
 
-.toolCallItem:hover {
-  background: color-mix(in srgb, #f97316 4%, var(--bg-tertiary));
+  &:nth-child(2) { animation-delay: 0.04s; }
+  &:nth-child(3) { animation-delay: 0.08s; }
+  &:nth-child(4) { animation-delay: 0.12s; }
+
+  & + & {
+    border-top: 1px solid color-mix(in srgb, #f97316 8%, var(--border-color));
+  }
+
+  &:hover {
+    background: color-mix(in srgb, #f97316 4%, var(--bg-tertiary));
+
+    & .toolCallIcon {
+      transform: scale(1.08);
+      background: color-mix(in srgb, currentColor 15%, transparent);
+    }
+  }
 }
 
 @keyframes toolCardFadeIn {
@@ -465,14 +382,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.toolCallItem:nth-child(2) { animation-delay: 0.04s; }
-.toolCallItem:nth-child(3) { animation-delay: 0.08s; }
-.toolCallItem:nth-child(4) { animation-delay: 0.12s; }
-
-.toolCallItem + .toolCallItem {
-  border-top: 1px solid color-mix(in srgb, #f97316 8%, var(--border-color));
 }
 
 /* ── Per-tool status indicator ── */
@@ -501,13 +410,6 @@
   animation: spin 1s linear infinite;
 }
 
-.toolCallHeader {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
 .toolCallIcon {
   display: inline-flex;
   align-items: center;
@@ -520,11 +422,6 @@
   transition: transform 0.15s ease, background 0.15s ease;
 }
 
-.toolCallItem:hover .toolCallIcon {
-  transform: scale(1.08);
-  background: color-mix(in srgb, currentColor 15%, transparent);
-}
-
 .toolCallName {
   font-weight: 600;
   color: var(--text-primary);
@@ -533,13 +430,6 @@
 }
 
 /* ── Argument pills ── */
-.toolCallArgPills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding-left: 0;
-}
-
 .toolCallArgPill {
   display: inline-flex;
   align-items: center;
@@ -550,10 +440,10 @@
   border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
   background: var(--bg-tertiary);
   transition: border-color 0.15s ease;
-}
 
-.toolCallArgPill:hover {
-  border-color: var(--border-color);
+  &:hover {
+    border-color: var(--border-color);
+  }
 }
 
 .toolCallArgKey {
@@ -591,89 +481,18 @@
   line-height: 1.3;
   max-width: 280px;
   flex-shrink: 0;
-}
 
-.toolCallSummary span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+  & span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-.toolCallSummary svg {
-  flex-shrink: 0;
-  filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.3));
-}
-
-.toolCallMapPreview {
-  margin: 8px 0 4px;
-  border-radius: var(--border-radius-sm);
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-}
-
-.toolCallMapImage {
-  width: 100%;
-  max-height: 280px;
-  object-fit: cover;
-  display: block;
-  transition: opacity 0.15s;
-
-  &:hover {
-    opacity: 0.9;
+  & svg {
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.3));
   }
 }
-
-.toolCallMapEmbed {
-  width: 100%;
-  height: 320px;
-  border: none;
-  display: block;
-}
-
-.toolCallResultWrapper {
-  margin-top: 0;
-  padding-left: 0;
-  flex-basis: 100%;
-}
-
-.toolCallResultToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  border-radius: var(--border-radius-sm);
-  transition: all 0.15s ease;
-
-  &:hover {
-    color: var(--text-secondary);
-    background: var(--bg-tertiary);
-  }
-}
-
-.toolCallChevronOpen {
-  transform: rotate(90deg);
-  transition: transform 0.15s ease;
-}
-
-.toolCallResult {
-  margin-top: 4px;
-  padding: 0;
-  background: var(--bg-tertiary);
-  border-radius: var(--border-radius-sm);
-  border: 1px solid var(--border-color);
-  font-size: 12px;
-  line-height: 1.5;
-  max-height: 400px;
-  overflow-y: auto;
-  color: var(--text-secondary);
-}
-
 
 /* ── Images / media ── */
 .imagePreviewRow {
@@ -690,10 +509,10 @@
   object-fit: cover;
   cursor: pointer;
   transition: opacity 0.15s;
-}
 
-.messageImage:hover {
-  opacity: 0.85;
+  &:hover {
+    opacity: 0.85;
+  }
 }
 
 .mediaCard {
@@ -801,133 +620,67 @@
   color: var(--text-primary);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-}
 
-.text h1,
-.text h2,
-.text h3,
-.text h4 {
-  margin: 16px 0 8px;
-  font-weight: 600;
-}
+  & h1, & h2, & h3, & h4 {
+    margin: 16px 0 8px;
+    font-weight: 600;
+  }
 
-.text h1 {
-  font-size: 1.4em;
-}
-.text h2 {
-  font-size: 1.2em;
-}
-.text h3 {
-  font-size: 1.1em;
-}
+  & h1 { font-size: 1.4em; }
+  & h2 { font-size: 1.2em; }
+  & h3 { font-size: 1.1em; }
+  & p { margin: 8px 0; }
 
-.text p {
-  margin: 8px 0;
-}
+  & ul, & ol {
+    padding-left: 20px;
+    margin: 8px 0;
+  }
 
-.text ul,
-.text ol {
-  padding-left: 20px;
-  margin: 8px 0;
-}
+  & li { margin: 4px 0; }
 
-.text li {
-  margin: 4px 0;
-}
+  & blockquote {
+    border-left: 3px solid var(--accent-color);
+    padding: 4px 12px;
+    margin: 8px 0;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border-radius: 0 2px 2px 0;
+  }
 
-.text blockquote {
-  border-left: 3px solid var(--accent-color);
-  padding: 4px 12px;
-  margin: 8px 0;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border-radius: 0 2px 2px 0;
-}
+  & a {
+    color: var(--accent-color);
+    text-decoration: underline;
+    text-decoration-color: rgba(138, 120, 255, 0.3);
+    transition: text-decoration-color 0.2s;
 
-.text a {
-  color: var(--accent-color);
-  text-decoration: underline;
-  text-decoration-color: rgba(138, 120, 255, 0.3);
-  transition: text-decoration-color 0.2s;
-}
+    &:hover {
+      text-decoration-color: var(--accent-color);
+    }
+  }
 
-.text a:hover {
-  text-decoration-color: var(--accent-color);
-}
+  & table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 14px;
+  }
 
-.text table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 12px 0;
-  font-size: 14px;
-}
+  & th, & td {
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    text-align: left;
+  }
 
-.text th,
-.text td {
-  border: 1px solid var(--border-color);
-  padding: 8px 12px;
-  text-align: left;
-}
+  & th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+  }
 
-.text th {
-  background: var(--bg-tertiary);
-  font-weight: 600;
-}
-
-.text hr {
-  border: none;
-  border-top: 1px solid var(--border-color);
-  margin: 16px 0;
-}
-
-.inlineCode {
-  background: var(--bg-tertiary);
-  padding: 2px 6px;
-  border-radius: 2px;
-  font-size: 13px;
-  font-family: var(--font-mono);
-}
-
-.codeBlockWrapper {
-  margin: 12px 0;
-  border-radius: 2px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-}
-
-.codeBlockHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 12px;
-  background: var(--bg-tertiary);
-  font-size: 12px;
-}
-
-.codeBlockLang {
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-}
-
-.codeBlockCopy {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 2px;
-  transition: all 0.15s;
-}
-
-.codeBlockCopy:hover {
-  color: var(--accent-color);
-  background: var(--bg-tertiary);
+  & hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 16px 0;
+  }
 }
 
 /* ── Metadata badges row ── */
@@ -954,14 +707,14 @@
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
-}
 
-.modelChangeDividerFaded {
-  opacity: 0.4;
-}
+  &.modelChangeDividerFaded {
+    opacity: 0.4;
 
-.modelChangeDividerFaded .modelChangeLabel {
-  color: var(--text-muted);
+    & .modelChangeLabel {
+      color: var(--text-muted);
+    }
+  }
 }
 
 .modelChangeLine {
@@ -984,41 +737,18 @@
   opacity: 0.7;
 }
 
-/* ── Standalone streaming cursor (before any text arrives) ── */
-.streamingCursor {
-  display: inline-block;
-  width: 3px;
-  height: 1.15em;
-  vertical-align: text-bottom;
-  border-radius: 1px;
-  background: var(--prism-conic);
-  background-size: 100% 100%;
-  animation: caretBlink 0.8s step-end infinite;
-  will-change: opacity;
-}
-
 /* ── Streaming Text Effect ── */
 .streamingText {
   position: relative;
 
-  /* The cursor <span> is now the last child inside the wrapper.
-     Target the element just before it (the last markdown block)
-     and make it inline so the cursor sits at the end of the text. */
+  /* Make the last markdown block inline so the cursor sits at end of text */
   & > :nth-last-child(2) {
     display: inline;
   }
-}
 
-/* ── Streaming chunk fade-in for markdown text ── */
-.streamingText p,
-.streamingText li,
-.streamingText h1,
-.streamingText h2,
-.streamingText h3,
-.streamingText h4,
-.streamingText blockquote,
-.streamingText pre {
-  animation: streamChunkFadeIn 1s ease-out both;
+  & p, & li, & h1, & h2, & h3, & h4, & blockquote, & pre {
+    animation: streamChunkFadeIn 1s ease-out both;
+  }
 }
 
 @keyframes streamChunkFadeIn {
@@ -1032,16 +762,6 @@
   }
 }
 
-@keyframes caretBlink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-
 /* ── Soft-deleted messages (compact collapsible disclosure) ── */
 .deletedRow {
   display: flex;
@@ -1049,6 +769,10 @@
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
+
+  &:hover .deletedActions {
+    opacity: 1;
+  }
 }
 
 .deletedExpanded {
@@ -1072,16 +796,16 @@
   text-align: left;
   transition: color 0.15s ease;
   opacity: 0.6;
-}
 
-.deletedToggle:hover {
-  color: var(--text-secondary);
-  opacity: 1;
-}
+  &:hover {
+    color: var(--text-secondary);
+    opacity: 1;
+  }
 
-.deletedToggle svg:first-child {
-  flex-shrink: 0;
-  color: var(--text-muted);
+  & svg:first-child {
+    flex-shrink: 0;
+    color: var(--text-muted);
+  }
 }
 
 .deletedPreview {
@@ -1105,18 +829,14 @@
   transition: opacity 0.15s ease;
 }
 
-.deletedRow:hover .deletedActions {
-  opacity: 1;
-}
-
 .deletedMessageBody {
   opacity: 0.3;
   transition: opacity 0.2s ease;
   animation: deletedBodyReveal 0.2s ease-out;
-}
 
-.deletedMessageBody:hover {
-  opacity: 0.5;
+  &:hover {
+    opacity: 0.5;
+  }
 }
 
 @keyframes deletedBodyReveal {
@@ -1149,10 +869,10 @@
 .deletedGroupItem {
   border-top: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
   padding: 4px 0;
-}
 
-.deletedGroupItem:last-child {
-  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+  &:last-child {
+    border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+  }
 }
 
 .deletedGroupItemHeader {
@@ -1193,89 +913,7 @@
   50% { opacity: 0.4; }
 }
 
-/* ── Inline Terminal Output ─────────────────────────────────── */
-
-.terminalContainer {
-  margin-left: 20px;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
-  background: #0d1117;
-  margin-bottom: 4px;
-}
-
-.terminalHeader {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  font-size: 10px;
-  font-weight: 600;
-  color: #8b949e;
-  background: #161b22;
-  border-bottom: 1px solid #21262d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  user-select: none;
-}
-
-.terminalLive {
-  color: #3fb950;
-  font-size: 9px;
-  margin-left: auto;
-  animation: livePulse 1.5s ease-in-out infinite;
-}
-
-.terminalBody {
-  margin: 0;
-  padding: 8px 10px;
-  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
-  font-size: 11px;
-  line-height: 1.5;
-  color: #c9d1d9;
-  white-space: pre-wrap;
-  word-break: break-all;
-  max-height: 200px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #30363d transparent;
-}
-
-.terminalBody::-webkit-scrollbar {
-  width: 6px;
-}
-
-.terminalBody::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.terminalBody::-webkit-scrollbar-thumb {
-  background: #30363d;
-  border-radius: 3px;
-}
-
-.terminalCursor {
-  color: #58a6ff;
-  animation: blink 1s step-end infinite;
-}
-
-.terminalInput {
-  color: #79c0ff;
-  user-select: all;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-@keyframes livePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-/* ── Sticky Pinned User Message ─────────────────────────────── */
-
+/* ── Sticky Pinned User Message ── */
 .stickyUserMsg {
   position: sticky;
   top: -30px;
@@ -1303,15 +941,20 @@
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.15),
     0 1px 3px rgba(0, 0, 0, 0.1);
-}
 
-.stickyUserMsgInner:hover {
-  background: color-mix(in srgb, var(--bg-secondary) 95%, transparent);
-  border-color: var(--border-color);
-  box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.2),
-    0 2px 4px rgba(0, 0, 0, 0.12);
-  transform: translateY(1px);
+  &:hover {
+    background: color-mix(in srgb, var(--bg-secondary) 95%, transparent);
+    border-color: var(--border-color);
+    box-shadow:
+      0 6px 16px rgba(0, 0, 0, 0.2),
+      0 2px 4px rgba(0, 0, 0, 0.12);
+    transform: translateY(1px);
+
+    & .stickyUserMsgChevron {
+      opacity: 1;
+      transform: translateY(2px);
+    }
+  }
 }
 
 .stickyUserMsgAvatar {
@@ -1365,11 +1008,6 @@
   transition: opacity 0.15s, transform 0.15s;
 }
 
-.stickyUserMsgInner:hover .stickyUserMsgChevron {
-  opacity: 1;
-  transform: translateY(2px);
-}
-
 @keyframes stickySlideIn {
   from {
     opacity: 0;
@@ -1381,8 +1019,7 @@
   }
 }
 
-/* ── Worker agent status bar (per spawn_agent tool call) ──── */
-
+/* ── Worker agent status bar (per spawn_agent tool call) ── */
 .workerStatusBar {
   position: relative;
   width: 100%;
