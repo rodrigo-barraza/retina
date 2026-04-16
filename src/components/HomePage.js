@@ -520,19 +520,43 @@ export default function HomePage({ initialConversationId = null }) {
   const handleSelectConversation = async (conv) => {
     if (conv.id === activeId) return;
 
-    // Phase 1: pixelate OUT the current messages
+    // Phase 1: pixelate OUT the current messages + fetch new data in parallel
+    setPixelOutDone(false);
+    setPendingConvReady(false);
+    pendingConvRef.current = null;
     setPixelTransition("out");
 
     try {
       const full = await PrismService.getConversation(conv.id);
-      // Store the fetched conversation — the 'out' completion handler will apply it
       pendingConvRef.current = full;
+      setPendingConvReady(true);
     } catch (err) {
       console.error(err);
       setPixelTransition(null);
+      setPixelOutDone(false);
+      setPendingConvReady(false);
       pendingConvRef.current = null;
     }
   };
+
+  // When both 'out' animation and fetch are done, swap data and start 'in'
+  useEffect(() => {
+    if (!pixelOutDone || !pendingConvReady) return;
+
+    const full = pendingConvRef.current;
+    if (full) {
+      liveConvIdRef.current = full.id;
+      liveConvCreatedRef.current = true;
+      livePersistChainRef.current = Promise.resolve();
+      updateUrl(full.id);
+      restoreConversation(full);
+      pendingConvRef.current = null;
+    }
+
+    setPixelOutDone(false);
+    setPendingConvReady(false);
+    setPixelTransition("in");
+  }, [pixelOutDone, pendingConvReady, restoreConversation]);
 
   const handleDeleteConversation = async (id) => {
     try {
@@ -2305,19 +2329,8 @@ export default function HomePage({ initialConversationId = null }) {
           pixelTransition={pixelTransition}
           onPixelTransitionComplete={() => {
             if (pixelTransition === "out") {
-              // Phase 2: swap in the new conversation data, then pixelate IN
-              const full = pendingConvRef.current;
-              if (full) {
-                liveConvIdRef.current = full.id;
-                liveConvCreatedRef.current = true;
-                livePersistChainRef.current = Promise.resolve();
-                updateUrl(full.id);
-                restoreConversation(full);
-                pendingConvRef.current = null;
-              }
-              setPixelTransition("in");
+              setPixelOutDone(true);
             } else if (pixelTransition === "in") {
-              // All done — clear the transition
               setPixelTransition(null);
             }
           }}

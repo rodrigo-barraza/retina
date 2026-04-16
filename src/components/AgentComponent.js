@@ -130,18 +130,22 @@ export default function AgentComponent() {
 
   // Phase 1: Agentic controls
   const [autoApprove, setAutoApprove] = useState(false);
-  const [maxIterations, setMaxIterations] = useState(() => {
-    const stored = localStorage.getItem("agent:maxIterations");
-    if (stored === "Infinity") return Infinity;
-    const parsed = Number(stored);
-    return [10, 25, 50, 100].includes(parsed) ? parsed : MAX_TOOL_ITERATIONS;
-  });
-  const [maxWorkerIterations, setMaxWorkerIterations] = useState(() => {
-    const stored = localStorage.getItem("agent:maxWorkerIterations");
-    if (stored === "Infinity") return Infinity;
-    const parsed = Number(stored);
-    return [10, 25, 50, 100].includes(parsed) ? parsed : MAX_TOOL_ITERATIONS;
-  });
+  const [maxIterations, setMaxIterations] = useState(MAX_TOOL_ITERATIONS);
+  const [maxWorkerIterations, setMaxWorkerIterations] = useState(MAX_TOOL_ITERATIONS);
+
+  // Hydrate from localStorage after mount to avoid SSR mismatch
+  useEffect(() => {
+    const parseStored = (key) => {
+      const stored = localStorage.getItem(key);
+      if (stored === "Infinity") return Infinity;
+      const parsed = Number(stored);
+      return [10, 25, 50, 100].includes(parsed) ? parsed : null;
+    };
+    const iter = parseStored("agent:maxIterations");
+    if (iter != null) setMaxIterations(iter);
+    const workerIter = parseStored("agent:maxWorkerIterations");
+    if (workerIter != null) setMaxWorkerIterations(workerIter);
+  }, []);
   const [planFirst, setPlanFirst] = useState(false);
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [planProposal, setPlanProposal] = useState(null); // { plan, steps, status }

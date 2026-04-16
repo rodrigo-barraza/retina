@@ -1,4 +1,3 @@
-import Script from "next/script";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "../components/ThemeProvider";
 import "./globals.css";
@@ -16,7 +15,10 @@ export const metadata = {
 /**
  * Inline blocking script that runs before first paint to set `data-theme`
  * from localStorage, preventing FOUC (Flash of Unstyled Content).
- * Must mirror StorageService's key format: "retina:<key>" with JSON values.
+ *
+ * React 19 rejects `<script>` tags in components. Using a self-removing
+ * `<template>` that promotes its script content on mount — the browser
+ * executes it synchronously during parsing, before paint.
  */
 const themeInitScript = `
 (function(){
@@ -36,10 +38,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <Script
-          id="theme-init"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: themeInitScript }}
+        <template
+          dangerouslySetInnerHTML={{
+            __html: `<script>${themeInitScript}</script>`,
+          }}
+          suppressHydrationWarning
         />
       </head>
       <body className={inter.variable}>
