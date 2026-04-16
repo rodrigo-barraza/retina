@@ -85,6 +85,22 @@ export default function AgentComponent() {
   const [workersCount, setWorkersCount] = useState(0);
   const [workerToolActivity, setWorkerToolActivity] = useState({});
 
+  // Track which tabs have received new data the user hasn't viewed yet
+  const [newDataTabs, setNewDataTabs] = useState(new Set());
+  const leftTabRef = useRef(leftTab);
+  leftTabRef.current = leftTab;
+
+  /** Mark a tab as having new unseen data (only if user isn't already viewing it). */
+  const markTabNew = useCallback((tabKey) => {
+    if (leftTabRef.current === tabKey) return;
+    setNewDataTabs((prev) => {
+      if (prev.has(tabKey)) return prev;
+      const next = new Set(prev);
+      next.add(tabKey);
+      return next;
+    });
+  }, []);
+
   // Count concurrent API calls: main generation + active worker agents
   const activeApiCount = useMemo(() => {
     const activeWorkers = Object.values(workerToolActivity).filter(
@@ -794,13 +810,16 @@ export default function AgentComponent() {
               // Auto-expand tasks panel when agent creates/updates tasks
               setLeftTab("tasks");
               setTasksRefreshKey((k) => k + 1);
+              markTabNew("tasks");
             } else if (statusData?.message === "workers_updated") {
               // Refresh workers data without switching the active tab
               setTasksRefreshKey((k) => k + 1);
+              markTabNew("workers");
             } else if (statusData?.message === "memories_updated") {
               // Auto-expand memories panel when agent saves a memory
               setLeftTab("memories");
               setMemoriesRefreshKey((k) => k + 1);
+              markTabNew("memories");
               // Re-fetch count for the tab badge (MemoriesPanel may not be mounted yet)
               PrismService.getAgentMemories(PROJECT_AGENT, 1)
                 .then((r) => setTotalMemoriesCount(r.total || 0))
@@ -958,6 +977,7 @@ export default function AgentComponent() {
       planFirst,
       maxIterations,
       fetchSessionStats,
+      markTabNew,
     ],
   );
 
@@ -1086,6 +1106,11 @@ export default function AgentComponent() {
   const handleSelectSession = useCallback(
     async (conv) => {
       if (isGenerating) return;
+      // Already viewing this session — just scroll to bottom instantly
+      if (conv.id === activeId) {
+        endRef.current?.scrollIntoView({ behavior: "instant" });
+        return;
+      }
       try {
         const full = await PrismService.getAgentSession(
           conv.id,
@@ -1123,7 +1148,7 @@ export default function AgentComponent() {
         console.error("Failed to load session:", err);
       }
     },
-    [isGenerating],
+    [isGenerating, activeId],
   );
 
   const handleDeleteSession = useCallback(
@@ -1142,11 +1167,15 @@ export default function AgentComponent() {
   );
 
   // ── Left sidebar: tab bar + content ──────────────────────────
-  // Badge helper — 0 = greyed-out, >0 = lit
-  const badgeProps = (count) => ({ badge: count, badgeDisabled: count === 0 });
+  // Badge helper — 0 = greyed-out, >0 = lit, "new" if tab has unseen data
+  const badgeProps = (count, tabKey) => ({
+    badge: count,
+    badgeDisabled: count === 0,
+    badgeState: newDataTabs.has(tabKey) ? "new" : "default",
+  });
 
   const leftPanel = (
-    <>
+    <div>
       <TabBarComponent
         tabs={[
           { key: "settings", icon: <Settings size={14} />, tooltip: "Settings" },
@@ -1158,44 +1187,44 @@ export default function AgentComponent() {
           {
             key: "tools",
             icon: <Wrench size={14} />,
-            ...badgeProps(allToolSchemas.length),
+            ...badgeProps(allToolSchemas.length, "tools"),
             tooltip: "Tools",
           },
           {
             key: "skills",
             icon: <BookOpen size={14} />,
-            ...badgeProps(skills.filter((s) => s.enabled).length),
+            ...badgeProps(skills.filter((s) => s.enabled).length, "skills"),
             tooltip: "Skills",
           },
           {
             key: "memories",
             icon: <Brain size={14} />,
-            ...badgeProps(totalMemoriesCount),
+            ...badgeProps(totalMemoriesCount, "memories"),
             tooltip: "Memories",
           },
           {
             key: "tasks",
             icon: <ListChecks size={14} />,
-            ...badgeProps(tasksCount),
+            ...badgeProps(tasksCount, "tasks"),
             tooltip: "Tasks",
           },
           {
             key: "mcp",
             icon: <Plug size={14} />,
-            ...badgeProps(mcpServers.filter((s) => s.connected).length),
+            ...badgeProps(mcpServers.filter((s) => s.connected).length, "mcp"),
             tooltip: "MCP Servers",
           },
           {
             key: "workers",
             icon: <BotMessageSquare size={14} />,
-            ...badgeProps(workersCount),
+            ...badgeProps(workersCount, "workers"),
             badgeRainbow: Object.values(workerToolActivity).some((w) => w.currentTool || w.phase === "generating" || w.phase === "thinking"),
             tooltip: "Workers",
           },
           {
             key: "requests",
             icon: <Activity size={14} />,
-            ...badgeProps(backendSessionStats?.requestCount || 0),
+            ...badgeProps(backendSessionStats?.requestCount || 0, "requests"),
             tooltip: "Requests",
           },
           {
@@ -1207,6 +1236,13 @@ export default function AgentComponent() {
         activeTab={leftTab}
         onChange={(tab) => {
           setLeftTab(tab);
+          // Clear "new data" flag — user is now viewing this tab
+          setNewDataTabs((prev) => {
+            if (!prev.has(tab)) return prev;
+            const next = new Set(prev);
+            next.delete(tab);
+            return next;
+          });
         }}
       />
 
@@ -1351,7 +1387,7 @@ export default function AgentComponent() {
       {leftTab === "coordinator" && (
         <CoordinatorPanel project={PROJECT_AGENT} />
       )}
-    </>
+    </div>
   );
 
   // ── Center: chat area ───────────────────────────────────────

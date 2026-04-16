@@ -171,12 +171,11 @@ export default function NavigationSidebarComponent({
     }
     const next = [...pool];
     while (next.length < needed) {
-      let x, y;
-      do {
-        x = 8 + Math.random() * 84;
-        y = 8 + Math.random() * 84;
-      } while (Math.abs(x - 50) < 15 && Math.abs(y - 50) < 15);
-      next.push({ x, y, size: 20 + Math.floor(Math.random() * 12) });
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 25 + Math.random() * 45;
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance;
+      next.push({ dx, dy, size: 30 + Math.floor(Math.random() * 18) });
     }
     miniCatPoolRef.current = next;
     setMiniCatPositions(next);
@@ -228,8 +227,8 @@ export default function NavigationSidebarComponent({
                     alt=""
                     className={styles.miniCat}
                     style={{
-                      top: `${pos.y}%`,
-                      left: `${pos.x}%`,
+                      '--cat-dx': `${pos.dx}px`,
+                      '--cat-dy': `${pos.dy}px`,
                       width: `${pos.size}px`,
                       height: `${pos.size}px`,
                       animationDelay: `${i * 0.06}s`,
@@ -379,8 +378,8 @@ export default function NavigationSidebarComponent({
               alt=""
               className={styles.miniCat}
               style={{
-                top: `${pos.y}%`,
-                left: `${pos.x}%`,
+                '--cat-dx': `${pos.dx}px`,
+                '--cat-dy': `${pos.dy}px`,
                 width: `${pos.size}px`,
                 height: `${pos.size}px`,
                 animationDelay: `${i * 0.06}s`,

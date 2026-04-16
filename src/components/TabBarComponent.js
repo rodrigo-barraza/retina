@@ -1,13 +1,14 @@
 "use client";
 
 import styles from "./TabBarComponent.module.css";
+import CountBadgeComponent from "./CountBadgeComponent";
 import TooltipComponent from "./TooltipComponent";
 import SoundService from "@/services/SoundService";
 
 /**
  * TabBarComponent — An inline tab switcher for sidebars/panels.
  *
- * @param {Array<{key: string, label?: string, icon?: React.ReactNode, badge?: number|string, disabled?: boolean, tooltip?: string}>} tabs
+ * @param {Array<{key: string, label?: string, icon?: React.ReactNode, badge?: number|string, badgeState?: "default"|"new", badgeDisabled?: boolean, badgeRainbow?: boolean, disabled?: boolean, tooltip?: string}>} tabs
  * @param {string} activeTab — The currently active tab key
  * @param {Function} onChange — (key: string) => void
  * @param {string} [className] — Additional class on the container
@@ -36,11 +37,13 @@ export default function TabBarComponent({
             {tab.icon}
             {tab.label}
             {tab.badge != null && (
-              <span
-                className={`${styles.tabBadge}${tab.badgeDisabled ? ` ${styles.tabBadgeDisabled}` : ""}${tab.badgeRainbow ? ` ${styles.tabBadgeRainbow}` : ""}`}
-              >
-                {tab.badge}
-              </span>
+              <CountBadgeComponent
+                count={tab.badge}
+                state={tab.badgeState || "default"}
+                disabled={tab.badgeDisabled}
+                rainbow={tab.badgeRainbow}
+                className={styles.tabBadge}
+              />
             )}
           </button>
         );

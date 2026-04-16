@@ -588,6 +588,7 @@ export default function MessageList({
   const [isUserMsgScrolledPast, setIsUserMsgScrolledPast] = useState(false);
   const lastUserMsgRef = useRef(null);
   const lastUserMsgIndexRef = useRef(-1);
+  const scrollingToUserMsgRef = useRef(false);
 
   // Find the last user message
   const lastUserMsgIndex = useMemo(() => {
@@ -616,6 +617,8 @@ export default function MessageList({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
+        // Suppress during programmatic scroll-to to prevent stutter
+        if (scrollingToUserMsgRef.current) return;
         // Show sticky when user message is NOT intersecting
         // AND the element is above the viewport (scrolled past)
         const scrolledPast = !entry.isIntersecting &&
@@ -649,10 +652,36 @@ export default function MessageList({
   }, [isUserMsgScrolledPast, lastUserMsgIndex, messages]);
 
   const handleStickyClick = useCallback(() => {
-    lastUserMsgRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    const node = lastUserMsgRef.current;
+    if (!node) return;
+    // Walk up to the nearest scrollable ancestor
+    let scrollParent = node.parentElement;
+    while (scrollParent) {
+      const overflow = getComputedStyle(scrollParent).overflowY;
+      if (overflow === "auto" || overflow === "scroll") break;
+      scrollParent = scrollParent.parentElement;
+    }
+    if (!scrollParent) return;
+
+    // Suppress observer during scroll to prevent stutter from layout shifts
+    scrollingToUserMsgRef.current = true;
+
+    const nodeRect = node.getBoundingClientRect();
+    const parentRect = scrollParent.getBoundingClientRect();
+    const offset = nodeRect.top - parentRect.top + scrollParent.scrollTop - 50;
+    scrollParent.scrollTo({ top: offset, behavior: "smooth" });
+
+    // Re-enable observer after scroll completes — it will naturally
+    // detect the element is visible and dismiss the sticky header
+    setTimeout(() => {
+      scrollingToUserMsgRef.current = false;
+      // Manually check if element is now visible and dismiss sticky
+      const rect = node.getBoundingClientRect();
+      const pRect = scrollParent.getBoundingClientRect();
+      if (rect.top >= pRect.top) {
+        setIsUserMsgScrolledPast(false);
+      }
+    }, 600);
   }, []);
 
   const toggleDeletedExpanded = (index) => {
@@ -747,30 +776,37 @@ export default function MessageList({
   return (
     <div className={styles.messagesList}>
       {/* ── Sticky pinned user message ── */}
-      {stickyUserMsg && (
-        <div className={styles.stickyUserMsg} onClick={handleStickyClick}>
-          <div className={styles.stickyUserMsgInner}>
-            <div className={styles.stickyUserMsgAvatar}>
-              <User size={12} />
-            </div>
-            <div className={styles.stickyUserMsgContent}>
-              {stickyUserMsg.images && stickyUserMsg.images.length > 0 && (
-                <span className={styles.stickyUserMsgBadge}>
-                  {stickyUserMsg.images.length} attachment{stickyUserMsg.images.length > 1 ? "s" : ""}
-                </span>
-              )}
-              <span className={styles.stickyUserMsgText}>
-                {stickyUserMsg.content
-                  ? stickyUserMsg.content.length > 200
-                    ? stickyUserMsg.content.slice(0, 200) + "…"
-                    : stickyUserMsg.content
-                  : "(no text)"}
-              </span>
-            </div>
-            <ChevronDown size={14} className={styles.stickyUserMsgChevron} />
+      <div
+        className={styles.stickyUserMsg}
+        onClick={stickyUserMsg ? handleStickyClick : undefined}
+        style={{
+          visibility: stickyUserMsg ? "visible" : "hidden",
+          opacity: stickyUserMsg ? 1 : 0,
+          pointerEvents: stickyUserMsg ? "auto" : "none",
+          transition: "opacity 0.2s ease, visibility 0.2s ease",
+        }}
+      >
+        <div className={styles.stickyUserMsgInner}>
+          <div className={styles.stickyUserMsgAvatar}>
+            <User size={12} />
           </div>
+          <div className={styles.stickyUserMsgContent}>
+            {stickyUserMsg?.images && stickyUserMsg.images.length > 0 && (
+              <span className={styles.stickyUserMsgBadge}>
+                {stickyUserMsg.images.length} attachment{stickyUserMsg.images.length > 1 ? "s" : ""}
+              </span>
+            )}
+            <span className={styles.stickyUserMsgText}>
+              {stickyUserMsg?.content
+                ? stickyUserMsg.content.length > 200
+                  ? stickyUserMsg.content.slice(0, 200) + "…"
+                  : stickyUserMsg.content
+                : "(no text)"}
+            </span>
+          </div>
+          <ChevronDown size={14} className={styles.stickyUserMsgChevron} />
         </div>
-      )}
+      </div>
       {hasSystemPrompt && (
         <div className={`${styles.message} ${styles.systemNode}`}>
           <div className={styles.avatar}>

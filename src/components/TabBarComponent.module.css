@@ -51,41 +51,7 @@
   top: 6px;
   left: 50%;
   transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 3px;
-  font-size: 8px;
-  font-weight: 700;
-  color: #fff;
-  background: #f97316;
-  border-radius: 999px;
-  pointer-events: none;
-  transition: all 0.2s ease;
 }
-
-.tabBadgeDisabled {
-  color: var(--text-tertiary);
-  background: color-mix(in srgb, var(--text-tertiary) 12%, transparent);
-  opacity: 0.5;
-}
-
-.tabBadgeRainbow {
-  background: hsl(0, 90%, 55%);
-  filter: hue-rotate(0deg);
-  animation: badgeRainbowHue 4s linear infinite;
-  will-change: filter;
-}
-
-@keyframes badgeRainbowHue {
-  to {
-    filter: hue-rotate(360deg);
-  }
-}
-
-
 
 .tabDisabled {
   opacity: 0.3;
