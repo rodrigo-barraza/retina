@@ -117,9 +117,12 @@ export default function PixelTransitionComponent({
     if (rawProgress < 1) {
       rafRef.current = requestAnimationFrame(tickRef.current);
     } else {
-      // Animation complete — remove inline filter
-      const el = p.targetRef?.current;
-      if (el) el.style.filter = "";
+      // Animation complete — only remove filter after 'in' (de-pixelation)
+      // Keep it applied after 'out' so the element stays pixelated between phases
+      if (p.phase === "in") {
+        const el = p.targetRef?.current;
+        if (el) el.style.filter = "";
+      }
       p.onComplete?.();
     }
   };

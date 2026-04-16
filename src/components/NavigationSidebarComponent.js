@@ -46,6 +46,7 @@ function RainbowCanvas({ turbo = false, greyscale = false }) {
 }
 
 const USER_NAV_ITEMS = [
+  { href: "/coding-agent", label: "Coding Agent", icon: Bot },
   {
     href: "/",
     label: "Conversations",
@@ -60,7 +61,6 @@ const USER_NAV_ITEMS = [
 ];
 
 const USER_EXPERIMENT_ITEMS = [
-  { href: "/coding-agent", label: "Coding Agent", icon: Bot },
   { href: "/benchmarks", label: "Benchmarks", icon: Target },
   { href: "/vram-benchmark", label: "VRAM Bench", icon: MemoryStick },
   { href: "/synthesis", label: "Synthesis", icon: FlaskConical },

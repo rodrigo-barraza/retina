@@ -26,6 +26,7 @@ import ApprovalCardComponent from "./ApprovalCardComponent.js";
 import PlanCardComponent from "./PlanCardComponent.js";
 import ButtonComponent from "./ButtonComponent.js";
 import StatusBarComponent from "./StatusBarComponent.js";
+import PixelTransitionComponent from "./PixelTransitionComponent.js";
 
 import {
   buildToolSchemas,
@@ -155,11 +156,18 @@ export default function AgentComponent() {
   const [backendSessionStats, setBackendSessionStats] = useState(null); // aggregate from /admin/sessions/:id/stats
   const [requestsRefreshKey, setRequestsRefreshKey] = useState(0);
 
+  // ── Pixelation transition state ────────────────────────────
+  const [pixelTransition, setPixelTransition] = useState(null); // 'out' | 'in' | null
+  const [pixelOutDone, setPixelOutDone] = useState(false);
+  const [pendingSessionReady, setPendingSessionReady] = useState(false);
+  const pendingSessionRef = useRef(null);
+
   const textareaRef = useRef(null);
   const endRef = useRef(null);
   const abortRef = useRef(null);
   const scrollBehaviorRef = useRef("smooth"); // "smooth" for streaming, "instant" for history loads
   const fileInputRef = useRef(null);
+  const messagesListRef = useRef(null);
 
   const handleStop = useCallback(() => {
     if (abortRef.current) {
@@ -1116,46 +1124,71 @@ export default function AgentComponent() {
         endRef.current?.scrollIntoView({ behavior: "instant" });
         return;
       }
+
+      // Phase 1: pixelate OUT + fetch in parallel
+      setPixelOutDone(false);
+      setPendingSessionReady(false);
+      pendingSessionRef.current = null;
+      setPixelTransition("out");
+
       try {
         const full = await PrismService.getAgentSession(
           conv.id,
           PROJECT_AGENT,
         );
-        const displayMessages = prepareDisplayMessages(full.messages || []);
-        scrollBehaviorRef.current = "instant";
-        setMessages(displayMessages);
-        setAgentSessionId(conv.id);
-        setTraceId(full.traceId || null);
-        setActiveId(conv.id);
-        setTitle(full.title || "Agent");
-        setToolActivity([]);
-        setWorkerToolActivity({});
-
-        // Restore settings from the last assistant message (source of truth)
-        const lastAssistant = [...(full.messages || [])]
-          .reverse()
-          .find((m) => m.role === "assistant" && m.provider);
-        if (lastAssistant) {
-          const gs = lastAssistant.generationSettings || {};
-          setSettings((prev) => ({
-            ...prev,
-            ...(lastAssistant.provider && { provider: lastAssistant.provider }),
-            ...(lastAssistant.model && { model: lastAssistant.model }),
-            ...(gs.temperature !== undefined && { temperature: gs.temperature }),
-            ...(gs.maxTokens !== undefined && { maxTokens: gs.maxTokens }),
-            ...(gs.thinkingEnabled !== undefined && { thinkingEnabled: gs.thinkingEnabled }),
-            ...(gs.reasoningEffort && { reasoningEffort: gs.reasoningEffort }),
-            ...(gs.thinkingBudget && { thinkingBudget: gs.thinkingBudget }),
-          }));
-        }
-        // Stats come from the session response itself (aggregated from request logs)
-        setBackendSessionStats(full.stats || null);
+        pendingSessionRef.current = full;
+        setPendingSessionReady(true);
       } catch (err) {
         console.error("Failed to load session:", err);
+        setPixelTransition(null);
+        setPixelOutDone(false);
+        setPendingSessionReady(false);
+        pendingSessionRef.current = null;
       }
     },
     [isGenerating, activeId],
   );
+
+  // When both 'out' animation and fetch are done, swap data and start 'in'
+  useEffect(() => {
+    if (!pixelOutDone || !pendingSessionReady) return;
+
+    const full = pendingSessionRef.current;
+    if (full) {
+      const displayMessages = prepareDisplayMessages(full.messages || []);
+      scrollBehaviorRef.current = "instant";
+      setMessages(displayMessages);
+      setAgentSessionId(full.id || crypto.randomUUID());
+      setTraceId(full.traceId || null);
+      setActiveId(full.id);
+      setTitle(full.title || "Agent");
+      setToolActivity([]);
+      setWorkerToolActivity({});
+
+      const lastAssistant = [...(full.messages || [])]
+        .reverse()
+        .find((m) => m.role === "assistant" && m.provider);
+      if (lastAssistant) {
+        const gs = lastAssistant.generationSettings || {};
+        setSettings((prev) => ({
+          ...prev,
+          ...(lastAssistant.provider && { provider: lastAssistant.provider }),
+          ...(lastAssistant.model && { model: lastAssistant.model }),
+          ...(gs.temperature !== undefined && { temperature: gs.temperature }),
+          ...(gs.maxTokens !== undefined && { maxTokens: gs.maxTokens }),
+          ...(gs.thinkingEnabled !== undefined && { thinkingEnabled: gs.thinkingEnabled }),
+          ...(gs.reasoningEffort && { reasoningEffort: gs.reasoningEffort }),
+          ...(gs.thinkingBudget && { thinkingBudget: gs.thinkingBudget }),
+        }));
+      }
+      setBackendSessionStats(full.stats || null);
+      pendingSessionRef.current = null;
+    }
+
+    setPixelOutDone(false);
+    setPendingSessionReady(false);
+    setPixelTransition("in");
+  }, [pixelOutDone, pendingSessionReady]);
 
   const handleDeleteSession = useCallback(
     async (convId) => {
@@ -1439,8 +1472,21 @@ export default function AgentComponent() {
   // ── Center: chat area ───────────────────────────────────────
   const chatContent = (
     <div className={chatStyles.container}>
+      <PixelTransitionComponent
+        phase={pixelTransition}
+        duration={1000}
+        maxBlockSize={24}
+        onComplete={() => {
+          if (pixelTransition === "out") {
+            setPixelOutDone(true);
+          } else if (pixelTransition === "in") {
+            setPixelTransition(null);
+          }
+        }}
+        targetRef={messagesListRef}
+      />
       {/* Messages */}
-      <div className={chatStyles.messagesList}>
+      <div className={chatStyles.messagesList} ref={messagesListRef}>
         {messages.length === 0 && (
           <EmptyStateComponent
             icon={<Bot size={40} />}
