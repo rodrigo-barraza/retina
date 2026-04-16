@@ -59,14 +59,16 @@ export default function HistoryPanel({
         });
       }
 
-      // Extract unique model names used in this conversation
+      // Extract unique model names and providers used in this conversation
       const msgs = conv.messages || [];
       const modelNamesSet = new Set();
+      const providersSet = new Set();
 
       // Look at messages from newest to oldest to order recent models first
       for (let i = msgs.length - 1; i >= 0; i--) {
-        if (msgs[i].role === "assistant" && msgs[i].model) {
-          modelNamesSet.add(msgs[i].model);
+        if (msgs[i].role === "assistant") {
+          if (msgs[i].model) modelNamesSet.add(msgs[i].model);
+          if (msgs[i].provider) providersSet.add(msgs[i].provider);
         }
       }
 
@@ -76,6 +78,9 @@ export default function HistoryPanel({
       }
 
       const modelNames = Array.from(modelNamesSet);
+      const derivedProviders = conv.providers?.length > 0
+        ? conv.providers
+        : Array.from(providersSet);
 
       return {
         id: conv.id,
@@ -84,7 +89,7 @@ export default function HistoryPanel({
         createdAt: conv.createdAt,
         totalCost,
         modalities: conv.modalities || getModalities(conv.messages),
-        providers: conv.providers || [],
+        providers: derivedProviders,
         tags,
         username: conv.username,
         modelNames,

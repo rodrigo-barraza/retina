@@ -21,7 +21,7 @@ import {
   Bot,
   Wrench,
 } from "lucide-react";
-import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import ProviderLogo, { PROVIDER_LABELS, resolveProviderLabel } from "./ProviderLogos";
 import {
   MODALITY_ICONS,
   MODALITY_COLORS,
@@ -38,6 +38,7 @@ import FilterDropdownComponent from "./FilterDropdownComponent";
 import { FilterBarComponent } from "./FilterBarComponent";
 import ProportionBarComponent from "./ProportionBarComponent";
 import CostBadgeComponent from "./CostBadgeComponent";
+import TokenCountBadgeComponent from "./TokenCountBadgeComponent";
 import {
   formatFileSize,
   formatContextTokens,
@@ -58,6 +59,19 @@ import {
   emptyDash,
 } from "../utils/tableColumns";
 import styles from "./ModelsTableComponent.module.css";
+
+/**
+ * Format a per-million-token pricing rate with clean precision.
+ * e.g. 2.5 → "$2.50", 0.15 → "$0.15", 10 → "$10.00"
+ */
+function formatPricingRate(n) {
+  if (n == null) return "—";
+  // Use up to 4 decimals but strip unnecessary trailing zeros, min 2 decimals
+  const str = n.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+  const [int, dec = ""] = str.split(".");
+  const padded = dec.padEnd(2, "0");
+  return `$${int}.${padded}`;
+}
 
 
 /**
@@ -198,7 +212,7 @@ function buildRow(rawModel, favorites = []) {
     _favKey: favKey,
     model: model.key.toLowerCase(),
     name: model.name.toLowerCase(),
-    provider: (PROVIDER_LABELS[model.provider] || model.provider).toLowerCase(),
+    provider: resolveProviderLabel(model.provider).toLowerCase(),
     year: rawModel.year || 0,
     context:
       rawModel.max_context_length ||
@@ -496,7 +510,7 @@ function ModelsTableInner({
           norm.key.toLowerCase().includes(q) ||
           norm.name.toLowerCase().includes(q) ||
           (norm.params || "").toLowerCase().includes(q) ||
-          (PROVIDER_LABELS[norm.provider] || norm.provider)
+          resolveProviderLabel(norm.provider)
             .toLowerCase()
             .includes(q)
         );
@@ -790,7 +804,7 @@ function ModelsTableInner({
       label: "Provider",
       description: "The API provider hosting this model",
       align: "left",
-      sortValue: (row) => (PROVIDER_LABELS[row._model.provider] || row._model.provider).toLowerCase(),
+      sortValue: (row) => resolveProviderLabel(row._model.provider).toLowerCase(),
       render: (row) => (
         <ProvidersBadgeComponent providers={[row._model.provider]} />
       ),
@@ -959,7 +973,7 @@ function ModelsTableInner({
         align: "right",
         render: (row) => {
           const v = row._raw.totalInputTokens || 0;
-          return v > 0 ? formatTokenCount(v) : "—";
+          return v > 0 ? <TokenCountBadgeComponent value={v} label="in" mini /> : "—";
         },
       });
       cols.push({
@@ -969,7 +983,7 @@ function ModelsTableInner({
         align: "right",
         render: (row) => {
           const v = row._raw.totalOutputTokens || 0;
-          return v > 0 ? formatTokenCount(v) : "—";
+          return v > 0 ? <TokenCountBadgeComponent value={v} label="out" mini /> : "—";
         },
       });
       cols.push({
@@ -1104,7 +1118,7 @@ function ModelsTableInner({
         ...benchmarkHide,
         render: (row) =>
           row._raw.pricing?.inputPerMillion != null
-            ? `$${row._raw.pricing.inputPerMillion}`
+            ? <CostBadgeComponent cost={row._raw.pricing.inputPerMillion} mini showIcon={false} formatFn={formatPricingRate} />
             : "—",
       });
     }
@@ -1118,7 +1132,7 @@ function ModelsTableInner({
         ...benchmarkHide,
         render: (row) =>
           row._raw.pricing?.outputPerMillion != null
-            ? `$${row._raw.pricing.outputPerMillion}`
+            ? <CostBadgeComponent cost={row._raw.pricing.outputPerMillion} mini showIcon={false} formatFn={formatPricingRate} />
             : "—",
       });
     }
@@ -1263,7 +1277,7 @@ function ModelsTableInner({
                     items: allProviders.map((p) => ({
                       key: p,
                       icon: () => <ProviderLogo provider={p} size={13} />,
-                      title: PROVIDER_LABELS[p] || p,
+                      title: resolveProviderLabel(p),
                     })),
                     activeKeys: activeProvider,
                     isSingleSelect: true,

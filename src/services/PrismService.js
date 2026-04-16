@@ -3,6 +3,7 @@
 import { PRISM_URL } from "../../config.js";
 import { getBaseHeaders } from "./serviceHeaders.js";
 import { buildLmStudioLoadBody } from "../utils/utilities.js";
+import { setLocalProviderMeta } from "../components/ProviderLogos.js";
 
 const API_BASE = PRISM_URL;
 
@@ -64,7 +65,13 @@ export default class PrismService {
    * @returns {Promise<object>}
    */
   static async getConfig() {
-    return PrismService._request("/config", { method: "GET" });
+    const config = await PrismService._request("/config", { method: "GET" });
+    // Register local provider metadata (nicknames, instance numbers)
+    // on every config fetch — enables resolveProviderLabel() globally
+    if (config?.localProviders) {
+      setLocalProviderMeta(config.localProviders);
+    }
+    return config;
   }
 
   /**

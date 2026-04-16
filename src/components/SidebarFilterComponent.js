@@ -18,7 +18,7 @@ import {
   Calendar,
 } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
-import { PROVIDER_LABELS } from "./ProviderLogos";
+import { resolveProviderLabel } from "./ProviderLogos";
 import { MODALITY_COLORS, TOOL_COLORS } from "./WorkflowNodeConstants";
 import DatePickerComponent from "./DatePickerComponent";
 import { DATE_PRESETS, formatDateDisplay, getActiveDatePreset } from "../utils/datePresets";
@@ -216,7 +216,7 @@ export default function SidebarFilterComponent({
     if (activeProviders.has(p)) {
       badges.push({
         key: `prov-${p}`,
-        label: PROVIDER_LABELS[p] || p,
+        label: resolveProviderLabel(p),
         providerKey: p,
         onRemove: () => toggleProvider(p),
       });
@@ -392,7 +392,7 @@ export default function SidebarFilterComponent({
                         onClick={() => toggleProvider(p)}
                       >
                         <ProviderLogo provider={p} size={13} />
-                        <span>{PROVIDER_LABELS[p] || p}</span>
+                        <span>{resolveProviderLabel(p)}</span>
                         {isActive && (
                           <span className={styles.menuCheck}>✓</span>
                         )}

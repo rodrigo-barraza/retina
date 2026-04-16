@@ -36,6 +36,7 @@ import ModalityIconComponent from "../components/ModalityIconComponent";
 import ToolIconComponent from "../components/ToolIconComponent";
 import BadgeComponent from "../components/BadgeComponent";
 import ProviderLogo from "../components/ProviderLogos";
+import { resolveProviderLabel } from "../components/ProviderLogos";
 import {
   formatTokenCount,
   formatLatency,
@@ -627,7 +628,7 @@ export const benchmarkModelColumn = () => ({
     <span className={`${styles.benchmarkModelCell} ${r._pending ? styles.benchmarkModelPending : ""}`}>
       <span className={styles.benchmarkModelName}>{r.label}</span>
       <span className={styles.benchmarkModelProviderRow}>
-        <span className={styles.benchmarkModelProvider}>{r.provider}</span>
+        <span className={styles.benchmarkModelProvider}>{resolveProviderLabel(r.provider)}</span>
         {r._running && r._progress > 0 && (
           <span className={styles.benchmarkProgressPct}>
             {Math.round(r._progress * 100)}%

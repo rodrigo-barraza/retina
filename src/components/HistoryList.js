@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Star } from "lucide-react";
-import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import ProviderLogo, { PROVIDER_LABELS, resolveProviderLabel } from "./ProviderLogos";
 import { MODALITY_FILTERS, TOOL_FILTERS } from "./SidebarFilterComponent";
 import FilterDropdownComponent from "./FilterDropdownComponent";
 import SearchInputComponent from "./SearchInputComponent";
@@ -212,7 +212,7 @@ export default function HistoryList({
                   items: allProviders.map((p) => ({
                     key: p,
                     icon: () => <ProviderLogo provider={p} size={13} />,
-                    title: PROVIDER_LABELS[p] || p,
+                    title: resolveProviderLabel(p),
                   })),
                   activeKeys: activeProviders,
                   onToggle: (key) => {

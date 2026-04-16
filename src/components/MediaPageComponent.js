@@ -19,7 +19,7 @@ import IrisService from "../services/IrisService";
 import PrismService from "../services/PrismService";
 import MediaCardComponent from "./MediaCardComponent";
 import SearchFilterComponent from "./SearchFilterComponent";
-import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
 import ImagePreviewComponent from "./ImagePreviewComponent";
 import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
 import PaginationComponent from "./PaginationComponent";
@@ -376,7 +376,7 @@ export default function MediaPageComponent({
                       items: providers.map((p) => ({
                         key: p,
                         icon: () => <ProviderLogo provider={p} size={13} />,
-                        title: PROVIDER_LABELS[p] || p,
+                        title: resolveProviderLabel(p),
                       })),
                       activeKeys: provider || null,
                       isSingleSelect: true,

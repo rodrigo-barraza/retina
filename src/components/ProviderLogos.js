@@ -58,10 +58,22 @@ const LOGOS = {
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="currentColor"
+      fill="none"
       style={{ flexShrink: 0 }}
     >
-      <path d="M20 2H4c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 6H4V4h16v4zm0 4H4c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zm0 6H4v-4h16v4zM6 6.5c0-.83.67-1.5 1.5-1.5S9 5.67 9 6.5 8.33 8 7.5 8 6 7.33 6 6.5zm0 10c0-.83.67-1.5 1.5-1.5S9 15.67 9 16.5 8.33 18 7.5 18 6 17.33 6 16.5z" />
+      <defs>
+        <linearGradient id="lms-grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#7C5CFC" />
+          <stop offset="100%" stopColor="#5B3CC4" />
+        </linearGradient>
+      </defs>
+      <rect width="24" height="24" rx="5" fill="url(#lms-grad)" />
+      {/* Stacked horizontal bars — LM Studio logo mark */}
+      <rect x="4.5" y="4"   width="15" height="2.2" rx="1.1" fill="rgba(255,255,255,0.95)" />
+      <rect x="6"   y="7.6" width="12" height="2.2" rx="1.1" fill="rgba(255,255,255,0.80)" />
+      <rect x="4.5" y="11.2" width="15" height="2.2" rx="1.1" fill="rgba(255,255,255,0.95)" />
+      <rect x="6"   y="14.8" width="12" height="2.2" rx="1.1" fill="rgba(255,255,255,0.70)" />
+      <rect x="4.5" y="18.4" width="15" height="2.2" rx="1.1" fill="rgba(255,255,255,0.55)" />
     </svg>
   ),
   vllm: (size) => (
@@ -69,10 +81,24 @@ const LOGOS = {
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="currentColor"
+      fill="none"
       style={{ flexShrink: 0 }}
     >
-      <path d="M18 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zM6 5h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm2 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm2 2H8v2h8v-2zm-6 4a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm4 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+      {/* vLLM checkmark "v" — orange left stroke, blue right stroke */}
+      <path
+        d="M3 5 L10 20"
+        stroke="#F5A623"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 20 L21 3"
+        stroke="#2E8BEF"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   elevenlabs: (size) => (
@@ -122,7 +148,19 @@ const LOGOS = {
       fill="currentColor"
       style={{ flexShrink: 0 }}
     >
-      <path d="M12 2C8.69 2 6 4.69 6 8v2.17c-1.16.41-2 1.52-2 2.83v5c0 1.66 1.34 3 3 3h1v-7H7v-4c0-2.76 2.24-5 5-5s5 2.24 5 5v4h-1v7h1c1.66 0 3-1.34 3-3v-5c0-1.31-.84-2.42-2-2.83V8c0-3.31-2.69-6-6-6zm-2 14v4h4v-4h-4z" />
+      {/* Llama ears */}
+      <path d="M8 2 C7 2, 6 3, 6 5 L6 8 C6.5 7.5, 7.5 7.5, 8 8 L8 2Z" />
+      <path d="M16 2 C17 2, 18 3, 18 5 L18 8 C17.5 7.5, 16.5 7.5, 16 8 L16 2Z" />
+      {/* Llama head */}
+      <path d="M6 8 C6 6.5, 7 5.5, 8 6 C9 5, 11 4.5, 12 4.5 C13 4.5, 15 5, 16 6 C17 5.5, 18 6.5, 18 8 C18 9, 18.5 10, 18.5 11 C18.5 13, 17 15, 15.5 16 C14.5 16.7, 13 17.5, 12 17.5 C11 17.5, 9.5 16.7, 8.5 16 C7 15, 5.5 13, 5.5 11 C5.5 10, 6 9, 6 8Z" />
+      {/* Eyes */}
+      <circle cx="9.5" cy="10" r="1.2" fill="var(--bg-primary, #1a1a2e)" />
+      <circle cx="14.5" cy="10" r="1.2" fill="var(--bg-primary, #1a1a2e)" />
+      {/* Nose / snout */}
+      <ellipse cx="12" cy="13.5" rx="2.5" ry="2" fill="var(--bg-primary, #1a1a2e)" />
+      <ellipse cx="12" cy="13.5" rx="1.8" ry="1.3" fill="currentColor" />
+      <circle cx="11.2" cy="13.2" r="0.5" fill="var(--bg-primary, #1a1a2e)" />
+      <circle cx="12.8" cy="13.2" r="0.5" fill="var(--bg-primary, #1a1a2e)" />
     </svg>
   ),
   "llama-cpp": (size) => (
@@ -133,13 +171,27 @@ const LOGOS = {
       fill="currentColor"
       style={{ flexShrink: 0 }}
     >
-      <path d="M12 2C9.5 2 7.5 4 7.5 6.5c0 1.1.4 2.1 1 2.9L7 11l-2 1v4l2 1v3h2v-2.5l1-.5V19h4v-2.5l1 .5V19h2v-3l2-1v-4l-2-1-1.5-1.6c.6-.8 1-1.8 1-2.9C16.5 4 14.5 2 12 2zm-1.5 4a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm3 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+      {/* Same llama but smaller / monochrome variant */}
+      <path d="M8 2 C7 2, 6 3, 6 5 L6 8 C6.5 7.5, 7.5 7.5, 8 8 L8 2Z" />
+      <path d="M16 2 C17 2, 18 3, 18 5 L18 8 C17.5 7.5, 16.5 7.5, 16 8 L16 2Z" />
+      <path d="M6 8 C6 6.5, 7 5.5, 8 6 C9 5, 11 4.5, 12 4.5 C13 4.5, 15 5, 16 6 C17 5.5, 18 6.5, 18 8 C18 9, 18.5 10, 18.5 11 C18.5 13, 17 15, 15.5 16 C14.5 16.7, 13 17.5, 12 17.5 C11 17.5, 9.5 16.7, 8.5 16 C7 15, 5.5 13, 5.5 11 C5.5 10, 6 9, 6 8Z" />
+      <circle cx="9.5" cy="10" r="1.2" fill="var(--bg-primary, #1a1a2e)" />
+      <circle cx="14.5" cy="10" r="1.2" fill="var(--bg-primary, #1a1a2e)" />
+      <ellipse cx="12" cy="13.5" rx="2.5" ry="2" fill="var(--bg-primary, #1a1a2e)" />
+      <ellipse cx="12" cy="13.5" rx="1.8" ry="1.3" fill="currentColor" />
+      <circle cx="11.2" cy="13.2" r="0.5" fill="var(--bg-primary, #1a1a2e)" />
+      <circle cx="12.8" cy="13.2" r="0.5" fill="var(--bg-primary, #1a1a2e)" />
+      {/* C++ badge */}
+      <rect x="15" y="15" width="8" height="6" rx="1.5" fill="var(--bg-primary, #1a1a2e)" />
+      <text x="19" y="19.5" textAnchor="middle" fontSize="5" fontWeight="bold" fill="currentColor">C++</text>
     </svg>
   ),
 };
 
 export default function ProviderLogo({ provider, size = 16, className = "" }) {
-  const render = LOGOS[provider];
+  // Resolve multi-instance IDs (e.g. "lm-studio-2") to base type logo
+  const key = LOGOS[provider] ? provider : _resolveBaseTypeFromLogos(provider);
+  const render = LOGOS[key];
   if (!render) return null;
   return (
     <span
@@ -152,7 +204,17 @@ export default function ProviderLogo({ provider, size = 16, className = "" }) {
 }
 
 /**
- * Display label for providers
+ * Resolve base type from a potentially numbered instance ID, using LOGOS keys.
+ * Inline helper so ProviderLogo works before setLocalProviderMeta is called.
+ */
+function _resolveBaseTypeFromLogos(id) {
+  const match = id.match(/^(.+)-(\d+)$/);
+  if (match && LOGOS[match[1]]) return match[1];
+  return id;
+}
+
+/**
+ * Base display labels for provider types.
  */
 export const PROVIDER_LABELS = {
   openai: "OpenAI",
@@ -165,3 +227,93 @@ export const PROVIDER_LABELS = {
   ollama: "Ollama",
   "llama-cpp": "llama.cpp",
 };
+
+// ── Multi-instance nickname registry ────────────────────────────
+// Populated from the /config response's `localProviders` array.
+// Maps instance IDs (e.g. "lm-studio-2") → { nickname, instanceNumber }
+
+/** @type {Map<string, { nickname?: string, instanceNumber: number }>} */
+const _localMeta = new Map();
+
+/**
+ * Register local provider metadata from the Prism config response.
+ * Call once after fetching `/config` to enable nickname + numbering.
+ * @param {Array<{ id: string, type: string, instanceNumber: number, nickname?: string }>} providers
+ */
+export function setLocalProviderMeta(providers) {
+  _localMeta.clear();
+  if (!providers) return;
+  for (const p of providers) {
+    _localMeta.set(p.id, {
+      nickname: p.nickname || "",
+      instanceNumber: p.instanceNumber,
+    });
+  }
+}
+
+/**
+ * Resolve the base provider type from a potentially numbered instance ID.
+ * e.g. "lm-studio-2" → "lm-studio", "ollama" → "ollama"
+ */
+function _resolveBaseType(id) {
+  if (PROVIDER_LABELS[id]) return id;
+  // Check meta first (authoritative)
+  const meta = _localMeta.get(id);
+  if (meta) {
+    // Walk the labels to find which type this belongs to
+    for (const type of Object.keys(PROVIDER_LABELS)) {
+      if (id === type || id.startsWith(`${type}-`)) return type;
+    }
+  }
+  // Fallback: strip trailing "-N" suffix
+  const match = id.match(/^(.+)-(\d+)$/);
+  if (match && PROVIDER_LABELS[match[1]]) return match[1];
+  return id;
+}
+
+/**
+ * Resolve a provider ID to a human-readable display label.
+ *
+ * Resolution order:
+ *   1. Nickname from config → "LM Studio (Desktop)"
+ *   2. Numbered instance    → "LM Studio #2"
+ *   3. Base type label      → "LM Studio"
+ *   4. Raw ID fallback      → "lm-studio-2"
+ *
+ * @param {string} id - Provider instance ID (e.g. "lm-studio", "lm-studio-2")
+ * @returns {string} Human-readable label
+ */
+export function resolveProviderLabel(id) {
+  // Direct match (base type or cloud)
+  if (PROVIDER_LABELS[id]) {
+    const meta = _localMeta.get(id);
+    if (meta?.nickname) return `${PROVIDER_LABELS[id]} (${meta.nickname})`;
+    return PROVIDER_LABELS[id];
+  }
+
+  const baseType = _resolveBaseType(id);
+  const baseName = PROVIDER_LABELS[baseType] || id;
+  const meta = _localMeta.get(id);
+
+  if (meta?.nickname) return `${baseName} (${meta.nickname})`;
+  if (meta?.instanceNumber) return `${baseName} #${meta.instanceNumber}`;
+
+  // Fallback: parse the suffix number
+  const match = id.match(/^(.+)-(\d+)$/);
+  if (match && PROVIDER_LABELS[match[1]]) {
+    return `${PROVIDER_LABELS[match[1]]} #${match[2]}`;
+  }
+
+  return baseName;
+}
+
+/**
+ * Resolve the logo key for a provider ID.
+ * Multi-instance IDs (e.g. "lm-studio-2") map to the base type logo.
+ * @param {string} id
+ * @returns {string} Logo key for the LOGOS map
+ */
+export function resolveProviderLogoKey(id) {
+  if (LOGOS[id]) return id;
+  return _resolveBaseType(id);
+}

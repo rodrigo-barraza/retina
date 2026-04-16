@@ -21,12 +21,14 @@ function easeOutCubic(t) {
  * @param {boolean} [showIcon=true] — show Coins icon
  * @param {string} [className]
  * @param {boolean} [mini]
+ * @param {Function} [formatFn=formatCost] — custom display formatter
  */
 export default function CostBadgeComponent({
   cost,
   showIcon = true,
   className = "",
   mini = false,
+  formatFn = formatCost,
 }) {
   const prevCostRef = useRef(null);
   const rafRef = useRef(null);
@@ -76,7 +78,7 @@ export default function CostBadgeComponent({
       className={`${styles.badge} ${mini ? styles.mini : ""} ${tweening ? styles.tweening : ""} ${className}`}
     >
       {showIcon && <Coins size={mini ? 8 : 10} />}
-      {formatCost(displayCost)}
+      {formatFn(displayCost)}
     </span>
   );
 }

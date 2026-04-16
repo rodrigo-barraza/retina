@@ -10,7 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Search, X, Loader2 } from "lucide-react";
-import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
 import PrismService from "../services/PrismService";
 import ModelsTableComponent from "./ModelsTableComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
@@ -167,7 +167,7 @@ export default function ModelPickerPopoverComponent({
         return (
           (m.name || "").toLowerCase().includes(q) ||
           (m.label || "").toLowerCase().includes(q) ||
-          (PROVIDER_LABELS[m.provider] || m.provider || "")
+          resolveProviderLabel(m.provider || "")
             .toLowerCase()
             .includes(q) ||
           (m.organization || "").toLowerCase().includes(q) ||
@@ -382,7 +382,7 @@ export default function ModelPickerPopoverComponent({
     const rawLabel = currentModel?.label || settings?.model || "Select Model";
     const provider = currentModel?.provider || settings?.provider;
     if (!provider || LOCAL_PROVIDERS.has(provider)) return rawLabel;
-    const providerName = PROVIDER_LABELS[provider] || provider;
+    const providerName = resolveProviderLabel(provider);
     return `${providerName}'s ${rawLabel}`;
   })();
 

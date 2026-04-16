@@ -11,7 +11,7 @@ import {
   AudioLines,
   Layers,
 } from "lucide-react";
-import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
 import SelectDropdown from "./SelectDropdown";
 import ToggleSwitch from "./ToggleSwitch";
 import CycleButton from "./CycleButton";
@@ -238,7 +238,7 @@ export default function SettingsPanel({
             <label>Provider</label>
             <div className={styles.readOnlyValue}>
               <ProviderLogo provider={settings.provider} size={16} />
-              {PROVIDER_LABELS[settings.provider] || settings.provider || "-"}
+              {resolveProviderLabel(settings.provider) || "-"}
             </div>
           </div>
         )}

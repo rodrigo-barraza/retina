@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import IrisService from "../../../services/IrisService";
+import PrismService from "../../../services/PrismService";
 import TableComponent from "../../../components/TableComponent";
+import { resolveProviderLabel } from "../../../components/ProviderLogos";
 
 
 import SelectDropdown from "../../../components/SelectDropdown";
@@ -51,6 +53,8 @@ export default function ProvidersPage() {
         const [models, limits] = await Promise.all([
           IrisService.getModelStats(params),
           IrisService.getRateLimits().catch(() => ({})),
+          // Side-effect: registers local provider nicknames
+          PrismService.getConfig().catch(() => null),
         ]);
         setModelStats(models);
         setRateLimits(limits);
@@ -197,7 +201,7 @@ export default function ProvidersPage() {
                     className={styles.providerDot}
                     style={{ background: color }}
                   />
-                  <span>{p.provider}</span>
+                  <span>{resolveProviderLabel(p.provider)}</span>
                   <span className={styles.modelCount}>
                     {p.models.length} models
                   </span>

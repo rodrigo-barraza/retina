@@ -22,7 +22,7 @@ import {
   Box,
   Hash,
 } from "lucide-react";
-import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
 import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
 import ModelTypeBadgeComponent from "./ModelTypeBadgeComponent";
 import {
@@ -115,7 +115,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
       name,
       key: model.key || model.name,
       provider,
-      providerLabel: PROVIDER_LABELS[provider] || provider,
+      providerLabel: resolveProviderLabel(provider),
       modelType: model.modelType || null,
       year: model.year || null,
       contextLength: model.contextLength || model.max_context_length || null,

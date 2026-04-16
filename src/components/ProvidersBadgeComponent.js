@@ -1,5 +1,5 @@
 import { Layers } from "lucide-react";
-import ProviderLogo, { PROVIDER_LABELS } from "./ProviderLogos";
+import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
 import TooltipComponent from "./TooltipComponent";
 import styles from "./ProvidersBadgeComponent.module.css";
 
@@ -19,7 +19,7 @@ export default function ProvidersBadgeComponent({ providers = [], className = ""
   const iconSize = mini ? 8 : 10;
   const cls = `${styles.badge} ${mini ? styles.mini : ""} ${className}`;
 
-  const displayLabel = (key) => PROVIDER_LABELS[key] || key;
+  const displayLabel = (key) => resolveProviderLabel(key);
 
   if (providers.length === 1) {
     return (
