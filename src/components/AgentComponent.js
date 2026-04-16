@@ -837,13 +837,14 @@ export default function AgentComponent() {
                     ...entry,
                     currentTool: data.tool?.name || null,
                     toolCount: entry.toolCount + 1,
+                    phase: null, // Clear phase — tool is now active
                   },
                 };
               }
-              // done/error — clear currentTool
+              // done/error — clear currentTool, phase will be set by next chunk event
               return {
                 ...prev,
-                [data.workerId]: { ...entry, currentTool: null },
+                [data.workerId]: { ...entry, currentTool: null, phase: null },
               };
             });
           },
@@ -855,6 +856,15 @@ export default function AgentComponent() {
                   ...(prev[data.workerId] || { toolCount: 0, currentTool: null }),
                   iteration: data.iteration,
                   maxIterations: data.maxIterations,
+                },
+              }));
+            } else if (data.message === "phase") {
+              // Worker LLM phase updates (generating, thinking)
+              setWorkerToolActivity((prev) => ({
+                ...prev,
+                [data.workerId]: {
+                  ...(prev[data.workerId] || { toolCount: 0, currentTool: null, iteration: 0 }),
+                  phase: data.phase,
                 },
               }));
             }
@@ -1154,7 +1164,7 @@ export default function AgentComponent() {
             key: "workers",
             icon: <Users size={14} />,
             ...badgeProps(workersCount),
-            badgeRainbow: Object.values(workerToolActivity).some((w) => w.currentTool),
+            badgeRainbow: Object.values(workerToolActivity).some((w) => w.currentTool || w.phase === "generating" || w.phase === "thinking"),
             tooltip: "Workers",
           },
           {
@@ -1353,6 +1363,7 @@ export default function AgentComponent() {
           )}
           isGenerating={isGenerating}
           streamingOutputs={streamingOutputs}
+          workerToolActivity={workerToolActivity}
         />
 
         {/* Plan proposal card */}

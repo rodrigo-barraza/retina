@@ -18,6 +18,7 @@ import {
   Loader,
   Wrench,
   User,
+  Users,
   Bot,
   Terminal,
 } from "lucide-react";
@@ -35,6 +36,7 @@ import CostBadgeComponent from "./CostBadgeComponent";
 import StopwatchComponent from "./StopwatchComponent";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
 import BadgeComponent from "./BadgeComponent";
+import RainbowCanvasComponent from "./RainbowCanvasComponent";
 import styles from "./MessageList.module.css";
 import PrismService from "../services/PrismService";
 import { getTotalInputTokens, formatLatency } from "../utils/utilities";
@@ -228,7 +230,87 @@ function resolveToolVisuals(rawName) {
 }
 
 
-function ToolCallsBlock({ toolCalls, streamingOutputs }) {
+/**
+ * Extract the agent_id from a spawn_agent tool call result.
+ * The result may be a JSON string or an already-parsed object.
+ */
+function extractWorkerAgentId(tc) {
+  if (tc.name !== "spawn_agent" || !tc.result) return null;
+  try {
+    const parsed = typeof tc.result === "string" ? JSON.parse(tc.result) : tc.result;
+    return parsed?.agent_id || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Mini status bar for an individual spawned worker agent.
+ * Shows a RainbowCanvasComponent with the worker's live phase.
+ *
+ * Three visual states:
+ *  1. Tool executing: rainbow turbo + tool name
+ *  2. Generating/Thinking: rainbow (normal speed) + phase label
+ *  3. Idle: greyscale + tools used count
+ */
+function WorkerStatusBar({ activity }) {
+  if (!activity) return null;
+  const { currentTool, toolCount = 0, iteration = 0, maxIterations, phase } = activity;
+  const isToolActive = !!currentTool;
+  const isGenerating = !isToolActive && (phase === "generating" || phase === "thinking");
+  const isActive = isToolActive || isGenerating;
+  const toolLabel = currentTool
+    ? currentTool.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    : null;
+
+  const phaseLabel = phase === "thinking" ? "Thinking…" : "Generating…";
+
+  return (
+    <div className={`${styles.workerStatusBar}${isActive ? ` ${styles.workerStatusBarActive}` : ""}`}>
+      <RainbowCanvasComponent
+        turbo={isToolActive}
+        animate={isActive}
+        greyscale={!isActive}
+        className={styles.workerStatusBarCanvas}
+      />
+      <div className={styles.workerStatusBarOverlay}>
+        <Users size={10} className={styles.workerStatusBarIcon} />
+        {isToolActive ? (
+          <span className={styles.workerStatusBarMessage}>
+            {toolLabel}
+            {iteration > 0 && (
+              <span className={styles.workerStatusBarIter}>
+                iter {iteration}{maxIterations ? `/${maxIterations}` : ""}
+              </span>
+            )}
+          </span>
+        ) : isGenerating ? (
+          <span className={styles.workerStatusBarMessage}>
+            {phaseLabel}
+            {iteration > 0 && (
+              <span className={styles.workerStatusBarIter}>
+                iter {iteration}{maxIterations ? `/${maxIterations}` : ""}
+              </span>
+            )}
+          </span>
+        ) : (
+          <span className={styles.workerStatusBarMessage}>
+            {toolCount > 0 ? `${toolCount} tools used` : "Worker idle"}
+            {iteration > 0 && (
+              <span className={styles.workerStatusBarIter}>
+                iter {iteration}{maxIterations ? `/${maxIterations}` : ""}
+              </span>
+            )}
+          </span>
+        )}
+        {isActive && <span className={styles.workerStatusBarPulse} />}
+      </div>
+    </div>
+  );
+}
+
+
+function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   if (!toolCalls || toolCalls.length === 0) return null;
 
@@ -280,6 +362,12 @@ function ToolCallsBlock({ toolCalls, streamingOutputs }) {
             const isCalling = tc.status === "calling";
             const isError = tc.status === "error";
 
+            // Resolve live worker activity for spawn_agent tool calls
+            const workerAgentId = extractWorkerAgentId(tc);
+            const workerActivity = workerAgentId && workerToolActivity
+              ? workerToolActivity[workerAgentId] || null
+              : null;
+
             return (
               <div key={j} className={styles.toolCallItem}>
                 {/* Status indicator */}
@@ -319,6 +407,11 @@ function ToolCallsBlock({ toolCalls, streamingOutputs }) {
                   toolCall={tc}
                   streamingOutput={streamingOutputs?.get(tc.id)}
                 />
+
+                {/* Worker agent live status bar */}
+                {workerActivity && (
+                  <WorkerStatusBar activity={workerActivity} />
+                )}
               </div>
             );
           })}
@@ -609,12 +702,14 @@ function EditableMessage({
  * @param {Function} [props.onImageClick]  - (resolvedUrl) => void
  * @param {Function} [props.onDocClick]    - (resolvedUrl) => void
  * @param {Map}      [props.streamingOutputs] - toolCallId → accumulated output string
+ * @param {object}   [props.workerToolActivity] - workerId → { currentTool, toolCount, iteration, maxIterations }
  */
 export default function MessageList({
   messages = [],
   readOnly = false,
   isGenerating = false,
   streamingOutputs,
+  workerToolActivity,
   headerContent,
   systemPrompt,
   onSystemPromptEdit,
@@ -1020,7 +1115,7 @@ export default function MessageList({
                                 <ThinkingBlock thinking={gMsg.thinking} isStreaming={false} />
                               )}
                               {gMsg.toolCalls && gMsg.toolCalls.length > 0 && (
-                                <ToolCallsBlock toolCalls={gMsg.toolCalls} />
+                                <ToolCallsBlock toolCalls={gMsg.toolCalls} workerToolActivity={workerToolActivity} />
                               )}
                               {gMsg.images && gMsg.images.length > 0 && (
                                 <div className={styles.imagePreviewRow}>
@@ -1094,8 +1189,8 @@ export default function MessageList({
                         {taskNotif.toolUses && <span style={{ marginLeft: 8, opacity: 0.5 }}>{taskNotif.toolUses} tools</span>}
                       </div>
                       {taskNotif.result && (
-                        <div className={styles.text} style={{ opacity: 0.7, fontSize: 12, marginTop: 4, maxHeight: 120, overflow: "hidden" }}>
-                          {taskNotif.result.length > 400 ? taskNotif.result.slice(0, 400) + "…" : taskNotif.result}
+                        <div className={styles.text} style={{ opacity: 0.7, fontSize: 12, marginTop: 4 }}>
+                          {taskNotif.result}
                         </div>
                       )}
                     </div>
@@ -1208,7 +1303,7 @@ export default function MessageList({
                         const toolIdSet = new Set(seg.toolIds || []);
                         const segmentTools = msg.toolCalls.filter((tc) => toolIdSet.has(tc.id));
                         if (segmentTools.length === 0) return null;
-                        return <ToolCallsBlock key={`seg-t-${si}`} toolCalls={segmentTools} streamingOutputs={streamingOutputs} />;
+                        return <ToolCallsBlock key={`seg-t-${si}`} toolCalls={segmentTools} streamingOutputs={streamingOutputs} workerToolActivity={workerToolActivity} />;
                       }
                       if (seg.type === "text") {
                         const fragmentText = msg.textFragments?.[seg.fragmentIndex]?.trim();
@@ -1328,7 +1423,7 @@ export default function MessageList({
 
                     {/* Tool calls (legacy / saved conversations — no segments) */}
                     {msg.toolCalls && msg.toolCalls.length > 0 && (
-                      <ToolCallsBlock toolCalls={msg.toolCalls} streamingOutputs={streamingOutputs} />
+                      <ToolCallsBlock toolCalls={msg.toolCalls} streamingOutputs={streamingOutputs} workerToolActivity={workerToolActivity} />
                     )}
 
                     {/* Text content */}
