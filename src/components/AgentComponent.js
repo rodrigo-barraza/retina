@@ -84,6 +84,14 @@ export default function AgentComponent() {
   const [totalMemoriesCount, setTotalMemoriesCount] = useState(0);
   const [workersCount, setWorkersCount] = useState(0);
   const [workerToolActivity, setWorkerToolActivity] = useState({});
+
+  // Count concurrent API calls: main generation + active worker agents
+  const activeApiCount = useMemo(() => {
+    const activeWorkers = Object.values(workerToolActivity).filter(
+      (w) => w.currentTool || w.phase === "generating" || w.phase === "thinking"
+    ).length;
+    return (isGenerating ? 1 : 0) + activeWorkers;
+  }, [isGenerating, workerToolActivity]);
   const [tasksCount, setTasksCount] = useState(0);
   const [memoryConfigured, setMemoryConfigured] = useState(false);
   const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
@@ -1592,7 +1600,7 @@ export default function AgentComponent() {
   return (
     <ThreePanelLayout
       navSidebar={
-        <NavigationSidebarComponent mode="user" isGenerating={isGenerating} />
+        <NavigationSidebarComponent mode="user" isGenerating={isGenerating} activeApiCount={activeApiCount} />
       }
       leftPanel={leftPanel}
       leftTitle={null}

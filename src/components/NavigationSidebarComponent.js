@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import PrismService from "../services/PrismService.js";
 import {
@@ -100,6 +100,7 @@ export default function NavigationSidebarComponent({
   textCount = 0,
   systemStatus = "connected",
   isGenerating = false,
+  activeApiCount = 0,
   onNavClick,
 }) {
   const badgeCounts = {
@@ -157,6 +158,30 @@ export default function NavigationSidebarComponent({
     });
   }, []);
 
+  // ── Mini cats for concurrent API calls ─────────────────────────
+  const miniCatPoolRef = useRef([]);
+  const [miniCatPositions, setMiniCatPositions] = useState([]);
+
+  useEffect(() => {
+    const needed = Math.max(0, (activeApiCount || 0) - 1);
+    const pool = miniCatPoolRef.current;
+    if (needed <= pool.length) {
+      setMiniCatPositions(pool.slice(0, needed));
+      return;
+    }
+    const next = [...pool];
+    while (next.length < needed) {
+      let x, y;
+      do {
+        x = 8 + Math.random() * 84;
+        y = 8 + Math.random() * 84;
+      } while (Math.abs(x - 50) < 15 && Math.abs(y - 50) < 15);
+      next.push({ x, y, size: 20 + Math.floor(Math.random() * 12) });
+    }
+    miniCatPoolRef.current = next;
+    setMiniCatPositions(next);
+  }, [activeApiCount]);
+
   const navItems = mode === "admin" ? ADMIN_NAV_ITEMS : USER_NAV_ITEMS;
   const experimentItems = mode === "admin" ? ADMIN_EXPERIMENT_ITEMS : USER_EXPERIMENT_ITEMS;
   const isAdmin = mode === "admin";
@@ -195,6 +220,22 @@ export default function NavigationSidebarComponent({
               {/* Rainbow strip */}
               <div className={styles.rainbowStrip}>
                 <RainbowCanvas turbo={isGenerating} />
+                {miniCatPositions.map((pos, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src="/cat-spinning.gif"
+                    alt=""
+                    className={styles.miniCat}
+                    style={{
+                      top: `${pos.y}%`,
+                      left: `${pos.x}%`,
+                      width: `${pos.size}px`,
+                      height: `${pos.size}px`,
+                      animationDelay: `${i * 0.06}s`,
+                    }}
+                  />
+                ))}
                 <SpinningCatComponent animate={isGenerating} />
               </div>
 
@@ -330,6 +371,22 @@ export default function NavigationSidebarComponent({
         {/* Rainbow logo banner */}
         <div className={styles.logoBanner}>
           <RainbowCanvas turbo={isGenerating} />
+          {miniCatPositions.map((pos, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={i}
+              src="/cat-spinning.gif"
+              alt=""
+              className={styles.miniCat}
+              style={{
+                top: `${pos.y}%`,
+                left: `${pos.x}%`,
+                width: `${pos.size}px`,
+                height: `${pos.size}px`,
+                animationDelay: `${i * 0.06}s`,
+              }}
+            />
+          ))}
           <SpinningCatComponent animate={isGenerating} />
           <button
             className={styles.collapseBtn}
