@@ -238,15 +238,13 @@ function FileReadRenderer({ result, args }) {
   const filePath = parsed.path || args?.path || "";
   const content = parsed.content || "";
   const _lang = EXT_LANG[extensionOf(filePath)] || "";
-  const lineCount = content ? content.split("\n").length : 0;
-  const startLine = parsed.startLine || args?.startLine;
-  const lineRange = startLine ? `L${startLine}–${startLine + lineCount - 1}` : `${lineCount} lines`;
+
 
   return (
     <div className={styles.rendererBlock}>
       <div className={styles.rendererHeader}>
         <PathPill path={filePath} icon={FileText} />
-        <span className={styles.meta}>{lineRange}</span>
+
       </div>
       {content && (
         <pre className={styles.codeBlock}>
@@ -265,7 +263,7 @@ function FileWriteRenderer({ result, args }) {
 
   const filePath = parsed.path || args?.path || "";
   const success = !parsed.error;
-  const bytesWritten = parsed.bytesWritten;
+
   const created = parsed.created;
 
   return (
@@ -273,7 +271,7 @@ function FileWriteRenderer({ result, args }) {
       <div className={styles.rendererHeader}>
         <PathPill path={filePath} icon={FileText} />
         <StatusBadge success={success} label={created ? "Created" : "Written"} />
-        {bytesWritten != null && <span className={styles.meta}>{bytesWritten.toLocaleString()} bytes</span>}
+
       </div>
       {parsed.error && <div className={styles.errorText}>{parsed.error}</div>}
     </div>
@@ -348,9 +346,7 @@ function GrepSearchRenderer({ result, args }) {
             ))}
           </div>
         ))}
-        {totalMatches > 30 && (
-          <div className={styles.meta}>… and {totalMatches - 30} more matches</div>
-        )}
+
       </div>
     </div>
   );
@@ -371,7 +367,7 @@ function DirectoryListRenderer({ result, args }) {
       <div className={styles.rendererHeader}>
         <FolderTree size={13} />
         <span className={styles.rendererTitle}>{basename(dirPath) || "Directory"}</span>
-        <span className={styles.meta}>{entries.length} entries</span>
+
       </div>
       <div className={styles.dirList}>
         {entries.slice(0, 40).map((entry, i) => {
@@ -384,7 +380,7 @@ function DirectoryListRenderer({ result, args }) {
             </div>
           );
         })}
-        {entries.length > 40 && <div className={styles.meta}>… and {entries.length - 40} more</div>}
+
       </div>
     </div>
   );
@@ -417,7 +413,7 @@ function GlobFilesRenderer({ result, args }) {
             </div>
           );
         })}
-        {files.length > 40 && <div className={styles.meta}>… and {files.length - 40} more</div>}
+
       </div>
     </div>
   );
@@ -463,7 +459,7 @@ function FetchUrlRenderer({ result, args }) {
   const url = parsed.url || args?.url || "";
   const title = parsed.title || "";
   const content = parsed.content || parsed.text || parsed.markdown || "";
-  const charCount = content.length;
+
 
   return (
     <div className={styles.rendererBlock}>
@@ -472,7 +468,7 @@ function FetchUrlRenderer({ result, args }) {
         <a href={url} target="_blank" rel="noopener noreferrer" className={styles.searchLink}>
           {title || url}
         </a>
-        <span className={styles.meta}>{charCount.toLocaleString()} chars</span>
+
       </div>
       {content && (
         <pre className={styles.codeBlock}>
@@ -723,9 +719,9 @@ function BrowserActionRenderer({ result, args }) {
             {parsed.title || parsed.url}
           </a>
         )}
-        {parsed.status && <span className={styles.meta}>{parsed.status}</span>}
+
         {hasError && <StatusBadge success={false} label="Error" />}
-        {parsed.sessionId && <span className={styles.meta}>session: {parsed.sessionId}</span>}
+
       </div>
 
       {hasError && <div className={styles.errorText}>{parsed.error}</div>}
@@ -753,32 +749,20 @@ function BrowserActionRenderer({ result, args }) {
         </pre>
       )}
 
-      {action === "click" && parsed.selector && (
-        <div className={styles.meta}>Clicked: <code className={styles.inlineCode}>{parsed.selector}</code></div>
-      )}
-      {action === "type" && parsed.text && (
-        <div className={styles.meta}>
-          Typed into <code className={styles.inlineCode}>{parsed.selector}</code>: &ldquo;{parsed.text}&rdquo;
-          {parsed.pressEnter && " + Enter"}
-        </div>
-      )}
-      {action === "wait" && parsed.waited_for && (
-        <div className={styles.meta}>Waited for: {parsed.waited_for}</div>
-      )}
+
+
+
       {action === "get_elements" && parsed.elements && (
         <div className={styles.dirList}>
           {parsed.elements.slice(0, 30).map((el, i) => (
             <div key={i} className={styles.dirEntry}>
               <code className={styles.inlineCode}>{el.selector}</code>
-              <span className={styles.meta}>{el.tag}</span>
+
               {el.text && <span>{el.text}</span>}
-              {el.placeholder && <span className={styles.meta}>placeholder: {el.placeholder}</span>}
-              {el.type && <span className={styles.meta}>type={el.type}</span>}
+
             </div>
           ))}
-          {parsed.elements.length > 30 && (
-            <div className={styles.meta}>… and {parsed.elements.length - 30} more elements</div>
-          )}
+
         </div>
       )}
     </div>
@@ -871,12 +855,7 @@ function SpawnAgentRenderer({ result, args, workerToolActivity }) {
         </span>
         <StatusBadge success={!hasError} label={status} />
       </div>
-      {agentId && (
-        <div className={styles.meta} style={{ marginTop: 4 }}>
-          Agent ID: <code className={styles.inlineCode}>{agentId}</code>
-          {parsed.branch && <> · Branch: <code className={styles.inlineCode}>{parsed.branch}</code></>}
-        </div>
-      )}
+
       {hasError && <div className={styles.errorText}>{parsed.error}</div>}
       {workerActivity && (
         <WorkerStatusBar activity={workerActivity} />
@@ -902,7 +881,7 @@ function SendMessageRenderer({ result, args }) {
         </span>
         <StatusBadge success={!hasError} label={status} />
       </div>
-      {parsed.message && <div className={styles.meta}>{parsed.message}</div>}
+
       {hasError && <div className={styles.errorText}>{parsed.error}</div>}
     </div>
   );

@@ -26,11 +26,8 @@
   color: var(--text-primary);
 }
 
-.meta {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-left: auto;
-}
+
+
 
 /* ── Status badge ──────────────────────────────────────────── */
 

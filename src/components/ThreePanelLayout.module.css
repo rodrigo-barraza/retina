@@ -66,9 +66,7 @@
   justify-content: center;
   gap: 8px;
   pointer-events: none;
-  z-index: 3;
-  background: var(--bg-surface);
-  padding: 0 16px;
+  z-index: 1;
   transition:
     left 0.5s ease,
     right 0.5s ease;

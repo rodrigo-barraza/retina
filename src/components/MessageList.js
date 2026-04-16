@@ -155,60 +155,7 @@ function ThinkingBlock({ thinking, isStreaming, children }) {
 
 
 
-/**
- * Extract a concise, human-readable summary from tool result data.
- * Shows the first few meaningful values to give the user immediate insight.
- */
-function extractResultSummary(result) {
-  let parsed = null;
-  if (typeof result === "string") {
-    try { parsed = JSON.parse(result); } catch { return null; }
-  } else if (typeof result === "object") {
-    parsed = result;
-  }
-  if (!parsed) return null;
 
-  // Array results: show count + first few item names/titles
-  if (Array.isArray(parsed)) {
-    const count = parsed.length;
-    const labels = parsed.slice(0, 4).map((item) => {
-      if (typeof item === "string") return item;
-      return item?.name || item?.title || item?.label || item?.id || null;
-    }).filter(Boolean);
-    if (labels.length > 0) {
-      const suffix = count > labels.length ? ` +${count - labels.length} more` : "";
-      return `${count} result${count !== 1 ? "s" : ""}: ${labels.join(", ")}${suffix}`;
-    }
-    return `${count} result${count !== 1 ? "s" : ""}`;
-  }
-
-  // Object with count/results pattern (paginated APIs)
-  if (parsed.count != null || parsed.total != null || parsed.results) {
-    const count = parsed.count ?? parsed.total ?? parsed.results?.length;
-    const items = parsed.results || parsed.data || parsed.items;
-    if (Array.isArray(items) && items.length > 0) {
-      const labels = items.slice(0, 3).map((item) =>
-        item?.name || item?.title || item?.label || null
-      ).filter(Boolean);
-      if (labels.length > 0) {
-        return `${count} result${count !== 1 ? "s" : ""}: ${labels.join(", ")}${count > 3 ? " …" : ""}`;
-      }
-    }
-    if (count != null) return `${count} result${count !== 1 ? "s" : ""}`;
-  }
-
-  // Object with a 'name' or 'title': show it directly
-  if (parsed.name || parsed.title) {
-    return parsed.name || parsed.title;
-  }
-
-  // Fallback: count top-level keys
-  const keys = Object.keys(parsed);
-  if (keys.length > 0 && keys.length <= 6) {
-    return keys.join(", ");
-  }
-  return `${keys.length} fields`;
-}
 
 /**
  * Resolve a tool function name (e.g. `compare_food_nutrition`) to the
@@ -275,7 +222,7 @@ function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
           {toolCalls.map((tc, j) => {
             const name = formatName(tc.name);
             const { Icon, color } = resolveToolVisuals(tc.name);
-            const summary = tc.result ? extractResultSummary(tc.result) : null;
+
             const argEntries = tc.args ? Object.entries(tc.args) : [];
             const isCalling = tc.status === "calling";
             const isError = tc.status === "error";
@@ -296,23 +243,19 @@ function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
                 </span>
                 <span className={styles.toolCallName}>{name}</span>
 
-                {/* Arg pills — inline after name */}
-                {argEntries.length > 0 && argEntries.map(([k, v]) => (
-                  <span key={k} className={styles.toolCallArgPill}>
-                    <span className={styles.toolCallArgKey}>{k}</span>
-                    <span className={styles.toolCallArgValue}>
-                      {typeof v === "string" ? v : JSON.stringify(v)}
+                {/* Arg pills — inline after name (skip keys shown in ToolResultRenderers) */}
+                {argEntries.length > 0 && argEntries
+                  .filter(([k]) => k !== "description" && k !== "prompt")
+                  .map(([k, v]) => (
+                    <span key={k} className={styles.toolCallArgPill}>
+                      <span className={styles.toolCallArgKey}>{k}</span>
+                      <span className={styles.toolCallArgValue}>
+                        {typeof v === "string" ? v : JSON.stringify(v)}
+                      </span>
                     </span>
-                  </span>
-                ))}
+                  ))}
 
-                {/* Quick result summary */}
-                {summary && (
-                  <span className={styles.toolCallSummary}>
-                    <Check size={10} />
-                    <span>{summary}</span>
-                  </span>
-                )}
+
 
                 {/* Tool-specific result renderer (registry pattern) */}
                 <ToolResultView
