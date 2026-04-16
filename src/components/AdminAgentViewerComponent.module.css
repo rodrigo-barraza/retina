@@ -1,16 +1,3 @@
-/* ============================================================
-   AdminAgentViewerComponent — 3-column layout within AdminShell
-   ============================================================ */
-
-/* Break out of AdminShell .main padding to occupy the full area */
-.viewer {
-  display: flex;
-  flex-direction: column;
-  margin: -28px -32px;
-  height: calc(100% + 56px);
-  overflow: hidden;
-}
-
 /* ── Mini header ─────────────────────────────────────────────── */
 
 .viewerHeader {

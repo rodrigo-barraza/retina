@@ -10,7 +10,6 @@
   overflow: hidden;
 }
 
-
 /* ── Tab Content ─────────────────────────────────────────── */
 
 .tabContent {
@@ -68,65 +67,6 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-/* ── Legacy model chips (kept for compat) ────────────────── */
-
-.modelChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.modelChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 4px 3px 6px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.1px;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  white-space: nowrap;
-  transition: border-color 0.2s, color 0.2s;
-  animation: fadeIn 0.15s ease-out;
-
-  &:hover {
-    border-color: color-mix(in srgb, var(--accent-color) 40%, transparent);
-    color: var(--text-primary);
-  }
-}
-
-.modelChip svg:first-child {
-  flex-shrink: 0;
-}
-
-.modelChipName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
-}
-
-.modelChipRemove {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
-  color: var(--text-muted);
-  flex-shrink: 0;
-  transition: all 0.15s ease;
-  opacity: 0.5;
-
-  &:hover {
-    background: var(--danger-subtle);
-    color: var(--danger);
-    opacity: 1;
-  }
 }
 
 .modelActions {
@@ -204,64 +144,12 @@
   min-width: 0;
 }
 
-.operatorBadge {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 1px 5px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
 /* ── Prompt Preview ──────────────────────────────────────── */
 
 .promptSection {
   padding: 10px 14px;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
-}
-
-.promptPreview {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-}
-
-/* ── Run History List ────────────────────────────────────── */
-
-.historyHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px 6px;
-  flex-shrink: 0;
-}
-
-.historyLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-tertiary);
-}
-
-.historyCount {
-  font-size: 9px;
-  font-weight: 600;
-  font-family: var(--font-mono);
-  color: var(--text-tertiary);
-  background: var(--bg-tertiary);
-  padding: 1px 5px;
-  border-radius: 3px;
 }
 
 .list {
@@ -332,16 +220,6 @@
   color: var(--accent-color);
 }
 
-.runDate {
-  font-size: 11px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
-}
-
 /* ── Run Item Stats ──────────────────────────────────────── */
 
 .runStats {
@@ -366,39 +244,6 @@
   gap: 3px;
   font-weight: 600;
   color: var(--danger);
-}
-
-.statCost {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-tertiary);
-  margin-left: auto;
-}
-
-/* ── Mini Pass Rate Bar ──────────────────────────────────── */
-
-.miniPassBar {
-  width: 36px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--bg-tertiary);
-  overflow: hidden;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-.miniPassBarHasRuns {
-  background: var(--danger);
-}
-
-.miniPassBarFill {
-  height: 100%;
-  background: var(--success);
-  border-radius: 2px;
-  transition: width 0.3s ease-out;
 }
 
 /* ── Running Indicator ───────────────────────────────────── */

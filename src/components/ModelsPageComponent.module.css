@@ -39,49 +39,6 @@
   }
 }
 
-/* Error banner */
-.errorBanner {
-  background: var(--danger-subtle);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 2px;
-  padding: 16px 20px;
-  color: var(--danger);
-  font-size: 14px;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Toast */
-.toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  padding: 12px 20px;
-  border-radius: 2px;
-  font-size: 13px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 1000;
-  animation: slideUp 0.3s ease-out;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
-.toast.success {
-  background: var(--success-subtle);
-  color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.toast.error {
-  background: var(--danger-subtle);
-  color: var(--danger);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
 /* Loading state */
 .loadingState {
   display: flex;

@@ -30,18 +30,6 @@
   color: var(--text-primary);
 }
 
-.closeBtn {
-  padding: 6px;
-  border-radius: var(--border-radius-sm);
-  color: var(--text-muted);
-  transition: all var(--transition-fast);
-
-  &:hover {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-}
-
 .body {
   flex: 1;
   overflow-y: auto;

@@ -23,12 +23,6 @@
   border-left: 3px solid var(--accent-color);
 }
 
-.icon {
-  color: var(--text-secondary);
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
 .active .icon {
   color: var(--accent-color);
 }
@@ -55,12 +49,6 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-}
-
-.time {
-  font-size: 11px;
-  color: var(--text-secondary);
-  white-space: nowrap;
 }
 
 /* ── Row 2: title ── */

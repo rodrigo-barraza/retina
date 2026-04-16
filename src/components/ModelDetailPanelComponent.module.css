@@ -406,13 +406,6 @@
   color: var(--text-primary);
 }
 
-/* ── Empty state ────────────────────────────────────── */
-
-.emptyValue {
-  color: var(--text-muted);
-  opacity: 0.4;
-}
-
 /* ── Responsive ─────────────────────────────────────── */
 
 @media (max-width: 520px) {

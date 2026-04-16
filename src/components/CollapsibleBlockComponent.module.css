@@ -33,14 +33,6 @@
   transition: transform 0.15s ease;
 }
 
-.chevronOpen {
-  transform: rotate(0deg);
-}
-
-.chevronClosed {
-  transform: rotate(0deg);
-}
-
 .icon {
   flex-shrink: 0;
   display: flex;

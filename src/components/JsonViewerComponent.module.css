@@ -119,22 +119,6 @@
   padding: 0 4px;
 }
 
-/* ── Value types ── */
-.val_string {
-  color: #a9dc76;
-  word-break: break-all;
-  white-space: pre-wrap;
-}
-
-.val_number {
-  color: #78dce8;
-}
-
-.val_boolean {
-  color: #ff6188;
-  font-weight: 600;
-}
-
 .val_null {
   color: var(--text-muted);
   font-style: italic;

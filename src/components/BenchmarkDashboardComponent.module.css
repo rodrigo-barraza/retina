@@ -46,13 +46,6 @@
   min-height: 0;
 }
 
-.detailGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 8px;
-  padding: 8px 12px 12px;
-}
-
 .detailCard {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -160,11 +153,4 @@
 
 .selectedRow:hover td {
   background: color-mix(in srgb, var(--accent-color) 12%, transparent) !important;
-}
-
-/* ── Animations ──────────────────────────────────────────── */
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }

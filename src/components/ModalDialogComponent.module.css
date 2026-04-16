@@ -11,28 +11,6 @@
   animation: slideUp 0.2s ease-out;
 }
 
-/* ── Size variants ── */
-
-.size_sm {
-  width: 400px;
-  max-width: 95vw;
-}
-
-.size_md {
-  width: 520px;
-  max-width: 95vw;
-}
-
-.size_lg {
-  width: 680px;
-  max-width: 95vw;
-}
-
-.size_xl {
-  width: 1280px;
-  max-width: 95vw;
-}
-
 /* ── Header ── */
 
 .header {

@@ -51,26 +51,6 @@
   flex-shrink: 0;
 }
 
-.metaBadge {
-  display: inline-flex;
-  padding: 2px 8px;
-  border-radius: 2px;
-  font-size: 11px;
-  font-weight: 600;
-  background: var(--accent-subtle);
-  color: var(--accent-color);
-}
-
-.userBadge {
-  display: inline-flex;
-  padding: 2px 8px;
-  border-radius: 2px;
-  font-size: 11px;
-  font-weight: 600;
-  background: rgba(245, 158, 11, 0.12);
-  color: rgb(245, 158, 11);
-}
-
 .generatingBadge {
   display: inline-flex;
   align-items: center;

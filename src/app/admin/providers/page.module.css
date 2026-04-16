@@ -103,42 +103,6 @@
   padding: 0 20px 16px;
 }
 
-.table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--border-radius-sm);
-  overflow: hidden;
-}
-
-.table th {
-  text-align: left;
-  padding: 8px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: var(--bg-tertiary);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.table td {
-  padding: 8px 12px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.table tr:last-child td {
-  border-bottom: none;
-}
-
-.table tr:hover td {
-  background: var(--accent-subtle);
-}
-
 /* ── Rate Limit Panel ─────────────────────────────────────── */
 
 .rateLimitPanel {

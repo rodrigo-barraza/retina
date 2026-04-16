@@ -1,6 +1,8 @@
 /* ── Shared TableComponent Styles ──────────────────────── */
 
-/* Empty / null value placeholder — replaces all inline style={{ color: "var(--text-muted)" }} */
+/* Empty / null value placeholder — replaces all inline style={{ color: "var(--text-muted)" }}
+
+*/
 .emptyDash {
   color: var(--text-muted);
 }
@@ -41,20 +43,6 @@
   align-items: center;
   gap: 4px;
   font-variant-numeric: tabular-nums;
-
-  & svg {
-    opacity: 0.5;
-    flex-shrink: 0;
-  }
-}
-
-/* Duration cell */
-.durationCell {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 
   & svg {
     opacity: 0.5;
@@ -297,4 +285,3 @@
   font-size: 12px;
   min-width: 28px;
 }
-

@@ -34,29 +34,6 @@
   overflow: hidden;
 }
 
-/* ── Toast ── */
-.toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 8px 20px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-primary);
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
-  animation: toastIn 0.25s ease-out;
-}
-
-.success {
-  border-color: var(--success);
-  color: var(--success);
-}
-
 .emptyCanvas {
   display: flex;
   flex-direction: column;

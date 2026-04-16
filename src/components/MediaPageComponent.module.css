@@ -11,14 +11,6 @@
   flex: 1;
 }
 
-.filterDivider {
-  width: 1px;
-  height: 20px;
-  background: var(--border-color);
-  opacity: 0.4;
-  flex-shrink: 0;
-}
-
 .projectTag {
   font-size: 11px;
   padding: 2px 6px;
@@ -26,14 +18,6 @@
   background: var(--accent-subtle);
   color: var(--accent-color);
   font-weight: 500;
-}
-
-/* Loading */
-.loading {
-  padding: 60px 20px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 14px;
 }
 
 /* ── Grid View ── */
@@ -117,45 +101,6 @@
   overflow: hidden;
 }
 
-.table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.table th {
-  text-align: left;
-  padding: 10px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: var(--bg-tertiary);
-  border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
-}
-
-.table td {
-  padding: 8px 14px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-subtle);
-  vertical-align: middle;
-}
-
-.table tr:last-child td {
-  border-bottom: none;
-}
-
-.table tbody tr {
-  transition: background var(--transition-fast);
-}
-
-.table tbody tr:hover td {
-  background: var(--accent-subtle);
-}
-
 /* List thumbnail */
 .listThumb {
   width: 40px;
@@ -197,14 +142,6 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-}
-
-/* Empty */
-.empty {
-  padding: 60px 20px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 14px;
 }
 
 @media (max-width: 767px) {

@@ -21,108 +21,6 @@
   flex: 1;
 }
 
-.searchIcon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  pointer-events: none;
-}
-
-.searchInput {
-  width: 100%;
-  height: var(--input-height);
-  padding: 0 10px 0 32px;
-  font-size: 12px;
-  color: var(--text-primary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 2px;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-  font-family: inherit;
-
-  &::placeholder {
-    color: var(--text-secondary);
-    opacity: 0.6;
-  }
-
-  &:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 2px var(--accent-glow);
-  }
-}
-
-.searchClear {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 2px;
-  transition:
-    color 0.15s,
-    background 0.15s;
-
-  &:hover {
-    color: var(--text-primary);
-    background: var(--bg-tertiary);
-  }
-}
-
-/* ── Provider / Modality Filters ──────────────────── */
-
-.filterBar {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.filterDivider {
-  width: 1px;
-  height: 20px;
-  background: var(--border-color);
-  opacity: 0.4;
-  flex-shrink: 0;
-}
-
-.filterBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 2px;
-  border: 1px solid var(--border-color);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s;
-  padding: 0;
-
-  &:hover {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-}
-
-.filterBtnActive {
-  background: var(--accent-glow);
-  border-color: var(--accent-color);
-  color: var(--accent-color);
-}
-
 /* ── Model name cell layout ───────────────────────── */
 
 .nameRow {
@@ -135,25 +33,6 @@
   font-size: 10px;
   font-weight: 600;
   color: var(--text-primary);
-}
-
-.modelKey {
-  font-size: 10px;
-  font-family: var(
-    --font-mono,
-    "SF Mono",
-    "Fira Code",
-    "Fira Mono",
-    Menlo,
-    monospace
-  );
-  color: var(--text-secondary);
-}
-
-.modelProvider {
-  font-size: 9px;
-  color: var(--text-secondary);
-  opacity: 0.6;
 }
 
 /* ── Inline badges (loaded / available / actions) ──── */
@@ -189,11 +68,6 @@
 
 @keyframes loadingSpin {
   to { transform: rotate(360deg); }
-}
-
-.availableBadge {
-  color: var(--text-muted);
-  background: var(--bg-tertiary);
 }
 
 .inlineActions {

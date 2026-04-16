@@ -126,29 +126,12 @@
   flex-shrink: 0;
 }
 
-.requestStat {
-  font-size: 9px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 .requestCost {
   font-size: 9px;
   font-weight: 600;
   color: var(--success);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-.requestTime {
-  font-size: 9px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  opacity: 0.6;
-  min-width: 40px;
-  text-align: right;
 }
 
 /* ── Empty State ── */

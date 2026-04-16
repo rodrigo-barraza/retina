@@ -12,67 +12,12 @@
   gap: 12px;
 }
 
-
-
-.pageTitle {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: var(--text-primary);
-}
-
-.pageSubtitle {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-top: 4px;
-}
-
-/* ── Time Range Toolbar ── */
-.timeToolbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
 /* Stats grid */
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 16px;
 }
-
-/* Badges (used in table cell renders) */
-.badgeProvider {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 6px;
-  border-radius: 2px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: var(--info-subtle);
-  color: var(--info);
-}
-
-.workflowLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--accent-color);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-  transition: color var(--transition-fast);
-
-  &:hover {
-    color: var(--accent-hover);
-  }
-}
-
-
-
 
 .sectionAction {
   font-size: 13px;
@@ -100,21 +45,6 @@
   border-radius: var(--border-radius-md);
   padding: 20px 24px;
 }
-
-/* Error state */
-.errorBanner {
-  background: var(--danger-subtle);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: var(--border-radius-md);
-  padding: 16px 20px;
-  color: var(--danger);
-  font-size: 14px;
-  margin-bottom: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 
 /* Responsive */
 @media (max-width: 1200px) {

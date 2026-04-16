@@ -109,8 +109,6 @@
   min-width: 0;
 }
 
-
-
 /* ── Collapsible Sections ── */
 
 .collapsibleSection {
@@ -119,7 +117,6 @@
   background: var(--bg-secondary);
   overflow: hidden;
 }
-
 
 /* ── Template Grid ── */
 
@@ -215,16 +212,6 @@
   border: 1px solid transparent;
 }
 
-.role_user {
-  background: var(--info-subtle);
-  color: var(--info);
-}
-
-.role_assistant {
-  background: var(--success-subtle);
-  color: var(--success);
-}
-
 .removeSeedBtn {
   /* IconButtonComponent handles base styles — just override sizing */
   flex-shrink: 0;
@@ -307,21 +294,6 @@
   animation: pulse 1.2s ease-in-out infinite;
 }
 
-
-
-/* ── Animations ── */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(0.8); }
@@ -335,7 +307,6 @@
   display: flex;
   flex-direction: column;
 }
-
 
 .turnsInput {
   width: 72px;
@@ -417,5 +388,3 @@
   align-items: center;
   justify-content: center;
 }
-
-

@@ -221,27 +221,6 @@
   background: var(--border-color);
 }
 
-.closeBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: none;
-  background: none;
-  border-radius: 8px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.15s;
-  margin-left: 4px;
-}
-
-.closeBtn:hover {
-  color: var(--text-primary);
-  background: var(--bg-tertiary);
-}
-
 /* ── Popover body ─────────────────────────────────────────────────── */
 
 .popoverBody {

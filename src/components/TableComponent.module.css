@@ -57,7 +57,6 @@
   user-select: none;
 }
 
-
 .thSortable {
   cursor: pointer;
   transition: color 0.15s;
@@ -79,8 +78,6 @@
   margin-left: 2px;
   opacity: 0.7;
 }
-
-
 
 /* ── Rows ─────────────────────────────────────────── */
 
@@ -159,12 +156,6 @@
   color: var(--text-primary);
 }
 
-/* Highlight cost column */
-.tdHighlight {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
 /* ── Row alternation (zebra rows) ──────────────────── */
 
 .tr:nth-child(even) td {
@@ -178,29 +169,6 @@
 /* Sorted-column highlight preserved on even rows */
 .tr:nth-child(even) .tdSorted {
   background: rgba(99, 102, 241, 0.06);
-}
-
-/* Badge for provider / modality */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 6px;
-  border-radius: 2px;
-  font-size: 8px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.badgeProvider {
-  color: var(--info);
-  background: var(--info-subtle);
-}
-
-.badgeEndpoint {
-  color: var(--accent-color);
-  background: var(--accent-subtle);
 }
 
 /* Expandable row */

@@ -132,10 +132,6 @@
   animation: statusPulse 2s ease-in-out infinite;
 }
 
-.statusDotError {
-  background: #f43f5e;
-}
-
 @keyframes statusPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }

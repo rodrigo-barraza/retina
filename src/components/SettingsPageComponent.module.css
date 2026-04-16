@@ -104,52 +104,6 @@
   border-top: 1px solid var(--border-color);
 }
 
-.resetBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast),
-    background var(--transition-fast);
-}
-
-.resetBtn:hover {
-  color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--accent-color) 40%, transparent);
-  background: color-mix(in srgb, var(--accent-color) 6%, var(--bg-tertiary));
-}
-
-/* ── Status indicator ─────────────────────────────────────────────── */
-
-.statusBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--success);
-  background: var(--success-subtle);
-  border-radius: var(--border-radius-sm);
-}
-
-.statusDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
-  animation: pulse 2s ease-in-out infinite;
-}
-
 /* ── Loading state ────────────────────────────────────────────────── */
 
 .loading {
