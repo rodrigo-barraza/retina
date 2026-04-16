@@ -6,7 +6,7 @@ import styles from "./page.module.css";
 
 export default function SettingsPage() {
   return (
-    <div className={styles.pageWrapper}>
+    <div className="page-wrapper">
       <NavigationSidebarComponent mode="user" />
       <div className={styles.page}>
         <SettingsPageComponent />
