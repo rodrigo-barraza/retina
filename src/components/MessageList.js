@@ -247,9 +247,14 @@ function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
 
                 {/* Worker tool badges — show which tools a spawned agent used */}
                 {tc.name === "spawn_agent" && (() => {
-                  const agentId = tc.result ? (typeof tc.result === "string" ? (() => { try { return JSON.parse(tc.result); } catch { return null; } })() : tc.result)?.agent_id : null;
+                  const parsed = tc.result ? (typeof tc.result === "string" ? (() => { try { return JSON.parse(tc.result); } catch { return null; } })() : tc.result) : null;
+                  const agentId = parsed?.agent_id;
                   const activity = agentId && workerToolActivity ? workerToolActivity[agentId] : null;
-                  return activity?.toolNames ? <ToolBadgeRow tools={activity.toolNames} activeTool={activity.currentTool} /> : null;
+                  // Live badges during execution
+                  if (activity?.toolNames) return <ToolBadgeRow tools={activity.toolNames} activeTool={activity.currentTool} />;
+                  // Static badge from completed result
+                  if (parsed?.toolUses > 0) return <ToolBadgeRow tools={[`${parsed.toolUses} tool calls`]} />;
+                  return null;
                 })()}
 
 
@@ -290,7 +295,7 @@ export function prepareDisplayMessages(rawMessages) {
   }
 
   // Second pass: filter and enrich
-  return rawMessages
+  const filtered = rawMessages
     .filter(
       (m) =>
         m.role !== "tool" &&
@@ -319,6 +324,7 @@ export function prepareDisplayMessages(rawMessages) {
       }
       return m;
     });
+  return filtered;
 }
 
 function MediaPreview({ dataUrl: rawUrl, onClick }) {
@@ -1034,6 +1040,8 @@ export default function MessageList({
             {/* ── Normal (non-deleted) message ── */}
             {!msg.deleted && (() => {
               // ── Task notification card (replaces user bubble for worker results) ──
+              // Only renders for non-absorbed notifications (i.e. edge cases where
+              // the matching spawn_agent tool call isn't in the visible window).
               const taskNotif = msg.role === "user" ? parseTaskNotification(msg.content) : null;
               if (taskNotif) {
                 return (

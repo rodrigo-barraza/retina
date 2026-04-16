@@ -660,3 +660,71 @@
   line-height: 1.5;
 }
 
+/* ── Worker result card (absorbed task-notification) ──────── */
+
+.workerResultCard {
+  margin-top: 6px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--accent-color, #6366f1) 20%, transparent);
+  background: color-mix(in srgb, var(--accent-color, #6366f1) 4%, var(--bg-secondary));
+  overflow: hidden;
+  animation: workerResultFadeIn 0.3s ease-out;
+}
+
+.workerResultToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-primary);
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.workerResultToggle:hover {
+  background: color-mix(in srgb, var(--accent-color, #6366f1) 8%, transparent);
+}
+
+.workerResultSummary {
+  flex: 1;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workerResultMeta {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-color, #6366f1) 10%, transparent);
+}
+
+.workerResultBody {
+  padding: 6px 10px 10px;
+  border-top: 1px solid color-mix(in srgb, var(--accent-color, #6366f1) 12%, transparent);
+  font-size: 12px;
+  color: var(--text-secondary);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+@keyframes workerResultFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

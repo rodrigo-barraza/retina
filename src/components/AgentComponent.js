@@ -829,32 +829,6 @@ export default function AgentComponent() {
               PrismService.getAgentMemories(PROJECT_AGENT, 1)
                 .then((r) => setTotalMemoriesCount(r.total || 0))
                 .catch(() => {});
-            } else if (statusData?.message === "worker_notification" && statusData.agentNotification) {
-              // Inject worker notification as a user-role message so
-              // MessageList detects <task-notification> XML and renders
-              // the live notification card (same as on session reload).
-              setMessages((prev) => [
-                ...prev,
-                {
-                  role: "user",
-                  content: statusData.agentNotification,
-                  timestamp: new Date().toISOString(),
-                  _isNotification: true,
-                },
-              ]);
-              // Clear the worker's live activity so the status bar stops
-              const taskIdMatch = statusData.agentNotification.match(/<task-id>([\s\S]*?)<\/task-id>/);
-              if (taskIdMatch) {
-                const completedWorkerId = taskIdMatch[1].trim();
-                setWorkerToolActivity((prev) => ({
-                  ...prev,
-                  [completedWorkerId]: {
-                    ...(prev[completedWorkerId] || {}),
-                    currentTool: null,
-                    phase: null,
-                  },
-                }));
-              }
             } else if (statusData?.phase) {
               // LM Studio lifecycle status (loading, processing, generating)
               setMessages((prev) => {

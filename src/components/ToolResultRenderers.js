@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   ChevronRight,
+  ChevronDown,
   Check,
   XCircle,
   FileText,
@@ -19,10 +20,12 @@ import {
   Users,
   MessageSquare,
   StopCircle,
+  Zap,
 } from "lucide-react";
 import MarkdownContent from "./MarkdownContent";
 import RainbowCanvasComponent from "./RainbowCanvasComponent";
 import PrismService from "../services/PrismService";
+import { formatLatency } from "../utils/utilities";
 import styles from "./ToolResultRenderers.module.css";
 import mlStyles from "./MessageList.module.css";
 
@@ -833,17 +836,29 @@ function WorkerStatusBar({ activity }) {
 }
 
 function SpawnAgentRenderer({ result, args, workerToolActivity }) {
+  const [resultExpanded, setResultExpanded] = useState(false);
   const parsed = tryParse(result);
   if (!parsed) return <RawResultToggle result={result} />;
 
   const agentId = parsed.agent_id || "";
   const description = args?.description || parsed.description || "";
-  const status = parsed.status || "unknown";
   const hasError = !!parsed.error;
 
-  // Resolve live worker activity for real-time status
+  // Resolve live worker activity for real-time status bar
   const workerActivity = agentId && workerToolActivity
     ? workerToolActivity[agentId] || null
+    : null;
+
+  // Since spawn_agent now blocks, the parsed result contains the full
+  // completion data: status, summary, result, toolUses, durationMs, diff.
+  const displayStatus = parsed.status || "unknown";
+  const isTerminal = displayStatus === "completed" || displayStatus === "failed" || displayStatus === "stopped";
+  const isCompleted = displayStatus === "completed";
+  const isFailed = displayStatus === "failed";
+  const statusSuccess = isTerminal ? isCompleted : !hasError;
+
+  const durationLabel = parsed.durationMs
+    ? formatLatency(Number(parsed.durationMs) / 1000)
     : null;
 
   return (
@@ -853,12 +868,41 @@ function SpawnAgentRenderer({ result, args, workerToolActivity }) {
         <span className={styles.rendererTitle}>
           Spawned worker: <strong>{description}</strong>
         </span>
-        <StatusBadge success={!hasError} label={status} />
+        <StatusBadge success={statusSuccess} label={displayStatus} />
       </div>
 
       {hasError && <div className={styles.errorText}>{parsed.error}</div>}
-      {workerActivity && (
+
+      {/* Live status bar — shown while the worker is running */}
+      {workerActivity && !isTerminal && (
         <WorkerStatusBar activity={workerActivity} />
+      )}
+
+      {/* Inline completion card — shown when the worker has finished */}
+      {isTerminal && (
+        <div className={styles.workerResultCard}>
+          <button
+            className={styles.workerResultToggle}
+            onClick={() => setResultExpanded((v) => !v)}
+          >
+            <Zap size={12} />
+            <span className={styles.workerResultSummary}>
+              {parsed.summary || (isCompleted ? "Worker completed" : isFailed ? "Worker failed" : "Worker finished")}
+            </span>
+            {durationLabel && (
+              <span className={styles.workerResultMeta}>{durationLabel}</span>
+            )}
+            {parsed.toolUses > 0 && (
+              <span className={styles.workerResultMeta}>{parsed.toolUses} tools</span>
+            )}
+            {resultExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          </button>
+          {resultExpanded && parsed.result && (
+            <div className={styles.workerResultBody}>
+              <MarkdownContent content={parsed.result} />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
