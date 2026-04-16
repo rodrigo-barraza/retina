@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Activity, AlertCircle, Users } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
-import StopwatchComponent from "./StopwatchComponent";
+import StopwatchBadgeComponent from "./StopwatchBadgeComponent";
 import TokenCountBadgeComponent from "./TokenCountBadgeComponent";
 import IrisService from "../services/IrisService";
 import { formatCost } from "../utils/utilities";
@@ -116,7 +116,7 @@ export default function SessionRequestsListComponent({ agentSessionId, refreshKe
                     <TokenCountBadgeComponent value={req.outputTokens} label="out" mini />
                   )}
                   {req.totalTime > 0 && (
-                    <StopwatchComponent seconds={req.totalTime} />
+                    <StopwatchBadgeComponent seconds={req.totalTime} />
                   )}
                   {req.estimatedCost > 0 && (
                     <span className={styles.requestCost} title="Cost">

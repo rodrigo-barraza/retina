@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { Timer } from "lucide-react";
 import { formatElapsedTime } from "../utils/utilities";
-import styles from "./StopwatchComponent.module.css";
+import styles from "./StopwatchBadgeComponent.module.css";
 
 /**
- * StopwatchComponent — displays an elapsed duration badge.
+ * StopwatchBadgeComponent — displays an elapsed duration badge.
  *
  * Can operate in two modes:
  *   1. Static: pass `seconds` for a fixed duration display.
@@ -19,7 +19,7 @@ import styles from "./StopwatchComponent.module.css";
  *   showIcon   — show Timer icon (default: true)
  *   className  — additional class
  */
-export default function StopwatchComponent({
+export default function StopwatchBadgeComponent({
   seconds,
   startTime,
   live: externalLive,

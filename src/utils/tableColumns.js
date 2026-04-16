@@ -45,7 +45,7 @@ import {
 } from "./utilities";
 import { PROVIDER_COLORS } from "../constants";
 import DateTimeBadgeComponent from "../components/DateTimeBadgeComponent";
-import StopwatchComponent from "../components/StopwatchComponent";
+import StopwatchBadgeComponent from "../components/StopwatchBadgeComponent";
 import TokenCountBadgeComponent from "../components/TokenCountBadgeComponent";
 import TooltipComponent from "../components/TooltipComponent";
 import styles from "../components/TableComponents.module.css";
@@ -428,7 +428,7 @@ export const durationColumn = ({ useDurationMs = false } = {}) => ({
     const dur = formatDuration(ms);
     if (!dur) return emptyDash();
     return (
-      <StopwatchComponent seconds={ms / 1000} />
+      <StopwatchBadgeComponent seconds={ms / 1000} />
     );
   },
 });
@@ -810,7 +810,7 @@ export const benchmarkDurationColumn = () => ({
   render: (r) => {
     if (!r.latency) return emptyDash();
     return (
-      <StopwatchComponent seconds={r.latency} />
+      <StopwatchBadgeComponent seconds={r.latency} />
     );
   },
 });
@@ -1010,7 +1010,7 @@ export const dashboardAvgLatencyColumn = () => ({
   sortable: true,
   align: "right",
   render: (r) => (
-    <StopwatchComponent seconds={r.avgLatency} />
+    <StopwatchBadgeComponent seconds={r.avgLatency} />
   ),
 });
 

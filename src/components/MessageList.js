@@ -32,7 +32,7 @@ import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
 import ModelBadgeComponent from "./ModelBadgeComponent";
 import TokenCountBadgeComponent from "./TokenCountBadgeComponent";
 import CostBadgeComponent from "./CostBadgeComponent";
-import StopwatchComponent from "./StopwatchComponent";
+import StopwatchBadgeComponent from "./StopwatchBadgeComponent";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
 import BadgeComponent from "./BadgeComponent";
 import styles from "./MessageList.module.css";
@@ -1447,7 +1447,7 @@ export default function MessageList({
                         </BadgeComponent>
                       )}
                       {msg.totalTime != null && (
-                        <StopwatchComponent seconds={msg.totalTime} showIcon={false} className={styles.metaMini} />
+                        <StopwatchBadgeComponent seconds={msg.totalTime} showIcon={false} className={styles.metaMini} />
                       )}
                       {msg.tokensPerSec && (
                         <BadgeComponent variant="info" mini>{msg.tokensPerSec} tok/s</BadgeComponent>

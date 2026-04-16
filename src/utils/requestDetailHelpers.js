@@ -17,7 +17,7 @@ import ModelBadgeComponent from "../components/ModelBadgeComponent";
 import ProvidersBadgeComponent from "../components/ProvidersBadgeComponent";
 import TokenCountBadgeComponent from "../components/TokenCountBadgeComponent";
 import DateTimeBadgeComponent from "../components/DateTimeBadgeComponent";
-import StopwatchComponent from "../components/StopwatchComponent";
+import StopwatchBadgeComponent from "../components/StopwatchBadgeComponent";
 import ModalityIconComponent from "../components/ModalityIconComponent";
 
 import CostBadgeComponent from "../components/CostBadgeComponent";
@@ -243,19 +243,19 @@ export function buildRequestDetailSections(req) {
         {
           label: "Time to Generation",
           value: req.timeToGeneration > 0
-            ? <StopwatchComponent seconds={req.timeToGeneration} />
+            ? <StopwatchBadgeComponent seconds={req.timeToGeneration} />
             : formatLatency(req.timeToGeneration),
         },
         {
           label: "Generation Time",
           value: req.generationTime > 0
-            ? <StopwatchComponent seconds={req.generationTime} />
+            ? <StopwatchBadgeComponent seconds={req.generationTime} />
             : formatLatency(req.generationTime),
         },
         {
           label: "Total Time",
           value: req.totalTime > 0
-            ? <StopwatchComponent seconds={req.totalTime} />
+            ? <StopwatchBadgeComponent seconds={req.totalTime} />
             : formatLatency(req.totalTime),
         },
       ],

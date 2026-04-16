@@ -23,7 +23,7 @@ import CostBadgeComponent from "./CostBadgeComponent";
 import TokenCountBadgeComponent from "./TokenCountBadgeComponent";
 import RequestCountBadgeComponent from "./RequestCountBadgeComponent";
 import MessageCountBadgeComponent from "./MessageCountBadgeComponent";
-import StopwatchComponent from "./StopwatchComponent";
+import StopwatchBadgeComponent from "./StopwatchBadgeComponent";
 import { formatCost } from "../utils/utilities";
 import {
   TOOL_COLORS,
@@ -167,7 +167,7 @@ export default function SettingsPanel({
                 </span>
               )}
               {totalElapsedTime > 0 && (
-                <StopwatchComponent
+                <StopwatchBadgeComponent
                   seconds={totalElapsedTime}
                   live={!!sessionStats.currentTurnStart}
                 />
