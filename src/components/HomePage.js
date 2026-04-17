@@ -129,6 +129,7 @@ export default function HomePage({ initialConversationId = null }) {
   const [pixelOutDone, setPixelOutDone] = useState(false); // true when 'out' animation ends
   const pendingConvRef = useRef(null); // holds fetched conversation during 'out' phase
   const [pendingConvReady, setPendingConvReady] = useState(false); // true when fetch completes
+  const pendingNewConvRef = useRef(false);
 
   // ── LM Studio Model Load Config ────────────────────────────
   const [lmConfigModel, setLmConfigModel] = useState(null);
@@ -498,8 +499,18 @@ export default function HomePage({ initialConversationId = null }) {
 
   // Explicit "New Conversation" button action — also resets the welcome flow
   const handleNewChatClick = () => {
-    handleNewChat();
-    setNewChatKey((k) => k + 1);
+    // If already on a blank conversation, just reset directly (no pixelation needed)
+    if (messages.length === 0 && !activeId) {
+      handleNewChat();
+      setNewChatKey((k) => k + 1);
+      return;
+    }
+    // Trigger pixelation out → reset → pixelation in
+    pendingNewConvRef.current = true;
+    setPixelOutDone(false);
+    setPendingConvReady(false);
+    pendingConvRef.current = null;
+    setPixelTransition("out");
   };
 
   // Persist provider/model to localStorage (legacy keys + page-scoped memory)
@@ -539,9 +550,23 @@ export default function HomePage({ initialConversationId = null }) {
     }
   };
 
-  // When both 'out' animation and fetch are done, swap data and start 'in'
+  // When 'out' animation completes: handle new-conversation reset or conversation-load swap
   useEffect(() => {
-    if (!pixelOutDone || !pendingConvReady) return;
+    if (!pixelOutDone) return;
+
+    // ── New conversation path (no fetch needed) ──
+    if (pendingNewConvRef.current) {
+      pendingNewConvRef.current = false;
+      handleNewChat();
+      setNewChatKey((k) => k + 1);
+      setPixelOutDone(false);
+      setPendingConvReady(false);
+      setPixelTransition("in");
+      return;
+    }
+
+    // ── Load existing conversation path (wait for fetch) ──
+    if (!pendingConvReady) return;
 
     const full = pendingConvRef.current;
     if (full) {
@@ -556,7 +581,7 @@ export default function HomePage({ initialConversationId = null }) {
     setPixelOutDone(false);
     setPendingConvReady(false);
     setPixelTransition("in");
-  }, [pixelOutDone, pendingConvReady, restoreConversation]);
+  }, [pixelOutDone, pendingConvReady, restoreConversation]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDeleteConversation = async (id) => {
     try {

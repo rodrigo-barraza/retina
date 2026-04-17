@@ -161,6 +161,7 @@ export default function AgentComponent() {
   const [pixelOutDone, setPixelOutDone] = useState(false);
   const [pendingSessionReady, setPendingSessionReady] = useState(false);
   const pendingSessionRef = useRef(null);
+  const pendingNewSessionRef = useRef(false);
 
   const textareaRef = useRef(null);
   const endRef = useRef(null);
@@ -930,6 +931,29 @@ export default function AgentComponent() {
                   phase: data.phase,
                 },
               }));
+            } else if (data.message === "complete") {
+              // Worker finished — clear phase so StatusBar stops showing "Generating..."
+              setWorkerToolActivity((prev) => ({
+                ...prev,
+                [data.workerId]: {
+                  ...(prev[data.workerId] || {}),
+                  phase: "complete",
+                  currentTool: null,
+                  durationMs: data.durationMs,
+                  toolCount: data.toolCount ?? prev[data.workerId]?.toolCount,
+                },
+              }));
+            } else if (data.message === "failed") {
+              // Worker errored — mark as failed
+              setWorkerToolActivity((prev) => ({
+                ...prev,
+                [data.workerId]: {
+                  ...(prev[data.workerId] || {}),
+                  phase: "failed",
+                  currentTool: null,
+                  error: data.error,
+                },
+              }));
             }
           },
           onDone: (data) => {
@@ -1109,8 +1133,7 @@ export default function AgentComponent() {
   );
 
   // ── Session management ──────────────────────────────────
-  const handleNewChat = useCallback(() => {
-    if (isGenerating) return;
+  const resetSessionState = useCallback(() => {
     setMessages([]);
     setToolActivity([]);
     setWorkerToolActivity({});
@@ -1121,7 +1144,22 @@ export default function AgentComponent() {
     setTitle("Agent");
     setBackendSessionStats(null);
     textareaRef.current?.focus();
-  }, [isGenerating]);
+  }, []);
+
+  const handleNewChat = useCallback(() => {
+    if (isGenerating) return;
+    // If already on a blank session, just reset directly (no pixelation needed)
+    if (messages.length === 0 && !activeId) {
+      resetSessionState();
+      return;
+    }
+    // Trigger pixelation out → reset → pixelation in
+    pendingNewSessionRef.current = true;
+    setPixelOutDone(false);
+    setPendingSessionReady(false);
+    pendingSessionRef.current = null;
+    setPixelTransition("out");
+  }, [isGenerating, messages.length, activeId, resetSessionState]);
 
   const handleSelectSession = useCallback(
     async (conv) => {
@@ -1156,9 +1194,22 @@ export default function AgentComponent() {
     [isGenerating, activeId],
   );
 
-  // When both 'out' animation and fetch are done, swap data and start 'in'
+  // When 'out' animation completes: handle new-session reset or session-load swap
   useEffect(() => {
-    if (!pixelOutDone || !pendingSessionReady) return;
+    if (!pixelOutDone) return;
+
+    // ── New session path (no fetch needed) ──
+    if (pendingNewSessionRef.current) {
+      pendingNewSessionRef.current = false;
+      resetSessionState();
+      setPixelOutDone(false);
+      setPendingSessionReady(false);
+      setPixelTransition("in");
+      return;
+    }
+
+    // ── Load existing session path (wait for fetch) ──
+    if (!pendingSessionReady) return;
 
     const full = pendingSessionRef.current;
     if (full) {
@@ -1195,7 +1246,7 @@ export default function AgentComponent() {
     setPixelOutDone(false);
     setPendingSessionReady(false);
     setPixelTransition("in");
-  }, [pixelOutDone, pendingSessionReady]);
+  }, [pixelOutDone, pendingSessionReady, resetSessionState]);
 
   const handleDeleteSession = useCallback(
     async (convId) => {

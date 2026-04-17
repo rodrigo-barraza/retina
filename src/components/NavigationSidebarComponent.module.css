@@ -18,7 +18,8 @@
   }
 }
 
-.wrapper.collapsed {
+.wrapper.collapsed,
+:global([data-nav-collapsed="true"]) .wrapper {
   & .sidebar {
     min-width: 52px;
     width: 52px;

@@ -30,6 +30,10 @@ const themeInitScript = `
         document.documentElement.setAttribute('data-theme', theme);
       }
     }
+    var nav = localStorage.getItem('panel_nav');
+    if (nav === 'false') {
+      document.documentElement.setAttribute('data-nav-collapsed', 'true');
+    }
   } catch(e) {}
 })();
 `;

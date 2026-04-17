@@ -780,18 +780,24 @@ function BrowserActionRenderer({ result, args }) {
 function WorkerStatusBar({ activity }) {
   if (!activity) return null;
   const { currentTool, toolCount = 0, iteration = 0, maxIterations, phase } = activity;
+  const isTerminal = phase === "complete" || phase === "failed";
   const isToolActive = !!currentTool;
-  const hasPhase = !!phase;
+  const hasPhase = !!phase && !isTerminal;
   const isActive = isToolActive || hasPhase;
   const toolLabel = currentTool
     ? currentTool.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
     : null;
 
   // Derive the effective phase for StatusBarComponent
-  const effectivePhase = isToolActive ? "thinking" : phase;
+  const effectivePhase = isToolActive ? "thinking" : (isTerminal ? null : phase);
   const label = isToolActive ? toolLabel : undefined;
   // Tool calls show a wrench emoji, phase uses default icons
   const icon = isToolActive ? "🔧" : undefined;
+
+  // Idle label reflects terminal state or tool count
+  const idleLabel = isTerminal
+    ? (phase === "failed" ? "Worker failed" : `Done · ${toolCount} tool${toolCount !== 1 ? "s" : ""} used`)
+    : (toolCount > 0 ? `${toolCount} tools used` : "Worker idle");
 
   return (
     <StatusBarComponent
@@ -802,7 +808,7 @@ function WorkerStatusBar({ activity }) {
       iteration={iteration}
       maxIterations={maxIterations}
       idleIcon={<Users size={10} />}
-      idleLabel={toolCount > 0 ? `${toolCount} tools used` : "Worker idle"}
+      idleLabel={idleLabel}
     />
   );
 }

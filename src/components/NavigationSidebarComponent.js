@@ -159,6 +159,11 @@ export default function NavigationSidebarComponent({
     setShowNav((prev) => {
       const next = !prev;
       localStorage.setItem(LS_PANEL_NAV, String(next));
+      if (next) {
+        document.documentElement.removeAttribute("data-nav-collapsed");
+      } else {
+        document.documentElement.setAttribute("data-nav-collapsed", "true");
+      }
       return next;
     });
   }, []);
