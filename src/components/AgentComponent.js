@@ -33,33 +33,98 @@ import {
 } from "../utils/FunctionCallingUtilities.js";
 import { shuffleArray } from "../utils/utilities.js";
 import useSessionStats from "../hooks/useSessionStats.js";
-import { PROJECT_AGENT, SETTINGS_DEFAULTS, SK_MODEL_MEMORY_AGENT, SK_TOOL_MEMORY_AGENT, MAX_TOOL_ITERATIONS } from "../constants.js";
+import { PROJECT_AGENT, SETTINGS_DEFAULTS, SK_MODEL_MEMORY_AGENT, SK_MODEL_MEMORY_AGENT_PREFIX, SK_TOOL_MEMORY_AGENT, SK_TOOL_MEMORY_AGENT_PREFIX, MAX_TOOL_ITERATIONS } from "../constants.js";
 import chatStyles from "./ChatArea.module.css";
 import styles from "./AgentComponent.module.css";
 import ChatInputButton from "./ChatInputButton.js";
 import useToolToggles from "../hooks/useToolToggles.js";
 import useModelMemory from "../hooks/useModelMemory.js";
+import AgentPickerComponent from "./AgentPickerComponent.js";
 
 
-// ── Coding-focused quick prompts (reflect the full toolset)
-const AGENT_PROMPTS = [
-  "Scan this project with project_summary and explain the architecture",
-  "Search for all TODO and FIXME comments across the codebase",
-  "Show me the git status and a diff of uncommitted changes",
-  "Find all files that import PrismService and summarize usage",
-  "Grep for console.log statements and suggest cleanups",
-  "Run npm test and report any failures with context",
-  "Read the last 5 git commits and summarize what changed",
-  "Compare two files side-by-side with file_diff",
-  "Find all .env and secrets files and check they're gitignored",
-  "List the directory tree and identify the largest files",
-];
+// ── Per-agent quick prompts ──────────────────────────────────────
+const AGENT_PROMPTS_MAP = {
+  CODING: [
+    "Scan this project with project_summary and explain the architecture",
+    "Search for all TODO and FIXME comments across the codebase",
+    "Show me the git status and a diff of uncommitted changes",
+    "Find all files that import PrismService and summarize usage",
+    "Grep for console.log statements and suggest cleanups",
+    "Run npm test and report any failures with context",
+    "Read the last 5 git commits and summarize what changed",
+    "Compare two files side-by-side with file_diff",
+    "Find all .env and secrets files and check they're gitignored",
+    "List the directory tree and identify the largest files",
+  ],
+  LUPOS: [
+    "Search the web for the latest AI news",
+    "What's the weather like in Vancouver right now?",
+    "Find trending topics on Reddit today",
+    "Generate an image of a wolf king on a throne",
+    "What are the top trending movies right now?",
+    "Look up the Wikipedia summary for 'neural networks'",
+    "Search for gym exercises targeting chest",
+    "What happened on this day in history?",
+  ],
+  STICKERS: [
+    "Generate a cute cat sticker with vibrant colors",
+    "Create a sticker of a robot drinking coffee",
+    "Design a sticker with a galaxy wolf",
+    "Search the web for sticker design trends",
+  ],
+  DIGEST: [
+    "Calculate my TDEE — I'm 30, male, 80kg, 178cm, moderate activity",
+    "Compare the nutrition of chicken breast vs salmon vs tofu",
+    "What foods are highest in iron?",
+    "Build me a 2200 calorie high-protein meal plan",
+    "Search for compound chest exercises with dumbbells",
+    "Analyze my food log: 200g chicken, 150g rice, 100g broccoli",
+    "How many calories does 45 minutes of barbell squats burn at 85kg?",
+    "Find vegan substitutes for eggs with similar protein",
+    "Calculate my daily water intake — 80kg, active, 30°C outside",
+    "What are the drug-nutrient interactions for metformin?",
+  ],
+};
+
+// ── Per-agent empty state config ─────────────────────────────────
+const AGENT_EMPTY_STATE = {
+  CODING: {
+    title: "Coding Agent",
+    subtitle: "Read, edit, search, and browse your codebase with AI-powered tools.",
+    placeholder: "Ask me to read, edit, search, or explore your codebase...",
+  },
+  LUPOS: {
+    title: "Lupos",
+    subtitle: "The insane wolf king. Web search, image generation, trends, and more.",
+    placeholder: "Talk to the wolf king...",
+  },
+  STICKERS: {
+    title: "Clankerbox",
+    subtitle: "Sticker-designing vending machine. Image generation and web search.",
+    placeholder: "Ask Clankerbox to create something...",
+  },
+  DIGEST: {
+    title: "Digest",
+    subtitle: "Evidence-based nutrition & exercise coach. USDA data, meal planning, calorie tracking, and workout search.",
+    placeholder: "Ask about nutrition, exercises, meal plans, or calorie targets...",
+  },
+};
+
+const DEFAULT_EMPTY_STATE = {
+  title: "Agent",
+  subtitle: "AI-powered agent with tool access.",
+  placeholder: "Send a message...",
+};
 
 // Tools that are always on and non-toggleable in the agent view
 const AGENT_LOCKED_TOOLS = new Set(["Tool Calling"]);
 
 
-export default function AgentComponent() {
+export default function AgentComponent({ agentId: propAgentId = "CODING", agents = [] }) {
+  const agentId = propAgentId;
+  const agentProject = agents.find((a) => a.id === agentId)?.project || PROJECT_AGENT;
+  const emptyState = AGENT_EMPTY_STATE[agentId] || DEFAULT_EMPTY_STATE;
+  const agentPrompts = AGENT_PROMPTS_MAP[agentId] || AGENT_PROMPTS_MAP.CODING;
   // ── State ────────────────────────────────────────────────────
   const [messages, setMessages] = useState([]);
   const [queuedNextTurn, setQueuedNextTurn] = useState(null);
@@ -112,11 +177,15 @@ export default function AgentComponent() {
   }, [isGenerating, workerToolActivity]);
   const [tasksCount, setTasksCount] = useState(0);
   const [memoryConfigured, setMemoryConfigured] = useState(false);
-  const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
-    useToolToggles(builtInTools, SK_TOOL_MEMORY_AGENT);
+  // ── Agent-scoped storage keys ─────────────────────────────────
+  const toolMemoryKey = agentId === "CODING" ? SK_TOOL_MEMORY_AGENT : SK_TOOL_MEMORY_AGENT_PREFIX + agentId;
+  const modelMemoryKey = agentId === "CODING" ? SK_MODEL_MEMORY_AGENT : SK_MODEL_MEMORY_AGENT_PREFIX + agentId;
 
-  // ── Model memory (persist last-used model per page) ──────────
-  const { saveModel, restoreModel } = useModelMemory(SK_MODEL_MEMORY_AGENT);
+  const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
+    useToolToggles(builtInTools, toolMemoryKey);
+
+  // ── Model memory (persist last-used model per agent) ──────────
+  const { saveModel, restoreModel } = useModelMemory(modelMemoryKey);
   const [settings, setSettings] = useState({
     ...SETTINGS_DEFAULTS,
     maxTokens: 64000,
@@ -288,12 +357,12 @@ export default function AgentComponent() {
   const loadSessions = useCallback(async () => {
     try {
       const list =
-        await PrismService.getAgentSessions(PROJECT_AGENT);
+        await PrismService.getAgentSessions(agentProject);
       setSessions(list);
     } catch (err) {
       console.error("Failed to load agent sessions:", err);
     }
-  }, []);
+  }, [agentProject]);
 
   useEffect(() => {
     loadSessions();
@@ -302,12 +371,12 @@ export default function AgentComponent() {
   // Load custom tools
   const loadCustomTools = useCallback(async () => {
     try {
-      const tools = await PrismService.getCustomTools(PROJECT_AGENT);
+      const tools = await PrismService.getCustomTools(agentProject);
       setCustomTools(tools);
     } catch (err) {
       console.error("Failed to load custom tools:", err);
     }
-  }, []);
+  }, [agentProject]);
 
   useEffect(() => {
     loadCustomTools();
@@ -316,12 +385,12 @@ export default function AgentComponent() {
   // Load skills
   const loadSkills = useCallback(async () => {
     try {
-      const s = await PrismService.getSkills(PROJECT_AGENT);
+      const s = await PrismService.getSkills(agentProject);
       setSkills(s);
     } catch (err) {
       console.error("Failed to load skills:", err);
     }
-  }, []);
+  }, [agentProject]);
 
   useEffect(() => {
     loadSkills();
@@ -330,18 +399,18 @@ export default function AgentComponent() {
   // Load MCP servers
   const loadMCPServers = useCallback(async () => {
     try {
-      const s = await PrismService.getMCPServers(PROJECT_AGENT);
+      const s = await PrismService.getMCPServers(agentProject);
       setMcpServers(s);
     } catch (err) {
       console.error("Failed to load MCP servers:", err);
     }
-  }, []);
+  }, [agentProject]);
 
   useEffect(() => {
     loadMCPServers();
   }, [loadMCPServers]);
 
-  // Fetch built-in tools for the CODING agent (filtered server-side by persona)
+  // Fetch built-in tools for the active agent (filtered server-side by persona)
   useEffect(() => {
     async function loadAgenticTools() {
       // Trigger Prism to re-fetch from tools-api (picks up newly added tools)
@@ -351,11 +420,11 @@ export default function AgentComponent() {
         // Non-fatal — Prism may still have a stale cache
       }
 
-      const tools = await PrismService.getBuiltInToolSchemas("CODING");
+      const tools = await PrismService.getBuiltInToolSchemas(agentId);
       setBuiltInTools(tools);
     }
     loadAgenticTools().catch(console.error);
-  }, []);
+  }, [agentId]);
 
   // ── Fetch memory settings to determine if memories are configured ──
   useEffect(() => {
@@ -381,10 +450,10 @@ export default function AgentComponent() {
   // ── Eager-fetch tab badge counts (fires on mount / session change) ──
 
   useEffect(() => {
-    PrismService.getAgentMemories(PROJECT_AGENT, 1)
+    PrismService.getAgentMemories(agentProject, 1)
       .then((r) => setTotalMemoriesCount(r.total || 0))
       .catch(() => {});
-  }, []);
+  }, [agentProject]);
 
   useEffect(() => {
     ToolsApiService.getAllAgenticTasks({ agentSessionId })
@@ -414,7 +483,7 @@ export default function AgentComponent() {
     // second at 8s catches background requests (memory extraction,
     // embedding) that take longer to flush to the DB.
     const refetch = () =>
-      PrismService.getAgentSession(sessionId, PROJECT_AGENT)
+      PrismService.getAgentSession(sessionId, agentProject)
         .then((session) => {
           if (session?.stats) {
             setBackendSessionStats(session.stats);
@@ -425,7 +494,7 @@ export default function AgentComponent() {
     const t1 = setTimeout(refetch, 2000);
     const t2 = setTimeout(refetch, 8000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
+  }, [agentProject]);
 
   // Build final tool schemas
   const allToolSchemas = useMemo(
@@ -437,9 +506,9 @@ export default function AgentComponent() {
   const [randomPrompts, setRandomPrompts] = useState([]);
 
   useEffect(() => {
-    const pool = shuffleArray(AGENT_PROMPTS);
+    const pool = shuffleArray(agentPrompts);
     setRandomPrompts(pool.slice(0, 5));
-  }, [agentSessionId]);
+  }, [agentSessionId, agentPrompts]);
 
   // ── Image handlers ──────────────────────────────────────────
   const handleImageSelect = useCallback((e) => {
@@ -552,13 +621,15 @@ export default function AgentComponent() {
           ...(settings.thinkingBudget && { thinkingBudget: settings.thinkingBudget }),
           // Local models need enough context for MCP tool schemas + session
           minContextLength: 150000,
-          project: PROJECT_AGENT,
+          project: agentProject,
           agentSessionId,
           conversationMeta: {
             title: resolvedTitle,
           },
           // Trace tracking — generated client-side
           traceId,
+          // Agent persona — dynamic per-agent
+          agent: agentId,
           // Phase 1: Agentic controls
           autoApprove,
           planFirst,
@@ -731,7 +802,7 @@ export default function AgentComponent() {
             if (data.status !== "calling" && tc.name === "upsert_memory") {
               setLeftTab("memories");
               setMemoriesRefreshKey((k) => k + 1);
-              PrismService.getAgentMemories(PROJECT_AGENT, 1)
+              PrismService.getAgentMemories(agentProject, 1)
                 .then((r) => setTotalMemoriesCount(r.total || 0))
                 .catch(() => {});
             }
@@ -793,7 +864,7 @@ export default function AgentComponent() {
             if (tc.status !== "calling" && tc.name === "upsert_memory") {
               setLeftTab("memories");
               setMemoriesRefreshKey((k) => k + 1);
-              PrismService.getAgentMemories(PROJECT_AGENT, 1)
+              PrismService.getAgentMemories(agentProject, 1)
                 .then((r) => setTotalMemoriesCount(r.total || 0))
                 .catch(() => {});
             }
@@ -857,7 +928,7 @@ export default function AgentComponent() {
               setMemoriesRefreshKey((k) => k + 1);
               markTabNew("memories");
               // Re-fetch count for the tab badge (MemoriesPanel may not be mounted yet)
-              PrismService.getAgentMemories(PROJECT_AGENT, 1)
+              PrismService.getAgentMemories(agentProject, 1)
                 .then((r) => setTotalMemoriesCount(r.total || 0))
                 .catch(() => {});
             } else if (statusData?.phase) {
@@ -982,14 +1053,14 @@ export default function AgentComponent() {
             // SessionSummarizer runs async after SSE stream closes —
             // poll every 2s for up to 20s until new memories are detected
             (async () => {
-              const baselineCount = await PrismService.getAgentMemories(PROJECT_AGENT, 1)
+              const baselineCount = await PrismService.getAgentMemories(agentProject, 1)
                 .then((r) => r.total || 0)
                 .catch(() => 0);
               let pollAttempts = 0;
               const pollInterval = setInterval(async () => {
                 pollAttempts++;
                 try {
-                  const { total } = await PrismService.getAgentMemories(PROJECT_AGENT, 1);
+                  const { total } = await PrismService.getAgentMemories(agentProject, 1);
                   if (total > baselineCount) {
                     clearInterval(pollInterval);
                     setMemoriesRefreshKey((k) => k + 1);
@@ -1021,6 +1092,8 @@ export default function AgentComponent() {
       planFirst,
       maxIterations,
       maxWorkerIterations,
+      agentId,
+      agentProject,
       fetchSessionStats,
       markTabNew,
     ],
@@ -1210,7 +1283,7 @@ export default function AgentComponent() {
       try {
         const full = await PrismService.getAgentSession(
           conv.id,
-          PROJECT_AGENT,
+          agentProject,
         );
         pendingSessionRef.current = full;
         setPendingSessionReady(true);
@@ -1222,7 +1295,7 @@ export default function AgentComponent() {
         pendingSessionRef.current = null;
       }
     },
-    [isGenerating, activeId],
+    [isGenerating, activeId, agentProject],
   );
 
   // When 'out' animation completes: handle new-session reset or session-load swap
@@ -1282,7 +1355,7 @@ export default function AgentComponent() {
   const handleDeleteSession = useCallback(
     async (convId) => {
       try {
-        await PrismService.deleteAgentSession(convId, PROJECT_AGENT);
+        await PrismService.deleteAgentSession(convId, agentProject);
         setSessions((prev) => prev.filter((c) => c.id !== convId));
         if (activeId === convId) {
           handleNewChat();
@@ -1291,7 +1364,7 @@ export default function AgentComponent() {
         console.error("Failed to delete session:", err);
       }
     },
-    [activeId, handleNewChat],
+    [activeId, handleNewChat, agentProject],
   );
 
   // ── Left sidebar: tab bar + content ──────────────────────────
@@ -1508,7 +1581,7 @@ export default function AgentComponent() {
         <CustomToolsPanel
           tools={customTools}
           onToolsChange={loadCustomTools}
-          project={PROJECT_AGENT}
+          project={agentProject}
           builtInTools={builtInTools}
           disabledBuiltIns={disabledBuiltIns}
           onToggleBuiltIn={handleToggleBuiltIn}
@@ -1521,23 +1594,23 @@ export default function AgentComponent() {
         <SkillsPanel
           skills={skills}
           onSkillsChange={loadSkills}
-          project={PROJECT_AGENT}
+          project={agentProject}
         />
       )}
 
       {leftTab === "memories" && (
-        <MemoriesPanel project={PROJECT_AGENT} refreshKey={memoriesRefreshKey} onCountChange={setTotalMemoriesCount} memoryConfigured={memoryConfigured} />
+        <MemoriesPanel project={agentProject} refreshKey={memoriesRefreshKey} onCountChange={setTotalMemoriesCount} memoryConfigured={memoryConfigured} />
       )}
 
       {leftTab === "tasks" && (
-        <TasksPanel project={PROJECT_AGENT} refreshKey={tasksRefreshKey} agentSessionId={agentSessionId} onCountChange={setTasksCount} />
+        <TasksPanel project={agentProject} refreshKey={tasksRefreshKey} agentSessionId={agentSessionId} onCountChange={setTasksCount} />
       )}
 
       {leftTab === "mcp" && (
         <MCPServersPanel
           servers={mcpServers}
           onServersChange={loadMCPServers}
-          project={PROJECT_AGENT}
+          project={agentProject}
         />
       )}
 
@@ -1553,7 +1626,7 @@ export default function AgentComponent() {
       )}
 
       {leftTab === "coordinator" && (
-        <CoordinatorPanel project={PROJECT_AGENT} />
+        <CoordinatorPanel project={agentProject} />
       )}
     </div>
   );
@@ -1579,8 +1652,8 @@ export default function AgentComponent() {
         {messages.length === 0 && (
           <EmptyStateComponent
             icon={<Bot size={40} />}
-            title="Coding Agent"
-            subtitle="Read, edit, search, and browse your codebase with AI-powered tools."
+            title={emptyState.title}
+            subtitle={emptyState.subtitle}
           >
             {randomPrompts.map((prompt) => (
               <ButtonComponent
@@ -1768,7 +1841,7 @@ export default function AgentComponent() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask me to read, edit, search, or explore your codebase..."
+              placeholder={emptyState.placeholder}
               rows={1}
             />
             {isGenerating && (
@@ -1836,38 +1909,52 @@ export default function AgentComponent() {
       sessionType="agent"
       headerTitle={title}
       headerCenter={
-        <ModelPickerPopoverComponent
-          config={filteredConfig}
-          settings={settings}
-          onSelectModel={(provider, modelName) => {
-            const modelDef =
-              (filteredConfig?.textToText?.models?.[provider] || []).find(
-                (m) => m.name === modelName,
-              );
-            const temp = modelDef?.defaultTemperature ?? 1.0;
-            setSettings((s) => ({
-              ...s,
-              provider,
-              model: modelName,
-              temperature: temp,
-            }));
-            saveModel(provider, modelName);
-          }}
-          favorites={favoriteKeys}
-          onToggleFavorite={async (key) => {
-            if (favoriteKeys.includes(key)) {
-              setFavoriteKeys((prev) => prev.filter((k) => k !== key));
-              PrismService.removeFavorite("model", key).catch(() => {});
-            } else {
-              setFavoriteKeys((prev) => [...prev, key]);
-              const [provider, ...rest] = key.split(":");
-              PrismService.addFavorite("model", key, {
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {agents.length > 1 && (
+            <AgentPickerComponent
+              agents={agents}
+              activeAgentId={agentId}
+              onSelect={(id) => {
+                // Agent switching is handled by the parent page via URL/state
+                // Emit a custom event or call a callback
+                window.dispatchEvent(new CustomEvent("agent:switch", { detail: { agentId: id } }));
+              }}
+              disabled={isGenerating}
+            />
+          )}
+          <ModelPickerPopoverComponent
+            config={filteredConfig}
+            settings={settings}
+            onSelectModel={(provider, modelName) => {
+              const modelDef =
+                (filteredConfig?.textToText?.models?.[provider] || []).find(
+                  (m) => m.name === modelName,
+                );
+              const temp = modelDef?.defaultTemperature ?? 1.0;
+              setSettings((s) => ({
+                ...s,
                 provider,
-                name: rest.join(":"),
-              }).catch(() => {});
-            }
-          }}
-        />
+                model: modelName,
+                temperature: temp,
+              }));
+              saveModel(provider, modelName);
+            }}
+            favorites={favoriteKeys}
+            onToggleFavorite={async (key) => {
+              if (favoriteKeys.includes(key)) {
+                setFavoriteKeys((prev) => prev.filter((k) => k !== key));
+                PrismService.removeFavorite("model", key).catch(() => {});
+              } else {
+                setFavoriteKeys((prev) => [...prev, key]);
+                const [provider, ...rest] = key.split(":");
+                PrismService.addFavorite("model", key, {
+                  provider,
+                  name: rest.join(":"),
+                }).catch(() => {});
+              }
+            }}
+          />
+        </div>
       }
       headerMeta={null}
       headerControls={null}

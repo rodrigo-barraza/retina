@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import IconButtonComponent from "./IconButtonComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
-import { ModelToolsRow } from "./ToolBadgeComponent";
+import { ModelToolsRow } from "./ToolCallingBadgeComponent";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
 import styles from "./HistoryItemComponent.module.css";
 import CostBadgeComponent from "./CostBadgeComponent";

@@ -317,7 +317,7 @@ export default function ToolRequestsPage() {
           sortDir={order}
           onSort={handleSort}
           onRowClick={(tc) => setSelectedCall(tc)}
-          getRowKey={(tc, i) => tc._id || i}
+          getRowKey={(tc, i) => tc._id || `tc-${i}`}
           emptyText={loading ? "Loading..." : "No tool calls found"}
           maxHeight={null}
           storageKey="tool-requests"

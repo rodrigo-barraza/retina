@@ -406,7 +406,7 @@ export default function ToolCallsPage() {
           <TableComponent
             columns={slowestColumns}
             data={stats.slowest}
-            getRowKey={(r, i) => r._id || i}
+            getRowKey={(r, i) => r._id || `slow-${i}`}
             emptyText="No data"
             maxHeight={null}
             storageKey="tool-calls-slowest"

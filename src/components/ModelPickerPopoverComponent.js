@@ -14,7 +14,7 @@ import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
 import PrismService from "../services/PrismService";
 import ModelsTableComponent from "./ModelsTableComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
-import { ModelToolsRow } from "./ToolBadgeComponent";
+import { ModelToolsRow } from "./ToolCallingBadgeComponent";
 import CloseButtonComponent from "./CloseButtonComponent";
 import SoundService from "@/services/SoundService";
 import { LOCAL_PROVIDERS } from "../constants.js";

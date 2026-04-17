@@ -33,7 +33,8 @@ import {
   TOOL_ICON_MAP,
   TOGGLEABLE_TOOLS,
 } from "./WorkflowNodeConstants";
-import ToolBadgeComponent from "./ToolBadgeComponent";
+import ToolCallingBadgeComponent from "./ToolCallingBadgeComponent";
+import ToolCallBadgeComponent from "./ToolCallBadgeComponent";
 
 
 
@@ -193,14 +194,29 @@ export default function SettingsPanel({
           live={false}
         />
       )}
-      {stats.usedTools?.length > 0 &&
-        stats.usedTools.map((tool) => (
-          <ToolBadgeComponent
-            key={tool.name}
-            name={tool.name}
-            count={tool.count}
-          />
-        ))}
+      {stats.usedTools?.length > 0 && (() => {
+        const CAPABILITY_NAMES = new Set(["Thinking", "Tool Calling", "Web Search", "Google Search", "Code Execution", "Computer Use", "File Search", "URL Context", "Image Generation"]);
+        const capabilities = stats.usedTools.filter((t) => CAPABILITY_NAMES.has(t.name));
+        const toolCalls = stats.usedTools.filter((t) => !CAPABILITY_NAMES.has(t.name));
+        return (
+          <>
+            {capabilities.map((tool) => (
+              <ToolCallingBadgeComponent
+                key={tool.name}
+                name={tool.name}
+                count={tool.count}
+              />
+            ))}
+            {toolCalls.map((tool) => (
+              <ToolCallBadgeComponent
+                key={tool.name}
+                name={tool.name}
+                count={tool.count}
+              />
+            ))}
+          </>
+        );
+      })()}
       {stats.modalities &&
         Object.values(stats.modalities).some(Boolean) && (
           <ModalityIconComponent

@@ -46,7 +46,7 @@ function RainbowCanvas({ turbo = false, greyscale = false }) {
 }
 
 const USER_NAV_ITEMS = [
-  { href: "/coding-agent", label: "Coding Agent", icon: Bot },
+  { href: "/agents", label: "Agents", icon: Bot, alsoMatches: ["/coding-agent"] },
   {
     href: "/",
     label: "Conversations",

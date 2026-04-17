@@ -160,6 +160,14 @@ export default class PrismService {
     return PrismService._request("/config/tools/refresh", { method: "POST" });
   }
 
+  /**
+   * Fetch the list of registered agent personas from Prism.
+   * @returns {Promise<Array<{ id: string, name: string, project: string, toolCount: number }>>}
+   */
+  static async getAgentPersonas() {
+    return PrismService._request("/config/agents", { method: "GET" });
+  }
+
 
 
   // ---------------------------------------------------------------------------
@@ -653,7 +661,7 @@ export default class PrismService {
    * @returns {Promise<object>}
    */
   static async generateAgentText(payload) {
-    return PrismService._request("/agent?stream=false", { body: { ...payload, agent: "CODING" } });
+    return PrismService._request("/agent?stream=false", { body: { ...payload, agent: payload.agent || "CODING" } });
   }
 
   /**
@@ -868,7 +876,7 @@ export default class PrismService {
    * @returns {Function} abort - Call to cancel the stream early
    */
   static streamAgentText(payload, callbacks) {
-    return PrismService._streamSSE("/agent", { body: { ...payload, agent: "CODING" } }, callbacks);
+    return PrismService._streamSSE("/agent", { body: { ...payload, agent: payload.agent || "CODING" } }, callbacks);
   }
 
   /**
