@@ -4,7 +4,6 @@ import {
   Cpu,
   Edit3,
   Mic,
-  Wrench,
   Brain,
   GitBranch,
   ExternalLink,
@@ -29,11 +28,9 @@ import StopwatchBadgeComponent from "./StopwatchBadgeComponent";
 import TooltipComponent from "./TooltipComponent";
 import { formatCost } from "../utils/utilities";
 import {
-  TOOL_COLORS,
-  TOOL_ICON_MAP,
   TOGGLEABLE_TOOLS,
 } from "./WorkflowNodeConstants";
-import ToolCallingBadgeComponent from "./ToolCallingBadgeComponent";
+import ToolBadgeComponent from "./ToolBadgeComponent";
 import ToolCallBadgeComponent from "./ToolCallBadgeComponent";
 
 
@@ -201,7 +198,7 @@ export default function SettingsPanel({
         return (
           <>
             {capabilities.map((tool) => (
-              <ToolCallingBadgeComponent
+              <ToolBadgeComponent
                 key={tool.name}
                 name={tool.name}
                 count={tool.count}
@@ -653,25 +650,11 @@ export default function SettingsPanel({
                     key={tool}
                     className={`${styles.modalityRow} ${toggle ? styles.toolToggleRow : ""}`}
                   >
-                    <span className={styles.modalityIcon}>
-                      {(() => {
-                        const ToolIcon = TOOL_ICON_MAP[tool];
-                        return ToolIcon ? (
-                          <ToolIcon
-                            size={12}
-                            style={{ color: TOOL_COLORS[tool] }}
-                          />
-                        ) : (
-                          <Wrench
-                            size={12}
-                            style={{ color: TOOL_COLORS[tool] }}
-                          />
-                        );
-                      })()}
-                    </span>
-                    <span className={styles.modalityName}>
-                      {getToolLabel(tool)}
-                    </span>
+                    <ToolBadgeComponent
+                      name={getToolLabel(tool)}
+                      tooltip={tool}
+                    />
+                    <span style={{ flex: 1 }} />
                     {readOnly ? (
                       toggle ? (
                         <span

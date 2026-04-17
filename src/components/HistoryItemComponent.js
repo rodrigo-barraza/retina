@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import IconButtonComponent from "./IconButtonComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
-import { ModelToolsRow } from "./ToolCallingBadgeComponent";
+import { ModelToolsRow } from "./ToolBadgeComponent";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
 import styles from "./HistoryItemComponent.module.css";
 import CostBadgeComponent from "./CostBadgeComponent";
@@ -113,7 +113,7 @@ export default function HistoryItemComponent({
         {hasModalities && (
           <div className={styles.bottomRow}>
             <ModalityIconComponent modalities={mod} />
-            <ModelToolsRow tools={mod} />
+            <ModelToolsRow tools={mod} variant="condensed" />
           </div>
         )}
 

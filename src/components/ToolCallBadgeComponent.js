@@ -60,7 +60,7 @@ function resolveToolVisuals(name) {
 
 // ═══════════════════════════════════════════════════════════════════════
 // ToolCallBadgeComponent — A single badge for an individual tool call.
-// Distinguished from ToolCallingBadgeComponent which represents the
+// Distinguished from ToolBadgeComponent which represents the
 // Tool Calling *capability*. This component renders badges for the
 // actual function-level tool calls (read_file, write_file, etc.).
 // ═══════════════════════════════════════════════════════════════════════

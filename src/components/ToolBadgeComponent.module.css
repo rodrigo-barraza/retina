@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   ToolCallingBadgeComponent — Single, consistent tool-calling badge style.
+   ToolBadgeComponent — Single, consistent tool badge style.
    Used everywhere: SettingsPanel stats, MessageList tool activity,
    HistoryItem capability badges, ModelPickerPopover, etc.
    ═══════════════════════════════════════════════════════════════ */

@@ -28,7 +28,7 @@ import IconButtonComponent from "./IconButtonComponent";
 import CopyButtonComponent from "./CopyButtonComponent";
 import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
 import { ToolResultView } from "./ToolResultRenderers";
-import { ToolCallingBadgeRow } from "./ToolCallingBadgeComponent";
+import { ToolBadgeRow } from "./ToolBadgeComponent";
 import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
 import ModelBadgeComponent from "./ModelBadgeComponent";
 import TokenCountBadgeComponent from "./TokenCountBadgeComponent";
@@ -256,9 +256,9 @@ function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
                     activity = Object.values(workerToolActivity).find((v) => v.description === tc.args.description) || null;
                   }
                   // Live badges during execution
-                  if (activity?.toolNames) return <ToolCallingBadgeRow tools={activity.toolNames} activeTool={activity.currentTool} />;
+                  if (activity?.toolNames) return <ToolBadgeRow tools={activity.toolNames} activeTool={activity.currentTool} />;
                   // Static badge from completed result — build a proper { name: count } object
-                  if (parsed?.toolUses > 0) return <ToolCallingBadgeRow tools={{ "Tool Calling": parsed.toolUses }} />;
+                  if (parsed?.toolUses > 0) return <ToolBadgeRow tools={{ "Tool Calling": parsed.toolUses }} />;
                   return null;
                 })()}
 

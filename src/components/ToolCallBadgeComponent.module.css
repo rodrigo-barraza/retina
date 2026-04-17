@@ -2,7 +2,7 @@
    ToolCallBadgeComponent — Individual tool call badge style.
    For function-level invocations (read_file, grep_search, etc.)
    rendered in session stats. Visually subtler than the
-   capability-level ToolCallingBadgeComponent.
+   capability-level ToolBadgeComponent.
    ═══════════════════════════════════════════════════════════════ */
 
 .badge {

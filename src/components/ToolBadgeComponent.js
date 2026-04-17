@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import TooltipComponent from "./TooltipComponent";
 import { TOOL_ICON_MAP, TOOL_COLORS } from "./WorkflowNodeConstants";
-import styles from "./ToolCallingBadgeComponent.module.css";
+import styles from "./ToolBadgeComponent.module.css";
 
 // ═══════════════════════════════════════════════════════════════════════
 // Canonical tool display names — single source of truth for labels.
@@ -30,6 +30,21 @@ const TOOL_DISPLAY_NAMES = {
 };
 
 /**
+ * Abbreviated display names for the "condensed" variant.
+ */
+const TOOL_SHORT_NAMES = {
+  "Thinking": "Think",
+  "Tool Calling": "Tool",
+  "Web Search": "Web",
+  "Google Search": "Web",
+  "Code Execution": "Code",
+  "Computer Use": "Computer",
+  "File Search": "File",
+  "URL Context": "URL",
+  "Image Generation": "Image",
+};
+
+/**
  * Resolve a tool name to its icon and color.
  */
 function resolveToolVisuals(name) {
@@ -44,8 +59,11 @@ function resolveToolVisuals(name) {
 
 /**
  * Resolve any tool name to a human-readable display label.
+ * @param {string} name  — raw tool function name or canonical name
+ * @param {"default"|"compact"|"condensed"} variant
  */
-function resolveDisplayName(name) {
+function resolveDisplayName(name, variant = "default") {
+  if (variant === "condensed" && TOOL_SHORT_NAMES[name]) return TOOL_SHORT_NAMES[name];
   if (TOOL_DISPLAY_NAMES[name]) return TOOL_DISPLAY_NAMES[name];
   // Fallback: strip prefixes and title-case
   return name
@@ -55,27 +73,28 @@ function resolveDisplayName(name) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// ToolCallingBadgeComponent — THE single badge component used everywhere.
+// ToolBadgeComponent — THE single badge component used everywhere.
 // ═══════════════════════════════════════════════════════════════════════
 
 /**
- * ToolCallingBadgeComponent — renders a single, consistently-styled tool-calling badge.
+ * ToolBadgeComponent — renders a single, consistently-styled tool badge.
  *
  * Props:
  *   name    — raw tool function name or canonical name (e.g. "read_file", "Tool Calling")
  *   count   — optional usage count (shown as ×N when > 1)
  *   active  — whether the tool is currently executing (pulses)
- *   size    — icon size in px (default 11)
+ *   variant — "default" (icon+label+count), "compact" (icon+count), "condensed" (icon+short label+count)
  *   tooltip — optional tooltip override (defaults to raw name)
  */
-export default function ToolCallingBadgeComponent({
+export default function ToolBadgeComponent({
   name,
   count,
   active,
-  size = 11,
+  variant = "default",
   tooltip,
 }) {
-  const displayName = resolveDisplayName(name);
+  const isCompact = variant === "compact";
+  const displayName = resolveDisplayName(name, variant);
   const { Icon, color } = resolveToolVisuals(name);
   const tooltipLabel = tooltip || name;
 
@@ -87,8 +106,8 @@ export default function ToolCallingBadgeComponent({
         borderColor: `color-mix(in srgb, ${color} 30%, transparent)`,
       }}
     >
-      <Icon size={size} />
-      <span className={styles.label}>{displayName}</span>
+      <Icon size={11} />
+      {!isCompact && <span className={styles.label}>{displayName}</span>}
       {count != null && count > 1 && (
         <span className={styles.count}>×{count}</span>
       )}
@@ -96,7 +115,7 @@ export default function ToolCallingBadgeComponent({
   );
 
   // Only wrap in tooltip if there's useful extra info beyond what's visible
-  if (tooltipLabel !== displayName) {
+  if (isCompact || tooltipLabel !== displayName) {
     return (
       <TooltipComponent label={tooltipLabel} position="top">
         {badge}
@@ -108,10 +127,10 @@ export default function ToolCallingBadgeComponent({
 }
 
 /**
- * ToolCallingBadgeRow — renders a row of tool-calling badges from a { toolName: count } map.
+ * ToolBadgeRow — renders a row of tool badges from a { toolName: count } map.
  * Used in MessageList for worker tool activity.
  */
-export function ToolCallingBadgeRow({ tools, activeTool }) {
+export function ToolBadgeRow({ tools, activeTool, variant }) {
   if (!tools || Object.keys(tools).length === 0) return null;
 
   return (
@@ -119,7 +138,7 @@ export function ToolCallingBadgeRow({ tools, activeTool }) {
       {Object.entries(tools)
         .sort(([, a], [, b]) => b - a)
         .map(([name, count]) => (
-          <ToolCallingBadgeComponent key={name} name={name} count={count} active={name === activeTool} />
+          <ToolBadgeComponent key={name} name={name} count={count} active={name === activeTool} variant={variant} />
         ))}
     </div>
   );
@@ -128,7 +147,7 @@ export function ToolCallingBadgeRow({ tools, activeTool }) {
 
 // ═══════════════════════════════════════════════════════════════════════
 // ModelToolsRow — data-driven row of tool-capability badges for models.
-// Renders the SAME ToolCallingBadgeComponent — just driven by boolean/numeric
+// Renders the SAME ToolBadgeComponent — just driven by boolean/numeric
 // capability keys from the model definition.
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -148,16 +167,16 @@ const TOOL_DEFS = [
 
 /**
  * ModelToolsRow — renders a compact row of tool-capability badges
- * for a model, using ToolCallingBadgeComponent for each active capability.
+ * for a model, using ToolBadgeComponent for each active capability.
  *
  * Props:
  *   tools     — object with boolean/numeric keys (thinking, functionCalling, webSearch, etc.)
- *   size      — icon size in px (default 11)
+ *   variant   — "default" | "compact" | "condensed"
  *   className — extra root class name
  */
 export function ModelToolsRow({
   tools,
-  size = 11,
+  variant,
   className,
 }) {
   if (!tools) return null;
@@ -172,11 +191,11 @@ export function ModelToolsRow({
         const count = typeof raw === "number" ? raw : 0;
 
         return (
-          <ToolCallingBadgeComponent
+          <ToolBadgeComponent
             key={def.key}
             name={def.name}
             count={count}
-            size={size}
+            variant={variant}
           />
         );
       })}
