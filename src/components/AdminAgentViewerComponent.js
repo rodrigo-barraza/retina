@@ -163,7 +163,7 @@ export default function AdminAgentViewerComponent() {
 
     for (const [provider, models] of Object.entries(textModelsMap)) {
       const fcModels = models.filter((m) =>
-        m.tools?.includes("Function Calling"),
+        m.tools?.includes("Tool Calling"),
       );
       if (fcModels.length > 0) filteredTextModels[provider] = fcModels;
     }
@@ -347,7 +347,7 @@ export default function AdminAgentViewerComponent() {
           config={filteredConfig}
           settings={settings}
           onChange={() => {}}
-          lockedTools={new Set(["Function Calling"])}
+          lockedTools={new Set(["Tool Calling"])}
         />
       )}
 

@@ -56,7 +56,7 @@ const AGENT_PROMPTS = [
 ];
 
 // Tools that are always on and non-toggleable in the agent view
-const AGENT_LOCKED_TOOLS = new Set(["Function Calling"]);
+const AGENT_LOCKED_TOOLS = new Set(["Tool Calling"]);
 
 
 export default function AgentComponent() {
@@ -186,7 +186,7 @@ export default function AgentComponent() {
     PrismService.stopCoordinatorWorkers(agentSessionIdRef.current).catch(() => {});
   }, []);
 
-  // ── Filtered config: only function-calling models ────────────
+  // ── Filtered config: only tool-calling models ────────────
   const filteredConfig = useMemo(() => {
     if (!config) return null;
     const textModelsMap = config.textToText?.models || {};
@@ -194,7 +194,7 @@ export default function AgentComponent() {
 
     for (const [provider, models] of Object.entries(textModelsMap)) {
       const fcModels = models.filter((m) =>
-        m.tools?.includes("Function Calling"),
+        m.tools?.includes("Tool Calling"),
       );
       if (fcModels.length > 0) filteredTextModels[provider] = fcModels;
     }
@@ -258,7 +258,7 @@ export default function AgentComponent() {
       for (const provider of cfg.providerList || []) {
         const models = textModels[provider] || [];
         const fcModel = models.find((m) =>
-          m.tools?.includes("Function Calling"),
+          m.tools?.includes("Tool Calling"),
         );
         if (fcModel) {
           setSettings((s) => ({

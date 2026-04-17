@@ -8,7 +8,7 @@ import styles from "./ToolIconComponent.module.css";
 /**
  * ToolIconComponent — renders a row of compact tool-icon pills from an
  * array of tool name strings.  Unknown names are grouped under the
- * canonical "Function Calling" icon.
+ * canonical "Tool Calling" icon.
  *
  * Props:
  *   toolDisplayNames      — string[] of canonical tool names (e.g. "Web Search", "Thinking")
@@ -34,21 +34,21 @@ export default function ToolIconComponent({
     }
   }
 
-  // If toolApiNames provided, use those for the Function Calling tooltip
+  // If toolApiNames provided, use those for the Tool Calling tooltip
   // (they're the actual function names like get_web_content, generate_image)
   const fcRawDisplay = toolApiNames?.length
     ? toolApiNames
     : functionCallRawNames;
 
-  // De-duplicate and resolve unknown tools → "Function Calling"
+  // De-duplicate and resolve unknown tools → "Tool Calling"
   const resolved = new Map();
   for (const raw of toolDisplayNames) {
     if (TOOL_ICON_MAP[raw]) {
       if (!resolved.has(raw)) resolved.set(raw, TOOL_ICON_MAP[raw]);
     } else {
-      const fallbackIcon = TOOL_ICON_MAP["Function Calling"] || Wrench;
-      if (!resolved.has("Function Calling")) {
-        resolved.set("Function Calling", fallbackIcon);
+      const fallbackIcon = TOOL_ICON_MAP["Tool Calling"] || Wrench;
+      if (!resolved.has("Tool Calling")) {
+        resolved.set("Tool Calling", fallbackIcon);
       }
     }
   }
@@ -56,10 +56,10 @@ export default function ToolIconComponent({
   return (
     <span className={`${styles.toolPills} ${className || ""}`}>
       {[...resolved.entries()].map(([label, Icon]) => {
-        // Build rich tooltip for "Function Calling" showing actual tool names
+        // Build rich tooltip for "Tool Calling" showing actual tool names
         const tooltipLabel =
-          label === "Function Calling" && fcRawDisplay.length > 0
-            ? `Function Calling: ${fcRawDisplay.join(", ")}`
+          label === "Tool Calling" && fcRawDisplay.length > 0
+            ? `Tool Calling: ${fcRawDisplay.join(", ")}`
             : label;
 
         return (

@@ -163,17 +163,17 @@ function ThinkingBlock({ thinking, isStreaming, children }) {
 /**
  * Resolve a tool function name (e.g. `compare_food_nutrition`) to the
  * matching icon & color from TOOL_ICON_MAP/TOOL_COLORS. Falls back to
- * `Wrench` icon and the amber accent used for Function Calling.
+ * `Wrench` icon and the amber accent used for Tool Calling.
  */
 function resolveToolVisuals(rawName) {
   // Direct match first (e.g. "Web Search")
   if (TOOL_ICON_MAP[rawName]) {
     return { Icon: TOOL_ICON_MAP[rawName], color: TOOL_COLORS[rawName] || "#f59e0b" };
   }
-  // All custom function-calling tools fall under "Function Calling"
+  // All custom tool-calling tools fall under "Tool Calling"
   return {
-    Icon: TOOL_ICON_MAP["Function Calling"] || Wrench,
-    color: TOOL_COLORS["Function Calling"] || "#f97316",
+    Icon: TOOL_ICON_MAP["Tool Calling"] || Wrench,
+    color: TOOL_COLORS["Tool Calling"] || "#f97316",
   };
 }
 

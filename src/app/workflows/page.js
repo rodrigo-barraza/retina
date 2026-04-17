@@ -336,7 +336,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
       if (modality === "model") {
         const defaultModel = modelsWithModalities[0];
         const isConversation = defaultModel?.modelType === "conversation";
-        const supportsFC = defaultModel?.tools?.includes("Function Calling");
+        const supportsFC = defaultModel?.tools?.includes("Tool Calling");
         const baseInputs = isConversation
           ? ["conversation"]
           : defaultModel?.inputTypes || [];
@@ -369,7 +369,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
         return;
       }
 
-      // Tool node — function calling tools
+      // Tool node — tool calling tools
       if (modality === "tools") {
         const newNode = {
           id: generateNodeId(),
@@ -909,7 +909,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
   // Change the model on an existing node
   const handleChangeModel = useCallback((nodeId, newModel) => {
     const isConversation = newModel.modelType === "conversation";
-    const supportsFC = newModel.tools?.includes("Function Calling");
+    const supportsFC = newModel.tools?.includes("Tool Calling");
     const baseInputs = isConversation
       ? ["conversation"]
       : newModel.inputTypes || [];
@@ -1120,7 +1120,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
               <button
                 className={styles.assetBtn}
                 onClick={() => handleAddAsset("tools", "tools")}
-                title="Add Function Calling Tools"
+                title="Add Tool Calling Tools"
               >
                 <Parentheses size={12} style={{ color: "#f97316" }} />
                 <span>Tools</span>

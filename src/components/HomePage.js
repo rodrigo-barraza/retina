@@ -193,7 +193,7 @@ export default function HomePage({ initialConversationId = null }) {
     const providerModels =
       config?.textToText?.models?.[settings.provider] || [];
     const modelDef = providerModels.find((m) => m.name === settings.model);
-    return modelDef?.tools?.includes("Function Calling") ?? false;
+    return modelDef?.tools?.includes("Tool Calling") ?? false;
   }, [config, settings.provider, settings.model]);
 
   // Reset to Settings tab when the model doesn't support FC

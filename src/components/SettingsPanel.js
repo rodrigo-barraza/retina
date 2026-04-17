@@ -33,6 +33,7 @@ import {
   TOOL_ICON_MAP,
   TOGGLEABLE_TOOLS,
 } from "./WorkflowNodeConstants";
+import ToolBadgeComponent from "./ToolBadgeComponent";
 
 
 
@@ -193,24 +194,13 @@ export default function SettingsPanel({
         />
       )}
       {stats.usedTools?.length > 0 &&
-        stats.usedTools.map((tool) => {
-          const ToolIcon = TOOL_ICON_MAP[tool.name] || Wrench;
-          const color = TOOL_COLORS[tool.name] || "#c4956a";
-          return (
-            <span
-              key={tool.name}
-              className={styles.statBadge}
-              style={{
-                color,
-                borderColor: `color-mix(in srgb, ${color} 30%, transparent)`,
-              }}
-            >
-              <ToolIcon size={11} />
-              {tool.name}
-              <span className={styles.statBadgeCount}>×{tool.count}</span>
-            </span>
-          );
-        })}
+        stats.usedTools.map((tool) => (
+          <ToolBadgeComponent
+            key={tool.name}
+            name={tool.name}
+            count={tool.count}
+          />
+        ))}
       {stats.modalities &&
         Object.values(stats.modalities).some(Boolean) && (
           <ModalityIconComponent
@@ -618,11 +608,11 @@ export default function SettingsPanel({
                   onChange: (val) => onChange({ urlContextEnabled: val }),
                   disabled: settings.codeExecutionEnabled,
                 };
-              case "Function Calling":
+              case "Tool Calling":
                 return {
-                  checked: lockedTools?.has("Function Calling") || settings.functionCallingEnabled || false,
-                  onChange: lockedTools?.has("Function Calling") ? () => {} : (val) => onChange({ functionCallingEnabled: val }),
-                  disabled: !!lockedTools?.has("Function Calling"),
+                  checked: lockedTools?.has("Tool Calling") || settings.functionCallingEnabled || false,
+                  onChange: lockedTools?.has("Tool Calling") ? () => {} : (val) => onChange({ functionCallingEnabled: val }),
+                  disabled: !!lockedTools?.has("Tool Calling"),
                 };
               case "Image Generation":
                 return {

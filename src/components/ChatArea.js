@@ -42,7 +42,7 @@ const TOOL_DESCRIPTIONS = {
   "Web Fetch": "Fetch and read content from any URL on the web.",
   "Code Execution": "Run code in a sandboxed environment and return results.",
   "URL Context": "Extract and analyze content from provided URLs.",
-  "Function Calling":
+  "Tool Calling":
     "Ask about weather, events, commodities, trends, and more.",
   "Image Generation":
     "Force the model to generate an image in its response.",
@@ -236,7 +236,7 @@ export default function ChatArea({
           onChange: (val) => onUpdateSettings?.({ urlContextEnabled: val }),
           disabled: settings?.codeExecutionEnabled,
         };
-      case "Function Calling":
+      case "Tool Calling":
         return {
           checked: settings?.functionCallingEnabled || false,
           onChange: (val) =>
@@ -392,7 +392,7 @@ export default function ChatArea({
       }
 
       const activeToolNames = activeTools.filter((t) => getToolToggle(t)?.checked);
-      if (activeToolNames.includes("Function Calling") && enabledToolNames.length > 0) {
+      if (activeToolNames.includes("Tool Calling") && enabledToolNames.length > 0) {
         liveConfig.enabledTools = [...new Set([...activeToolNames, ...enabledToolNames])];
       } else {
         liveConfig.enabledTools = activeToolNames;
@@ -670,15 +670,15 @@ export default function ChatArea({
                   title={tool}
                   subtitle={TOOL_DESCRIPTIONS[tool] || ""}
                   color={TOOL_COLORS[tool]}
-                  count={tool === "Function Calling" ? toolCount : undefined}
+                  count={tool === "Tool Calling" ? toolCount : undefined}
                   enabled={isEnabled}
                   locked={isLocked}
                   onClick={
                     toggle ? () => toggle.onChange(!isEnabled) : undefined
                   }
-                  glowing={tool === "Function Calling" && fcCardGlowing}
+                  glowing={tool === "Tool Calling" && fcCardGlowing}
                   onHover={
-                    tool === "Function Calling"
+                    tool === "Tool Calling"
                       ? (h) => onFcCardHover?.(h)
                       : undefined
                   }

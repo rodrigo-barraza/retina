@@ -37,7 +37,7 @@ export const MODALITY_ICONS = {
   codeExecution: { icon: Code, label: "Code Execution", color: "#8b5cf6" },
   functionCalling: {
     icon: Wrench,
-    label: "Function Calling",
+    label: "Tool Calling",
     color: "#f97316",
   },
   thinking: { icon: Brain, label: "Thinking", color: "#eab308" },
@@ -61,7 +61,7 @@ export const MODALITY_COLORS = {
 // ── Tool Colors ──
 export const TOOL_COLORS = {
   Thinking: "#eab308",
-  "Function Calling": "#f97316",
+  "Tool Calling": "#f97316",
   "Web Search": "#3b82f6",
   "Google Search": "#3b82f6",
   googleSearch: "#3b82f6",
@@ -76,7 +76,7 @@ export const TOOL_COLORS = {
 // ── Tool Icon Map (Component references — render as <Icon size={n} />) ──
 export const TOOL_ICON_MAP = {
   Thinking: Brain,
-  "Function Calling": Parentheses,
+  "Tool Calling": Parentheses,
   "Web Search": Globe,
   "Google Search": Globe,
   googleSearch: Globe,
@@ -96,7 +96,7 @@ export const TOGGLEABLE_TOOLS = new Set([
   "Web Fetch",
   "Code Execution",
   "URL Context",
-  "Function Calling",
+  "Tool Calling",
   "Image Generation",
 ]);
 

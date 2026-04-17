@@ -102,7 +102,7 @@ const ARENA_COLUMNS = [
 
 const TOOL_ICONS = {
   Thinking: Brain,
-  "Function Calling": Parentheses,
+  "Tool Calling": Parentheses,
   "Web Search": Globe,
   "Google Search": Globe,
   "Code Execution": Terminal,
@@ -852,7 +852,7 @@ function ModelsTableInner({
       cols.push({
         key: "benchToolsEnabled",
         label: "Tools",
-        description: "Whether tool/function calling was enabled for this run",
+        description: "Whether tool calling was enabled for this run",
         sortable: true,
         align: "center",
         sortValue: (row) => (row._benchTools ? 1 : 0),

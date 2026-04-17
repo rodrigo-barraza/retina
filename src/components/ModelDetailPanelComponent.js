@@ -41,7 +41,7 @@ import styles from "./ModelDetailPanelComponent.module.css";
 
 const TOOL_ICONS = {
   Thinking: Brain,
-  "Function Calling": Parentheses,
+  "Tool Calling": Parentheses,
   "Web Search": Globe,
   "Google Search": Globe,
   "Code Execution": Terminal,

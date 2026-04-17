@@ -14,7 +14,7 @@ import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
 import PrismService from "../services/PrismService";
 import ModelsTableComponent from "./ModelsTableComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
-import ModelToolsComponent from "./ModelToolsComponent";
+import { ModelToolsRow } from "./ToolBadgeComponent";
 import CloseButtonComponent from "./CloseButtonComponent";
 import SoundService from "@/services/SoundService";
 import { LOCAL_PROVIDERS } from "../constants.js";
@@ -393,7 +393,7 @@ export default function ModelPickerPopoverComponent({
     const OUTPUT_MAP = { text: "textOut", image: "imageOut", audio: "audioOut", embedding: "embeddingOut" };
     const TOOL_MAP = {
       Thinking: "thinking",
-      "Function Calling": "functionCalling",
+      "Tool Calling": "functionCalling",
       "Web Search": "webSearch",
       "Google Search": "webSearch",
       "Web Fetch": "webSearch",
@@ -479,7 +479,7 @@ export default function ModelPickerPopoverComponent({
               modalities={triggerCapabilities}
               size={10}
             />
-            <ModelToolsComponent
+            <ModelToolsRow
               tools={triggerCapabilities}
               size={10}
             />

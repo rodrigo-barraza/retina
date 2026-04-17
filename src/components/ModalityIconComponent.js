@@ -33,7 +33,7 @@ const OUTPUT_MODALITIES = [
 
 /**
  * ModalityIconComponent — renders a compact row of input → output modality
- * icons. Modalities only — tool capabilities are rendered by ModelToolsComponent.
+ * icons. Modalities only — tool capabilities are rendered by ModelToolsRow (ToolBadgeComponent).
  *
  * Props:
  *   modalities  — object with boolean keys (textIn, imageIn, textOut, etc.)

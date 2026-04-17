@@ -265,7 +265,7 @@ export function getUsedTools(messages) {
     if (m.role !== "assistant") continue;
     if (m.thinking) counts.set("Thinking", (counts.get("Thinking") || 0) + 1);
     if (m.toolCalls?.length > 0) {
-      counts.set("Function Calling", (counts.get("Function Calling") || 0) + 1);
+      counts.set("Tool Calling", (counts.get("Tool Calling") || 0) + 1);
       for (const tc of m.toolCalls) {
         if (tc.name) counts.set(tc.name, (counts.get(tc.name) || 0) + 1);
       }

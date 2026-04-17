@@ -54,8 +54,8 @@ const TOOL_FILTERS = [
   {
     key: "functionCalling",
     icon: Parentheses,
-    title: "Function Calling",
-    color: TOOL_COLORS["Function Calling"],
+    title: "Tool Calling",
+    color: TOOL_COLORS["Tool Calling"],
   },
 ];
 

@@ -86,7 +86,7 @@ export default function useModelMemory(storageKey) {
       }
 
       // FC-only gate
-      if (fcOnly && !modelDef.tools?.includes("Function Calling")) {
+      if (fcOnly && !modelDef.tools?.includes("Tool Calling")) {
         if (fallback) fallback(config);
         restoredRef.current = true;
         return;

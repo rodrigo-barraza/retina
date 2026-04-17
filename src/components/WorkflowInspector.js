@@ -203,7 +203,7 @@ export default function WorkflowInspector({
   const nodeSubtitle = isModel
     ? node.provider
     : isTools
-      ? "Function Calling"
+      ? "Tool Calling"
       : isInput
         ? NODE_TYPE_LABELS[node.modality] || "Media Node"
         : "Output Node";
