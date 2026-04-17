@@ -106,7 +106,7 @@ export default function ToolBadgeComponent({
         borderColor: `color-mix(in srgb, ${color} 30%, transparent)`,
       }}
     >
-      <Icon size={11} />
+      <Icon size={10} />
       {!isCompact && <span className={styles.label}>{displayName}</span>}
       {count != null && count > 1 && (
         <span className={styles.count}>×{count}</span>

@@ -475,10 +475,11 @@ export default class PrismService {
    * @param {number} [limit=100]
    * @returns {Promise<{ memories: Array, total: number }>}
    */
-  static async getAgentMemories(project, limit = 100) {
+  static async getAgentMemories(project, limit = 100, agent) {
     const qs = new URLSearchParams();
     if (project) qs.set("project", project);
     if (limit) qs.set("limit", String(limit));
+    if (agent) qs.set("agent", agent);
     return PrismService._request(`/agent-memories?${qs}`, { method: "GET" });
   }
 
@@ -496,10 +497,10 @@ export default class PrismService {
    * @param {string} project - Project identifier
    * @returns {Promise<object>} Consolidation results
    */
-  static async consolidateMemories(project) {
+  static async consolidateMemories(project, agent) {
     return PrismService._request("/agent-memories/consolidate", {
       method: "POST",
-      body: { project },
+      body: { project, ...(agent && { agent }) },
     });
   }
 

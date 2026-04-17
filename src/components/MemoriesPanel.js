@@ -52,7 +52,7 @@ const TRIGGER_LABELS = {
  * @param {number} props.refreshKey - External refresh trigger
  * @param {object} [props.consolidationEvent] - Real-time consolidation event from WebSocket
  */
-export default function MemoriesPanel({ project, refreshKey, consolidationEvent, onCountChange, memoryConfigured = true }) {
+export default function MemoriesPanel({ project, agent, refreshKey, consolidationEvent, onCountChange, memoryConfigured = true }) {
   const [memories, setMemories] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -72,7 +72,7 @@ export default function MemoriesPanel({ project, refreshKey, consolidationEvent,
     setLoading(true);
     setError(null);
     try {
-      const result = await PrismService.getAgentMemories(project);
+      const result = await PrismService.getAgentMemories(project, 100, agent);
       const fetched = result.memories || [];
 
       // Detect newly arrived memories
@@ -99,7 +99,7 @@ export default function MemoriesPanel({ project, refreshKey, consolidationEvent,
     } finally {
       setLoading(false);
     }
-  }, [project]);
+  }, [project, agent]);
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -159,7 +159,7 @@ export default function MemoriesPanel({ project, refreshKey, consolidationEvent,
     setConsolidating(true);
     setToast(null);
     try {
-      const result = await PrismService.consolidateMemories(project);
+      const result = await PrismService.consolidateMemories(project, agent);
       if (result.skipped) {
         const msg = result.reason === "daily_limit_reached"
           ? "Daily consolidation limit reached"
@@ -181,7 +181,7 @@ export default function MemoriesPanel({ project, refreshKey, consolidationEvent,
       setConsolidating(false);
       setTimeout(() => setToast(null), 5000);
     }
-  }, [project, loadMemories, loadHistory, historyOpen]);
+  }, [project, agent, loadMemories, loadHistory, historyOpen]);
 
   // ── Not configured ──────────────────────────────────────────
   if (!memoryConfigured) {

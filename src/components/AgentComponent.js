@@ -450,10 +450,10 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
   // ── Eager-fetch tab badge counts (fires on mount / session change) ──
 
   useEffect(() => {
-    PrismService.getAgentMemories(agentProject, 1)
+    PrismService.getAgentMemories(agentProject, 1, agentId)
       .then((r) => setTotalMemoriesCount(r.total || 0))
       .catch(() => {});
-  }, [agentProject]);
+  }, [agentProject, agentId]);
 
   useEffect(() => {
     ToolsApiService.getAllAgenticTasks({ agentSessionId })
@@ -802,7 +802,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
             if (data.status !== "calling" && tc.name === "upsert_memory") {
               setLeftTab("memories");
               setMemoriesRefreshKey((k) => k + 1);
-              PrismService.getAgentMemories(agentProject, 1)
+              PrismService.getAgentMemories(agentProject, 1, agentId)
                 .then((r) => setTotalMemoriesCount(r.total || 0))
                 .catch(() => {});
             }
@@ -864,7 +864,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
             if (tc.status !== "calling" && tc.name === "upsert_memory") {
               setLeftTab("memories");
               setMemoriesRefreshKey((k) => k + 1);
-              PrismService.getAgentMemories(agentProject, 1)
+              PrismService.getAgentMemories(agentProject, 1, agentId)
                 .then((r) => setTotalMemoriesCount(r.total || 0))
                 .catch(() => {});
             }
@@ -928,7 +928,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
               setMemoriesRefreshKey((k) => k + 1);
               markTabNew("memories");
               // Re-fetch count for the tab badge (MemoriesPanel may not be mounted yet)
-              PrismService.getAgentMemories(agentProject, 1)
+              PrismService.getAgentMemories(agentProject, 1, agentId)
                 .then((r) => setTotalMemoriesCount(r.total || 0))
                 .catch(() => {});
             } else if (statusData?.phase) {
@@ -1053,14 +1053,14 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
             // SessionSummarizer runs async after SSE stream closes —
             // poll every 2s for up to 20s until new memories are detected
             (async () => {
-              const baselineCount = await PrismService.getAgentMemories(agentProject, 1)
+              const baselineCount = await PrismService.getAgentMemories(agentProject, 1, agentId)
                 .then((r) => r.total || 0)
                 .catch(() => 0);
               let pollAttempts = 0;
               const pollInterval = setInterval(async () => {
                 pollAttempts++;
                 try {
-                  const { total } = await PrismService.getAgentMemories(agentProject, 1);
+                  const { total } = await PrismService.getAgentMemories(agentProject, 1, agentId);
                   if (total > baselineCount) {
                     clearInterval(pollInterval);
                     setMemoriesRefreshKey((k) => k + 1);
@@ -1599,7 +1599,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
       )}
 
       {leftTab === "memories" && (
-        <MemoriesPanel project={agentProject} refreshKey={memoriesRefreshKey} onCountChange={setTotalMemoriesCount} memoryConfigured={memoryConfigured} />
+        <MemoriesPanel project={agentProject} agent={agentId} refreshKey={memoriesRefreshKey} onCountChange={setTotalMemoriesCount} memoryConfigured={memoryConfigured} />
       )}
 
       {leftTab === "tasks" && (
