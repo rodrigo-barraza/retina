@@ -152,7 +152,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   max-height: 75dvh;
@@ -226,7 +226,7 @@
 .popoverBody {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   font-size: 10px;
   display: flex;
   flex-direction: column;
@@ -242,7 +242,9 @@
   flex-direction: column;
 }
 
-/* FilterBar — stays at top, doesn't scroll */
+/* FilterBar — stays at top, doesn't scroll.
+   overflow: visible lets FilterDropdownComponent's
+   absolutely-positioned .dropdownMenu escape. */
 .popoverBody > div > div:first-child {
   background: var(--bg-secondary);
   margin-bottom: 0;
@@ -251,6 +253,9 @@
   border-radius: 0;
   padding: 10px 14px;
   flex-shrink: 0;
+  overflow: visible;
+  position: relative;
+  z-index: 10;
 }
 
 /* TableComponent .container — flex fill */

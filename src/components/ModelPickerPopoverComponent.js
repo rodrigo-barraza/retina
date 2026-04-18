@@ -446,7 +446,8 @@ export default function ModelPickerPopoverComponent({
         <button
           ref={triggerRef}
           className={`${styles.trigger} ${open ? styles.triggerOpen : ""} ${readOnly ? styles.triggerReadOnly : ""} ${loadingProgress != null ? styles.triggerLoading : ""} ${multiSelect && selectedKeys?.size > 0 ? styles.triggerActive : ""}`}
-          {...(readOnly ? {} : SoundService.interactive(togglePopover))}
+          onMouseEnter={readOnly ? undefined : (e) => SoundService.playHoverButton({ event: e })}
+          onClick={readOnly ? undefined : (e) => { SoundService.playClickButton({ event: e }); togglePopover(); }}
           data-model-picker-trigger
           title={readOnly ? displayLabel : multiSelect ? "Select models" : "Switch model"}
           style={readOnly ? { cursor: "default" } : undefined}
