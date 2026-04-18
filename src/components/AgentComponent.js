@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { BotMessageSquare, Paperclip, X, ClipboardList, Zap, Settings, Wrench, Brain, Plug, GitBranch, Repeat, ListChecks, BookOpen, Info, Activity, CornerDownLeft, Send, Square } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ToolsApiService from "../services/ToolsApiService.js";
-import ThreePanelLayout from "./ThreePanelLayout.js";
+import ThreePanelLayout, { layoutStyles } from "./ThreePanelLayout.js";
 import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
 import HistoryPanel from "./HistoryPanel.js";
 import SettingsPanel from "./SettingsPanel.js";
@@ -1896,7 +1896,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
       sessionType="agent"
       headerTitle={title}
       headerCenter={
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className={layoutStyles.headerCenterGroup}>
           {agents.length > 1 && (
             <AgentPickerComponent
               agents={agents}

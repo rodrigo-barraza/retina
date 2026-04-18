@@ -215,3 +215,5 @@ export default function ThreePanelLayout({
     </div>
   );
 }
+
+export { styles as layoutStyles };

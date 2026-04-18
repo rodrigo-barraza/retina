@@ -59,11 +59,17 @@
   justify-content: center;
   gap: 8px;
   pointer-events: none;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .headerCenter > * {
   pointer-events: auto;
+}
+
+.headerCenterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ── Header Toggle Buttons ─────────────────────────── */
@@ -268,13 +274,16 @@
   }
 
   .headerCenter {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px;
     overflow: visible;
-    /* Let center section take full width so children stack */
     flex-basis: 100%;
     order: 10;
     padding: 4px 8px 0;
+  }
+
+  .headerCenterGroup {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
   }
 }
