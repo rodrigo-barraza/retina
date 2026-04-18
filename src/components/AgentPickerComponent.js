@@ -1,23 +1,47 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Bot, ChevronDown, Wrench, Check, Skull, Sticker, Apple } from "lucide-react";
+import { Bot, ChevronDown, Wrench, Check, Skull, Sticker, Apple, Lightbulb, Hammer } from "lucide-react";
+import { resolveIconComponent } from "./CustomAgentsPanel";
 import styles from "./AgentPickerComponent.module.css";
 
 /**
- * Icon mapping per agent ID — each agent gets a unique icon and color.
+ * Icon mapping per agent ID — built-in agents only.
+ * Custom agents use the `icon` field stored in their data.
  */
 const AGENT_ICONS = {
   CODING: Bot,
   LUPOS: Skull,
   STICKERS: Sticker,
   DIGEST: Apple,
+  LIGHTS: Lightbulb,
+  OOG: Hammer,
 };
+
+/** Render the correct icon for an agent — custom icon field takes priority. */
+export function renderAgentIcon(agent, size = 15) {
+  // Custom agents store an icon name string
+  if (agent?.icon) {
+    const Resolved = resolveIconComponent(agent.icon);
+    return <Resolved size={size} />;
+  }
+  // Built-in agents use the hardcoded map
+  const BuiltIn = AGENT_ICONS[agent?.id] || Bot;
+  return <BuiltIn size={size} />;
+}
+
+/** Build an inline style for the agent icon background when a custom color is set. */
+function agentIconStyle(agent) {
+  if (!agent?.color) return undefined;
+  return {
+    background: `linear-gradient(135deg, ${agent.color} 0%, color-mix(in srgb, ${agent.color} 70%, #fff) 100%)`,
+  };
+}
 
 /**
  * AgentPickerComponent — Compact popover for selecting the active agent persona.
  *
- * @param {Array<{ id, name, project, toolCount }>} agents - Available agent personas
+ * @param {Array<{ id, name, project, toolCount, icon?, color? }>} agents - Available agent personas
  * @param {string} activeAgentId - Currently selected agent ID
  * @param {Function} onSelect - Called with agent ID when user picks an agent
  * @param {boolean} [disabled] - Disable interaction during generation
@@ -32,7 +56,6 @@ export default function AgentPickerComponent({
   const triggerRef = useRef(null);
 
   const activeAgent = agents.find((a) => a.id === activeAgentId) || agents[0];
-  const ActiveIcon = AGENT_ICONS[activeAgentId] || Bot;
 
   const handleSelect = useCallback(
     (agentId) => {
@@ -66,8 +89,8 @@ export default function AgentPickerComponent({
         disabled={disabled}
         type="button"
       >
-        <span className={styles.triggerIcon}>
-          <ActiveIcon size={13} />
+        <span className={styles.triggerIcon} style={agentIconStyle(activeAgent)}>
+          {renderAgentIcon(activeAgent, 13)}
         </span>
         <span className={styles.triggerLabel}>
           {activeAgent?.name || activeAgentId}
@@ -84,7 +107,6 @@ export default function AgentPickerComponent({
           <div className={styles.backdrop} onClick={() => setOpen(false)} />
           <div className={styles.popover}>
             {agents.map((agent) => {
-              const Icon = AGENT_ICONS[agent.id] || Bot;
               const isActive = agent.id === activeAgentId;
 
               return (
@@ -94,9 +116,14 @@ export default function AgentPickerComponent({
                   data-active={isActive}
                   onClick={() => handleSelect(agent.id)}
                   type="button"
+                  style={agent.color ? { "--agent-accent": agent.color } : undefined}
                 >
-                  <span className={styles.agentIcon} data-agent={agent.id}>
-                    <Icon size={15} />
+                  <span
+                    className={styles.agentIcon}
+                    data-agent={agent.id}
+                    style={agentIconStyle(agent)}
+                  >
+                    {renderAgentIcon(agent)}
                   </span>
                   <div className={styles.agentInfo}>
                     <div className={styles.agentName}>{agent.name}</div>
@@ -109,7 +136,7 @@ export default function AgentPickerComponent({
                     </div>
                   </div>
                   {isActive && (
-                    <Check size={14} className={styles.activeCheck} />
+                    <Check size={14} className={styles.activeCheck} style={agent.color ? { color: agent.color } : undefined} />
                   )}
                 </button>
               );

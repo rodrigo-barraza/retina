@@ -189,6 +189,23 @@ export default function SettingsPageComponent() {
         </span>
       </PageHeaderComponent>
 
+      {/* ── Custom Agents Section ──────────────────────────────────── */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <Bot size={16} className={styles.sectionIcon} />
+          <span className={styles.sectionTitle}>Custom Agents</span>
+          <span className={styles.sectionSubtitle}>
+            Create your own agent personas with custom prompts and tools
+          </span>
+        </div>
+
+        <CustomAgentsPanel
+          agents={customAgents}
+          onAgentsChange={loadCustomAgents}
+          availableTools={availableTools}
+        />
+      </div>
+
       {/* ── Memory Models Section ──────────────────────────────────── */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
@@ -328,23 +345,6 @@ export default function SettingsPageComponent() {
             Reset to Defaults
           </ButtonComponent>
         </div>
-      </div>
-
-      {/* ── Custom Agents Section ──────────────────────────────────── */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <Bot size={16} className={styles.sectionIcon} />
-          <span className={styles.sectionTitle}>Custom Agents</span>
-          <span className={styles.sectionSubtitle}>
-            Create your own agent personas with custom prompts and tools
-          </span>
-        </div>
-
-        <CustomAgentsPanel
-          agents={customAgents}
-          onAgentsChange={loadCustomAgents}
-          availableTools={availableTools}
-        />
       </div>
     </div>
   );

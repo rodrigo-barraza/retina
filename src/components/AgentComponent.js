@@ -24,67 +24,22 @@ import EmptyStateComponent from "./EmptyStateComponent.js";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent.js";
 import ApprovalCardComponent from "./ApprovalCardComponent.js";
 import PlanCardComponent from "./PlanCardComponent.js";
-import ButtonComponent from "./ButtonComponent.js";
+
 import StatusBarComponent from "./StatusBarComponent.js";
 import PixelTransitionComponent from "./PixelTransitionComponent.js";
 
 import {
   buildToolSchemas,
 } from "../utils/FunctionCallingUtilities.js";
-import { shuffleArray } from "../utils/utilities.js";
+
 import useSessionStats from "../hooks/useSessionStats.js";
 import { PROJECT_AGENT, SETTINGS_DEFAULTS, SK_MODEL_MEMORY_AGENT, SK_MODEL_MEMORY_AGENT_PREFIX, SK_TOOL_MEMORY_AGENT, SK_TOOL_MEMORY_AGENT_PREFIX, MAX_TOOL_ITERATIONS } from "../constants.js";
 import chatStyles from "./ChatArea.module.css";
-import styles from "./AgentComponent.module.css";
 import ChatInputButton from "./ChatInputButton.js";
 import useToolToggles from "../hooks/useToolToggles.js";
 import useModelMemory from "../hooks/useModelMemory.js";
-import AgentPickerComponent from "./AgentPickerComponent.js";
+import AgentPickerComponent, { renderAgentIcon } from "./AgentPickerComponent.js";
 
-
-// ── Per-agent quick prompts ──────────────────────────────────────
-const AGENT_PROMPTS_MAP = {
-  CODING: [
-    "Scan this project with project_summary and explain the architecture",
-    "Search for all TODO and FIXME comments across the codebase",
-    "Show me the git status and a diff of uncommitted changes",
-    "Find all files that import PrismService and summarize usage",
-    "Grep for console.log statements and suggest cleanups",
-    "Run npm test and report any failures with context",
-    "Read the last 5 git commits and summarize what changed",
-    "Compare two files side-by-side with file_diff",
-    "Find all .env and secrets files and check they're gitignored",
-    "List the directory tree and identify the largest files",
-  ],
-  LUPOS: [
-    "Search the web for the latest AI news",
-    "What's the weather like in Vancouver right now?",
-    "Find trending topics on Reddit today",
-    "Generate an image of a wolf king on a throne",
-    "What are the top trending movies right now?",
-    "Look up the Wikipedia summary for 'neural networks'",
-    "Search for gym exercises targeting chest",
-    "What happened on this day in history?",
-  ],
-  STICKERS: [
-    "Generate a cute cat sticker with vibrant colors",
-    "Create a sticker of a robot drinking coffee",
-    "Design a sticker with a galaxy wolf",
-    "Search the web for sticker design trends",
-  ],
-  DIGEST: [
-    "Calculate my TDEE — I'm 30, male, 80kg, 178cm, moderate activity",
-    "Compare the nutrition of chicken breast vs salmon vs tofu",
-    "What foods are highest in iron?",
-    "Build me a 2200 calorie high-protein meal plan",
-    "Search for compound chest exercises with dumbbells",
-    "Analyze my food log: 200g chicken, 150g rice, 100g broccoli",
-    "How many calories does 45 minutes of barbell squats burn at 85kg?",
-    "Find vegan substitutes for eggs with similar protein",
-    "Calculate my daily water intake — 80kg, active, 30°C outside",
-    "What are the drug-nutrient interactions for metformin?",
-  ],
-};
 
 // ── Per-agent empty state config ─────────────────────────────────
 const AGENT_EMPTY_STATE = {
@@ -122,9 +77,17 @@ const AGENT_LOCKED_TOOLS = new Set(["Tool Calling"]);
 
 export default function AgentComponent({ agentId: propAgentId = "CODING", agents = [] }) {
   const agentId = propAgentId;
-  const agentProject = agents.find((a) => a.id === agentId)?.project || PROJECT_AGENT;
-  const emptyState = AGENT_EMPTY_STATE[agentId] || DEFAULT_EMPTY_STATE;
-  const agentPrompts = AGENT_PROMPTS_MAP[agentId] || AGENT_PROMPTS_MAP.CODING;
+  const activeAgentData = agents.find((a) => a.id === agentId);
+  const agentProject = activeAgentData?.project || PROJECT_AGENT;
+  const agentBackgroundImage = activeAgentData?.backgroundImage || "";
+  const rawEmptyState = AGENT_EMPTY_STATE[agentId] || (activeAgentData?.name
+    ? { title: activeAgentData.name, subtitle: activeAgentData.description || "AI-powered agent with tool access.", placeholder: `Talk to ${activeAgentData.name}...` }
+    : DEFAULT_EMPTY_STATE);
+  const emptyState = {
+    ...rawEmptyState,
+    subtitle: activeAgentData?.description || rawEmptyState.subtitle,
+  };
+
   // ── State ────────────────────────────────────────────────────
   const [messages, setMessages] = useState([]);
   const [queuedNextTurn, setQueuedNextTurn] = useState(null);
@@ -497,13 +460,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
     [customTools, builtInTools, disabledBuiltIns],
   );
 
-  // Pick random prompt suggestions
-  const [randomPrompts, setRandomPrompts] = useState([]);
 
-  useEffect(() => {
-    const pool = shuffleArray(agentPrompts);
-    setRandomPrompts(pool.slice(0, 5));
-  }, [agentSessionId, agentPrompts]);
 
   // ── Memoize filtered messages for MessageList to prevent ref churn ──
   const filteredMessages = useMemo(
@@ -1687,28 +1644,17 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
         targetRef={messagesListRef}
       />
       {/* Messages */}
-      <div className={chatStyles.messagesList} ref={messagesListRef}>
+      <div
+        className={`${chatStyles.messagesList} ${agentBackgroundImage ? chatStyles.hasBackground : ""}`}
+        ref={messagesListRef}
+        style={agentBackgroundImage ? { "--agent-bg-image": `url(${agentBackgroundImage})` } : undefined}
+      >
         {messages.length === 0 && (
           <EmptyStateComponent
-            icon={<Bot size={40} />}
+            icon={renderAgentIcon(activeAgentData, 40)}
             title={emptyState.title}
             subtitle={emptyState.subtitle}
-          >
-            {randomPrompts.map((prompt) => (
-              <ButtonComponent
-                key={prompt}
-                variant="ghost"
-                size="sm"
-                className={styles.quickPrompt}
-                onClick={() => {
-                  setTextareaValue(prompt);
-                  textareaRef.current?.focus();
-                }}
-              >
-                {prompt}
-              </ButtonComponent>
-            ))}
-          </EmptyStateComponent>
+          />
         )}
 
         <MessageList

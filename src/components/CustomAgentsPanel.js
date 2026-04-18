@@ -35,6 +35,58 @@ import {
   Cpu,
   Sparkles,
   Layers,
+  ImageIcon,
+  Skull,
+  Sticker,
+  Apple,
+  Lightbulb,
+  Flame,
+  Zap,
+  Shield,
+  Swords,
+  Palette,
+  Music,
+  Gamepad2,
+  Camera,
+  Telescope,
+  Rocket,
+  Atom,
+  Brain,
+  GraduationCap,
+  Briefcase,
+  Hammer,
+  Microscope,
+  Leaf,
+  Dog,
+  Cat,
+  Bird,
+  Bug,
+  Fish,
+  Crown,
+  Gem,
+  Star,
+  Moon,
+  Sun,
+  Mountain,
+  Anchor,
+  Compass,
+  Crosshair,
+  Target,
+  Trophy,
+  Medal,
+  Dumbbell,
+  HeartPulse,
+  Coffee,
+  UtensilsCrossed,
+  Wine,
+  Cake,
+  Paintbrush,
+  Pen,
+  Wand2,
+  Hexagon,
+  CircuitBoard,
+  Cog,
+  FlaskConical,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ButtonComponent from "./ButtonComponent.js";
@@ -112,6 +164,9 @@ const EMPTY_AGENT = {
   name: "",
   description: "",
   project: "coding",
+  icon: "",
+  color: "",
+  backgroundImage: "",
   identity: "",
   guidelines: "",
   toolPolicy: "",
@@ -119,6 +174,99 @@ const EMPTY_AGENT = {
   usesDirectoryTree: false,
   usesCodingGuidelines: false,
 };
+
+// ── Curated color palette for agent theming ─────────────────────
+const COLOR_PALETTE = [
+  { hex: "#6366f1", name: "Indigo" },
+  { hex: "#8b5cf6", name: "Violet" },
+  { hex: "#a855f7", name: "Purple" },
+  { hex: "#d946ef", name: "Fuchsia" },
+  { hex: "#ec4899", name: "Pink" },
+  { hex: "#f43f5e", name: "Rose" },
+  { hex: "#ef4444", name: "Red" },
+  { hex: "#f97316", name: "Orange" },
+  { hex: "#f59e0b", name: "Amber" },
+  { hex: "#eab308", name: "Yellow" },
+  { hex: "#84cc16", name: "Lime" },
+  { hex: "#22c55e", name: "Green" },
+  { hex: "#10b981", name: "Emerald" },
+  { hex: "#14b8a6", name: "Teal" },
+  { hex: "#06b6d4", name: "Cyan" },
+  { hex: "#0ea5e9", name: "Sky" },
+  { hex: "#3b82f6", name: "Blue" },
+  { hex: "#6d28d9", name: "Deep Violet" },
+  { hex: "#78716c", name: "Stone" },
+  { hex: "#64748b", name: "Slate" },
+];
+
+// ── Curated icon palette for the icon picker ────────────────────
+// Stored as string name → component mapping.
+const ICON_OPTIONS = [
+  { name: "Bot", icon: Bot },
+  { name: "Skull", icon: Skull },
+  { name: "Sticker", icon: Sticker },
+  { name: "Apple", icon: Apple },
+  { name: "Brain", icon: Brain },
+  { name: "Lightbulb", icon: Lightbulb },
+  { name: "Flame", icon: Flame },
+  { name: "Zap", icon: Zap },
+  { name: "Shield", icon: Shield },
+  { name: "Swords", icon: Swords },
+  { name: "Sparkles", icon: Sparkles },
+  { name: "Palette", icon: Palette },
+  { name: "Music", icon: Music },
+  { name: "Gamepad2", icon: Gamepad2 },
+  { name: "Camera", icon: Camera },
+  { name: "Telescope", icon: Telescope },
+  { name: "Rocket", icon: Rocket },
+  { name: "Atom", icon: Atom },
+  { name: "GraduationCap", icon: GraduationCap },
+  { name: "Briefcase", icon: Briefcase },
+  { name: "Hammer", icon: Hammer },
+  { name: "Microscope", icon: Microscope },
+  { name: "Leaf", icon: Leaf },
+  { name: "Dog", icon: Dog },
+  { name: "Cat", icon: Cat },
+  { name: "Bird", icon: Bird },
+  { name: "Bug", icon: Bug },
+  { name: "Fish", icon: Fish },
+  { name: "Crown", icon: Crown },
+  { name: "Gem", icon: Gem },
+  { name: "Star", icon: Star },
+  { name: "Moon", icon: Moon },
+  { name: "Sun", icon: Sun },
+  { name: "Mountain", icon: Mountain },
+  { name: "Anchor", icon: Anchor },
+  { name: "Compass", icon: Compass },
+  { name: "Crosshair", icon: Crosshair },
+  { name: "Target", icon: Target },
+  { name: "Trophy", icon: Trophy },
+  { name: "Medal", icon: Medal },
+  { name: "Dumbbell", icon: Dumbbell },
+  { name: "HeartPulse", icon: HeartPulse },
+  { name: "Coffee", icon: Coffee },
+  { name: "UtensilsCrossed", icon: UtensilsCrossed },
+  { name: "Wine", icon: Wine },
+  { name: "Cake", icon: Cake },
+  { name: "Paintbrush", icon: Paintbrush },
+  { name: "Pen", icon: Pen },
+  { name: "Wand2", icon: Wand2 },
+  { name: "Hexagon", icon: Hexagon },
+  { name: "CircuitBoard", icon: CircuitBoard },
+  { name: "Cog", icon: Cog },
+  { name: "FlaskConical", icon: FlaskConical },
+  { name: "Heart", icon: Heart },
+  { name: "Code2", icon: Code2 },
+  { name: "Globe2", icon: Globe2 },
+  { name: "Cpu", icon: Cpu },
+];
+
+/** Resolve an icon name string to its lucide component. */
+export function resolveIconComponent(name) {
+  if (!name) return Bot;
+  const found = ICON_OPTIONS.find((o) => o.name === name);
+  return found?.icon || Bot;
+}
 
 // ── Tri-state checkbox: global select-all ───────────────────────
 function MasterCheckbox({ enabledCount, totalCount, onToggle, label }) {
@@ -417,6 +565,96 @@ export default function CustomAgentsPanel({
             />
           </div>
 
+          {/* Icon Picker */}
+          <div className={styles.formGroup}>
+            <label>Icon</label>
+            <div className={styles.iconGrid}>
+              {ICON_OPTIONS.map(({ name, icon: IconComp }) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={styles.iconOption}
+                  data-selected={editingAgent.icon === name}
+                  onClick={() => updateField("icon", name)}
+                  title={name}
+                  style={editingAgent.color ? { "--agent-color": editingAgent.color } : undefined}
+                >
+                  <IconComp size={16} />
+                </button>
+              ))}
+            </div>
+            <span className={styles.hint}>
+              {editingAgent.icon ? `Selected: ${editingAgent.icon}` : "Click an icon — defaults to Bot"}
+            </span>
+          </div>
+
+          {/* Color Picker */}
+          <div className={styles.formGroup}>
+            <label>
+              <Palette size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
+              Accent Color
+            </label>
+            <div className={styles.colorGrid}>
+              {COLOR_PALETTE.map(({ hex, name }) => (
+                <button
+                  key={hex}
+                  type="button"
+                  className={styles.colorSwatch}
+                  data-selected={editingAgent.color === hex}
+                  onClick={() => updateField("color", editingAgent.color === hex ? "" : hex)}
+                  title={name}
+                  style={{ "--swatch-color": hex }}
+                />
+              ))}
+            </div>
+            <span className={styles.hint}>
+              {editingAgent.color
+                ? <>
+                    Selected: <span className={styles.colorPreviewDot} style={{ background: editingAgent.color }} />{" "}
+                    {COLOR_PALETTE.find((c) => c.hex === editingAgent.color)?.name || editingAgent.color}
+                  </>
+                : "Click a color to brand your agent — used for icon backgrounds and UI accents"
+              }
+            </span>
+          </div>
+
+          {/* Background Image */}
+          <div className={styles.formGroup}>
+            <label>
+              <ImageIcon size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
+              Background Image
+            </label>
+            <input
+              type="text"
+              className={styles.input}
+              value={editingAgent.backgroundImage || ""}
+              onChange={(e) => updateField("backgroundImage", e.target.value)}
+              placeholder="https://example.com/background.jpg"
+            />
+            <span className={styles.hint}>
+              URL to a background image displayed behind the chat messages — use a subtle, dark image for best results
+            </span>
+            {editingAgent.backgroundImage && (
+              <div className={styles.bgPreview}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={editingAgent.backgroundImage}
+                  alt="Background preview"
+                  className={styles.bgPreviewImg}
+                  onError={(e) => { e.target.style.display = "none"; }}
+                />
+                <button
+                  type="button"
+                  className={styles.bgPreviewClear}
+                  onClick={() => updateField("backgroundImage", "")}
+                  title="Remove background image"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Identity Prompt */}
           <div className={styles.formGroup}>
             <label>Identity Prompt</label>
@@ -670,8 +908,11 @@ export default function CustomAgentsPanel({
 
             return (
               <div key={agent._id} className={styles.agentCard}>
-                <div className={styles.agentIcon}>
-                  <Bot size={16} />
+                <div
+                  className={styles.agentIcon}
+                  style={agent.color ? { background: `color-mix(in srgb, ${agent.color} 15%, transparent)`, color: agent.color } : undefined}
+                >
+                  {(() => { const IC = resolveIconComponent(agent.icon); return <IC size={16} />; })()}
                 </div>
                 <div className={styles.agentInfo}>
                   <span className={styles.agentName}>{agent.name}</span>

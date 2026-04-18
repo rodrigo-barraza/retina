@@ -15,6 +15,25 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  position: relative;
+}
+
+/* ── Agent background image overlay ─────────────────────────── */
+/* Uses a layered background with a semi-transparent color on top
+   of the image to achieve the low-opacity watermark effect without
+   a pseudo-element (which breaks in scrollable containers). */
+
+.hasBackground {
+  background-image:
+    linear-gradient(
+      var(--bg-surface, rgba(10, 10, 15, 0.94)),
+      var(--bg-surface, rgba(10, 10, 15, 0.94))
+    ),
+    var(--agent-bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 .welcome {

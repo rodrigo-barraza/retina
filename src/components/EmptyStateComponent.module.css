@@ -3,7 +3,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  flex: 1;
   min-height: 360px;
   padding: 40px 20px;
   text-align: center;
@@ -34,12 +34,4 @@
   max-width: 440px;
   line-height: 1.5;
   margin-bottom: 28px;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  max-width: 560px;
 }

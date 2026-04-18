@@ -91,7 +91,7 @@
   }
 }
 
-.mapEmbedWrapper {
+.embedWrapper {
   display: block;
   margin: 12px 0;
   border-radius: var(--border-radius-sm);
@@ -99,11 +99,17 @@
   border: 1px solid var(--border-color);
 }
 
-.mapEmbed {
+.mapEmbed,
+.embedFrame {
   width: 100%;
-  height: 360px;
   border: none;
   display: block;
+  background: transparent;
+  transition: height 0.2s ease;
+}
+
+.mapEmbed {
+  height: 360px;
 }
 
 .inlineCode {
