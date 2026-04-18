@@ -128,8 +128,8 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
   // ── State ────────────────────────────────────────────────────
   const [messages, setMessages] = useState([]);
   const [queuedNextTurn, setQueuedNextTurn] = useState(null);
-  const [inputValue, setInputValue] = useState("");
   const inputValueRef = useRef("");
+  const [hasInput, setHasInput] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [toolActivity, setToolActivity] = useState([]);
   const [streamingOutputs, setStreamingOutputs] = useState(new Map());
@@ -302,13 +302,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
     scrollBehaviorRef.current = "smooth";
   }, [messages, toolActivity]);
 
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (el) {
-      el.style.height = "auto";
-      el.style.height = el.scrollHeight + "px";
-    }
-  }, [inputValue]);
+  // Auto-resize is handled inline in handleInputChange (no effect needed)
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -517,11 +511,29 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
     [messages],
   );
 
-  // ── Stable input change handler (syncs ref + state) ─────────
+  // ── Stable input change handler ─────────────────────────────
+  // Uncontrolled textarea: only flip hasInput on empty↔non-empty
+  // transitions to avoid re-rendering the entire component tree.
   const handleInputChange = useCallback((e) => {
     const val = e.target.value;
     inputValueRef.current = val;
-    setInputValue(val);
+    const nowHasInput = val.trim().length > 0;
+    setHasInput((prev) => (prev !== nowHasInput ? nowHasInput : prev));
+    // Auto-resize inline (no state/effect needed)
+    const el = e.target;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }, []);
+
+  // Helper to programmatically set the textarea value (quick prompts, queue cancel)
+  const setTextareaValue = useCallback((text) => {
+    inputValueRef.current = text;
+    setHasInput(text.trim().length > 0);
+    if (textareaRef.current) {
+      textareaRef.current.value = text;
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+    }
   }, []);
 
   // ── Image handlers ──────────────────────────────────────────
@@ -1141,15 +1153,13 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
 
       if (isQueueing) {
         setQueuedNextTurn({ text, images: currentImages });
-        setInputValue("");
-        inputValueRef.current = "";
+        setTextareaValue("");
         setPendingImages([]);
         return;
       }
 
       if (!overridePayload) {
-        setInputValue("");
-        inputValueRef.current = "";
+        setTextareaValue("");
         setPendingImages([]);
       }
 
@@ -1228,6 +1238,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
     [
       handleStop,
       isGenerating,
+      setTextareaValue,
       runOrchestrationLoop,
       loadSessions,
     ],
@@ -1690,7 +1701,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
                 size="sm"
                 className={styles.quickPrompt}
                 onClick={() => {
-                  setInputValue(prompt);
+                  setTextareaValue(prompt);
                   textareaRef.current?.focus();
                 }}
               >
@@ -1794,7 +1805,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
                 <button
                   type="button"
                   onClick={() => {
-                    setInputValue(queuedNextTurn.text);
+                    setTextareaValue(queuedNextTurn.text);
                     setPendingImages(queuedNextTurn.images);
                     setQueuedNextTurn(null);
                   }}
@@ -1864,7 +1875,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
             )}
             <textarea
               ref={textareaRef}
-              value={inputValue}
+              defaultValue=""
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder={emptyState.placeholder}
@@ -1874,7 +1885,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
               <ChatInputButton
                 variant="button"
                 onClick={() => handleSend(null, { isQueueing: true })}
-                disabled={!inputValue.trim() && pendingImages.length === 0}
+                disabled={!hasInput && pendingImages.length === 0}
                 label="Queue message for next turn"
                 icon={<CornerDownLeft size={18} />}
               />
@@ -1885,7 +1896,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
               disabled={
                 isGenerating
                   ? false
-                  : !inputValue.trim() && pendingImages.length === 0
+                  : !hasInput && pendingImages.length === 0
               }
               label={isGenerating ? "Stop" : "Send"}
             />
