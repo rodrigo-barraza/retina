@@ -59,6 +59,7 @@ export default function AgentPickerComponent({
         onSelect(agentId);
       }
       setOpen(false);
+      document.dispatchEvent(new CustomEvent("panel:dismiss-sidebars"));
     },
     [activeAgentId, onSelect],
   );

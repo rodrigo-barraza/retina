@@ -273,6 +273,7 @@ export default function ModelPickerPopoverComponent({
         onSelectModel("", "");
         setOpen(false);
         setHighlightIndex(-1);
+        document.dispatchEvent(new CustomEvent("panel:dismiss-sidebars"));
         return;
       }
 
@@ -281,12 +282,14 @@ export default function ModelPickerPopoverComponent({
         onLmStudioSelect(rawModel);
         setOpen(false);
         setHighlightIndex(-1);
+        document.dispatchEvent(new CustomEvent("panel:dismiss-sidebars"));
         return;
       }
 
       onSelectModel(provider, name);
       setOpen(false);
       setHighlightIndex(-1);
+      document.dispatchEvent(new CustomEvent("panel:dismiss-sidebars"));
     },
     [onSelectModel, onLmStudioSelect, multiSelect, allowDeselect, settings?.provider, settings?.model],
   );

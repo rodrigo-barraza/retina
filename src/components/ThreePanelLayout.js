@@ -126,6 +126,29 @@ export default function ThreePanelLayout({
     [isMobile],
   );
 
+  /* ── Mobile: dismiss all open sidebars ── */
+  const dismissSidebars = useCallback(() => {
+    if (!isMobile) return;
+    if (showLeft) {
+      setShowLeft(false);
+      localStorage.setItem(LS_PANEL_LEFT, "false");
+    }
+    if (showRight) {
+      setShowRight(false);
+      localStorage.setItem(LS_PANEL_RIGHT, "false");
+    }
+  }, [isMobile, showLeft, showRight]);
+
+  /* Backdrop dismiss — tap main area to close any open sidebar */
+  const handleMainClick = dismissSidebars;
+
+  /* Listen for programmatic dismiss from child components (pickers, etc.) */
+  useEffect(() => {
+    const handler = () => dismissSidebars();
+    document.addEventListener("panel:dismiss-sidebars", handler);
+    return () => document.removeEventListener("panel:dismiss-sidebars", handler);
+  }, [dismissSidebars]);
+
   // Suppress the CSS transition on first paint so panels don't animate from open→closed
   const transitionStyle = hydrated ? undefined : { transition: "none" };
 
@@ -194,7 +217,7 @@ export default function ThreePanelLayout({
 
 
           {/* Main Center */}
-          <section className={styles.main} data-chat-area>
+          <section className={styles.main} data-chat-area onClick={handleMainClick}>
             {children}
           </section>
 
