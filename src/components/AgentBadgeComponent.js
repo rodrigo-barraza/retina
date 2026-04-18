@@ -186,19 +186,33 @@ export default function AgentBadgeComponent({
     );
   }
 
-  const inlineStyle = agent?.color
-    ? {
-        width: resolvedSize,
-        height: resolvedSize,
-        background: `linear-gradient(135deg, ${agent.color} 0%, color-mix(in srgb, ${agent.color} 70%, #fff) 100%)`,
-      }
-    : { width: resolvedSize, height: resolvedSize };
+  // Mini: outer container is transparent, inner carries the gradient
+  // Non-mini: gradient lives directly on .badge
+  const outerStyle = { width: resolvedSize, height: resolvedSize };
+
+  const gradientStyle = agent?.color
+    ? { background: `linear-gradient(135deg, ${agent.color} 0%, color-mix(in srgb, ${agent.color} 70%, #fff) 100%)` }
+    : undefined;
+
+  if (mini) {
+    return (
+      <span
+        className={`${styles.badge} ${styles.mini} ${className}`}
+        data-agent={agentId}
+        style={outerStyle}
+      >
+        <span className={styles.miniInner} data-agent={agentId} style={gradientStyle}>
+          {renderAgentIcon(agent, resolvedIconSize)}
+        </span>
+      </span>
+    );
+  }
 
   return (
     <span
-      className={`${styles.badge} ${mini ? styles.mini : ""} ${className}`}
+      className={`${styles.badge} ${className}`}
       data-agent={agentId}
-      style={inlineStyle}
+      style={{ ...outerStyle, ...gradientStyle }}
     >
       {renderAgentIcon(agent, resolvedIconSize)}
     </span>
