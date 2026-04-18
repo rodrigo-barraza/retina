@@ -39,9 +39,9 @@ export default function ThreePanelLayout({
   children,
 }) {
   const resolvedRightTitle = rightTitle ?? (sessionType === "agent" ? "Sessions" : "Conversations");
-  // Start with panels visible (matches SSR), then sync from localStorage after mount
-  const [showLeft, setShowLeft] = useState(true);
-  const [showRight, setShowRight] = useState(true);
+  // Start with panels hidden to prevent FOUC on mobile; mount effect opens them on desktop
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
