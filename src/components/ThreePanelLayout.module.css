@@ -80,7 +80,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
+  width: 100%;
+  min-width: 34px;
+  max-width: 60px;
   height: 100%;
   flex-shrink: 0;
   border-radius: 0;
@@ -285,7 +287,6 @@
     height: auto;
     min-height: 80px;
     flex-wrap: wrap;
-    padding: 8px 0;
   }
 
   .headerTitle {

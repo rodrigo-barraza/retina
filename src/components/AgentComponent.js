@@ -1652,7 +1652,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
         ref={messagesListRef}
         style={agentBackgroundImage ? { "--agent-bg-image": `url(${agentBackgroundImage})` } : undefined}
       >
-        {messages.length === 0 && (
+        {messages.length === 0 && activeAgentData && (
           <EmptyStateComponent
             icon={<AgentBadgeComponent agent={activeAgentData} size={80} iconSize={40} animation />}
             title={emptyState.title}
