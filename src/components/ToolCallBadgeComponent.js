@@ -31,6 +31,14 @@ const TOOL_CALL_DISPLAY_NAMES = {
   project_summary: "Summary",
   generate_image: "Image Gen",
   spawn_agent: "Spawn Agent",
+  // New tools
+  sleep: "Sleep",
+  enter_plan_mode: "Plan",
+  exit_plan_mode: "Execute",
+  tool_search: "Tool Search",
+  cron_create: "Schedule",
+  remote_trigger: "Trigger",
+  notebook_edit: "Notebook",
 };
 
 /**
