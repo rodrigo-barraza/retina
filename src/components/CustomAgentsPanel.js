@@ -129,6 +129,10 @@ const DOMAIN_ICONS = {
   "Agentic: Structured Output": Code2,
   "Agentic: Git Isolation": GitBranch,
   Creative: Sparkles,
+  Discord: Radio,
+  "Smart Home": Lightbulb,
+  Sports: Trophy,
+  Utilities: Wrench,
   Coordinator: Bot,
   Other: Layers,
 };
@@ -186,6 +190,10 @@ const DOMAIN_ORDER = [
   "Maritime",
   "Energy",
   "Creative",
+  "Discord",
+  "Smart Home",
+  "Sports",
+  "Utilities",
   "Other",
 ];
 
@@ -208,6 +216,7 @@ const LABEL_ICONS = {
   smart_home: Lightbulb,
   lifx: Lightbulb,
   discord: Radio,
+  git: GitBranch,
   meta: Search,
   automation: CalendarDays,
   data_science: FlaskConical,
@@ -231,6 +240,7 @@ const LABEL_DISPLAY = {
   smart_home: "Smart Home",
   lifx: "LIFX",
   discord: "Discord",
+  git: "Git",
   meta: "Meta",
   automation: "Automation",
   data_science: "Data Science",
@@ -254,6 +264,7 @@ const LABEL_ORDER = [
   "smart_home",
   "lifx",
   "discord",
+  "git",
   "maritime",
   "energy",
   "meta",
@@ -982,7 +993,7 @@ export default function CustomAgentsPanel({
                     : LABEL_DISPLAY[groupKey] || groupKey;
                   const collapsed = collapsedDomains.has(groupKey);
                   const groupEnabled = tools.filter((t) =>
-                    enabledSet.has(t.name),
+                    resolvedEnabledSet.has(t.name),
                   ).length;
 
                   return (
@@ -1006,7 +1017,7 @@ export default function CustomAgentsPanel({
                         <DomainCheckbox
                           domainEnabled={groupEnabled}
                           totalCount={tools.length}
-                          onToggle={() => toggleDomainTools(tools)}
+                          onToggle={() => toggleGroupTools(groupKey, tools)}
                         />
                       </div>
 
@@ -1016,7 +1027,7 @@ export default function CustomAgentsPanel({
                             <input
                               type="checkbox"
                               className={styles.toolCheckbox}
-                              checked={enabledSet.has(tool.name)}
+                              checked={resolvedEnabledSet.has(tool.name)}
                               onChange={() => toggleTool(tool.name)}
                             />
                             <span className={styles.toolName}>
