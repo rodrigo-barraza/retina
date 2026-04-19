@@ -1002,7 +1002,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
                 },
               }));
             } else if (data.message === "generation_progress") {
-              // Worker live generation progress — store on message for tok/s
+              // Worker live generation progress — store on message for SettingsPanel tok/s
               setMessages((prev) => {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
@@ -1022,6 +1022,17 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
                 }
                 return updated;
               });
+              // Also store on workerToolActivity so TeamCreateRenderer can
+              // display live per-worker tok/s on each worker's header
+              setWorkerToolActivity((prev) => ({
+                ...prev,
+                [data.workerId]: {
+                  ...(prev[data.workerId] || { toolCount: 0, currentTool: null, iteration: 0, toolNames: {} }),
+                  outputTokens: data.outputTokens,
+                  firstChunkTime: data.firstChunkTime,
+                  lastChunkTime: data.lastChunkTime,
+                },
+              }));
             } else if (data.message === "complete") {
               // Worker finished — clear phase so StatusBar stops showing "Generating..."
               setWorkerToolActivity((prev) => ({
@@ -1584,8 +1595,15 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
                     // assistant message on top of the backend totals so stats
                     // badges update during the current turn
                     const lastMsg = messages[messages.length - 1];
+                    // Sum live worker generation tokens (from _workerGenerationProgress)
+                    let liveWorkerGenTokens = 0;
+                    if (lastMsg?._workerGenerationProgress) {
+                      for (const wp of Object.values(lastMsg._workerGenerationProgress)) {
+                        liveWorkerGenTokens += wp.outputTokens || 0;
+                      }
+                    }
                     const liveOutput = (lastMsg?.role === "assistant" && !lastMsg.usage)
-                      ? (lastMsg._streamingOutputTokens || 0) + (lastMsg._workerTokens?.output || 0)
+                      ? (lastMsg._streamingOutputTokens || 0) + (lastMsg._workerTokens?.output || 0) + liveWorkerGenTokens
                       : 0;
                     const liveInput = (lastMsg?.role === "assistant" && !lastMsg.usage)
                       ? (lastMsg._workerTokens?.input || 0)

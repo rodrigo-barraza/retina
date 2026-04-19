@@ -266,9 +266,18 @@ export function getSessionTokenStats(messages) {
     // Worker live generation progress (keyed by workerId)
     if (m._workerGenerationProgress) {
       workerGenerationProgress = m._workerGenerationProgress;
+      // Sum live worker output tokens so the token badge increments
+      // in real-time during worker generation (before completion)
+      for (const wp of Object.values(m._workerGenerationProgress)) {
+        if (wp.outputTokens > 0) {
+          output += wp.outputTokens;
+        }
+      }
     }
     // Accumulated worker tokens (from worker_status complete events)
-    // These arrive independently of the coordinator's own usage
+    // These arrive independently of the coordinator's own usage.
+    // Only add completed worker tokens that aren't already counted
+    // from _workerGenerationProgress (which is removed on completion).
     if (m._workerTokens) {
       input += m._workerTokens.input || 0;
       output += m._workerTokens.output || 0;

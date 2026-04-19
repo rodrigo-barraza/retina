@@ -822,6 +822,35 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
   const resultMembers = parsed?.members || [];
   const teamName = args?.name || parsed?.team || "";
 
+  // ── Live tok/s ticker ────────────────────────────────────────
+  // Tick every 500ms while any worker is actively generating so
+  // the per-worker speed badge stays current.
+  const CHUNK_STALE_MS = 2000;
+  const [tickNow, setTickNow] = useState(() => Date.now());
+  const hasActiveWorkers = useMemo(() => {
+    if (!workerToolActivity) return false;
+    const now = tickNow; // use tickNow to subscribe to ticker
+    return Object.values(workerToolActivity).some((a) => {
+      if (!a.lastChunkTime) return false;
+      return (now - a.lastChunkTime) < CHUNK_STALE_MS;
+    });
+  }, [workerToolActivity, tickNow]);
+
+  useEffect(() => {
+    if (!hasActiveWorkers) return;
+    const id = setInterval(() => setTickNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [hasActiveWorkers]);
+
+  // Compute tok/s for a single worker from its activity entry
+  const getWorkerTokPerSec = (activity) => {
+    if (!activity?.lastChunkTime || !activity?.firstChunkTime) return null;
+    if ((tickNow - activity.lastChunkTime) >= CHUNK_STALE_MS) return null;
+    const elapsed = (activity.lastChunkTime - activity.firstChunkTime) / 1000;
+    if (elapsed < 0.1 || !activity.outputTokens || activity.outputTokens < 2) return null;
+    return activity.outputTokens / elapsed;
+  };
+
   // Resolve live worker activity for a member — by agentId or description match
   const getActivity = (member) => {
     if (!workerToolActivity) return null;
@@ -858,12 +887,18 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
         </div>
         {argMembers.map((member, i) => {
           const activity = getActivity(member);
+          const tokPerSec = getWorkerTokPerSec(activity);
           return (
             <div key={i} className={styles.rendererBlock} style={{ marginTop: 4 }}>
               <div className={styles.rendererHeader}>
                 <span className={styles.rendererTitle}>
                   Worker {i + 1}: <strong>{member.description}</strong>
                 </span>
+                {tokPerSec !== null && (
+                  <span className={styles.workerSpeedBadge}>
+                    ⚡ {tokPerSec.toFixed(1)} tok/s
+                  </span>
+                )}
                 {activity?.phase && (
                   <StatusBadge success={true} label={activity.phase} />
                 )}
@@ -909,6 +944,7 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
         const durationLabel = member.durationMs
           ? formatLatency(Number(member.durationMs) / 1000)
           : null;
+        const tokPerSec = !isTerminal ? getWorkerTokPerSec(activity) : null;
 
         return (
           <div key={i} className={styles.rendererBlock} style={{ marginTop: 4 }}>
@@ -916,6 +952,11 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
               <span className={styles.rendererTitle}>
                 Worker {i + 1}: <strong>{member.description}</strong>
               </span>
+              {tokPerSec !== null && (
+                <span className={styles.workerSpeedBadge}>
+                  ⚡ {tokPerSec.toFixed(1)} tok/s
+                </span>
+              )}
               <StatusBadge
                 success={isCompleted}
                 label={member.status || "unknown"}

@@ -728,3 +728,28 @@
   }
 }
 
+/* ── Worker live tok/s badge ─────────────────────────────── */
+
+.workerSpeedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  animation: workerSpeedPulse 2s ease-in-out infinite;
+  will-change: opacity;
+  flex-shrink: 0;
+}
+
+@keyframes workerSpeedPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
