@@ -83,7 +83,7 @@ export default function StatusBarComponent({
         greyscale={active ? !isColorPhase : true}
         className={styles.statusBarCanvas}
       />
-      <div className={styles.statusBarOverlay}>
+      <div className={`${styles.statusBarOverlay}${phase ? ` ${styles[`phase_${phase}`] || ""}` : ""}`}>
         {active ? (
           <>
             {resolvedIcon && (

@@ -22,8 +22,8 @@
   min-height: 28px;
   opacity: 1;
   box-shadow:
-    0 0 8px -2px rgba(249, 115, 22, 0.3),
-    0 0 16px -4px rgba(245, 158, 11, 0.15);
+    0 0 8px -2px color-mix(in srgb, var(--phase-pulse, rgb(249, 115, 22)) 30%, transparent),
+    0 0 16px -4px color-mix(in srgb, var(--phase-pulse, rgb(245, 158, 11)) 15%, transparent);
 }
 
 .statusBarCanvas {
@@ -78,7 +78,7 @@
 .statusBarMessage {
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--phase-text, rgba(255, 255, 255, 0.9));
   letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
@@ -108,7 +108,7 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--phase-pulse, rgba(255, 255, 255, 0.8));
   flex-shrink: 0;
   margin-left: auto;
   animation: statusBarPulseDot 1.4s ease-in-out infinite;
@@ -124,4 +124,18 @@
     opacity: 0.3;
     transform: scale(0.6);
   }
+}
+
+/* ── Phase-specific overlay themes ── */
+
+.phase_loading {
+  background: rgba(59, 130, 246, 0.25);
+  --phase-text: rgb(191, 219, 254);
+  --phase-pulse: rgb(96, 165, 250);
+}
+
+.phase_processing {
+  background: rgba(245, 158, 11, 0.2);
+  --phase-text: rgb(253, 230, 138);
+  --phase-pulse: rgb(251, 191, 36);
 }
