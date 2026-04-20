@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Bot, ChevronDown, Wrench, Check, Skull, Sticker, Apple, Lightbulb, Hammer } from "lucide-react";
+import { Bot, ChevronDown, Wrench, Check, Skull, Sticker, Apple, Lightbulb, Hammer, MessageSquare } from "lucide-react";
 import { resolveIconComponent } from "./CustomAgentsPanel";
 import AgentBadgeComponent from "./AgentBadgeComponent";
 import ToolBadgeComponent from "./ToolBadgeComponent";
@@ -12,6 +12,7 @@ import styles from "./AgentPickerComponent.module.css";
  * Custom agents use the `icon` field stored in their data.
  */
 const AGENT_ICONS = {
+  NONE: MessageSquare,
   CODING: Bot,
   LUPOS: Skull,
   STICKERS: Sticker,
@@ -127,7 +128,7 @@ export default function AgentPickerComponent({
                     <div className={styles.agentMeta}>
                       <span className={styles.toolBadge}>
                         <Wrench size={9} />
-                        {agent.toolCount} tools
+                        {agent.toolCount === -1 ? "All tools" : `${agent.toolCount} tools`}
                       </span>
                       <span>{agent.project}</span>
                     </div>

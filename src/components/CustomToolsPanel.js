@@ -54,6 +54,7 @@ import SearchInputComponent from "./SearchInputComponent.js";
 import FilterDropdownComponent from "./FilterDropdownComponent.js";
 import TextAreaComponent from "./TextAreaComponent.js";
 import { renderToolName } from "../utils/utilities";
+import ToolSelectionComponent from "./ToolSelectionComponent";
 import styles from "./CustomToolsPanel.module.css";
 
 
@@ -204,6 +205,8 @@ export default function CustomToolsPanel({
   onToggleAllBuiltIn,
   offlineTools = new Set(),
   lockedOffTools = new Set(),
+  enabledTools,
+  onEnabledToolsChange,
 }) {
   const [editingTool, setEditingTool] = useState(null);
   const [isNew, setIsNew] = useState(false);
@@ -931,6 +934,15 @@ export default function CustomToolsPanel({
 
   return (
     <div className={styles.container}>
+      {/* ── Agent Tool Selection (checkbox picker) ── */}
+      {enabledTools && onEnabledToolsChange && (
+        <ToolSelectionComponent
+          availableTools={builtInTools}
+          enabledTools={enabledTools}
+          onEnabledToolsChange={onEnabledToolsChange}
+        />
+      )}
+
       {/* ── Search ── */}
       <SearchInputComponent
         value={searchQuery}

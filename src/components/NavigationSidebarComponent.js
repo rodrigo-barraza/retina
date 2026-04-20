@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import PrismService from "../services/PrismService.js";
 import {
@@ -45,26 +45,44 @@ function RainbowCanvas({ turbo = false, greyscale = false }) {
   );
 }
 
-const USER_NAV_ITEMS = [
-  { href: "/agents", label: "Agents", icon: Bot, alsoMatches: ["/coding-agent"] },
+const USER_NAV_SECTIONS = [
   {
-    href: "/",
-    label: "Conversations",
-    icon: MessageSquare,
-    exact: true,
-    alsoMatches: ["/conversations"],
+    label: "Work",
+    items: [
+      { href: "/agents", label: "Agents", icon: Bot, alsoMatches: ["/coding-agent"] },
+      {
+        href: "/",
+        label: "Conversations",
+        icon: MessageSquare,
+        exact: true,
+        alsoMatches: ["/conversations"],
+      },
+      { href: "/settings", label: "Settings", icon: Settings },
+    ],
   },
-  { href: "/models", label: "Models", icon: Server },
-  { href: "/media", label: "Media", icon: ImageIcon },
-  { href: "/text", label: "Text", icon: Type },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
-const USER_EXPERIMENT_ITEMS = [
-  { href: "/benchmarks", label: "Benchmarks", icon: Target },
-  { href: "/vram-benchmark", label: "VRAM Bench", icon: MemoryStick },
-  { href: "/synthesis", label: "Synthesis", icon: FlaskConical },
-  { href: "/workflows", label: "Workflows", icon: Workflow },
+  {
+    label: "Information",
+    items: [
+      { href: "/models", label: "Models", icon: Server },
+      { href: "/tools", label: "Tools", icon: Wrench },
+    ],
+  },
+  {
+    label: "Data",
+    items: [
+      { href: "/media", label: "Media", icon: ImageIcon },
+      { href: "/text", label: "Text", icon: Type },
+    ],
+  },
+  {
+    label: "Experiments",
+    items: [
+      { href: "/benchmarks", label: "Benchmarks", icon: Target },
+      { href: "/vram-benchmark", label: "VRAM Bench", icon: MemoryStick },
+      { href: "/synthesis", label: "Synthesis", icon: FlaskConical },
+      { href: "/workflows", label: "Workflows", icon: Workflow },
+    ],
+  },
 ];
 
 const ADMIN_NAV_ITEMS = [
@@ -86,9 +104,18 @@ const ADMIN_NAV_ITEMS = [
   { href: "/admin/models", label: "Models", icon: Server },
 ];
 
-const ADMIN_EXPERIMENT_ITEMS = [
-  { href: "/admin/synthesis", label: "Synthesis", icon: FlaskConical },
-  { href: "/admin/workflows", label: "Workflows", icon: GitBranch },
+const ADMIN_NAV_SECTIONS = [
+  {
+    label: null,
+    items: ADMIN_NAV_ITEMS,
+  },
+  {
+    label: "Experiments",
+    items: [
+      { href: "/admin/synthesis", label: "Synthesis", icon: FlaskConical },
+      { href: "/admin/workflows", label: "Workflows", icon: GitBranch },
+    ],
+  },
 ];
 
 export default function NavigationSidebarComponent({
@@ -402,8 +429,7 @@ export default function NavigationSidebarComponent({
     return () => cancelAnimationFrame(rafId);
   }, []);
 
-  const navItems = mode === "admin" ? ADMIN_NAV_ITEMS : USER_NAV_ITEMS;
-  const experimentItems = mode === "admin" ? ADMIN_EXPERIMENT_ITEMS : USER_EXPERIMENT_ITEMS;
+  const navSections = mode === "admin" ? ADMIN_NAV_SECTIONS : USER_NAV_SECTIONS;
   const isAdmin = mode === "admin";
 
   /* ── Mobile: render floating hamburger + compact popover menu ── */
@@ -445,56 +471,24 @@ export default function NavigationSidebarComponent({
 
               {/* Navigation links */}
               <nav className={styles.mobilePopoverNav}>
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive =
-                    (item.exact
-                      ? pathname === item.href
-                      : pathname.startsWith(item.href)) ||
-                    item.alsoMatches?.some((p) =>
-                      pathname.startsWith(p)
-                    );
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`${styles.navLink} ${isActive ? styles.active : ""}`}
-                      onMouseEnter={(e) => SoundService.playHover({ event: e })}
-                      onClick={(e) => {
-                        SoundService.playClick({ event: e });
-                        onNavClick?.(item.href);
-                        setMobileOpen(false);
-                        // Pre-close ThreePanelLayout sidebars so the next page mounts clean
-                        localStorage.setItem(LS_PANEL_LEFT, "false");
-                        localStorage.setItem(LS_PANEL_RIGHT, "false");
-                      }}
-                    >
-                      <Icon className={styles.navIcon} />
-                      <span className={styles.navLabel}>{item.label}</span>
-                      {item.href === "/settings" && !memoryConfigured && (
-                        <span className={styles.attentionDot} title="Memory models need to be configured">
-                          <AlertCircle size={13} />
-                        </span>
-                      )}
-                      {item.showBadge && badgeCounts[item.showBadge] > 0 && (
-                        <span className={`${styles.badge} ${styles.live}`}>
-                          {badgeCounts[item.showBadge]}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-
-                {/* Experiments divider (mobile) */}
-                {experimentItems.length > 0 && (
-                  <>
-                    <div className={styles.navDivider}>
-                      <span>Experiments</span>
-                    </div>
-                    {experimentItems.map((item) => {
+                {navSections.map((section, sectionIdx) => (
+                  <React.Fragment key={section.label || sectionIdx}>
+                    {/* Section divider — skip for the very first section */}
+                    {sectionIdx > 0 && section.label && (
+                      <div className={styles.navDivider}>
+                        <span>{section.label}</span>
+                      </div>
+                    )}
+                    {section.items.map((item) => {
                       const Icon = item.icon;
-                      const isActive = pathname.startsWith(item.href);
+                      const isActive =
+                        (item.exact
+                          ? pathname === item.href
+                          : pathname.startsWith(item.href)) ||
+                        item.alsoMatches?.some((p) =>
+                          pathname.startsWith(p)
+                        );
+
                       return (
                         <Link
                           key={item.href}
@@ -505,17 +499,28 @@ export default function NavigationSidebarComponent({
                             SoundService.playClick({ event: e });
                             onNavClick?.(item.href);
                             setMobileOpen(false);
+                            // Pre-close ThreePanelLayout sidebars so the next page mounts clean
                             localStorage.setItem(LS_PANEL_LEFT, "false");
                             localStorage.setItem(LS_PANEL_RIGHT, "false");
                           }}
                         >
                           <Icon className={styles.navIcon} />
                           <span className={styles.navLabel}>{item.label}</span>
+                          {item.href === "/settings" && !memoryConfigured && (
+                            <span className={styles.attentionDot} title="Memory models need to be configured">
+                              <AlertCircle size={13} />
+                            </span>
+                          )}
+                          {item.showBadge && badgeCounts[item.showBadge] > 0 && (
+                            <span className={`${styles.badge} ${styles.live}`}>
+                              {badgeCounts[item.showBadge]}
+                            </span>
+                          )}
                         </Link>
                       );
                     })}
-                  </>
-                )}
+                  </React.Fragment>
+                ))}
               </nav>
 
               {/* Footer actions */}
@@ -593,55 +598,24 @@ export default function NavigationSidebarComponent({
 
         {/* Navigation */}
         <nav className={styles.nav}>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              (item.exact
-                ? pathname === item.href
-                : pathname.startsWith(item.href)) ||
-              item.alsoMatches?.some((p) =>
-                pathname.startsWith(p)
-              );
-
-            const link = (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`${styles.navLink} ${isActive ? styles.active : ""}`}
-                onMouseEnter={(e) => SoundService.playHover({ event: e })}
-                onClick={(e) => { SoundService.playClick({ event: e }); onNavClick?.(item.href); }}
-              >
-                <Icon className={styles.navIcon} />
-                <span className={styles.navLabel}>{item.label}</span>
-                {item.href === "/settings" && !memoryConfigured && (
-                  <span className={styles.attentionDot} title="Memory models need to be configured">
-                    <AlertCircle size={13} />
-                  </span>
-                )}
-                {item.showBadge && badgeCounts[item.showBadge] > 0 && (
-                  <span className={`${styles.badge} ${styles.live}`}>
-                    {badgeCounts[item.showBadge]}
-                  </span>
-                )}
-              </Link>
-            );
-
-            return (
-              <TooltipComponent key={item.href} label={item.label} position="right" delay={200} disabled={showNav} className={styles.tooltipFill}>
-                {link}
-              </TooltipComponent>
-            );
-          })}
-
-          {/* Experiments divider (desktop) */}
-          {experimentItems.length > 0 && (
-            <>
-              <div className={styles.navDivider}>
-                <span>Experiments</span>
-              </div>
-              {experimentItems.map((item) => {
+          {navSections.map((section, sectionIdx) => (
+            <React.Fragment key={section.label || sectionIdx}>
+              {/* Section divider — skip for the very first section */}
+              {sectionIdx > 0 && section.label && (
+                <div className={styles.navDivider}>
+                  <span>{section.label}</span>
+                </div>
+              )}
+              {section.items.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname.startsWith(item.href);
+                const isActive =
+                  (item.exact
+                    ? pathname === item.href
+                    : pathname.startsWith(item.href)) ||
+                  item.alsoMatches?.some((p) =>
+                    pathname.startsWith(p)
+                  );
+
                 const link = (
                   <Link
                     key={item.href}
@@ -652,6 +626,16 @@ export default function NavigationSidebarComponent({
                   >
                     <Icon className={styles.navIcon} />
                     <span className={styles.navLabel}>{item.label}</span>
+                    {item.href === "/settings" && !memoryConfigured && (
+                      <span className={styles.attentionDot} title="Memory models need to be configured">
+                        <AlertCircle size={13} />
+                      </span>
+                    )}
+                    {item.showBadge && badgeCounts[item.showBadge] > 0 && (
+                      <span className={`${styles.badge} ${styles.live}`}>
+                        {badgeCounts[item.showBadge]}
+                      </span>
+                    )}
                   </Link>
                 );
 
@@ -661,8 +645,8 @@ export default function NavigationSidebarComponent({
                   </TooltipComponent>
                 );
               })}
-            </>
-          )}
+            </React.Fragment>
+          ))}
         </nav>
 
         {/* Footer */}

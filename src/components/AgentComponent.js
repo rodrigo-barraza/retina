@@ -76,15 +76,25 @@ const DEFAULT_EMPTY_STATE = {
 // Tools that are always on and non-toggleable in the agent view
 const AGENT_LOCKED_TOOLS = new Set(["Tool Calling"]);
 
+/** No-agent empty state — direct model chat, all tools. */
+const NONE_EMPTY_STATE = {
+  title: "Direct Chat",
+  subtitle: "Talk to the model directly with all tools available.",
+  placeholder: "Send a message...",
+};
+
 
 export default function AgentComponent({ agentId: propAgentId = "CODING", agents = [] }) {
   const agentId = propAgentId;
+  const isNoAgent = agentId === "NONE";
   const activeAgentData = agents.find((a) => a.id === agentId);
   const agentProject = activeAgentData?.project || PROJECT_AGENT;
   const agentBackgroundImage = activeAgentData?.backgroundImage || "";
-  const rawEmptyState = AGENT_EMPTY_STATE[agentId] || (activeAgentData?.name
-    ? { title: activeAgentData.name, subtitle: activeAgentData.description || "AI-powered agent with tool access.", placeholder: `Talk to ${activeAgentData.name}...` }
-    : DEFAULT_EMPTY_STATE);
+  const rawEmptyState = isNoAgent
+    ? NONE_EMPTY_STATE
+    : AGENT_EMPTY_STATE[agentId] || (activeAgentData?.name
+      ? { title: activeAgentData.name, subtitle: activeAgentData.description || "AI-powered agent with tool access.", placeholder: `Talk to ${activeAgentData.name}...` }
+      : DEFAULT_EMPTY_STATE);
   const emptyState = {
     ...rawEmptyState,
     subtitle: activeAgentData?.description || rawEmptyState.subtitle,
@@ -371,6 +381,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
   }, [loadMCPServers]);
 
   // Fetch built-in tools for the active agent (filtered server-side by persona)
+  // NONE = no agent filter → all tools exposed
   useEffect(() => {
     async function loadAgenticTools() {
       // Trigger Prism to re-fetch from tools-api (picks up newly added tools)
@@ -380,11 +391,11 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
         // Non-fatal — Prism may still have a stale cache
       }
 
-      const tools = await PrismService.getBuiltInToolSchemas(agentId);
+      const tools = await PrismService.getBuiltInToolSchemas(isNoAgent ? undefined : agentId);
       setBuiltInTools(tools);
     }
     loadAgenticTools().catch(console.error);
-  }, [agentId]);
+  }, [agentId, isNoAgent]);
 
   // ── Fetch memory settings to determine if memories are configured ──
   useEffect(() => {
@@ -608,6 +619,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
           ...(settings.thinkingBudget && { thinkingBudget: settings.thinkingBudget }),
           // Local models need enough context for MCP tool schemas + session
           minContextLength: 150000,
+          // Agentic project — null agent for NONE mode (no persona system prompt)
           project: agentProject,
           agentSessionId,
           conversationMeta: {
@@ -615,8 +627,8 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
           },
           // Trace tracking — generated client-side
           traceId,
-          // Agent persona — dynamic per-agent
-          agent: agentId,
+          // Agent persona — null for "No Agent" mode, dynamic per-agent otherwise
+          agent: isNoAgent ? null : agentId,
           // Phase 1: Agentic controls
           autoApprove,
           planFirst,
@@ -1178,6 +1190,7 @@ export default function AgentComponent({ agentId: propAgentId = "CODING", agents
       maxIterations,
       maxWorkerIterations,
       agentId,
+      isNoAgent,
       agentProject,
       fetchSessionStats,
       markTabNew,

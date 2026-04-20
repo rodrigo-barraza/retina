@@ -8,6 +8,18 @@ import styles from "./page.module.css";
 
 const LS_ACTIVE_AGENT = "retina:activeAgent";
 
+/** Synthetic "No Agent" entry — direct model chat with all tools. */
+const NONE_AGENT = {
+  id: "NONE",
+  name: "No Agent",
+  description: "Direct model conversation with all tools available.",
+  project: "direct",
+  toolCount: -1, // sentinel — rendered as "All tools" in picker
+  custom: false,
+  icon: "",
+  color: "",
+};
+
 export default function AgentsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -29,10 +41,10 @@ export default function AgentsPage() {
     return fromUrl || localAgentId;
   }, [searchParams, localAgentId]);
 
-  // Fetch agent personas on mount
+  // Fetch agent personas on mount — prepend "No Agent" synthetic entry
   useEffect(() => {
     PrismService.getAgentPersonas()
-      .then((list) => setAgents(list))
+      .then((list) => setAgents([NONE_AGENT, ...list]))
       .catch(console.error);
   }, []);
 

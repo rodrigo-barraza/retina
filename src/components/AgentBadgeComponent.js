@@ -7,6 +7,7 @@ import styles from "./AgentBadgeComponent.module.css";
 
 // ── Agent gradient lookup ──────────────────────────────────────────
 const AGENT_GRADIENTS = {
+  NONE:     ["#64748b", "#94a3b8"],
   CODING:   ["#6366f1", "#818cf8"],
   LUPOS:    ["#ef4444", "#f97316"],
   STICKERS: ["#10b981", "#34d399"],
