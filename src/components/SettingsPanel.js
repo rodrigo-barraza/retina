@@ -233,9 +233,13 @@ export default function SettingsPanel({
               label="reasoning"
             />
           )}
-          {liveTokensPerSec !== null && (
+          {liveTokensPerSec !== null ? (
             <span className={`${styles.statBadge} ${styles.speedBadge}`}>
               ⚡ {liveTokensPerSec.toFixed(1)} tok/s
+            </span>
+          ) : stats.totalTokens.output > 0 && activeElapsedTime > 1 && (
+            <span className={`${styles.statBadge} ${styles.avgSpeedBadge}`}>
+              ⚡ {(stats.totalTokens.output / activeElapsedTime).toFixed(1)} tok/s
             </span>
           )}
         </>
