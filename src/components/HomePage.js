@@ -1859,7 +1859,7 @@ export default function HomePage({ initialConversationId = null }) {
         let streamedThinking = "";
         let streamedImages = [];
         const codeBlocks = [];
-        let outputTokenEstimate = 0;
+
         let firstChunkTime = null;
 
         // Reset audio player for new generation
@@ -1907,14 +1907,13 @@ export default function HomePage({ initialConversationId = null }) {
               return updated;
             });
           },
-          onChunk: (content) => {
+          onChunk: (content, _sourceModel, outputTokens) => {
             // Safety net: if we receive a chunk while lmLoadProgress is
             // stuck (model loaded via chat auto-load), clear it now.
             setLmLoadProgress((prev) => (prev != null ? null : prev));
 
             streamedText += content;
-            // Client-side token metering: each SSE chunk ≈ 1 output token
-            outputTokenEstimate++;
+            // Backend sends authoritative running token count on each chunk
             if (!firstChunkTime) firstChunkTime = performance.now();
             const lastChunkTime = performance.now();
             setMessages((prev) => {
@@ -1922,17 +1921,16 @@ export default function HomePage({ initialConversationId = null }) {
               updated[updated.length - 1] = {
                 ...updated[updated.length - 1],
                 content: streamedText,
-                _streamingOutputTokens: outputTokenEstimate,
+                _streamingOutputTokens: outputTokens || 0,
                 _streamingStartTime: firstChunkTime,
                 _streamingLastChunkTime: lastChunkTime,
               };
               return updated;
             });
           },
-          onThinking: (content) => {
+          onThinking: (content, _sourceModel, outputTokens) => {
             streamedThinking += content;
-            // Reasoning tokens are output tokens — count them for live metering
-            outputTokenEstimate++;
+            // Backend sends authoritative running token count on each thinking chunk
             if (!firstChunkTime) firstChunkTime = performance.now();
             const lastChunkTime = performance.now();
             setMessages((prev) => {
@@ -1940,7 +1938,7 @@ export default function HomePage({ initialConversationId = null }) {
               updated[updated.length - 1] = {
                 ...updated[updated.length - 1],
                 thinking: streamedThinking,
-                _streamingOutputTokens: outputTokenEstimate,
+                _streamingOutputTokens: outputTokens || 0,
                 _streamingStartTime: firstChunkTime,
                 _streamingLastChunkTime: lastChunkTime,
               };

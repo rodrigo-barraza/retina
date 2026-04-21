@@ -265,9 +265,22 @@ export function getSessionTokenStats(messages) {
     if (m.timeToGeneration != null) {
       lastTimeToGeneration = m.timeToGeneration;
     }
-    // In-flight streaming messages: use client-side chunk counter
-    // as an approximate output token count until the final usage arrives
-    else if (m._streamingOutputTokens > 0) {
+    // Intermediate authoritative usage from backend usage_update events.
+    // Priority: usage (done) > _intermediateUsage (per-iteration) > _streamingOutputTokens (per-chunk)
+    if (!m.usage && m._intermediateUsage) {
+      requests += m._intermediateUsage.requests || 1;
+      input += getTotalInputTokens(m._intermediateUsage);
+      output += m._intermediateUsage.outputTokens || 0;
+      // Still expose streaming metadata for tok/s computation
+      liveStreamingTokens = m._intermediateUsage.outputTokens || 0;
+      liveStreamingStartTime = m._streamingStartTime || null;
+      liveStreamingLastChunkTime = m._streamingLastChunkTime || null;
+      liveStreamingBurstTokens = m._streamingBurstTokens || 0;
+      liveStreamingBurstElapsed = m._streamingBurstElapsed || 0;
+    }
+    // In-flight streaming messages: use backend-reported running count
+    // as the output token count until _intermediateUsage or final usage arrives
+    else if (!m.usage && m._streamingOutputTokens > 0) {
       output += m._streamingOutputTokens;
       liveStreamingTokens = m._streamingOutputTokens;
       liveStreamingStartTime = m._streamingStartTime || null;

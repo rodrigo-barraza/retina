@@ -748,7 +748,6 @@ export default function AgentComponent({
 
         let streamedText = "";
         let streamedThinking = "";
-        let outputTokenEstimate = 0;
         let firstChunkTime = null;
         let prevChunkTime = null;    // previous chunk's timestamp for delta accumulation
         let burstTokens = 0;         // tokens in current generation burst (resets on gap)
@@ -775,10 +774,9 @@ export default function AgentComponent({
         // Direct Chat → streamText (/chat); Agents → streamAgentText (/agent)
         const streamFn = isNoAgent ? PrismService.streamText : PrismService.streamAgentText;
         abortRef.current = streamFn(payload, {
-          onChunk: (content) => {
+          onChunk: (content, _sourceModel, outputTokens) => {
             streamedText += content;
-            // Client-side token metering: each SSE chunk ≈ 1 output token
-            outputTokenEstimate++;
+            // Backend sends authoritative running token count on each chunk
             burstTokens++;
             const now = performance.now();
             if (!firstChunkTime) firstChunkTime = now;
@@ -830,7 +828,7 @@ export default function AgentComponent({
                 lastMsg.contentSegments = snapshotSegments();
                 lastMsg.textFragments = [...textFragments];
                 lastMsg.thinkingFragments = [...thinkingFragments];
-                lastMsg._streamingOutputTokens = outputTokenEstimate;
+                lastMsg._streamingOutputTokens = outputTokens || 0;
                 lastMsg._streamingStartTime = firstChunkTime;
                 lastMsg._streamingLastChunkTime = now;
                 lastMsg._streamingBurstTokens = burstTokens;
@@ -842,7 +840,7 @@ export default function AgentComponent({
                   contentSegments: snapshotSegments(),
                   textFragments: [...textFragments],
                   thinkingFragments: [...thinkingFragments],
-                  _streamingOutputTokens: outputTokenEstimate,
+                  _streamingOutputTokens: outputTokens || 0,
                   _streamingStartTime: firstChunkTime,
                   _streamingLastChunkTime: now,
                   _streamingBurstTokens: burstTokens,
@@ -852,11 +850,10 @@ export default function AgentComponent({
               return updated;
             });
           },
-          onThinking: (content) => {
+          onThinking: (content, _sourceModel, outputTokens) => {
             streamedThinking += content;
 
-            // Reasoning tokens are output tokens — count them for live metering
-            outputTokenEstimate++;
+            // Backend sends authoritative running token count on each thinking chunk
             burstTokens++;
             const now = performance.now();
             if (!firstChunkTime) firstChunkTime = now;
@@ -892,7 +889,7 @@ export default function AgentComponent({
                 lastMsg.thinking = streamedThinking;
                 lastMsg.contentSegments = snapshotSegments();
                 lastMsg.thinkingFragments = [...thinkingFragments];
-                lastMsg._streamingOutputTokens = outputTokenEstimate;
+                lastMsg._streamingOutputTokens = outputTokens || 0;
                 lastMsg._streamingStartTime = firstChunkTime;
                 lastMsg._streamingLastChunkTime = now;
                 lastMsg._streamingBurstTokens = burstTokens;
@@ -904,7 +901,7 @@ export default function AgentComponent({
                   thinking: streamedThinking,
                   contentSegments: snapshotSegments(),
                   thinkingFragments: [...thinkingFragments],
-                  _streamingOutputTokens: outputTokenEstimate,
+                  _streamingOutputTokens: outputTokens || 0,
                   _streamingStartTime: firstChunkTime,
                   _streamingLastChunkTime: now,
                   _streamingBurstTokens: burstTokens,
@@ -1346,6 +1343,22 @@ export default function AgentComponent({
                 },
               }));
             }
+          },
+          onUsageUpdate: (data) => {
+            // Authoritative per-iteration usage from the backend —
+            // stored on the message so getSessionTokenStats can use it
+            // as a middle priority between streaming estimate and final done.
+            setMessages((prev) => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              if (last?.role === "assistant" && !last.usage) {
+                updated[updated.length - 1] = {
+                  ...last,
+                  _intermediateUsage: data.usage,
+                };
+              }
+              return updated;
+            });
           },
           onDone: (data) => {
             setMessages((prev) => {

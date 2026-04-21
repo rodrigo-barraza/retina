@@ -840,15 +840,16 @@ export default class PrismService {
       onApprovalRequired, onPlanProposal,
       onUserQuestion, onTodoUpdate, onBriefUpdate,
       onRunInfo, onModelStart, onModelComplete, onRunComplete,
+      onUsageUpdate,
       onStatus, onDone, onError,
     } = callbacks;
 
     switch (data.type) {
       case "chunk":
-        onChunk?.(data.content, data._sourceModel);
+        onChunk?.(data.content, data._sourceModel, data.outputTokens);
         break;
       case "thinking":
-        onThinking?.(data.content, data._sourceModel);
+        onThinking?.(data.content, data._sourceModel, data.outputTokens);
         break;
       case "image":
         onImage?.(data.data, data.mimeType, data.minioRef);
@@ -920,6 +921,9 @@ export default class PrismService {
         break;
       case "run_complete":
         onRunComplete?.(data);
+        break;
+      case "usage_update":
+        onUsageUpdate?.(data);
         break;
       case "status":
         onStatus?.(data);
