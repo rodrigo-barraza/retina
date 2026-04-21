@@ -656,7 +656,7 @@ export default function ChatArea({
           <div className={styles.toolCardsStack}>
             <div className={styles.toolCardsHeader}>
               <Zap size={14} />
-              <span>Tools</span>
+              <span>Native Tools</span>
               <span className={styles.toolCardsCount}>
                 {activeTools.filter((t) => getToolToggle(t)?.checked).length}
               </span>

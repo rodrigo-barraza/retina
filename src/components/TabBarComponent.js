@@ -50,7 +50,7 @@ export default function TabBarComponent({
 
         if (tab.tooltip) {
           return (
-            <TooltipComponent key={tab.key} label={tab.tooltip} position="bottom" delay={400} className={styles.tooltipWrapper}>
+            <TooltipComponent key={tab.key} label={tab.tooltip} position="bottom" delay={400} className={styles.tooltipWrapper} disabled={tab.tooltipDisabled}>
               {button}
             </TooltipComponent>
           );

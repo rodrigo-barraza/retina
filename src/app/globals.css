@@ -24,6 +24,10 @@
   --warning-subtle: rgba(245, 158, 11, 0.1);
   --info: #3b82f6;
   --info-subtle: rgba(59, 130, 246, 0.1);
+  --color-success: var(--success);
+  --color-error: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --border-radius-sm: 2px;
   --border-radius-md: 2px;
   --border-radius-lg: 2px;
@@ -83,6 +87,10 @@
   --warning-subtle: rgba(217, 119, 6, 0.06);
   --info: #2563eb;
   --info-subtle: rgba(37, 99, 235, 0.06);
+  --color-success: var(--success);
+  --color-error: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);

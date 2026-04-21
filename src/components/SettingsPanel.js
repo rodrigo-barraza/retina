@@ -729,7 +729,7 @@ export default function SettingsPanel({
 
           return (
             <div className={styles.section}>
-              <div className={styles.sectionHeader}>Tools</div>
+              <div className={styles.sectionHeader}>Native Tools</div>
               {selectedModelDef.tools.map((tool) => {
                 const toggle = TOGGLEABLE_TOOLS.has(tool)
                   ? getToolToggle(tool)

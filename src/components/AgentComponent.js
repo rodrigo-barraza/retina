@@ -647,13 +647,13 @@ export default function AgentComponent({
               ],
               maxTokens: settings.maxTokens,
               temperature: settings.temperature,
-              thinkingEnabled: settings.thinkingEnabled ?? false,
+              ...(settings.thinkingEnabled !== undefined && { thinkingEnabled: settings.thinkingEnabled }),
               ...(settings.reasoningEffort && { reasoningEffort: settings.reasoningEffort }),
               ...(settings.thinkingBudget && { thinkingBudget: settings.thinkingBudget }),
               // Native provider FC (Google code exec, LM Studio MCP, etc.)
               functionCallingEnabled: settings.functionCallingEnabled ?? false,
               ...(settings.functionCallingEnabled && allToolSchemas.length > 0 && {
-                enabledTools: allToolSchemas.map((t) => t.name),
+                enabledTools: allToolSchemas.filter(t => !["team_create", "send_message", "stop_agent", "task_output", "team_delete"].includes(t.name)).map((t) => t.name),
               }),
               // Provider-native capabilities
               ...(settings.webSearchEnabled ? { webSearch: true } : {}),
@@ -684,7 +684,7 @@ export default function AgentComponent({
               enabledTools: allToolSchemas.map((t) => t.name),
               maxTokens: settings.maxTokens,
               temperature: settings.temperature,
-              thinkingEnabled: settings.thinkingEnabled ?? false,
+              ...(settings.thinkingEnabled !== undefined && { thinkingEnabled: settings.thinkingEnabled }),
               ...(settings.reasoningEffort && { reasoningEffort: settings.reasoningEffort }),
               ...(settings.thinkingBudget && { thinkingBudget: settings.thinkingBudget }),
               // Local models need enough context for MCP tool schemas + session
@@ -995,7 +995,7 @@ export default function AgentComponent({
             setPlanProposal({
               plan: data.plan,
               steps: data.steps || [],
-              status: "pending",
+              status: data.autoApproved ? "approved" : "pending",
             });
           },
           onStatus: (statusData) => {
@@ -1574,7 +1574,8 @@ export default function AgentComponent({
             key: "tools",
             icon: <Wrench size={14} />,
             ...badgeProps(allToolSchemas.length, "tools"),
-            tooltip: "Tools",
+            tooltip: "Tool Calling",
+            tooltipDisabled: !settings.functionCallingEnabled,
           },
           ...(isNoAgent ? [
             {
