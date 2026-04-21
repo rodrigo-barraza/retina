@@ -1,21 +1,29 @@
 import { useReducer, useMemo } from "react";
 
 /**
- * TTFT reducer — latches the final TTFT value when the processing phase ends.
+ * TTFT reducer — captures the server-computed TTFT value or falls back
+ * to client-side phase-based tracking.
  *
  * States:
- * - `{ live: true, value }` — actively counting during processing
- * - `{ live: false, value }` — latched after processing ended, turn still active
+ * - `{ live: true, value }` — actively counting during processing (client-side)
+ * - `{ live: false, value }` — latched after TTFT is known (server-side or phase transition)
  * - `{ live: false, value: null }` — idle / turn ended
  */
-function ttftReducer(prev, { phase, startTime, perfNow, active }) {
+function ttftReducer(prev, { phase, startTime, perfNow, active, serverTtft }) {
   // Turn ended → clear
   if (!active) {
     if (prev.value === null && !prev.live) return prev;
     return { value: null, live: false, prevPhase: null };
   }
 
-  // Active processing → live counting
+  // Server-computed TTFT arrived — use it (authoritative, all providers)
+  if (serverTtft != null) {
+    // Already latched with the same value — skip
+    if (prev.value === serverTtft && !prev.live) return prev;
+    return { value: serverTtft, live: false, prevPhase: phase };
+  }
+
+  // Active processing → live counting (client-side fallback)
   if (phase === "processing" && startTime) {
     return {
       value: (perfNow - startTime) / 1000,
@@ -48,17 +56,21 @@ function ttftReducer(prev, { phase, startTime, perfNow, active }) {
 const TTFT_INITIAL = { value: null, live: false, prevPhase: null };
 
 /**
- * useTtft — Time To First Token tracking with latching.
+ * useTtft — Time To First Token tracking.
  *
- * Computes and holds the TTFT value across three lifecycle phases:
+ * Two data sources (priority order):
  *
- * 1. **Processing** (prompt evaluation): returns a live-counting value
- *    derived from `perfNow - liveProcessingStartTime`.
- * 2. **Generating** (first token arrived): latches the final TTFT from
- *    the processing phase so the badge remains visible mid-turn instead
- *    of vanishing when the phase transitions.
- * 3. **Idle** (turn complete / no turn): returns `null` so the consumer
- *    can fall back to the static `avgTimeToGeneration` from backend stats.
+ * 1. **Server-computed TTFT** (`sessionStats.liveServerTtft`): emitted by the
+ *    backend's `generation_started` status event when the first token arrives.
+ *    This is authoritative and works for ALL providers, including the
+ *    OpenAI-compat path that doesn't emit processing phase events.
+ *
+ * 2. **Client-side phase tracking** (`liveProcessingPhase` / `liveProcessingStartTime`):
+ *    fallback for providers that emit real-time processing progress (LM Studio
+ *    native path). Counts up during `processing` phase and latches on transition.
+ *
+ * After the turn completes, the consumer falls back to the static
+ * `avgTimeToGeneration` from backend session stats.
  *
  * @param {object|null} sessionStats — the sessionStats prop
  * @param {number} perfNow — current performance.now() snapshot (from useTokenRate ticker)
@@ -70,13 +82,14 @@ const TTFT_INITIAL = { value: null, live: false, prevPhase: null };
 export default function useTtft(sessionStats, perfNow, needsTicker) {
   const phase = sessionStats?.liveProcessingPhase || null;
   const startTime = sessionStats?.liveProcessingStartTime || null;
+  const serverTtft = sessionStats?.liveServerTtft ?? null;
 
   const [state, dispatch] = useReducer(ttftReducer, TTFT_INITIAL);
 
   // Dispatch on every tick to keep in sync (same pattern as tok/s reducer)
   useMemo(() => {
-    dispatch({ phase, startTime, perfNow, active: needsTicker });
-  }, [phase, startTime, perfNow, needsTicker]);
+    dispatch({ phase, startTime, perfNow, active: needsTicker, serverTtft });
+  }, [phase, startTime, perfNow, needsTicker, serverTtft]);
 
   return {
     liveTtft: state.value,

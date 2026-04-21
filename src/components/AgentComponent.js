@@ -519,7 +519,7 @@ export default function AgentComponent({
     uniqueModels, uniqueProviders, totalCost, totalTokens, requestCount,
     usedTools, modalities, elapsedTime: completedElapsedTime,
     liveStreamingTokens, liveStreamingStartTime, liveStreamingLastChunkTime, liveStreamingBurstTokens, liveStreamingBurstElapsed, workerGenerationProgress,
-    lastTimeToGeneration, liveProcessingStartTime, liveProcessingPhase,
+    lastTimeToGeneration, liveProcessingStartTime, liveProcessingPhase, liveServerTtft,
   } = useSessionStats(messages);
 
   // ── Fetch backend-aggregate session stats ────────────────
@@ -1120,6 +1120,19 @@ export default function AgentComponent({
               PrismService.getAgentMemories(agentProject, 1, agentId)
                 .then((r) => setTotalMemoriesCount(r.total || 0))
                 .catch(() => {});
+            } else if (statusData?.message === "generation_started") {
+              // Server-computed TTFT — authoritative, works for all providers
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.role === "assistant") {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    _serverTtft: statusData.timeToFirstToken,
+                  };
+                }
+                return updated;
+              });
             } else if (statusData?.phase) {
               // LM Studio lifecycle status (loading, processing, generating)
               setMessages((prev) => {
@@ -1137,6 +1150,20 @@ export default function AgentComponent({
                       ? performance.now()
                       : last._processingStartTime,
                   };
+                } else {
+                  // Phase event arrived before any content chunk — create a
+                  // placeholder assistant message to carry the phase metadata.
+                  // onChunk/onThinking will merge into this message when they fire.
+                  updated.push({
+                    role: "assistant",
+                    content: "",
+                    status: statusData.message,
+                    statusPhase: statusData.phase,
+                    _statusProgress: statusData.progress != null ? statusData.progress : undefined,
+                    _processingStartTime: statusData.phase === "processing"
+                      ? performance.now()
+                      : undefined,
+                  });
                 }
                 return updated;
               });
@@ -1876,6 +1903,7 @@ export default function AgentComponent({
                       lastTimeToGeneration,
                       liveProcessingStartTime,
                       liveProcessingPhase,
+                      liveServerTtft,
                       avgTokensPerSec: backendSessionStats.avgTokensPerSec || null,
                       avgTimeToGeneration: backendSessionStats.avgTimeToGeneration || null,
                       orchestrator: mapSubStats(backendSessionStats.orchestrator),
@@ -1910,6 +1938,7 @@ export default function AgentComponent({
                     lastTimeToGeneration,
                     liveProcessingStartTime,
                     liveProcessingPhase,
+                    liveServerTtft,
                   }
               : null
           }

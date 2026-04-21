@@ -260,6 +260,7 @@ export default function HomePage({ initialConversationId = null }) {
   const {
     uniqueModels, uniqueProviders, totalCost, totalTokens, requestCount,
     usedTools, modalities, liveStreamingTokens, liveStreamingStartTime, liveStreamingLastChunkTime,
+    lastTimeToGeneration, liveProcessingStartTime, liveProcessingPhase, liveServerTtft,
   } = useSessionStats(messages);
 
   // Auto-save system prompt on edit (debounced)
@@ -1124,6 +1125,10 @@ export default function HomePage({ initialConversationId = null }) {
                 ...updated[insertIndex],
                 status: message,
                 statusPhase: phase,
+                // Server-computed TTFT from generation_started event
+                ...(statusData?.message === "generation_started" && statusData.timeToFirstToken != null
+                  ? { _serverTtft: statusData.timeToFirstToken }
+                  : {}),
               };
               return updated;
             });
@@ -1896,6 +1901,10 @@ export default function HomePage({ initialConversationId = null }) {
                 ...updated[updated.length - 1],
                 status: message,
                 statusPhase: phase,
+                // Server-computed TTFT from generation_started event
+                ...(statusData?.message === "generation_started" && statusData.timeToFirstToken != null
+                  ? { _serverTtft: statusData.timeToFirstToken }
+                  : {}),
               };
               return updated;
             });
@@ -2157,6 +2166,10 @@ export default function HomePage({ initialConversationId = null }) {
                         liveStreamingTokens,
                         liveStreamingStartTime,
                         liveStreamingLastChunkTime,
+                        lastTimeToGeneration,
+                        liveProcessingStartTime,
+                        liveProcessingPhase,
+                        liveServerTtft,
                       }
                     : null
                 }
