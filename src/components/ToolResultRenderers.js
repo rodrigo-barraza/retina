@@ -825,8 +825,10 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
   const parsed = tryParse(result);
 
   // Extract members from args (calling state) or result (done state)
-  const argMembers = args?.members || [];
-  const resultMembers = parsed?.members || [];
+  const rawArgMembers = args?.members;
+  const argMembers = Array.isArray(rawArgMembers) ? rawArgMembers : [];
+  const rawResultMembers = parsed?.members;
+  const resultMembers = Array.isArray(rawResultMembers) ? rawResultMembers : [];
   const teamName = args?.name || parsed?.team || "";
 
   // ── Live tok/s ticker ────────────────────────────────────────
