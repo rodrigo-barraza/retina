@@ -267,12 +267,21 @@ export function getSessionTokenStats(messages) {
     }
     // Intermediate authoritative usage from backend usage_update events.
     // Priority: usage (done) > _intermediateUsage (per-iteration) > _streamingOutputTokens (per-chunk)
+    //
+    // However, _streamingOutputTokens may exceed _intermediateUsage when
+    // a new iteration is actively streaming — the intermediate value is
+    // from the end of the *previous* iteration. Use whichever is higher
+    // so the token count never stalls between iterations.
     if (!m.usage && m._intermediateUsage) {
+      const intermediateOutput = m._intermediateUsage.outputTokens || 0;
+      const streamingOutput = m._streamingOutputTokens || 0;
+      const effectiveOutput = Math.max(intermediateOutput, streamingOutput);
+
       requests += m._intermediateUsage.requests || 1;
       input += getTotalInputTokens(m._intermediateUsage);
-      output += m._intermediateUsage.outputTokens || 0;
+      output += effectiveOutput;
       // Still expose streaming metadata for tok/s computation
-      liveStreamingTokens = m._intermediateUsage.outputTokens || 0;
+      liveStreamingTokens = effectiveOutput;
       liveStreamingStartTime = m._streamingStartTime || null;
       liveStreamingLastChunkTime = m._streamingLastChunkTime || null;
       liveStreamingBurstTokens = m._streamingBurstTokens || 0;
