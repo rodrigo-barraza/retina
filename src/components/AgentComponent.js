@@ -2218,12 +2218,23 @@ export default function AgentComponent({
           : undefined;
         // Structured progress (0-1) from LM Studio prompt processing / model loading
         const progress = (phase === "processing" || phase === "loading") ? (lastMsg?._statusProgress ?? null) : null;
+
+        // Orchestrator tok/s from burst-scoped generation metrics.
+        // Only show when the orchestrator itself is actively generating
+        // (not during tool execution or worker delegation).
+        let orchestratorTokPerSec = null;
+        const isOrchestratorGenerating = (phase === "generating" || phase === "thinking") && !hasActiveTools && !workerDerivedPhase;
+        if (isOrchestratorGenerating && liveStreamingBurstTokens > 1 && liveStreamingBurstElapsed > 0) {
+          orchestratorTokPerSec = liveStreamingBurstTokens / (liveStreamingBurstElapsed / 1000);
+        }
+
         return (
           <StatusBarComponent
             active={isGenerating}
             phase={phase}
             label={label}
             progress={progress}
+            tokPerSec={orchestratorTokPerSec}
             iteration={agenticProgress?.iteration || 0}
             maxIterations={Number.isFinite(maxIterations) ? maxIterations : undefined}
           />

@@ -67,6 +67,7 @@ const SYNTHETIC_TICK_MS = 200;
  * @param {string}  [props.label]         – Text label override. Falls back to `PHASE_LABELS[phase]`.
  * @param {string|null} [props.icon]      – Emoji override. `null` = no icon. Undefined = auto from phase.
  * @param {number|null} [props.progress]  – Progress value 0-1 (LM Studio prompt processing / model loading).
+ * @param {number|null} [props.tokPerSec] – Live tokens/second for this specific agent.
  * @param {number}  [props.iteration]     – Current iteration number (worker bar).
  * @param {number}  [props.maxIterations] – Max iterations (worker bar).
  * @param {React.ReactNode} [props.idleIcon]  – Icon shown when bar is inactive (worker idle state).
@@ -79,6 +80,7 @@ export default function StatusBarComponent({
   label,
   icon,
   progress,
+  tokPerSec,
   iteration,
   maxIterations,
   idleIcon,
@@ -168,6 +170,11 @@ export default function StatusBarComponent({
               {hasEffectiveProgress && (
                 <span className={styles.statusBarProgress}>
                   {progressPct}%
+                </span>
+              )}
+              {tokPerSec != null && tokPerSec > 0 && (
+                <span className={styles.statusBarSpeed}>
+                  ⚡ {tokPerSec.toFixed(1)} tok/s
                 </span>
               )}
               {iteration > 0 && (

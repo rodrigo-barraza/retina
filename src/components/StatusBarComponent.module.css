@@ -152,6 +152,20 @@
   letter-spacing: 0.03em;
 }
 
+/* ── Speed chip (tok/s) ── */
+
+.statusBarSpeed {
+  font-size: 9px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+  padding: 1px 5px;
+  background: rgba(250, 204, 21, 0.15);
+  color: rgb(253, 224, 71);
+  border-radius: 3px;
+  letter-spacing: 0.03em;
+}
+
 /* ── Pulse dot ── */
 
 .statusBarPulse {

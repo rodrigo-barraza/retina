@@ -808,6 +808,17 @@ function WorkerStatusBar({ activity }) {
     ? (phase === "failed" ? "Worker failed" : `Done · ${toolCount} tool${toolCount !== 1 ? "s" : ""} used`)
     : (toolCount > 0 ? `${toolCount} tools used` : "Worker idle");
 
+  // Per-worker tok/s from burst-scoped generation progress data.
+  // Only show during generating/thinking phases (not while a tool is executing).
+  let tokPerSec = null;
+  if (!isToolActive && (phase === "generating" || phase === "thinking")) {
+    const { outputTokens = 0, firstChunkTime, lastChunkTime } = activity;
+    if (outputTokens > 1 && firstChunkTime && lastChunkTime) {
+      const elapsedSec = (lastChunkTime - firstChunkTime) / 1000;
+      if (elapsedSec > 0) tokPerSec = outputTokens / elapsedSec;
+    }
+  }
+
   return (
     <StatusBarComponent
       active={isActive}
@@ -816,6 +827,7 @@ function WorkerStatusBar({ activity }) {
       label={label}
       icon={icon}
       progress={progress}
+      tokPerSec={tokPerSec}
       iteration={iteration}
       maxIterations={maxIterations}
       idleIcon={<Users size={10} />}
