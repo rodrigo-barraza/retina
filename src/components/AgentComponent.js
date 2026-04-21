@@ -1035,6 +1035,21 @@ export default function AgentComponent({
                 status: "pending",
               },
             ]);
+            // Clear processing metadata so the live TTFT badge stops
+            // counting — user deliberation time on approval gates
+            // should not inflate time-to-first-token.
+            setMessages((prev) => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              if (last?.role === "assistant" && (last.statusPhase || last._processingStartTime)) {
+                updated[updated.length - 1] = {
+                  ...last,
+                  statusPhase: undefined,
+                  _processingStartTime: undefined,
+                };
+              }
+              return updated;
+            });
           },
           onPlanProposal: (data) => {
             console.log("[AgentComponent] plan_proposal received:", data.plan?.length, "chars, autoApproved:", data.autoApproved);
