@@ -1096,7 +1096,7 @@ export default function MessageList({
                   {msg.role === "user" ? <User size={16} /> : msg.role === "system" ? "S" : <Bot size={16} />}
                 </div>
               )}
-              <div className={styles.content}>
+              <div className={`${styles.content}${isStreaming ? ` ${styles.contentGenerating}` : ""}`}>
                 {/* Header: hidden for continuation messages */}
                 {!coalesce?.isContinuation && (
                 <div className={styles.messageHeader}>

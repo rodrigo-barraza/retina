@@ -111,6 +111,28 @@
   min-width: 0;
 }
 
+/* ── Generating state: blinking caret cursor ── */
+.contentGenerating::after {
+  content: "▎";
+  display: inline;
+  font-weight: 700;
+  font-size: 1.1em;
+  line-height: 1;
+  color: transparent;
+  background: var(--prism-conic);
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: contentCaretBlink 0.8s step-end infinite;
+  will-change: opacity;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes contentCaretBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 .messageHeader {
   display: flex;
   justify-content: space-between;

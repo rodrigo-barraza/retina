@@ -237,6 +237,24 @@ export default function AgentComponent({
       abortRef.current = null;
     }
     setIsGenerating(false);
+    setPlanProposal(null);
+
+    // Force all active workers to terminal state so their StatusBarComponent
+    // bars stop animating — the SSE stream was aborted before "complete" events
+    // could arrive, leaving activity entries stuck in active phases.
+    setWorkerToolActivity((prev) => {
+      const hasActive = Object.values(prev).some(
+        (w) => w.phase && w.phase !== "complete" && w.phase !== "failed",
+      );
+      if (!hasActive) return prev;
+      const next = {};
+      for (const [id, w] of Object.entries(prev)) {
+        next[id] = (w.phase && w.phase !== "complete" && w.phase !== "failed")
+          ? { ...w, phase: "complete", currentTool: null }
+          : w;
+      }
+      return next;
+    });
 
     // Explicitly abort any running workers for this session — belt-and-suspenders
     // alongside the backend SSE disconnect handler
@@ -301,7 +319,7 @@ export default function AgentComponent({
     endRef.current?.scrollIntoView({ behavior: scrollBehaviorRef.current });
     // Reset to smooth after each scroll so streaming remains animated
     scrollBehaviorRef.current = "smooth";
-  }, [messages, toolActivity]);
+  }, [messages, toolActivity, planProposal, pendingApprovals]);
 
   // Auto-resize is handled inline in handleInputChange (no effect needed)
 
@@ -992,6 +1010,7 @@ export default function AgentComponent({
             ]);
           },
           onPlanProposal: (data) => {
+            console.log("[AgentComponent] plan_proposal received:", data.plan?.length, "chars, autoApproved:", data.autoApproved);
             setPlanProposal({
               plan: data.plan,
               steps: data.steps || [],
@@ -1420,6 +1439,7 @@ export default function AgentComponent({
     setToolActivity([]);
     setWorkerToolActivity({});
     setPendingImages([]);
+    setPlanProposal(null);
     setAgentSessionId(crypto.randomUUID());
     setTraceId(null);
     setActiveId(null);
