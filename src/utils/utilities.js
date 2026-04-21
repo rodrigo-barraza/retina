@@ -339,6 +339,85 @@ export function getUsedTools(messages) {
 }
 
 /**
+ * Tool names that represent provider capabilities rather than
+ * function-level tool calls. Used to separate capability badges
+ * (Thinking, Tool Calling, Web Search, etc.) from individual
+ * tool-call badges (read_file, grep_search, etc.) in the stats UI.
+ */
+export const CAPABILITY_TOOL_NAMES = new Set([
+  "Thinking", "Tool Calling", "Web Search", "Google Search",
+  "Code Execution", "Computer Use", "File Search", "URL Context",
+  "Image Generation",
+]);
+
+/**
+ * Convert a backend toolCounts map ({ name: count }) into the
+ * usedTools array format ([{ name, count }]) sorted by count desc.
+ */
+export function toolCountsToUsedTools(toolCounts) {
+  if (!toolCounts || Object.keys(toolCounts).length === 0) return [];
+  return Object.entries(toolCounts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Merge multiple tool-count sources into a single usedTools array
+ * for display in the stats badges. Handles three layers:
+ *
+ * 1. **clientTools** — from getUsedTools(messages), includes both
+ *    capability-level entries (Thinking, Tool Calling) and
+ *    coordinator function-level entries (read_file, etc.)
+ * 2. **backendToolCounts** — optional { name: count } map from
+ *    backend session stats (authoritative post-completion)
+ * 3. **workerToolActivity** — optional { [workerId]: { toolNames: { name: count } } }
+ *    from live SSE events (real-time during generation)
+ *
+ * When both backend and live worker counts exist for the same tool,
+ * the higher count wins (prevents badges from appearing to decrease
+ * as backend catches up).
+ *
+ * @param {Array<{name: string, count: number}>} clientTools
+ * @param {{ [name: string]: number }} [backendToolCounts]
+ * @param {{ [workerId: string]: { toolNames?: { [name: string]: number } } }} [workerToolActivity]
+ * @returns {Array<{name: string, count: number}>} sorted by count desc
+ */
+export function mergeUsedToolsWithWorkers(clientTools, backendToolCounts, workerToolActivity) {
+  // Separate capabilities from function-level tool calls
+  const capabilities = clientTools.filter((t) => CAPABILITY_TOOL_NAMES.has(t.name));
+
+  // Start with authoritative source (backend if available, else client function-level)
+  const merged = new Map();
+  if (backendToolCounts) {
+    for (const t of toolCountsToUsedTools(backendToolCounts)) {
+      merged.set(t.name, t.count);
+    }
+  } else {
+    for (const t of clientTools) {
+      if (CAPABILITY_TOOL_NAMES.has(t.name)) continue;
+      merged.set(t.name, (merged.get(t.name) || 0) + t.count);
+    }
+  }
+
+  // Overlay live worker tool counts (real-time during generation)
+  if (workerToolActivity) {
+    for (const w of Object.values(workerToolActivity)) {
+      if (!w.toolNames) continue;
+      for (const [name, count] of Object.entries(w.toolNames)) {
+        if (CAPABILITY_TOOL_NAMES.has(name)) continue;
+        merged.set(name, Math.max(merged.get(name) || 0, count));
+      }
+    }
+  }
+
+  const mergedTools = [...merged.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
+  return [...capabilities, ...mergedTools];
+}
+
+/**
  * Shuffle an array in-place using the Fisher–Yates algorithm.
  * Returns a new shuffled copy — does not mutate the original.
  */

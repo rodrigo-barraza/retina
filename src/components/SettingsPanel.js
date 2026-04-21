@@ -24,7 +24,7 @@ import RequestCountBadgeComponent from "./RequestCountBadgeComponent";
 import MessageCountBadgeComponent from "./MessageCountBadgeComponent";
 import StopwatchBadgeComponent from "./StopwatchBadgeComponent";
 import StatsTabBarComponent from "./StatsTabBarComponent";
-import { formatCost } from "../utils/utilities";
+import { formatCost, CAPABILITY_TOOL_NAMES } from "../utils/utilities";
 import {
   TOGGLEABLE_TOOLS,
 } from "./WorkflowNodeConstants";
@@ -306,9 +306,8 @@ export default function SettingsPanel({
         />
       )}
       {stats.usedTools?.length > 0 && (() => {
-        const CAPABILITY_NAMES = new Set(["Thinking", "Tool Calling", "Web Search", "Google Search", "Code Execution", "Computer Use", "File Search", "URL Context", "Image Generation"]);
-        const capabilities = stats.usedTools.filter((t) => CAPABILITY_NAMES.has(t.name));
-        const toolCalls = stats.usedTools.filter((t) => !CAPABILITY_NAMES.has(t.name));
+        const capabilities = stats.usedTools.filter((t) => CAPABILITY_TOOL_NAMES.has(t.name));
+        const toolCalls = stats.usedTools.filter((t) => !CAPABILITY_TOOL_NAMES.has(t.name));
         return (
           <>
             {capabilities.map((tool) => (

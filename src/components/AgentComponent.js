@@ -33,6 +33,7 @@ import {
 } from "../utils/FunctionCallingUtilities.js";
 
 import useSessionStats from "../hooks/useSessionStats.js";
+import { mergeUsedToolsWithWorkers, toolCountsToUsedTools } from "../utils/utilities.js";
 import { PROJECT_AGENT, SETTINGS_DEFAULTS, SK_MODEL_MEMORY_AGENT, SK_MODEL_MEMORY_AGENT_PREFIX, SK_TOOL_MEMORY_AGENT, SK_TOOL_MEMORY_AGENT_PREFIX, MAX_TOOL_ITERATIONS } from "../constants.js";
 import chatStyles from "./ChatArea.module.css";
 import ChatInputButton from "./ChatInputButton.js";
@@ -1776,13 +1777,6 @@ export default function AgentComponent({
               ? backendSessionStats
                 ? (() => {
                     // Map a backend sub-stats object to the display shape
-                    // Convert backend toolCounts map to the usedTools array format
-                    const toolCountsToUsedTools = (toolCounts) => {
-                      if (!toolCounts || Object.keys(toolCounts).length === 0) return [];
-                      return Object.entries(toolCounts)
-                        .map(([name, count]) => ({ name, count }))
-                        .sort((a, b) => b.count - a.count);
-                    };
                     const mapSubStats = (sub) => {
                       if (!sub) return null;
                       return {
@@ -1840,33 +1834,13 @@ export default function AgentComponent({
                       },
                       totalCost: backendSessionStats.totalCost,
                       originalTotalCost: 0,
-                      // Merge backend toolCounts (function-level: read_file, grep_search, etc.)
-                      // with client-side usedTools (capability-level: Thinking, Tool Calling)
-                      // and live worker tool counts from workerToolActivity (real-time during generation)
-                      usedTools: (() => {
-                        const CAPABILITY_NAMES = new Set(["Thinking", "Tool Calling", "Web Search", "Google Search", "Code Execution", "Computer Use", "File Search", "URL Context", "Image Generation"]);
-                        const capabilities = usedTools.filter((t) => CAPABILITY_NAMES.has(t.name));
-                        const backendTools = toolCountsToUsedTools(backendSessionStats.toolCounts);
-                        // Aggregate live worker tool counts so badges update in real-time
-                        const liveWorkerCounts = new Map();
-                        for (const w of Object.values(workerToolActivity)) {
-                          if (!w.toolNames) continue;
-                          for (const [name, count] of Object.entries(w.toolNames)) {
-                            liveWorkerCounts.set(name, (liveWorkerCounts.get(name) || 0) + count);
-                          }
-                        }
-                        // Merge: use the higher count between backend (authoritative post-completion)
-                        // and live worker (real-time during generation) for each tool
-                        const merged = new Map();
-                        for (const t of backendTools) merged.set(t.name, t.count);
-                        for (const [name, count] of liveWorkerCounts) {
-                          merged.set(name, Math.max(merged.get(name) || 0, count));
-                        }
-                        const mergedTools = [...merged.entries()]
-                          .map(([name, count]) => ({ name, count }))
-                          .sort((a, b) => b.count - a.count);
-                        return [...capabilities, ...mergedTools];
-                      })(),
+                      // Merge backend toolCounts, client capabilities, and live
+                      // worker tool counts into a single usedTools array
+                      usedTools: mergeUsedToolsWithWorkers(
+                        usedTools,
+                        backendSessionStats.toolCounts,
+                        workerToolActivity,
+                      ),
                       modalities: backendSessionStats.modalities || modalities,
                       completedElapsedTime: backendSessionStats.totalElapsedTime || completedElapsedTime,
                       currentTurnStart,
@@ -1896,21 +1870,11 @@ export default function AgentComponent({
                     totalCost,
                     originalTotalCost: 0,
                     // Merge client-side usedTools with live worker tool counts
-                    usedTools: (() => {
-                      const CAPABILITY_NAMES = new Set(["Thinking", "Tool Calling", "Web Search", "Google Search", "Code Execution", "Computer Use", "File Search", "URL Context", "Image Generation"]);
-                      const merged = new Map();
-                      for (const t of usedTools) merged.set(t.name, (merged.get(t.name) || 0) + t.count);
-                      for (const w of Object.values(workerToolActivity)) {
-                        if (!w.toolNames) continue;
-                        for (const [name, count] of Object.entries(w.toolNames)) {
-                          if (CAPABILITY_NAMES.has(name)) continue;
-                          merged.set(name, Math.max(merged.get(name) || 0, count));
-                        }
-                      }
-                      return [...merged.entries()]
-                        .map(([name, count]) => ({ name, count }))
-                        .sort((a, b) => b.count - a.count);
-                    })(),
+                    usedTools: mergeUsedToolsWithWorkers(
+                      usedTools,
+                      null,
+                      workerToolActivity,
+                    ),
                     modalities,
                     completedElapsedTime,
                     currentTurnStart,
