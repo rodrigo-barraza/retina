@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import ProviderLogo from "./ProviderLogos";
 import { MODALITY_ICONS } from "./WorkflowNodeConstants";
+import { renderToolName } from "../utils/utilities";
 import MarkdownContent from "./MarkdownContent";
 import TextContentComponent from "./TextContentComponent";
 import MessageList from "./MessageList";
@@ -689,10 +690,7 @@ export default function WorkflowInspector({
               const paramCount = t.parameters?.properties
                 ? Object.keys(t.parameters.properties).length
                 : t.parameters?.length || 0;
-              const displayName = name
-                .replace(/^get_/, "")
-                .replace(/_/g, " ")
-                .replace(/\b\w/g, (c) => c.toUpperCase());
+              const displayName = renderToolName(name);
               return (
                 <div key={name} className={styles.toolRow}>
                   <div className={styles.toolRowLeft}>

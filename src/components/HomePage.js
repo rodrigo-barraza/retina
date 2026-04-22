@@ -809,7 +809,7 @@ export default function HomePage({ initialConversationId = null }) {
                 })),
             ],
             functionCallingEnabled: true,
-            enabledTools: allToolSchemas.map(t => t.name),
+            disabledBuiltIns: [...disabledBuiltIns],
             maxTokens: settings.maxTokens,
             temperature: settings.temperature,
             // Pass thinking toggle so the server respects it for local models
@@ -1586,7 +1586,7 @@ export default function HomePage({ initialConversationId = null }) {
                 })),
             ],
             functionCallingEnabled: true,
-            enabledTools: allToolSchemas.map(t => t.name),
+            disabledBuiltIns: [...disabledBuiltIns],
             maxTokens: settings.maxTokens,
             temperature: settings.temperature,
             // Pass thinking toggle so the server respects it for local models

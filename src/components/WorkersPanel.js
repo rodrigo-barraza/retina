@@ -5,6 +5,8 @@ import {
   Users, RefreshCw, Wrench, Clock, GitBranch, FileCode,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
+import { renderToolName } from "../utils/utilities.js";
+import { formatDuration } from "../utils/tableColumns.js";
 import CostBadgeComponent from "./CostBadgeComponent.js";
 import ModelBadgeComponent from "./ModelBadgeComponent.js";
 import ModalityIconComponent from "./ModalityIconComponent";
@@ -34,18 +36,7 @@ const CARD_CLASS = {
   stopped: "workerCardStopped",
 };
 
-/**
- * Format milliseconds as a human-readable duration.
- * E.g. 125400 → "2m 5s"
- */
-function formatDuration(ms) {
-  if (!ms || ms < 1000) return ms ? `${ms}ms` : "—";
-  const secs = Math.floor(ms / 1000);
-  const mins = Math.floor(secs / 60);
-  const s = secs % 60;
-  if (mins > 0) return `${mins}m ${s}s`;
-  return `${s}s`;
-}
+
 
 /**
  * Extract a short agent number from an agentId like "agent-1" → "1"
@@ -257,7 +248,7 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
                 <span className={styles.liveDot} />
                 <Wrench size={9} />
                 <span className={styles.liveToolName}>
-                  {workerToolActivity[worker.agentId].currentTool.replace(/_/g, " ")}
+                  {renderToolName(workerToolActivity[worker.agentId].currentTool)}
                 </span>
                 {workerToolActivity[worker.agentId].iteration > 0 && (
                   <span className={styles.liveIteration}>

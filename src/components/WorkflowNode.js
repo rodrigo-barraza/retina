@@ -17,6 +17,7 @@ import ProviderLogo from "./ProviderLogos";
 import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
 import AssetInputOptions from "./AssetInputOptions";
 import PrismService from "../services/PrismService";
+import { renderToolName } from "../utils/utilities";
 import { MODALITY_ICONS } from "./WorkflowNodeConstants";
 import {
   MODALITY_COLORS,
@@ -1256,7 +1257,7 @@ function ToolNode(props) {
           <div className={styles.toolNodePills}>
             {displayedTools.map((name) => (
               <span key={name} className={styles.toolNodePill}>
-                {name.replace(/^get_/, "").replace(/_/g, " ")}
+                {renderToolName(name)}
               </span>
             ))}
             {remainingCount > 0 && (

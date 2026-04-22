@@ -26,7 +26,7 @@ import MarkdownContent from "./MarkdownContent";
 import { ToolBadgeRow } from "./ToolBadgeComponent";
 import StatusBarComponent from "./StatusBarComponent.js";
 import PrismService from "../services/PrismService";
-import { formatLatency } from "../utils/utilities";
+import { formatLatency, renderToolName } from "../utils/utilities";
 import styles from "./ToolResultRenderers.module.css";
 
 // ─── Helpers ──────────────────────────────────────────────────────────
@@ -810,7 +810,7 @@ function WorkerStatusBar({ activity }) {
   const hasPhase = !!phase && !isTerminal;
   const isActive = isToolActive || hasPhase;
   const toolLabel = currentTool
-    ? currentTool.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    ? renderToolName(currentTool)
     : null;
 
   // Derive the effective phase for StatusBarComponent:

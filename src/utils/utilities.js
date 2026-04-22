@@ -56,11 +56,31 @@ export function formatCost(n) {
   return `$${n.toFixed(5)}`;
 }
 
+/**
+ * Format a USD cost with adaptive precision.
+ * Costs < $0.01 show 4 decimals, otherwise 2.
+ * E.g. 0.0034 → "$0.0034", 1.50 → "$1.50"
+ */
+export function formatCostAdaptive(cost) {
+  if (!cost || cost === 0) return "$0.00";
+  if (cost < 0.01) return `$${cost.toFixed(4)}`;
+  return `$${cost.toFixed(2)}`;
+}
+
 export function formatLatency(seconds) {
   if (seconds === null || seconds === undefined) return "-";
   if (seconds >= 60) return `${(seconds / 60).toFixed(1)}m`;
   if (seconds >= 1) return `${seconds.toFixed(1)}s`;
   return `${Math.round(seconds * 1000)}ms`;
+}
+
+/**
+ * Format a latency value given in **milliseconds**.
+ * Thin wrapper over formatLatency(seconds) for call sites that have ms values.
+ */
+export function formatLatencyMs(ms) {
+  if (!ms) return "—";
+  return formatLatency(ms / 1000);
 }
 
 /**
@@ -82,11 +102,25 @@ export function formatDateTime(isoString) {
 
 /**
  * Convert a snake_case function name to a human-readable title.
- * e.g. "get_stock_price" → "Stock Price"
+ * Strips common prefixes: get_, mcp__<server>__
+ * e.g. "get_stock_price" → "Stock Price", "mcp__github__list_repos" → "List Repos"
  */
 export function renderToolName(name) {
   return name
-    .replace(/^get_/, "")
+    .replace(/^(get_|mcp__\w+__)/, "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Extended tool name humanization — strips a broad set of verb prefixes
+ * before title-casing. Use for display contexts where the action verb
+ * is redundant (e.g. tool catalog pages).
+ * e.g. "search_web_results" → "Web Results", "execute_python" → "Python"
+ */
+export function humanizeToolName(name) {
+  return name
+    .replace(/^(get|set|search|list|create|delete|update|fetch|read|write|check|run|execute|find|query|rank|lookup|send|track|stop|cancel|submit|browse|navigate|click|scroll|type|clear|wait|close|open|save|load|ask|plan|log|emit|extract|consolidate|manage|add|remove|use|exit|enter)_/i, "")
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }

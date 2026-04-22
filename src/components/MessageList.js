@@ -16,12 +16,11 @@ import {
   Undo2,
   AlertTriangle,
   Loader,
-  Wrench,
   User,
   Bot,
   Terminal,
 } from "lucide-react";
-import { TOOL_ICON_MAP, TOOL_COLORS } from "./WorkflowNodeConstants";
+import { resolveToolVisuals } from "./WorkflowNodeConstants";
 import MarkdownContent from "./MarkdownContent";
 import StreamingCursorComponent from "./StreamingCursorComponent";
 import IconButtonComponent from "./IconButtonComponent";
@@ -42,7 +41,7 @@ import PlanCardComponent from "./PlanCardComponent.js";
 import styles from "./MessageList.module.css";
 import PrismService from "../services/PrismService";
 import SoundService from "@/services/SoundService";
-import { getTotalInputTokens } from "../utils/utilities";
+import { getTotalInputTokens, renderToolName } from "../utils/utilities";
 
 
 
@@ -161,25 +160,6 @@ function ThinkingBlock({ thinking, isStreaming, children }) {
 
 
 
-
-/**
- * Resolve a tool function name (e.g. `compare_food_nutrition`) to the
- * matching icon & color from TOOL_ICON_MAP/TOOL_COLORS. Falls back to
- * `Wrench` icon and the amber accent used for Tool Calling.
- */
-function resolveToolVisuals(rawName) {
-  // Direct match first (e.g. "Web Search")
-  if (TOOL_ICON_MAP[rawName]) {
-    return { Icon: TOOL_ICON_MAP[rawName], color: TOOL_COLORS[rawName] || "#f59e0b" };
-  }
-  // All custom tool-calling tools fall under "Tool Calling"
-  return {
-    Icon: TOOL_ICON_MAP["Tool Calling"] || Wrench,
-    color: TOOL_COLORS["Tool Calling"] || "#f97316",
-  };
-}
-
-
 function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   if (!toolCalls || toolCalls.length === 0) return null;
@@ -187,18 +167,11 @@ function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
   const hasActiveCalls = toolCalls.some((tc) => tc.status === "calling");
   const doneCount = toolCalls.filter((tc) => tc.status === "done" || tc.status === "error").length;
 
-  const formatName = (raw) => {
-    if (raw === "googleSearch") return "Google Search";
-    return (raw || "unknown")
-      .replace(/^get_/, "")
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-  };
 
   // Build header text with active tense awareness
   const headerText = (() => {
     if (toolCalls.length === 1) {
-      const name = formatName(toolCalls[0].name);
+      const name = toolCalls[0].name === "googleSearch" ? "Google Search" : renderToolName(toolCalls[0].name);
       if (hasActiveCalls) return `Calling ${name}…`;
       return `Used tool: ${name}`;
     }
@@ -225,7 +198,7 @@ function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
       {!headerCollapsed && (
         <div className={styles.toolCallsContent}>
           {toolCalls.map((tc, j) => {
-            const name = formatName(tc.name);
+            const name = tc.name === "googleSearch" ? "Google Search" : renderToolName(tc.name);
             const { Icon, color } = resolveToolVisuals(tc.name);
 
             const isCalling = tc.status === "calling";

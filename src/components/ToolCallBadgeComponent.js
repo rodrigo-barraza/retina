@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { Wrench } from "lucide-react";
 import TooltipComponent from "./TooltipComponent";
-import { TOOL_ICON_MAP, TOOL_COLORS } from "./WorkflowNodeConstants";
+import { resolveToolVisuals } from "./WorkflowNodeConstants";
+import { renderToolName } from "../utils/utilities";
 import styles from "./ToolCallBadgeComponent.module.css";
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -57,25 +57,10 @@ const TOOL_CALL_DISPLAY_NAMES = {
  */
 function resolveDisplayName(name) {
   if (TOOL_CALL_DISPLAY_NAMES[name]) return TOOL_CALL_DISPLAY_NAMES[name];
-  // Fallback: strip common prefixes and title-case
-  return name
-    .replace(/^(get_|mcp__\w+__)/, "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  // Fallback: title-case via shared utility
+  return renderToolName(name);
 }
 
-/**
- * Resolve a tool call name to its icon and color.
- */
-function resolveToolVisuals(name) {
-  if (TOOL_ICON_MAP[name]) {
-    return { Icon: TOOL_ICON_MAP[name], color: TOOL_COLORS[name] || "#f59e0b" };
-  }
-  return {
-    Icon: TOOL_ICON_MAP["Tool Calling"] || Wrench,
-    color: TOOL_COLORS["Tool Calling"] || "#f97316",
-  };
-}
 
 // ═══════════════════════════════════════════════════════════════════════
 // ToolCallBadgeComponent — A single badge for an individual tool call.

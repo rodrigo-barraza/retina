@@ -88,6 +88,20 @@ export const TOOL_ICON_MAP = {
   "Image Generation": ImagePlus,
 };
 
+/**
+ * Resolve a tool name to its icon component and color.
+ * Falls back to Wrench / "Tool Calling" amber for unknown tools.
+ */
+export function resolveToolVisuals(name) {
+  if (TOOL_ICON_MAP[name]) {
+    return { Icon: TOOL_ICON_MAP[name], color: TOOL_COLORS[name] || "#f59e0b" };
+  }
+  return {
+    Icon: TOOL_ICON_MAP["Tool Calling"] || Wrench,
+    color: TOOL_COLORS["Tool Calling"] || "#f97316",
+  };
+}
+
 // ── Tools that support toggle switches ──
 export const TOGGLEABLE_TOOLS = new Set([
   "Thinking",

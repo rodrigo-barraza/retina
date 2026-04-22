@@ -1,11 +1,9 @@
 "use client";
 
 import React from "react";
-import {
-  Wrench,
-} from "lucide-react";
 import TooltipComponent from "./TooltipComponent";
-import { TOOL_ICON_MAP, TOOL_COLORS } from "./WorkflowNodeConstants";
+import { resolveToolVisuals } from "./WorkflowNodeConstants";
+import { renderToolName } from "../utils/utilities";
 import styles from "./ToolBadgeComponent.module.css";
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -44,18 +42,6 @@ const TOOL_SHORT_NAMES = {
   "Image Generation": "Image",
 };
 
-/**
- * Resolve a tool name to its icon and color.
- */
-function resolveToolVisuals(name) {
-  if (TOOL_ICON_MAP[name]) {
-    return { Icon: TOOL_ICON_MAP[name], color: TOOL_COLORS[name] || "#f59e0b" };
-  }
-  return {
-    Icon: TOOL_ICON_MAP["Tool Calling"] || Wrench,
-    color: TOOL_COLORS["Tool Calling"] || "#f97316",
-  };
-}
 
 /**
  * Resolve any tool name to a human-readable display label.
@@ -65,11 +51,8 @@ function resolveToolVisuals(name) {
 function resolveDisplayName(name, variant = "default") {
   if (variant === "condensed" && TOOL_SHORT_NAMES[name]) return TOOL_SHORT_NAMES[name];
   if (TOOL_DISPLAY_NAMES[name]) return TOOL_DISPLAY_NAMES[name];
-  // Fallback: strip prefixes and title-case
-  return name
-    .replace(/^(get_|mcp__\w+__)/, "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  // Fallback: title-case via shared utility
+  return renderToolName(name);
 }
 
 // ═══════════════════════════════════════════════════════════════════════

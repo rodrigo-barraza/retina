@@ -47,6 +47,13 @@ import {
   XCircle,
 } from "lucide-react";
 import styles from "./ToolsPageComponent.module.css";
+import {
+  humanizeToolName,
+  formatCostAdaptive,
+  formatCompact,
+  formatLatencyMs,
+  formatTimeAgo,
+} from "../utils/utilities";
 
 // ── Agent color mapping (stable hues per built-in agent) ───────
 const AGENT_COLORS = {
@@ -169,14 +176,6 @@ function groupByDomain(tools) {
   );
 }
 
-/** Humanize a tool name: get_weather_forecast → Weather Forecast */
-function humanizeToolName(name) {
-  return name
-    .replace(/^(get|set|search|list|create|delete|update|fetch|read|write|check|run|execute|find|query|rank|lookup|send|track|stop|cancel|submit|browse|navigate|click|scroll|type|clear|wait|close|open|save|load|ask|plan|log|emit|extract|consolidate|manage|add|remove|use|exit|enter)_/i, "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 /** Extract output fields from the `fields` parameter enum, if present */
 function extractOutputFields(tool) {
   const fieldsParam = tool.parameters?.properties?.fields;
@@ -194,39 +193,6 @@ function getInputParams(tool) {
   return Object.entries(props).filter(([name]) => name !== "fields");
 }
 
-// ── Helpers for stat formatting ───────────────────────────────────
-
-function formatCost(cost) {
-  if (!cost || cost === 0) return "$0.00";
-  if (cost < 0.01) return `$${cost.toFixed(4)}`;
-  return `$${cost.toFixed(2)}`;
-}
-
-function formatNumber(n) {
-  if (n == null) return "0";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString();
-}
-
-function formatLatency(ms) {
-  if (!ms) return "—";
-  if (ms < 1000) return `${Math.round(ms)}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
-}
-
-function timeAgo(dateStr) {
-  if (!dateStr) return "—";
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
-}
 
 // ── Tool Detail Modal ────────────────────────────────────────────
 
@@ -325,27 +291,27 @@ function ToolDetailModal({ tool, onClose, agents, stats, allTools }) {
                 <div className={styles.statsGrid}>
                   <div className={styles.statCell}>
                     <Hash size={14} className={styles.statCellIcon} />
-                    <div className={styles.statCellValue}>{formatNumber(stats.totalCalls)}</div>
+                    <div className={styles.statCellValue}>{formatCompact(stats.totalCalls)}</div>
                     <div className={styles.statCellLabel}>Total Calls</div>
                   </div>
                   <div className={styles.statCell}>
                     <Activity size={14} className={styles.statCellIcon} />
-                    <div className={styles.statCellValue}>{formatNumber(stats.totalRequests)}</div>
+                    <div className={styles.statCellValue}>{formatCompact(stats.totalRequests)}</div>
                     <div className={styles.statCellLabel}>Requests</div>
                   </div>
                   <div className={styles.statCell}>
                     <DollarSign size={14} className={styles.statCellIcon} />
-                    <div className={styles.statCellValue}>{formatCost(stats.totalCost)}</div>
+                    <div className={styles.statCellValue}>{formatCostAdaptive(stats.totalCost)}</div>
                     <div className={styles.statCellLabel}>Total Cost</div>
                   </div>
                   <div className={styles.statCell}>
                     <TrendingUp size={14} className={styles.statCellIcon} />
-                    <div className={styles.statCellValue}>{formatLatency(stats.avgLatency)}</div>
+                    <div className={styles.statCellValue}>{formatLatencyMs(stats.avgLatency)}</div>
                     <div className={styles.statCellLabel}>Avg Latency</div>
                   </div>
                   <div className={styles.statCell}>
                     <Zap size={14} className={styles.statCellIcon} />
-                    <div className={styles.statCellValue}>{formatNumber(stats.totalInputTokens + stats.totalOutputTokens)}</div>
+                    <div className={styles.statCellValue}>{formatCompact(stats.totalInputTokens + stats.totalOutputTokens)}</div>
                     <div className={styles.statCellLabel}>Total Tokens</div>
                   </div>
                   <div className={styles.statCell}>
@@ -360,12 +326,12 @@ function ToolDetailModal({ tool, onClose, agents, stats, allTools }) {
                   <div className={styles.statsTimeItem}>
                     <Calendar size={12} />
                     <span className={styles.statsTimeLabel}>First used</span>
-                    <span className={styles.statsTimeValue}>{timeAgo(stats.firstUsed)}</span>
+                    <span className={styles.statsTimeValue}>{formatTimeAgo(stats.firstUsed)}</span>
                   </div>
                   <div className={styles.statsTimeItem}>
                     <Clock size={12} />
                     <span className={styles.statsTimeLabel}>Last used</span>
-                    <span className={styles.statsTimeValue}>{timeAgo(stats.lastUsed)}</span>
+                    <span className={styles.statsTimeValue}>{formatTimeAgo(stats.lastUsed)}</span>
                   </div>
                   {stats.failureCount > 0 && (
                     <div className={styles.statsTimeItem}>

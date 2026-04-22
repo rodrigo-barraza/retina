@@ -1023,11 +1023,13 @@ export default class PrismService {
 
   /**
    * Generate speech from text (TTS).
+   * Uses ?format=dataUrl so the backend returns the audio as a base64 data URL
+   * directly, eliminating client-side ArrayBuffer→Base64 conversion.
    * @param {object} payload - { provider, text, voice?, model?, conversationId?, conversationMeta? }
-   * @returns {Promise<{ audioDataUrl: string }>}
+   * @returns {Promise<{ audioDataUrl: string, contentType: string }>}
    */
   static async generateSpeech(payload) {
-    const res = await fetch(`${API_BASE}/text-to-audio`, {
+    const res = await fetch(`${API_BASE}/text-to-audio?format=dataUrl`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -1045,15 +1047,7 @@ export default class PrismService {
       throw new Error(message);
     }
 
-    const contentType = res.headers.get("content-type") || "audio/mpeg";
-    const arrayBuffer = await res.arrayBuffer();
-    const base64 = btoa(
-      new Uint8Array(arrayBuffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        "",
-      ),
-    );
-    return { audioDataUrl: `data:${contentType};base64,${base64}` };
+    return res.json();
   }
 
   // ---------------------------------------------------------------------------

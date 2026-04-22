@@ -702,8 +702,8 @@ export default function AgentComponent({
               ...(settings.thinkingBudget && { thinkingBudget: settings.thinkingBudget }),
               // Native provider FC (Google code exec, LM Studio MCP, etc.)
               functionCallingEnabled: settings.functionCallingEnabled ?? false,
-              ...(settings.functionCallingEnabled && allToolSchemas.length > 0 && {
-                enabledTools: allToolSchemas.filter(t => !["team_create", "send_message", "stop_agent", "task_output", "team_delete"].includes(t.name)).map((t) => t.name),
+              ...(settings.functionCallingEnabled && {
+                disabledBuiltIns: [...disabledBuiltIns],
               }),
               // Provider-native capabilities
               ...(settings.webSearchEnabled ? { webSearch: true } : {}),
@@ -731,7 +731,7 @@ export default function AgentComponent({
                 ...currentMessages,
               ],
               functionCallingEnabled: true,
-              enabledTools: allToolSchemas.map((t) => t.name),
+              disabledBuiltIns: [...disabledBuiltIns],
               maxTokens: settings.maxTokens,
               temperature: settings.temperature,
               ...(settings.thinkingEnabled !== undefined && { thinkingEnabled: settings.thinkingEnabled }),
@@ -812,26 +812,17 @@ export default function AgentComponent({
               lastSegmentType = "text";
             }
 
-            // Strip tool call XML markup that some models (Gemma 4) emit in text.
-            // Use cleanTextRaw (no trim) for stable delta computation.
-            const cleanTextRaw = streamedText
-              .replace(/<\|?tool_call\|?>[\s\S]*?<\/?\|?tool_call\|?>/gi, "")
-              .replace(/<\|?tool_response\|?>[\s\S]*?<\/?\|?tool_response\|?>/gi, "")
-              .replace(/<\|?result\|?>[\s\S]*?<\/?\|?result\|?>/gi, "")
-              .replace(/\[END_TOOL_REQUEST\]/gi, "")
-              // Incomplete tags at end of stream (closing tag hasn't arrived yet)
-              .replace(/<\|?tool_call\|?>[\s\S]*$/gi, "")
-              .replace(/<\|?tool_response\|?>[\s\S]*$/gi, "")
-              .replace(/<\|?result\|?>[\s\S]*$/gi, "");
+            // Text is now sanitized server-side (tool call XML stripped in
+            // StreamChunkDispatcher/AgenticLoopService) — use streamedText directly.
 
             // Compute text delta since last update and append to current fragment
-            const delta = cleanTextRaw.slice(prevCleanLen);
+            const delta = streamedText.slice(prevCleanLen);
             if (delta) {
               textFragments[textFragments.length - 1] += delta;
             }
-            prevCleanLen = cleanTextRaw.length;
+            prevCleanLen = streamedText.length;
 
-            const cleanText = cleanTextRaw.trim();
+            const cleanText = streamedText.trim();
             setMessages((prev) => {
               const updated = [...prev];
               const lastMsg = updated[updated.length - 1];
@@ -1469,7 +1460,7 @@ export default function AgentComponent({
       settings.urlContextEnabled,
       agentSessionId,
       traceId,
-      allToolSchemas,
+      disabledBuiltIns,
       autoApprove,
       planFirst,
       maxIterations,
