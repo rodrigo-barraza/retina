@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { ClipboardList, Check, X, ChevronDown, ChevronUp } from "lucide-react";
 import MarkdownContent from "./MarkdownContent.js";
+import ButtonComponent from "./ButtonComponent.js";
 import styles from "./PlanCardComponent.module.css";
 
 /**
@@ -67,14 +68,24 @@ export default function PlanCardComponent({
         <>
           {status === "pending" && (
             <div className={styles.actions}>
-              <button className={styles.approveBtn} onClick={onApprove}>
-                <Check size={14} />
+              <ButtonComponent
+                variant="primary"
+                size="sm"
+                icon={Check}
+                className={styles.approveBtn}
+                onClick={onApprove}
+              >
                 Execute Plan
-              </button>
-              <button className={styles.rejectBtn} onClick={onReject}>
-                <X size={14} />
+              </ButtonComponent>
+              <ButtonComponent
+                variant="destructive"
+                size="sm"
+                icon={X}
+                className={styles.rejectBtn}
+                onClick={onReject}
+              >
                 Cancel
-              </button>
+              </ButtonComponent>
             </div>
           )}
 

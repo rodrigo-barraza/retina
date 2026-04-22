@@ -25,15 +25,11 @@ import MessageCountBadgeComponent from "./MessageCountBadgeComponent";
 import StopwatchBadgeComponent from "./StopwatchBadgeComponent";
 import StatsTabBarComponent from "./StatsTabBarComponent";
 import { formatCost, CAPABILITY_TOOL_NAMES } from "../utils/utilities";
-import {
-  TOGGLEABLE_TOOLS,
-} from "./WorkflowNodeConstants";
+import { TOGGLEABLE_TOOLS } from "./WorkflowNodeConstants";
 import ToolBadgeComponent from "./ToolBadgeComponent";
 import ToolCallBadgeComponent from "./ToolCallBadgeComponent";
 import useTokenRate from "../hooks/useTokenRate";
 import useTtft from "../hooks/useTtft";
-
-
 
 export default function SettingsPanel({
   config,
@@ -112,8 +108,11 @@ export default function SettingsPanel({
 
   // ── Live token rate + elapsed time (reusable hook) ────────────
   const {
-    perfNow, needsTicker,
-    totalElapsedTime, liveTokensPerSec, computedTokPerSec,
+    perfNow,
+    needsTicker,
+    totalElapsedTime,
+    liveTokensPerSec,
+    computedTokPerSec,
   } = useTokenRate(sessionStats);
 
   // ── Live TTFT (Time To First Token) ───────────────────────────
@@ -121,19 +120,23 @@ export default function SettingsPanel({
 
   // ── Stats tab (All / Orchestrator / Workers) ──────────────
   const [statsTab, setStatsTab] = useState("all");
-  const showStatsTabBar = canSpawnWorkers && !!(sessionStats?.orchestrator || sessionStats?.workers);
+  const showStatsTabBar =
+    canSpawnWorkers && !!(sessionStats?.orchestrator || sessionStats?.workers);
 
   // Resolve which stats object to render based on active tab
   const activeStats = sessionStats
-    ? statsTab === "orchestrator" ? sessionStats.orchestrator
-    : statsTab === "workers" ? sessionStats.workers
-    : sessionStats
+    ? statsTab === "orchestrator"
+      ? sessionStats.orchestrator
+      : statsTab === "workers"
+        ? sessionStats.workers
+        : sessionStats
     : null;
 
   // Compute displayed elapsed for the active tab
-  const activeElapsedTime = statsTab === "all"
-    ? totalElapsedTime
-    : (activeStats?.completedElapsedTime || 0);
+  const activeElapsedTime =
+    statsTab === "all"
+      ? totalElapsedTime
+      : activeStats?.completedElapsedTime || 0;
 
   const renderStatsBadges = (stats, showFull) => (
     <div className={styles.statsBadges}>
@@ -143,11 +146,12 @@ export default function SettingsPanel({
           deletedCount={stats.deletedCount}
         />
       )}
-      <RequestCountBadgeComponent
-        count={stats.requestCount}
-      />
+      <RequestCountBadgeComponent count={stats.requestCount} />
       {stats.uniqueModels?.length > 0 && (
-        <ModelBadgeComponent models={stats.uniqueModels} providers={stats.uniqueProviders} />
+        <ModelBadgeComponent
+          models={stats.uniqueModels}
+          providers={stats.uniqueProviders}
+        />
       )}
       {stats.totalTokens?.total > 0 && (
         <>
@@ -184,30 +188,44 @@ export default function SettingsPanel({
         </>
       )}
       {liveTokensPerSec !== null ? (
-        <span className={`${styles.statBadge} ${computedTokPerSec !== null ? styles.speedBadge : styles.staleSpeedBadge}`}>
+        <span
+          className={`${styles.statBadge} ${computedTokPerSec !== null ? styles.speedBadge : styles.staleSpeedBadge}`}
+        >
           ⚡ {liveTokensPerSec.toFixed(1)} tok/s
         </span>
-      ) : stats.avgTokensPerSec != null && (
-        <span className={`${styles.statBadge} ${styles.avgSpeedBadge}`}>
-          ⚡ {stats.avgTokensPerSec.toFixed(1)} tok/s
-        </span>
+      ) : (
+        stats.avgTokensPerSec != null && (
+          <span className={`${styles.statBadge} ${styles.avgSpeedBadge}`}>
+            ⚡ {stats.avgTokensPerSec.toFixed(1)} tok/s
+          </span>
+        )
       )}
       {/* TTFT badge — live during processing, latched after first token, static after completion */}
       {liveTtft !== null ? (
-        <span className={`${styles.statBadge} ${isLiveTtft ? styles.ttftBadgeLive : styles.ttftBadge}`}>
+        <span
+          className={`${styles.statBadge} ${isLiveTtft ? styles.ttftBadgeLive : styles.ttftBadge}`}
+        >
           ⏱ {liveTtft.toFixed(isLiveTtft ? 1 : 2)}s TTFT
         </span>
-      ) : (stats.avgTimeToGeneration ?? sessionStats?.lastTimeToGeneration) != null && (
-        <span className={`${styles.statBadge} ${styles.ttftBadge}`}>
-          ⏱ {(stats.avgTimeToGeneration ?? sessionStats?.lastTimeToGeneration).toFixed(2)}s TTFT
-        </span>
+      ) : (
+        (stats.avgTimeToGeneration ?? sessionStats?.lastTimeToGeneration) !=
+          null && (
+          <span className={`${styles.statBadge} ${styles.ttftBadge}`}>
+            ⏱{" "}
+            {(
+              stats.avgTimeToGeneration ?? sessionStats?.lastTimeToGeneration
+            ).toFixed(2)}
+            s TTFT
+          </span>
+        )
       )}
       <CostBadgeComponent cost={stats.totalCost} />
-      {stats.originalTotalCost > 0 && stats.originalTotalCost !== stats.totalCost && (
-        <span className={`${styles.statBadge} ${styles.statBadgeSub}`}>
-          ({formatCost(stats.originalTotalCost)} total)
-        </span>
-      )}
+      {stats.originalTotalCost > 0 &&
+        stats.originalTotalCost !== stats.totalCost && (
+          <span className={`${styles.statBadge} ${styles.statBadgeSub}`}>
+            ({formatCost(stats.originalTotalCost)} total)
+          </span>
+        )}
       {showFull && activeElapsedTime > 0 && (
         <StopwatchBadgeComponent
           seconds={activeElapsedTime}
@@ -220,9 +238,54 @@ export default function SettingsPanel({
           live={false}
         />
       )}
-      {stats.usedTools?.length > 0 && (() => {
-        const capabilities = stats.usedTools.filter((t) => CAPABILITY_TOOL_NAMES.has(t.name));
-        const toolCalls = stats.usedTools.filter((t) => !CAPABILITY_TOOL_NAMES.has(t.name));
+      {(() => {
+        // When viewing "all" stats and there are workers, aggregate tools from orchestrator and workers
+        const displayTools = (() => {
+          if (
+            statsTab !== "all" ||
+            !sessionStats?.workers ||
+            !sessionStats?.orchestrator
+          ) {
+            return stats.usedTools || [];
+          }
+
+          // Merge tools from orchestrator and workers
+          const toolMap = new Map();
+
+          // Add orchestrator tools
+          if (sessionStats.orchestrator?.usedTools) {
+            for (const tool of sessionStats.orchestrator.usedTools) {
+              toolMap.set(
+                tool.name,
+                (toolMap.get(tool.name) || 0) + (tool.count || 1),
+              );
+            }
+          }
+
+          // Add worker tools
+          if (sessionStats.workers?.usedTools) {
+            for (const tool of sessionStats.workers.usedTools) {
+              toolMap.set(
+                tool.name,
+                (toolMap.get(tool.name) || 0) + (tool.count || 1),
+              );
+            }
+          }
+
+          // Convert back to array and sort by count
+          return Array.from(toolMap.entries())
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count);
+        })();
+
+        if (!displayTools?.length) return null;
+
+        const capabilities = displayTools.filter((t) =>
+          CAPABILITY_TOOL_NAMES.has(t.name),
+        );
+        const toolCalls = displayTools.filter(
+          (t) => !CAPABILITY_TOOL_NAMES.has(t.name),
+        );
         return (
           <>
             {capabilities.map((tool) => (
@@ -242,12 +305,9 @@ export default function SettingsPanel({
           </>
         );
       })()}
-      {stats.modalities &&
-        Object.values(stats.modalities).some(Boolean) && (
-          <ModalityIconComponent
-            modalities={stats.modalities}
-          />
-        )}
+      {stats.modalities && Object.values(stats.modalities).some(Boolean) && (
+        <ModalityIconComponent modalities={stats.modalities} />
+      )}
     </div>
   );
 
@@ -269,7 +329,9 @@ export default function SettingsPanel({
               renderStatsBadges(activeStats, statsTab === "all")
             ) : (
               <div className={styles.statsBadges}>
-                <span className={`${styles.statBadge} ${styles.statBadgeSub}`}>No data</span>
+                <span className={`${styles.statBadge} ${styles.statBadgeSub}`}>
+                  No data
+                </span>
               </div>
             )}
           </div>
@@ -346,8 +408,6 @@ export default function SettingsPanel({
             </div>
           </div>
         )}
-
-
 
         {isTTS &&
           (() => {
@@ -526,15 +586,15 @@ export default function SettingsPanel({
         )}
 
         {readOnly && !hideSystemPrompt && settings.systemPrompt && (
-            <div className={styles.formGroup}>
-              <label>
-                <Edit3 size={12} /> System Prompt
-              </label>
-              <div className={styles.readOnlySystemPrompt}>
-                {settings.systemPrompt}
-              </div>
+          <div className={styles.formGroup}>
+            <label>
+              <Edit3 size={12} /> System Prompt
+            </label>
+            <div className={styles.readOnlySystemPrompt}>
+              {settings.systemPrompt}
             </div>
-          )}
+          </div>
+        )}
 
         {/* ── Agent Toggles (Plan, Auto, Iterations) ──────────────── */}
         {agentToggles?.length > 0 && (
@@ -545,12 +605,8 @@ export default function SettingsPanel({
                 key={toggle.key}
                 className={`${styles.modalityRow} ${styles.toolToggleRow}`}
               >
-                <span className={styles.modalityIcon}>
-                  {toggle.icon}
-                </span>
-                <span className={styles.modalityName}>
-                  {toggle.label}
-                </span>
+                <span className={styles.modalityIcon}>{toggle.icon}</span>
+                <span className={styles.modalityName}>{toggle.label}</span>
                 {toggle.type === "cycle" ? (
                   <CycleButton
                     value={toggle.value}
@@ -570,143 +626,164 @@ export default function SettingsPanel({
           </div>
         )}
 
-
         {/* ── Tools ───────────────────────────────────────────────── */}
-        {selectedModelDef?.tools && selectedModelDef.tools.length > 0 && (() => {
-          const TOOL_LABELS = {
-            google: { "Web Search": "Google Search" },
-            anthropic: selectedModelDef?.webFetch ? { "Web Search": "Web Fetch" } : {},
-          };
-          const providerToolLabels = TOOL_LABELS[settings.provider] || {};
-          const getToolLabel = (tool) => providerToolLabels[tool] || tool;
+        {selectedModelDef?.tools &&
+          selectedModelDef.tools.length > 0 &&
+          (() => {
+            const TOOL_LABELS = {
+              google: { "Web Search": "Google Search" },
+              anthropic: selectedModelDef?.webFetch
+                ? { "Web Search": "Web Fetch" }
+                : {},
+            };
+            const providerToolLabels = TOOL_LABELS[settings.provider] || {};
+            const getToolLabel = (tool) => providerToolLabels[tool] || tool;
 
-          const getToolToggle = (tool) => {
-            switch (tool) {
-              case "Thinking": {
-                const isLmStudio = settings.provider === "lm-studio";
-                const isLive = selectedModelDef?.liveAPI;
-                const canDisable =
-                  !selectedModelDef?.thinkingLevels ||
-                  selectedModelDef.thinkingLevels.includes("minimal");
-                const alwaysOn = !canDisable && settings.provider === "google";
-                const modelName = (settings.model || "").toLowerCase();
-                const nameBasedThinking = ["qwen3", "deepseek-r1", "deepseek-v3", "gpt-oss", "gemma-4"]
-                  .some((p) => modelName.includes(p));
-                const lmCanToggle = isLmStudio && (selectedModelDef?.thinking || nameBasedThinking);
-                const lmLocked = isLmStudio && !lmCanToggle;
-                return {
-                  checked: isLive
-                    ? (settings.liveThinkingLevel || "none") !== "none"
-                    : lmLocked || alwaysOn
-                      ? true
-                      : isLmStudio
-                        ? (settings.thinkingEnabled !== false)
-                        : (settings.thinkingEnabled || false),
-                  onChange: isLive
-                    ? (val) => onChange({ liveThinkingLevel: val ? "low" : "none" })
-                    : (lmLocked || alwaysOn)
+            const getToolToggle = (tool) => {
+              switch (tool) {
+                case "Thinking": {
+                  const isLmStudio = settings.provider === "lm-studio";
+                  const isLive = selectedModelDef?.liveAPI;
+                  const canDisable =
+                    !selectedModelDef?.thinkingLevels ||
+                    selectedModelDef.thinkingLevels.includes("minimal");
+                  const alwaysOn =
+                    !canDisable && settings.provider === "google";
+                  const modelName = (settings.model || "").toLowerCase();
+                  const nameBasedThinking = [
+                    "qwen3",
+                    "deepseek-r1",
+                    "deepseek-v3",
+                    "gpt-oss",
+                    "gemma-4",
+                  ].some((p) => modelName.includes(p));
+                  const lmCanToggle =
+                    isLmStudio &&
+                    (selectedModelDef?.thinking || nameBasedThinking);
+                  const lmLocked = isLmStudio && !lmCanToggle;
+                  return {
+                    checked: isLive
+                      ? (settings.liveThinkingLevel || "none") !== "none"
+                      : lmLocked || alwaysOn
+                        ? true
+                        : isLmStudio
+                          ? settings.thinkingEnabled !== false
+                          : settings.thinkingEnabled || false,
+                    onChange: isLive
+                      ? (val) =>
+                          onChange({ liveThinkingLevel: val ? "low" : "none" })
+                      : lmLocked || alwaysOn
+                        ? () => {}
+                        : (val) => onChange({ thinkingEnabled: val }),
+                    disabled: lmLocked || alwaysOn,
+                  };
+                }
+                case "Web Search":
+                case "Google Search":
+                case "Web Fetch":
+                  return {
+                    checked: settings.webSearchEnabled || false,
+                    onChange: (val) => onChange({ webSearchEnabled: val }),
+                    disabled: settings.codeExecutionEnabled,
+                  };
+                case "Code Execution":
+                  return {
+                    checked: settings.codeExecutionEnabled || false,
+                    onChange: (val) => {
+                      const updates = { codeExecutionEnabled: val };
+                      if (val) {
+                        updates.webSearchEnabled = false;
+                        updates.urlContextEnabled = false;
+                      }
+                      onChange(updates);
+                    },
+                    disabled: false,
+                  };
+                case "URL Context":
+                  return {
+                    checked: settings.urlContextEnabled || false,
+                    onChange: (val) => onChange({ urlContextEnabled: val }),
+                    disabled: settings.codeExecutionEnabled,
+                  };
+                case "Tool Calling":
+                  return {
+                    checked:
+                      lockedTools?.has("Tool Calling") ||
+                      settings.functionCallingEnabled ||
+                      false,
+                    onChange: lockedTools?.has("Tool Calling")
                       ? () => {}
-                      : (val) => onChange({ thinkingEnabled: val }),
-                  disabled: lmLocked || alwaysOn,
-                };
+                      : (val) => onChange({ functionCallingEnabled: val }),
+                    disabled: !!lockedTools?.has("Tool Calling"),
+                  };
+                case "Image Generation":
+                  return {
+                    checked: settings.forceImageGeneration || false,
+                    onChange: (val) => onChange({ forceImageGeneration: val }),
+                    disabled: false,
+                  };
+                default:
+                  return null;
               }
-              case "Web Search":
-              case "Google Search":
-              case "Web Fetch":
-                return {
-                  checked: settings.webSearchEnabled || false,
-                  onChange: (val) => onChange({ webSearchEnabled: val }),
-                  disabled: settings.codeExecutionEnabled,
-                };
-              case "Code Execution":
-                return {
-                  checked: settings.codeExecutionEnabled || false,
-                  onChange: (val) => {
-                    const updates = { codeExecutionEnabled: val };
-                    if (val) {
-                      updates.webSearchEnabled = false;
-                      updates.urlContextEnabled = false;
-                    }
-                    onChange(updates);
-                  },
-                  disabled: false,
-                };
-              case "URL Context":
-                return {
-                  checked: settings.urlContextEnabled || false,
-                  onChange: (val) => onChange({ urlContextEnabled: val }),
-                  disabled: settings.codeExecutionEnabled,
-                };
-              case "Tool Calling":
-                return {
-                  checked: lockedTools?.has("Tool Calling") || settings.functionCallingEnabled || false,
-                  onChange: lockedTools?.has("Tool Calling") ? () => {} : (val) => onChange({ functionCallingEnabled: val }),
-                  disabled: !!lockedTools?.has("Tool Calling"),
-                };
-              case "Image Generation":
-                return {
-                  checked: settings.forceImageGeneration || false,
-                  onChange: (val) => onChange({ forceImageGeneration: val }),
-                  disabled: false,
-                };
-              default:
-                return null;
-            }
-          };
+            };
 
-          return (
-            <div className={styles.section}>
-              <div className={styles.sectionHeader}>Native Tools</div>
-              {selectedModelDef.tools.map((tool) => {
-                const toggle = TOGGLEABLE_TOOLS.has(tool)
-                  ? getToolToggle(tool)
-                  : null;
-                return (
-                  <div
-                    key={tool}
-                    className={`${styles.modalityRow} ${toggle ? styles.toolToggleRow : ""}`}
-                  >
-                    <ToolBadgeComponent
-                      name={getToolLabel(tool)}
-                      tooltip={tool}
-                    />
-                    <span style={{ flex: 1 }} />
-                    {readOnly ? (
-                      toggle ? (
-                        <span
-                          className={`${styles.modalityStatus} ${toggle.checked ? styles.modalityActive : ""}`}
-                        >
-                          {tool === "Image Generation"
-                            ? (toggle.checked ? "Forced" : "Default")
-                            : (toggle.checked ? "On" : "Off")}
-                        </span>
+            return (
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>Native Tools</div>
+                {selectedModelDef.tools.map((tool) => {
+                  const toggle = TOGGLEABLE_TOOLS.has(tool)
+                    ? getToolToggle(tool)
+                    : null;
+                  return (
+                    <div
+                      key={tool}
+                      className={`${styles.modalityRow} ${toggle ? styles.toolToggleRow : ""}`}
+                    >
+                      <ToolBadgeComponent
+                        name={getToolLabel(tool)}
+                        tooltip={tool}
+                      />
+                      <span style={{ flex: 1 }} />
+                      {readOnly ? (
+                        toggle ? (
+                          <span
+                            className={`${styles.modalityStatus} ${toggle.checked ? styles.modalityActive : ""}`}
+                          >
+                            {tool === "Image Generation"
+                              ? toggle.checked
+                                ? "Forced"
+                                : "Default"
+                              : toggle.checked
+                                ? "On"
+                                : "Off"}
+                          </span>
+                        ) : (
+                          <span
+                            className={`${styles.modalityStatus} ${styles.modalityActive}`}
+                          >
+                            Supported
+                          </span>
+                        )
+                      ) : toggle ? (
+                        <ToggleSwitch
+                          checked={toggle.checked}
+                          onChange={toggle.onChange}
+                          disabled={toggle.disabled}
+                          size="mini"
+                        />
                       ) : (
                         <span
                           className={`${styles.modalityStatus} ${styles.modalityActive}`}
                         >
                           Supported
                         </span>
-                      )
-                    ) : toggle ? (
-                      <ToggleSwitch
-                        checked={toggle.checked}
-                        onChange={toggle.onChange}
-                        disabled={toggle.disabled}
-                        size="mini"
-                      />
-                    ) : (
-                      <span
-                        className={`${styles.modalityStatus} ${styles.modalityActive}`}
-                      >
-                        Supported
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
       </div>
 
       {!readOnly && showSystemPromptModal && (
