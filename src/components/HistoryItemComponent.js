@@ -5,6 +5,7 @@ import {
   Copy,
   Star,
   Trash2,
+  ExternalLink,
 } from "lucide-react";
 import IconButtonComponent from "./IconButtonComponent";
 import ModalityIconComponent from "./ModalityIconComponent";
@@ -52,6 +53,8 @@ export default function HistoryItemComponent({
   onToggleFavorite,
   className,
   dataPanelClose = false,
+  onOpenInNewTab,
+  isGenerating = false,
   children,
 }) {
   const itemDate = item.updatedAt || item.createdAt;
@@ -64,6 +67,13 @@ export default function HistoryItemComponent({
       className={`${styles.item} ${isActive ? styles.active : ""} ${className || ""}`}
       {...SoundService.interactive(() => onClick?.(item))}
       {...(dataPanelClose ? { "data-panel-close": true } : {})}
+      onContextMenu={onOpenInNewTab ? (e) => {
+        // Only show custom context on right-click of the main item area
+        // (not on action buttons which have their own handlers)
+        if (e.target.closest(`.${styles.actions}`)) return;
+        e.preventDefault();
+        onOpenInNewTab(item);
+      } : undefined}
     >
       {onToggleFavorite && (
         <button
@@ -96,6 +106,7 @@ export default function HistoryItemComponent({
 
         {/* Row 2: title */}
         <div className={styles.title}>
+          {isGenerating && <span className={styles.generatingDot} />}
           {item.title || "Untitled"}
           {isNew && <span className={styles.newBadge}>NEW</span>}
         </div>
@@ -152,6 +163,17 @@ export default function HistoryItemComponent({
             }}
             tooltip="Delete"
             variant="destructive"
+            hoverReveal
+          />
+        )}
+        {onOpenInNewTab && (
+          <IconButtonComponent
+            icon={<ExternalLink size={12} />}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenInNewTab(item);
+            }}
+            tooltip="Open in New Tab"
             hoverReveal
           />
         )}

@@ -75,6 +75,27 @@
   color: var(--bg-primary);
 }
 
+.generatingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  flex-shrink: 0;
+  animation: historyItemPulse 1.4s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+@keyframes historyItemPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+}
+
 /* ── Row 3: model badge ── */
 .modelBadge {
   width: fit-content;

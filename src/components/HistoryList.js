@@ -49,6 +49,8 @@ export default function HistoryList({
   initialProviders,
   initialSearch = "",
   countLabel,
+  onOpenInNewTab,
+  generatingSessionIds,
 }) {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [activeModalities, setActiveModalities] = useState(new Set());
@@ -258,6 +260,8 @@ export default function HistoryList({
             isFavorite={(favorites || []).includes(item.id)}
             onToggleFavorite={onToggleFavorite}
             dataPanelClose
+            onOpenInNewTab={onOpenInNewTab ? (item) => onOpenInNewTab(item) : undefined}
+            isGenerating={generatingSessionIds?.has?.(item.id)}
           />
         ))}
         {filtered.length === 0 && (

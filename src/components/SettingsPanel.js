@@ -141,12 +141,10 @@ export default function SettingsPanel({
 
   const renderStatsBadges = (stats, showFull) => (
     <div className={styles.statsBadges}>
-      {showFull && (
-        <MessageCountBadgeComponent
-          count={stats.messageCount}
-          deletedCount={stats.deletedCount}
-        />
-      )}
+      <MessageCountBadgeComponent
+        count={stats.messageCount}
+        deletedCount={stats.deletedCount}
+      />
       <RequestCountBadgeComponent count={stats.requestCount} />
       {stats.uniqueModels?.length > 0 && (
         <ModelBadgeComponent
@@ -315,28 +313,24 @@ export default function SettingsPanel({
   return (
     <>
       <div className={styles.container}>
-        {sessionStats && (
-          <div className={styles.sessionStats}>
-            <div className={styles.statsHeader}>
-              <Layers size={12} style={{ marginRight: 4 }} /> {sessionLabel}
-              {showStatsTabBar && (
-                <StatsTabBarComponent
-                  activeTab={statsTab}
-                  onChange={setStatsTab}
-                />
-              )}
-            </div>
-            {activeStats ? (
-              renderStatsBadges(activeStats, statsTab === "all")
-            ) : (
-              <div className={styles.statsBadges}>
-                <span className={`${styles.statBadge} ${styles.statBadgeSub}`}>
-                  No data
-                </span>
-              </div>
+        <div className={styles.sessionStats}>
+          <div className={styles.statsHeader}>
+            <Layers size={12} style={{ marginRight: 4 }} /> {sessionLabel}
+            {showStatsTabBar && (
+              <StatsTabBarComponent
+                activeTab={statsTab}
+                onChange={setStatsTab}
+              />
             )}
           </div>
-        )}
+          {activeStats ? (
+            renderStatsBadges(activeStats, statsTab === "all")
+          ) : (
+            <div className={styles.statsBadges}>
+              <MessageCountBadgeComponent count={0} />
+            </div>
+          )}
+        </div>
 
         {workflows.length > 0 && (
           <div className={styles.section} style={{ marginBottom: 12 }}>

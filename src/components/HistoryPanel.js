@@ -55,6 +55,8 @@ export default function HistoryPanel({
   searchText = "Search conversations...",
   itemIcon,
   countLabel,
+  onOpenInNewTab,
+  generatingSessionIds,
 }) {
   const newBtnRef = useRef(null);
   const rainbowTimer = useRef(null);
@@ -204,6 +206,8 @@ export default function HistoryPanel({
         initialProviders={initialProviders}
         initialSearch={initialSearch}
         countLabel={countLabel}
+        onOpenInNewTab={onOpenInNewTab}
+        generatingSessionIds={generatingSessionIds}
       />
     </div>
   );

@@ -230,6 +230,8 @@ export default function AgentComponent({
 
   const agentSessionIdRef = useRef(agentSessionId);
   agentSessionIdRef.current = agentSessionId;
+  // Track which sessions have active background generation (for history indicator)
+  const [generatingSessionIds, setGeneratingSessionIds] = useState(() => new Set());
 
   const handleStop = useCallback(() => {
     if (abortRef.current) {
@@ -674,6 +676,9 @@ export default function AgentComponent({
   const runOrchestrationLoop = useCallback(
     async (sessionMessages, resolvedTitle) => {
       const currentMessages = [...sessionMessages];
+      // Capture which session this generation belongs to — if the user
+      // switches sessions, streaming callbacks will skip UI updates.
+      const genSessionId = agentSessionIdRef.current;
 
 
 
@@ -772,6 +777,10 @@ export default function AgentComponent({
             ...(s.toolIds ? { toolIds: [...s.toolIds] } : {}),
           }));
 
+        // Guard: returns true when the user switched sessions — skip all UI updates
+        // but let the stream continue (the backend saves independently).
+        const isStale = () => agentSessionIdRef.current !== genSessionId;
+
         // Direct Chat → streamText (/chat); Agents → streamAgentText (/agent)
         const streamFn = isNoAgent ? PrismService.streamText : PrismService.streamAgentText;
         abortRef.current = streamFn(payload, {
@@ -779,6 +788,8 @@ export default function AgentComponent({
             streamedText += content;
             // Backend sends authoritative running token count on each chunk
             burstTokens++;
+            // Skip UI updates if user switched sessions
+            if (isStale()) return;
             const now = performance.now();
             if (!firstChunkTime) firstChunkTime = now;
             // Accumulate generation-only elapsed: skip gaps from processing/tool phases
@@ -853,6 +864,7 @@ export default function AgentComponent({
           },
           onThinking: (content, _sourceModel, outputTokens) => {
             streamedThinking += content;
+            if (isStale()) return;
 
             // Backend sends authoritative running token count on each thinking chunk
             burstTokens++;
@@ -913,6 +925,7 @@ export default function AgentComponent({
             });
           },
           onToolExecution: (data) => {
+            if (isStale()) return;
             const tc = data.tool;
             setToolActivity((prev) => {
               let updated = [];
@@ -985,6 +998,7 @@ export default function AgentComponent({
           },
           // LM Studio native MCP tool calls (toolCall events)
           onToolCall: (tc) => {
+            if (isStale()) return;
             setToolActivity((prev) => {
               let updated;
               const resolvedId = tc.id || `tc-${Date.now()}-${Math.random()}`;
@@ -1054,6 +1068,7 @@ export default function AgentComponent({
             }
           },
           onToolOutput: (data) => {
+            if (isStale()) return;
             if (data.event === "stdout" || data.event === "stderr") {
               setStreamingOutputs((prev) => {
                 const updated = new Map(prev);
@@ -1065,6 +1080,7 @@ export default function AgentComponent({
             }
           },
           onApprovalRequired: (data) => {
+            if (isStale()) return;
             setPendingApprovals((prev) => [
               ...prev,
               {
@@ -1092,6 +1108,7 @@ export default function AgentComponent({
             });
           },
           onPlanProposal: (data) => {
+            if (isStale()) return;
             console.log("[AgentComponent] plan_proposal received:", data.plan?.length, "chars, autoApproved:", data.autoApproved);
 
             // Inject plan as a content segment so it renders in-flow —
@@ -1129,6 +1146,7 @@ export default function AgentComponent({
             });
           },
           onStatus: (statusData) => {
+            if (isStale()) return;
             // statusData is now the full SSE data object { type, message, iteration?, maxIterations? }
             if (statusData?.message === "iteration_progress") {
               setAgenticProgress({
@@ -1211,6 +1229,7 @@ export default function AgentComponent({
           },
           // ── Worker agent live events ─────────────────────────────
           onWorkerToolExecution: (data) => {
+            if (isStale()) return;
             setWorkerToolActivity((prev) => {
               const raw = prev[data.workerId];
               const entry = { toolCount: 0, currentTool: null, iteration: 0, toolNames: {}, ...raw };
@@ -1236,6 +1255,7 @@ export default function AgentComponent({
             });
           },
           onWorkerStatus: (data) => {
+            if (isStale()) return;
             if (data.message === "spawned") {
               // Early mapping: store workerId indexed by description
               // so SpawnAgentRenderer can look up activity before tool result arrives
@@ -1366,6 +1386,7 @@ export default function AgentComponent({
             }
           },
           onUsageUpdate: (data) => {
+            if (isStale()) return;
             // Authoritative per-iteration usage from the backend —
             // stored on the message so getSessionTokenStats can use it
             // as a middle priority between streaming estimate and final done.
@@ -1382,28 +1403,30 @@ export default function AgentComponent({
             });
           },
           onDone: (data) => {
-            setMessages((prev) => {
-              const updated = [...prev];
-              const last = updated[updated.length - 1];
-              if (last?.role === "assistant") {
-                updated[updated.length - 1] = {
-                  ...last,
-                  provider: settings.provider,
-                  model: settings.model,
-                  usage: data.usage,
-                  totalTime: data.totalTime,
-                  tokensPerSec: data.tokensPerSec,
-                  estimatedCost: data.estimatedCost,
-                  timeToGeneration: data.timeToGeneration,
-                  completedAt: new Date().toISOString(),
-                  status: undefined,
-                  statusPhase: undefined,
-                };
-              }
-              return updated;
-            });
-            setCurrentTurnStart(null);
-            fetchSessionStats(agentSessionId);
+            if (!isStale()) {
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.role === "assistant") {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    provider: settings.provider,
+                    model: settings.model,
+                    usage: data.usage,
+                    totalTime: data.totalTime,
+                    tokensPerSec: data.tokensPerSec,
+                    estimatedCost: data.estimatedCost,
+                    timeToGeneration: data.timeToGeneration,
+                    completedAt: new Date().toISOString(),
+                    status: undefined,
+                    statusPhase: undefined,
+                  };
+                }
+                return updated;
+              });
+              setCurrentTurnStart(null);
+              fetchSessionStats(agentSessionId);
+            }
             // SessionSummarizer runs async after SSE stream closes —
             // poll every 2s for up to 20s until new memories are detected
             (async () => {
@@ -1498,6 +1521,9 @@ export default function AgentComponent({
       }
 
       setIsGenerating(true);
+      // Track this session as generating (for history indicator even after switching away)
+      const genId = agentSessionIdRef.current;
+      setGeneratingSessionIds((prev) => new Set(prev).add(genId));
       setToolActivity([]);
       setWorkerToolActivity({});
       setStreamingOutputs(new Map());
@@ -1514,6 +1540,13 @@ export default function AgentComponent({
         resolvedTitle =
           titleText.length > 60 ? titleText.slice(0, 57) + "..." : titleText;
         setTitle(resolvedTitle);
+        // Optimistic: add the session to the history list immediately
+        const now = new Date().toISOString();
+        setActiveId(agentSessionId);
+        setSessions((prev) => [
+          { id: agentSessionId, title: resolvedTitle, updatedAt: now, createdAt: now },
+          ...prev,
+        ]);
       }
 
       setCurrentTurnStart(Date.now());
@@ -1554,19 +1587,32 @@ export default function AgentComponent({
           },
         ]);
       } finally {
-        setIsGenerating(false);
-        abortRef.current = null;
-        // Ensure timer stops even on abort/error — stamp completedAt if missing
-        setCurrentTurnStart(null);
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          if (last?.role === "assistant" && !last.completedAt) {
-            const updated = [...prev];
-            updated[updated.length - 1] = { ...last, completedAt: new Date().toISOString() };
-            return updated;
-          }
-          return prev;
+        // Remove this session from the generating set
+        setGeneratingSessionIds((prev) => {
+          const next = new Set(prev);
+          next.delete(genId);
+          return next;
         });
+        // Only update local UI state if this session is still displayed
+        if (agentSessionIdRef.current === genId) {
+          setIsGenerating(false);
+          abortRef.current = null;
+          setCurrentTurnStart(null);
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant" && !last.completedAt) {
+              const updated = [...prev];
+              updated[updated.length - 1] = { ...last, completedAt: new Date().toISOString() };
+              return updated;
+            }
+            return prev;
+          });
+        } else {
+          // Session was switched away — just clear the abort ref
+          abortRef.current = null;
+        }
+        // Reload sessions list regardless (title/metadata may have changed)
+        loadSessions();
       }
     },
     [
@@ -1620,7 +1666,8 @@ export default function AgentComponent({
   }, [isNoAgent]);
 
   const handleNewChat = useCallback(() => {
-    if (isGenerating) return;
+    // If generating, let the stream continue in the background — just detach the UI
+    if (isGenerating) setIsGenerating(false);
     // If already on a blank session, just reset directly (no pixelation needed)
     if (messages.length === 0 && !activeId) {
       resetSessionState();
@@ -1636,7 +1683,8 @@ export default function AgentComponent({
 
   const handleSelectSession = useCallback(
     async (conv) => {
-      if (isGenerating) return;
+      // If generating, let the stream continue in the background — just detach the UI
+      if (isGenerating) setIsGenerating(false);
       // Already viewing this session — just scroll to bottom instantly
       if (conv.id === activeId) {
         endRef.current?.scrollIntoView({ behavior: "instant" });
@@ -1903,6 +1951,8 @@ export default function AgentComponent({
                     const mapSubStats = (sub) => {
                       if (!sub) return null;
                       return {
+                        messageCount: sub.requestCount,
+                        deletedCount: 0,
                         requestCount: sub.requestCount,
                         uniqueModels: sub.models || [],
                         uniqueProviders: sub.providers || [],
@@ -2414,6 +2464,7 @@ export default function AgentComponent({
           emptyText="No recent sessions"
           searchText="Search sessions..."
           countLabel="sessions"
+          generatingSessionIds={generatingSessionIds}
         />
       }
       rightTitle={`${sessions.length} Sessions`}
