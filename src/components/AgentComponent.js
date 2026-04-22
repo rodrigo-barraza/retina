@@ -760,6 +760,7 @@ export default function AgentComponent({
         const contentSegments = [];
         const textFragments = [];
         const thinkingFragments = [];
+        const segmentToolIdSet = new Set(); // Dedup: track tool IDs already in contentSegments
         let lastSegmentType = null; // "thinking" | "text" | "tools"
         let prevCleanLen = 0; // length of cleanTextRaw at last onChunk — used for computing deltas
         let prevThinkingLen = 0; // length of thinking text at last onThinking — used for computing deltas
@@ -917,6 +918,10 @@ export default function AgentComponent({
               let updated = [];
               const resolvedId = tc.id || `tc-${Date.now()}-${Math.random()}`;
               if (data.status === "calling") {
+                // Deduplicate: skip if this tool ID was already registered
+                if (prev.some((a) => a.id === resolvedId)) {
+                  return prev;
+                }
                 updated = [
                   ...prev,
                   {
@@ -928,12 +933,16 @@ export default function AgentComponent({
                   },
                 ];
                 // Track segment ordering: group consecutive tool events
-                if (lastSegmentType === "tools") {
-                  // Append to current tools segment
-                  contentSegments[contentSegments.length - 1].toolIds.push(resolvedId);
-                } else {
-                  contentSegments.push({ type: "tools", toolIds: [resolvedId] });
-                  lastSegmentType = "tools";
+                // Guard: only add to segments if not already tracked
+                if (!segmentToolIdSet.has(resolvedId)) {
+                  segmentToolIdSet.add(resolvedId);
+                  if (lastSegmentType === "tools") {
+                    // Append to current tools segment
+                    contentSegments[contentSegments.length - 1].toolIds.push(resolvedId);
+                  } else {
+                    contentSegments.push({ type: "tools", toolIds: [resolvedId] });
+                    lastSegmentType = "tools";
+                  }
                 }
               } else {
                 updated = prev.map((activity) => {
@@ -980,6 +989,10 @@ export default function AgentComponent({
               let updated;
               const resolvedId = tc.id || `tc-${Date.now()}-${Math.random()}`;
               if (tc.status === "calling") {
+                // Deduplicate: skip if this tool ID was already registered
+                if (prev.some((a) => a.id === resolvedId)) {
+                  return prev;
+                }
                 updated = [
                   ...prev,
                   {
@@ -991,11 +1004,15 @@ export default function AgentComponent({
                   },
                 ];
                 // Track segment ordering: group consecutive tool events
-                if (lastSegmentType === "tools") {
-                  contentSegments[contentSegments.length - 1].toolIds.push(resolvedId);
-                } else {
-                  contentSegments.push({ type: "tools", toolIds: [resolvedId] });
-                  lastSegmentType = "tools";
+                // Guard: only add to segments if not already tracked
+                if (!segmentToolIdSet.has(resolvedId)) {
+                  segmentToolIdSet.add(resolvedId);
+                  if (lastSegmentType === "tools") {
+                    contentSegments[contentSegments.length - 1].toolIds.push(resolvedId);
+                  } else {
+                    contentSegments.push({ type: "tools", toolIds: [resolvedId] });
+                    lastSegmentType = "tools";
+                  }
                 }
               } else {
                 // done or error — update existing entry

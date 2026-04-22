@@ -1180,6 +1180,9 @@ export default function MessageList({
                   (() => {
                     const segs = msg.contentSegments;
                     const hasThinking = segs.some((s) => s.type === "thinking");
+                    // Dedup guard: track tool IDs already rendered to prevent
+                    // the same tool call from appearing in multiple segments
+                    const renderedToolIds = new Set();
 
                     // Helper: render a segment by type
                     const renderSeg = (seg, si, opts = {}) => {
@@ -1190,7 +1193,12 @@ export default function MessageList({
                       }
                       if (seg.type === "tools" && msg.toolCalls?.length > 0) {
                         const toolIdSet = new Set(seg.toolIds || []);
-                        const segmentTools = msg.toolCalls.filter((tc) => toolIdSet.has(tc.id));
+                        const segmentTools = msg.toolCalls.filter((tc) => {
+                          if (!toolIdSet.has(tc.id)) return false;
+                          if (renderedToolIds.has(tc.id)) return false;
+                          renderedToolIds.add(tc.id);
+                          return true;
+                        });
                         if (segmentTools.length === 0) return null;
                         return <ToolCallsBlock key={`seg-t-${si}`} toolCalls={segmentTools} streamingOutputs={streamingOutputs} workerToolActivity={workerToolActivity} />;
                       }
