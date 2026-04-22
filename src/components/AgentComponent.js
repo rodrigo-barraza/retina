@@ -1851,7 +1851,7 @@ export default function AgentComponent({
             {
               key: "plan",
               icon: <ClipboardList size={12} />,
-              label: "Plan First",
+              label: "Plan Mode",
               checked: planFirst,
               onChange: () => setPlanFirst((v) => !v),
             },
