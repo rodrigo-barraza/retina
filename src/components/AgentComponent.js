@@ -1856,6 +1856,66 @@ export default function AgentComponent({
     setPixelTransition("out");
   }, [isGenerating, messages, title, toolActivity, workerToolActivity, streamingOutputs, pendingApprovals, planProposal, agenticProgress, settings, backendSessionStats, activeId, resetSessionState]);
 
+  /** Apply fetched/snapshot session data to component state immediately. */
+  const applySessionData = useCallback((full) => {
+    if (!full) return;
+
+    if (full._fromSnapshot && full._snapshot) {
+      // Restoring a background generating session from snapshot
+      const snap = full._snapshot;
+      scrollBehaviorRef.current = "instant";
+      setMessages(snap.messages);
+      setAgentSessionId(full.id);
+      setActiveId(full.id);
+      setTitle(snap.title);
+      setToolActivity(snap.toolActivity || []);
+      setWorkerToolActivity(snap.workerToolActivity || {});
+      setStreamingOutputs(snap.streamingOutputs || new Map());
+      setPendingApprovals(snap.pendingApprovals || []);
+      setPlanProposal(snap.planProposal || null);
+      setAgenticProgress(snap.agenticProgress || null);
+      setSettings((prev) => ({ ...prev, ...snap.settings }));
+      setBackendSessionStats(snap.backendSessionStats || null);
+      // Re-attach: mark as generating so the UI shows the active state
+      setIsGenerating(true);
+      // Remove the snapshot — the SSE callbacks will resume updating React state
+      // now that agentSessionIdRef matches again (isStale() → false)
+      backgroundSessionsRef.current.delete(full.id);
+    } else {
+      // Normal backend-loaded session
+      const displayMessages = prepareDisplayMessages(full.messages || []);
+      scrollBehaviorRef.current = "instant";
+      setMessages(displayMessages);
+      setAgentSessionId(full.id || crypto.randomUUID());
+      setTraceId(full.traceId || null);
+      setActiveId(full.id);
+      setTitle(full.title || "Agent");
+      setToolActivity([]);
+      setWorkerToolActivity({});
+
+      const lastAssistant = [...(full.messages || [])]
+        .reverse()
+        .find((m) => m.role === "assistant" && m.provider);
+      if (lastAssistant) {
+        const gs = lastAssistant.generationSettings || {};
+        setSettings((prev) => ({
+          ...prev,
+          ...(lastAssistant.provider && { provider: lastAssistant.provider }),
+          ...(lastAssistant.model && { model: lastAssistant.model }),
+          ...(gs.temperature !== undefined && { temperature: gs.temperature }),
+          ...(gs.maxTokens !== undefined && { maxTokens: gs.maxTokens }),
+          ...(gs.thinkingEnabled !== undefined && { thinkingEnabled: gs.thinkingEnabled }),
+          ...(gs.reasoningEffort && { reasoningEffort: gs.reasoningEffort }),
+          ...(gs.thinkingBudget && { thinkingBudget: gs.thinkingBudget }),
+          // Conversations store systemPrompt at root — restore for Direct Chat
+          ...(full.systemPrompt != null && { systemPrompt: full.systemPrompt }),
+        }));
+      }
+      setBackendSessionStats(full.stats || null);
+      tokenHwmRef.current = { input: 0, output: 0, total: 0 };
+    }
+  }, []);
+
   const handleSelectSession = useCallback(
     async (conv) => {
       // If generating, snapshot the current session so user can switch back to it
@@ -1874,11 +1934,9 @@ export default function AgentComponent({
         return;
       }
 
-      // Phase 1: pixelate OUT + fetch in parallel
-      pixelLoadStartRef.current = performance.now();
-      setPixelOutDone(false);
-      setPendingSessionReady(false);
-      pendingSessionRef.current = null;
+      // Start pixel-out animation concurrently — acts as a loading veil
+      // for slower connections. Gets interrupted by the "in" reveal once
+      // data arrives (no waiting for the out animation to finish).
       setPixelTransition("out");
 
       // If the target session is still generating in the background,
@@ -1886,15 +1944,16 @@ export default function AgentComponent({
       // (which would 404 because the session hasn't been persisted yet).
       const snapshot = backgroundSessionsRef.current.get(conv.id);
       if (snapshot && generatingSessionIds.has(conv.id)) {
-        pendingSessionRef.current = {
+        applySessionData({
           id: conv.id,
           title: snapshot.title,
           messages: snapshot.messages,
           stats: snapshot.backendSessionStats,
           _fromSnapshot: true,
           _snapshot: snapshot,
-        };
-        setPendingSessionReady(true);
+        });
+        // Quick "in" reveal after immediate data swap
+        setPixelTransition("in");
         return;
       }
 
@@ -1903,8 +1962,10 @@ export default function AgentComponent({
         const full = isNoAgent
           ? await PrismService.getConversation(conv.id)
           : await PrismService.getAgentSession(conv.id, agentProject);
-        pendingSessionRef.current = full;
-        setPendingSessionReady(true);
+        // Apply data immediately — no waiting for pixel-out animation
+        applySessionData(full);
+        // Quick "in" reveal after data swap
+        setPixelTransition("in");
       } catch (err) {
         // If the session is currently generating, the backend may not have
         // persisted the stub yet — swallow 404s and cancel the transition
@@ -1915,16 +1976,13 @@ export default function AgentComponent({
         } else {
           console.error("Failed to load session:", err);
         }
-        setPixelTransition(null);
-        setPixelOutDone(false);
-        setPendingSessionReady(false);
-        pendingSessionRef.current = null;
       }
     },
-    [isGenerating, activeId, agentProject, isNoAgent, messages, title, toolActivity, workerToolActivity, streamingOutputs, pendingApprovals, planProposal, agenticProgress, settings, backendSessionStats, generatingSessionIds],
+    [isGenerating, activeId, agentProject, isNoAgent, messages, title, toolActivity, workerToolActivity, streamingOutputs, pendingApprovals, planProposal, agenticProgress, settings, backendSessionStats, generatingSessionIds, applySessionData],
   );
 
-  // When 'out' animation completes: handle new-session reset or session-load swap
+  // When 'out' animation completes: handle new-session reset only.
+  // Session-load path now applies data immediately in handleSelectSession.
   useEffect(() => {
     if (!pixelOutDone) return;
 
@@ -1938,76 +1996,9 @@ export default function AgentComponent({
       return;
     }
 
-    // ── Load existing session path (wait for fetch) ──
-    if (!pendingSessionReady) return;
-
-    const full = pendingSessionRef.current;
-    if (full) {
-      // Restoring a background generating session from snapshot
-      if (full._fromSnapshot && full._snapshot) {
-        const snap = full._snapshot;
-        scrollBehaviorRef.current = "instant";
-        setMessages(snap.messages);
-        setAgentSessionId(full.id);
-        setActiveId(full.id);
-        setTitle(snap.title);
-        setToolActivity(snap.toolActivity || []);
-        setWorkerToolActivity(snap.workerToolActivity || {});
-        setStreamingOutputs(snap.streamingOutputs || new Map());
-        setPendingApprovals(snap.pendingApprovals || []);
-        setPlanProposal(snap.planProposal || null);
-        setAgenticProgress(snap.agenticProgress || null);
-        setSettings((prev) => ({ ...prev, ...snap.settings }));
-        setBackendSessionStats(snap.backendSessionStats || null);
-        // Re-attach: mark as generating so the UI shows the active state
-        setIsGenerating(true);
-        // Remove the snapshot — the SSE callbacks will resume updating React state
-        // now that agentSessionIdRef matches again (isStale() → false)
-        backgroundSessionsRef.current.delete(full.id);
-      } else {
-        // Normal backend-loaded session
-        const displayMessages = prepareDisplayMessages(full.messages || []);
-        scrollBehaviorRef.current = "instant";
-        setMessages(displayMessages);
-        setAgentSessionId(full.id || crypto.randomUUID());
-        setTraceId(full.traceId || null);
-        setActiveId(full.id);
-        setTitle(full.title || "Agent");
-        setToolActivity([]);
-        setWorkerToolActivity({});
-
-        const lastAssistant = [...(full.messages || [])]
-          .reverse()
-          .find((m) => m.role === "assistant" && m.provider);
-        if (lastAssistant) {
-          const gs = lastAssistant.generationSettings || {};
-          setSettings((prev) => ({
-            ...prev,
-            ...(lastAssistant.provider && { provider: lastAssistant.provider }),
-            ...(lastAssistant.model && { model: lastAssistant.model }),
-            ...(gs.temperature !== undefined && { temperature: gs.temperature }),
-            ...(gs.maxTokens !== undefined && { maxTokens: gs.maxTokens }),
-            ...(gs.thinkingEnabled !== undefined && { thinkingEnabled: gs.thinkingEnabled }),
-            ...(gs.reasoningEffort && { reasoningEffort: gs.reasoningEffort }),
-            ...(gs.thinkingBudget && { thinkingBudget: gs.thinkingBudget }),
-            // Conversations store systemPrompt at root — restore for Direct Chat
-            ...(full.systemPrompt != null && { systemPrompt: full.systemPrompt }),
-          }));
-        }
-        setBackendSessionStats(full.stats || null);
-        tokenHwmRef.current = { input: 0, output: 0, total: 0 };
-      }
-      pendingSessionRef.current = null;
-    }
-
-    // Record actual load time and update the EMA for future transitions
-    if (pixelLoadStartRef.current) {
-      recordPixelLoadTime(performance.now() - pixelLoadStartRef.current);
-      pixelLoadStartRef.current = null;
-    }
+    // pixelOutDone fired but not for new-session — stale, just clear
     setPixelOutDone(false);
     setPendingSessionReady(false);
-    setPixelTransition("in");
   }, [pixelOutDone, pendingSessionReady, resetSessionState, recordPixelLoadTime]);
 
   const handleDeleteSession = useCallback(

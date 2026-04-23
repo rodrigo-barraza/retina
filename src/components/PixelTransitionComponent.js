@@ -41,9 +41,15 @@ export default function PixelTransitionComponent({
   const propsRef = useRef({ phase, duration, maxBlockSize, onComplete, targetRef });
   propsRef.current = { phase, duration, maxBlockSize, onComplete, targetRef };
 
-  /** Ease-in-out cubic */
-  const ease = useCallback(
-    (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+  /** Ease-out cubic — fast initial ramp, decelerates toward end */
+  const easeOut = useCallback(
+    (t) => 1 - Math.pow(1 - t, 3),
+    [],
+  );
+
+  /** Ease-in cubic — slow start, accelerates toward end */
+  const easeIn = useCallback(
+    (t) => t * t * t,
     [],
   );
 
@@ -90,12 +96,15 @@ export default function PixelTransitionComponent({
     const p = propsRef.current;
     const elapsed = timestamp - startTimeRef.current;
     const rawProgress = Math.min(elapsed / p.duration, 1);
-    const progress = ease(rawProgress);
 
     let blockSize;
     if (p.phase === "out") {
+      // Ease-out: pixelation ramps up fast then decelerates
+      const progress = easeOut(rawProgress);
       blockSize = Math.round(1 + (p.maxBlockSize - 1) * progress);
     } else if (p.phase === "in") {
+      // Ease-in: depixelation starts slow then accelerates to sharp
+      const progress = easeIn(rawProgress);
       blockSize = Math.round(p.maxBlockSize - (p.maxBlockSize - 1) * progress);
     } else {
       return;
@@ -114,12 +123,11 @@ export default function PixelTransitionComponent({
       rafRef.current = requestAnimationFrame(tickRef.current);
     } else {
       // Transition complete
-      if (p.phase === "in") {
-        const el = p.targetRef?.current;
-        if (el) {
-          el.style.filter = "";
-          el.style.willChange = "";
-        }
+      const el = p.targetRef?.current;
+      if (p.phase === "in" && el) {
+        el.style.filter = "";
+        el.style.willChange = "";
+
       }
       lastBlockRef.current = 0;
       p.onComplete?.();
@@ -133,6 +141,7 @@ export default function PixelTransitionComponent({
       if (el) {
         el.style.filter = "";
         el.style.willChange = "";
+
       }
       lastBlockRef.current = 0;
       return;
@@ -140,7 +149,10 @@ export default function PixelTransitionComponent({
 
     // Promote to compositor layer before the first frame
     const el = targetRef?.current;
-    if (el) el.style.willChange = "filter";
+    if (el) {
+      el.style.willChange = "filter";
+
+    }
 
     startTimeRef.current = null;
     lastBlockRef.current = 0;
