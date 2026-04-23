@@ -241,18 +241,13 @@ export default function AgentComponent({
 
   // ── Pixelation transition state ────────────────────────────
   const [pixelTransition, setPixelTransition] = useState(null); // 'out' | 'in' | null
-  const [pixelOutDone, setPixelOutDone] = useState(false);
-  const [pendingSessionReady, setPendingSessionReady] = useState(false);
-  const pendingSessionRef = useRef(null);
-  const pendingNewSessionRef = useRef(false);
 
   // ── Adaptive pixel transition timing ───────────────────────
-  // Track session load durations and use an EMA to predict the "out" duration.
+  // Track session load durations via EMA to predict the "out" duration.
   // The "in" (reveal) phase is always a fixed 1000ms.
   const PIXEL_IN_DURATION = 1000;
   const PIXEL_DEFAULT_OUT = 3000;
   const PIXEL_LS_KEY = "pixel-transition:load-ema";
-  const pixelLoadStartRef = useRef(null);
   const pixelOutDuration = useMemo(() => {
     if (typeof window === "undefined") return PIXEL_DEFAULT_OUT;
     const stored = localStorage.getItem(PIXEL_LS_KEY);
@@ -1873,13 +1868,8 @@ export default function AgentComponent({
       resetSessionState();
       return;
     }
-    // Trigger pixelation out → reset → pixelation in
-    pendingNewSessionRef.current = true;
-    pixelLoadStartRef.current = performance.now();
-    setPixelOutDone(false);
-    setPendingSessionReady(false);
-    pendingSessionRef.current = null;
-    setPixelTransition("out");
+    // New session — instant reset, no pixelation transition needed
+    resetSessionState();
   }, [isGenerating, messages, title, toolActivity, workerToolActivity, streamingOutputs, pendingApprovals, planProposal, agenticProgress, settings, backendSessionStats, activeId, resetSessionState]);
 
   /** Apply fetched/snapshot session data to component state immediately. */
@@ -1966,6 +1956,7 @@ export default function AgentComponent({
       // for slower connections. Gets interrupted by the "in" reveal once
       // data arrives (no waiting for the out animation to finish).
       setPixelTransition("out");
+      const loadStart = performance.now();
 
       // If the target session is still generating in the background,
       // restore from the in-memory snapshot instead of hitting the backend
@@ -1980,54 +1971,32 @@ export default function AgentComponent({
           _fromSnapshot: true,
           _snapshot: snapshot,
         });
-        // Quick "in" reveal after immediate data swap
+        recordPixelLoadTime(performance.now() - loadStart);
         setPixelTransition("in");
         return;
       }
 
       try {
-        // Direct Chat sessions live in the conversations collection
         const full = isNoAgent
           ? await PrismService.getConversation(conv.id)
           : await PrismService.getAgentSession(conv.id, agentProject);
-        // Apply data immediately — no waiting for pixel-out animation
         applySessionData(full);
-        // Quick "in" reveal after data swap
+        recordPixelLoadTime(performance.now() - loadStart);
         setPixelTransition("in");
       } catch (err) {
-        // If the session is currently generating, the backend may not have
-        // persisted the stub yet — swallow 404s and cancel the transition
-        // so the user can retry once the session exists.
         const is404 = err.message?.includes("404") || err.message?.includes("not found");
         if (is404) {
           console.warn(`Session ${conv.id} not yet persisted (still generating?) — skipping switch`);
         } else {
           console.error("Failed to load session:", err);
         }
+        setPixelTransition(null);
       }
     },
-    [isGenerating, activeId, agentProject, isNoAgent, messages, title, toolActivity, workerToolActivity, streamingOutputs, pendingApprovals, planProposal, agenticProgress, settings, backendSessionStats, generatingSessionIds, applySessionData],
+    [isGenerating, activeId, agentProject, isNoAgent, messages, title, toolActivity, workerToolActivity, streamingOutputs, pendingApprovals, planProposal, agenticProgress, settings, backendSessionStats, generatingSessionIds, applySessionData, recordPixelLoadTime],
   );
 
-  // When 'out' animation completes: handle new-session reset only.
-  // Session-load path now applies data immediately in handleSelectSession.
-  useEffect(() => {
-    if (!pixelOutDone) return;
 
-    // ── New session path (no fetch needed) ──
-    if (pendingNewSessionRef.current) {
-      pendingNewSessionRef.current = false;
-      resetSessionState();
-      setPixelOutDone(false);
-      setPendingSessionReady(false);
-      setPixelTransition("in");
-      return;
-    }
-
-    // pixelOutDone fired but not for new-session — stale, just clear
-    setPixelOutDone(false);
-    setPendingSessionReady(false);
-  }, [pixelOutDone, pendingSessionReady, resetSessionState, recordPixelLoadTime]);
 
   const handleDeleteSession = useCallback(
     async (convId) => {
@@ -2446,9 +2415,7 @@ export default function AgentComponent({
         duration={pixelTransition === "in" ? PIXEL_IN_DURATION : pixelOutDuration}
         maxBlockSize={72}
         onComplete={() => {
-          if (pixelTransition === "out") {
-            setPixelOutDone(true);
-          } else if (pixelTransition === "in") {
+          if (pixelTransition === "in") {
             setPixelTransition(null);
           }
         }}
@@ -2564,10 +2531,17 @@ export default function AgentComponent({
         const progress = (phase === "processing" || phase === "loading") ? (lastMsg?._statusProgress ?? null) : null;
 
         // Orchestrator tok/s from burst-scoped generation metrics.
-        // Only show when the orchestrator itself is actively generating
-        // (not during tool execution or worker delegation).
+        // Show whenever the model is actively streaming chunks — including
+        // during tool-call JSON generation (where hasActiveTools is true but
+        // chunks are still flowing). We check chunk freshness rather than
+        // phase labels to avoid going stale while the model streams FC args.
         let orchestratorTokPerSec = null;
-        const isOrchestratorGenerating = (phase === "generating" || phase === "thinking") && !hasActiveTools && !workerDerivedPhase;
+        const CHUNK_FRESH_MS = 2000;
+        const isChunksFlowing = liveStreamingLastChunkTime
+          && (performance.now() - liveStreamingLastChunkTime) < CHUNK_FRESH_MS;
+        const isOrchestratorGenerating =
+          ((phase === "generating" || phase === "thinking") && !workerDerivedPhase)
+          || (hasActiveTools && isChunksFlowing); // tool-call JSON still streaming
         if (isOrchestratorGenerating && liveStreamingBurstTokens > 1 && liveStreamingBurstElapsed > 0) {
           orchestratorTokPerSec = liveStreamingBurstTokens / (liveStreamingBurstElapsed / 1000);
         }
