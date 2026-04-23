@@ -124,6 +124,9 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   });
   const [favoriteKeys, setFavoriteKeys] = useState([]);
 
+  // Available agent personas (fetched dynamically)
+  const [availableAgents, setAvailableAgents] = useState([]);
+
   // Selected result (for chat preview)
   const [selectedResult, setSelectedResult] = useState(null);
 
@@ -506,6 +509,11 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     // Load favorites
     PrismService.getFavorites("model")
       .then((favs) => setFavoriteKeys(favs.map((f) => f.key)))
+      .catch(() => {});
+
+    // Load agent personas (all built-in + custom, excluding "No Agent")
+    PrismService.getAgentPersonas()
+      .then((list) => setAvailableAgents(list.filter((a) => a.id !== "NONE")))
       .catch(() => {});
   }, []);
 
@@ -1006,10 +1014,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             }
           />
           <AgentPickerComponent
-            agents={[
-              { id: "CODING", name: "Coding Agent", description: "File system, git, command execution, and web tools", toolCount: 6 },
-              { id: "LUPOS", name: "Lupos", description: "Image generation, web search, trends, media, and weather", toolCount: 6 },
-            ]}
+            agents={availableAgents}
             addMode
             addCount={agentInstances.length}
             onAddAgent={handleAddAgent}
