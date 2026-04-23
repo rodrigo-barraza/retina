@@ -1,7 +1,7 @@
 import { useReducer, useMemo } from "react";
 
 /**
- * TTFT reducer — burst-averaging pattern, mirroring tokPerSecReducer.
+ * TTFT reducer — running-average pattern for Time-To-First-Token.
  *
  * Each agentic loop iteration and each worker emits a `generation_started`
  * event with a server-computed TTFT sample. This reducer tracks the number

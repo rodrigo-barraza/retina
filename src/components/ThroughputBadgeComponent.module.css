@@ -1,0 +1,58 @@
+/* ── ThroughputBadgeComponent ─────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+}
+
+.badge:hover {
+  border-color: color-mix(in srgb, var(--accent-color) 40%, transparent);
+  color: var(--text-primary);
+}
+
+/* ── Live tok/s — actively generating ── */
+.live {
+  color: rgb(52, 211, 153);
+  background: rgba(52, 211, 153, 0.08);
+  border-color: rgba(52, 211, 153, 0.25);
+  animation: throughputPulse 2s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.live:hover {
+  border-color: rgba(52, 211, 153, 0.5);
+  background: rgba(52, 211, 153, 0.14);
+}
+
+/* ── Stale tok/s — held value, no active generation ── */
+.stale {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  opacity: 0.5;
+}
+
+/* ── Average tok/s — static from completed session ── */
+.average {
+  color: rgb(52, 211, 153);
+  background: rgba(52, 211, 153, 0.06);
+  border-color: rgba(52, 211, 153, 0.15);
+  opacity: 0.7;
+}
+
+@keyframes throughputPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}

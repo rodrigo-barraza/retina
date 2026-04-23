@@ -119,28 +119,44 @@ export default function HistoryPanel({
         });
       }
 
-      // Extract unique model names and providers used in this conversation
-      const msgs = conv.messages || [];
-      const modelNamesSet = new Set();
-      const providersSet = new Set();
+      // Use live-patched model names if available (from active generation),
+      // otherwise derive from messages
+      let modelNames;
+      if (conv._liveModelNames?.length > 0) {
+        modelNames = conv._liveModelNames;
+      } else {
+        // Extract unique model names and providers used in this conversation
+        const msgs = conv.messages || [];
+        const modelNamesSet = new Set();
 
-      // Look at messages from newest to oldest to order recent models first
-      for (let i = msgs.length - 1; i >= 0; i--) {
-        if (msgs[i].role === "assistant") {
-          if (msgs[i].model) modelNamesSet.add(msgs[i].model);
-          if (msgs[i].provider) providersSet.add(msgs[i].provider);
+        // Look at messages from newest to oldest to order recent models first
+        for (let i = msgs.length - 1; i >= 0; i--) {
+          if (msgs[i].role === "assistant") {
+            if (msgs[i].model) modelNamesSet.add(msgs[i].model);
+          }
         }
+
+        // If no models found in messages, fall back to conv.model
+        if (modelNamesSet.size === 0 && conv.model) {
+          modelNamesSet.add(conv.model);
+        }
+        modelNames = Array.from(modelNamesSet);
       }
 
-      // If no models found in messages, fall back to conv.model
-      if (modelNamesSet.size === 0 && conv.model) {
-        modelNamesSet.add(conv.model);
+      // Providers: prefer top-level (from backend or live patch), else derive from messages
+      let derivedProviders;
+      if (conv.providers?.length > 0) {
+        derivedProviders = conv.providers;
+      } else {
+        const msgs = conv.messages || [];
+        const providersSet = new Set();
+        for (let i = msgs.length - 1; i >= 0; i--) {
+          if (msgs[i].role === "assistant" && msgs[i].provider) {
+            providersSet.add(msgs[i].provider);
+          }
+        }
+        derivedProviders = Array.from(providersSet);
       }
-
-      const modelNames = Array.from(modelNamesSet);
-      const derivedProviders = conv.providers?.length > 0
-        ? conv.providers
-        : Array.from(providersSet);
 
       // Merge request-log toolCounts into modalities for accurate badge counts
       const baseModalities = conv.modalities || getModalities(conv.messages);

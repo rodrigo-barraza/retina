@@ -28,6 +28,7 @@ import { formatCost, CAPABILITY_TOOL_NAMES } from "../utils/utilities";
 import { TOGGLEABLE_TOOLS } from "./WorkflowNodeConstants";
 import ToolBadgeComponent from "./ToolBadgeComponent";
 import ToolCallBadgeComponent from "./ToolCallBadgeComponent";
+import ThroughputBadgeComponent from "./ThroughputBadgeComponent";
 import useTokenRate from "../hooks/useTokenRate";
 import useTtft from "../hooks/useTtft";
 
@@ -187,19 +188,12 @@ export default function SettingsPanel({
           )}
         </>
       )}
-      {liveTokensPerSec !== null ? (
-        <span
-          className={`${styles.statBadge} ${(computedTokPerSec !== null || hasActiveWorkers || turnActive) ? styles.speedBadge : styles.staleSpeedBadge}`}
-        >
-          ⚡ {liveTokensPerSec.toFixed(1)} tok/s
-        </span>
-      ) : (
-        stats.avgTokensPerSec != null && (
-          <span className={`${styles.statBadge} ${styles.avgSpeedBadge}`}>
-            ⚡ {stats.avgTokensPerSec.toFixed(1)} tok/s
-          </span>
-        )
-      )}
+      <ThroughputBadgeComponent
+        liveTokPerSec={liveTokensPerSec}
+        avgTokPerSec={stats.avgTokensPerSec}
+        isActivelyGenerating={computedTokPerSec !== null || hasActiveWorkers}
+        turnActive={turnActive}
+      />
       {/* TTFT badge — live during processing, latched after first token, static after completion */}
       {liveTtft !== null ? (
         <span

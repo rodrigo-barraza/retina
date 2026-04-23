@@ -154,6 +154,25 @@ export default function AgentComponent({
     });
   }, []);
 
+  // Ephemeral tab switch — temporarily show a tab then revert after a delay.
+  // Cancels any pending revert to avoid stacking timeouts.
+  const tabRevertTimerRef = useRef(null);
+  const switchTabTemporarily = useCallback((targetTab, delayMs = 5000) => {
+    // Already viewing this tab — keep them there, no revert needed
+    const previousTab = leftTabRef.current;
+    if (previousTab === targetTab) return;
+    // Cancel any pending revert from a previous ephemeral switch
+    if (tabRevertTimerRef.current) clearTimeout(tabRevertTimerRef.current);
+    setLeftTab(targetTab);
+    tabRevertTimerRef.current = setTimeout(() => {
+      tabRevertTimerRef.current = null;
+      // Only revert if the user hasn't manually navigated away
+      if (leftTabRef.current === targetTab) {
+        setLeftTab(previousTab);
+      }
+    }, delayMs);
+  }, []);
+
   // Count concurrent API calls: main generation + active worker agents
   const activeApiCount = useMemo(() => {
     const activeWorkers = Object.values(workerToolActivity).filter(
@@ -532,6 +551,57 @@ export default function AgentComponent({
     liveStreamingTokens, liveStreamingStartTime, liveStreamingLastChunkTime, liveStreamingBurstTokens, liveStreamingBurstElapsed, workerGenerationProgress,
     lastTimeToGeneration, liveProcessingStartTime, liveProcessingPhase, liveTtftSamples, liveGenProgress,
   } = useSessionStats(messages);
+
+  // ── Live-patch sidebar session metadata ──────────────────
+  // Keep the active session's entry in `sessions[]` in sync with the
+  // live stats derived from messages so the HistoryPanel badges
+  // (model, provider, modalities, cost) update in real-time during
+  // generation — no full loadSessions() round-trip needed.
+  useEffect(() => {
+    if (!activeId || messages.length === 0) return;
+    setSessions((prev) => {
+      const idx = prev.findIndex((s) => s.id === activeId);
+      if (idx === -1) return prev;
+      const existing = prev[idx];
+      // Only patch if something actually changed to avoid churn
+      const resolvedCost = backendSessionStats?.totalCost ?? totalCost;
+      const resolvedModalities = backendSessionStats?.modalities ?? modalities;
+      const resolvedToolCounts = backendSessionStats?.toolCounts ?? undefined;
+      const resolvedProviders = uniqueProviders.length > 0
+        ? uniqueProviders
+        : existing.providers;
+      const resolvedModels = uniqueModels.length > 0
+        ? uniqueModels
+        : existing._liveModelNames;
+      // Shallow equality check — skip update if nothing visually changed
+      const prevMod = existing._liveModalities;
+      const modSame = prevMod && Object.keys(resolvedModalities).every(
+        (k) => prevMod[k] === resolvedModalities[k],
+      );
+      if (
+        modSame &&
+        existing.totalCost === resolvedCost &&
+        existing.title === title &&
+        JSON.stringify(existing._liveModelNames) === JSON.stringify(resolvedModels) &&
+        JSON.stringify(existing.providers) === JSON.stringify(resolvedProviders)
+      ) {
+        return prev;
+      }
+      const updated = [...prev];
+      updated[idx] = {
+        ...existing,
+        title,
+        totalCost: resolvedCost,
+        modalities: resolvedModalities,
+        toolCounts: resolvedToolCounts,
+        providers: resolvedProviders,
+        _liveModelNames: resolvedModels,
+        _liveModalities: resolvedModalities,
+        updatedAt: new Date().toISOString(),
+      };
+      return updated;
+    });
+  }, [activeId, title, modalities, uniqueModels, uniqueProviders, totalCost, backendSessionStats, messages.length]);
 
   // ── Fetch backend-aggregate session stats ────────────────
   const fetchSessionStats = useCallback((sessionId) => {
@@ -1174,8 +1244,8 @@ export default function AgentComponent({
                 estimatedTokens: statusData.estimatedTokens,
               });
             } else if (statusData?.message === "tasks_updated") {
-              // Auto-expand tasks panel when agent creates/updates tasks
-              setLeftTab("tasks");
+              // Ephemeral tab switch — show tasks panel then revert after 5s
+              switchTabTemporarily("tasks");
               setTasksRefreshKey((k) => k + 1);
               markTabNew("tasks");
             } else if (statusData?.message === "workers_updated") {
@@ -1183,8 +1253,8 @@ export default function AgentComponent({
               setTasksRefreshKey((k) => k + 1);
               markTabNew("workers");
             } else if (statusData?.message === "memories_updated") {
-              // Auto-expand memories panel when agent saves a memory
-              setLeftTab("memories");
+              // Ephemeral tab switch — show memories panel then revert after 5s
+              switchTabTemporarily("memories");
               setMemoriesRefreshKey((k) => k + 1);
               markTabNew("memories");
               // Re-fetch count for the tab badge (MemoriesPanel may not be mounted yet)
@@ -1548,6 +1618,7 @@ export default function AgentComponent({
       agentProject,
       fetchSessionStats,
       markTabNew,
+      switchTabTemporarily,
     ],
   );
 
@@ -2011,6 +2082,11 @@ export default function AgentComponent({
         activeTab={leftTab}
         onChange={(tab) => {
           setLeftTab(tab);
+          // User manually switched — cancel any pending ephemeral revert
+          if (tabRevertTimerRef.current) {
+            clearTimeout(tabRevertTimerRef.current);
+            tabRevertTimerRef.current = null;
+          }
           // Clear "new data" flag — user is now viewing this tab
           setNewDataTabs((prev) => {
             if (!prev.has(tab)) return prev;

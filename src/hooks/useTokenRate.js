@@ -14,46 +14,79 @@ const PROGRESS_STALE_MS = 3000;
 const CHUNK_STALE_MS = 2000;
 
 /**
- * Burst-averaging reducer for tok/s display.
+ * Last-value-hold reducer for tok/s display.
  *
- * While generating, shows the current burst rate. When generation
- * pauses (tool execution, processing), records that burst's final
- * rate and displays the running average across all bursts in the
- * turn. Clears when the turn fully ends.
+ * While generating, shows the current live rate. When generation
+ * pauses (tool execution, processing), holds the most recent
+ * burst's final rate so the badge doesn't flicker to zero during
+ * tool calls. Clears when the turn fully ends.
  */
 function tokPerSecReducer(prev, { computed, active }) {
   // Turn ended → clear everything
   if (!active) {
-    return { current: null, history: [], lastComputed: null };
+    return { current: null, lastComputed: null };
   }
-  // Actively generating → show live rate, track for recording
+  // Actively generating → show live rate, track for hold
   if (computed !== null) {
-    return { ...prev, current: computed, lastComputed: computed };
+    return { current: computed, lastComputed: computed };
   }
-  // Paused mid-turn: record the burst that just ended (if any)
+  // Paused mid-turn: hold the last burst's rate
   if (prev.lastComputed !== null) {
-    const newHistory = [...prev.history, prev.lastComputed];
-    const avg = newHistory.reduce((a, b) => a + b, 0) / newHistory.length;
-    return { current: avg, history: newHistory, lastComputed: null };
+    return { current: prev.lastComputed, lastComputed: null };
   }
-  // Already paused, no new burst to record — keep showing average
+  // Already paused, no new burst to record — keep showing held value
   return prev;
 }
 
-const TOK_PER_SEC_INITIAL = { current: null, history: [], lastComputed: null };
+const TOK_PER_SEC_INITIAL = { current: null, lastComputed: null };
+
+/**
+ * Sum per-worker tok/s from workerGenerationProgress.
+ *
+ * Each worker's `tokPerSec` is computed independently by CoordinatorService's
+ * `buildProgress()` using burst-scoped chunk counters — these values are
+ * accurate per-worker rates.
+ *
+ * The aggregate shown in the SettingsPanel should be the **additive sum**
+ * of all concurrent workers (e.g. 3 × 40 = 120 tok/s), not the average.
+ *
+ * This replaces the broken SessionGenerationTracker aggregate which has
+ * outputTokens=0 during streaming (tokens only set at stream end), causing
+ * it to fall back to the last completed request's rate.
+ *
+ * @param {Object|null} workerGenerationProgress — { [workerId]: { tokPerSec, status, ... } }
+ * @returns {{ sum: number, count: number }}
+ */
+function sumWorkerThroughput(workerGenerationProgress) {
+  let sum = 0;
+  let count = 0;
+  if (!workerGenerationProgress) return { sum: 0, count: 0 };
+  for (const wp of Object.values(workerGenerationProgress)) {
+    if (wp.tokPerSec != null && wp.tokPerSec > 0) {
+      sum += wp.tokPerSec;
+      count++;
+    }
+  }
+  return { sum, count };
+}
 
 /**
  * useTokenRate — live token throughput and elapsed-time computation
  * derived from a sessionStats object.
  *
- * Two data sources (in priority order):
+ * Three data sources (in priority order):
  *
- *   1. **Backend-sourced** (`liveGenProgress`): Authoritative tok/s
- *      computed by Prism's SessionGenerationTracker at the provider
- *      level. Aggregates coordinator, worker, and tool sub-request
- *      throughput. Available for agentic sessions.
+ *   1. **Worker aggregation** (coordinator sessions): Sum of per-worker
+ *      `tokPerSec` values from `workerGenerationProgress`. These are
+ *      computed by CoordinatorService's `buildProgress()` using accurate
+ *      burst-scoped chunk counters. Plus the orchestrator's own rate if
+ *      it's also generating.
  *
- *   2. **Frontend chunk-counting** (fallback): For non-agentic
+ *   2. **Backend-sourced** (`liveGenProgress`): tok/s from Prism's
+ *      SessionGenerationTracker. Used for solo agentic sessions without
+ *      workers (orchestrator-only), where the tracker has accurate data.
+ *
+ *   3. **Frontend chunk-counting** (fallback): For non-agentic
  *      sessions (regular conversations) that don't emit
  *      generation_progress events. Computes rates from SSE chunk
  *      inter-arrival timing.
@@ -99,50 +132,61 @@ export default function useTokenRate(sessionStats) {
   const totalElapsedTime = completedTime + liveExtra;
 
   // ── Live tok/s computation ────────────────────────────────────
-  // Priority 1: Backend-sourced generation_progress from
-  // SessionGenerationTracker (authoritative, includes all agents
-  // and sub-requests).
-  //
-  // Priority 2: Frontend chunk-counting fallback for non-agentic
-  // sessions that don't emit generation_progress events.
   let computedTokPerSec = null;
   let hasActiveWorkers = false;
 
-  const genProgress = sessionStats?.liveGenProgress;
-  const genProgressFresh = genProgress
-    && genProgress.timestamp
-    && (perfNow - genProgress.timestamp) < PROGRESS_STALE_MS;
+  // Priority 1: Sum per-worker tok/s from workerGenerationProgress.
+  // These come from CoordinatorService's buildProgress() which uses
+  // burst-scoped chunk counters — accurate and independent per worker.
+  const { sum: workerSum, count: activeWorkerCount } =
+    sumWorkerThroughput(sessionStats?.workerGenerationProgress);
 
-  if (genProgressFresh && genProgress.tokPerSec != null) {
-    // ── Backend-sourced (authoritative) ──────────────────────
-    computedTokPerSec = genProgress.tokPerSec;
-    hasActiveWorkers = (genProgress.activeRequests || 0) > 1;
-  } else {
-    // ── Frontend chunk-counting fallback ─────────────────────
-    // Used by regular conversation sessions (Direct Chat) that
-    // don't go through the agentic loop.
-    let totalTokPerSec = 0;
-    let generatingAgentCount = 0;
+  if (activeWorkerCount > 0) {
+    hasActiveWorkers = true;
+    let totalRate = workerSum;
 
-    // Coordinator's own generation rate
+    // Add orchestrator's own rate if it's also generating
+    // (the orchestrator streams chunks independently via its own SSE path)
     const coordActive = isStreaming
-      && sessionStats.liveStreamingLastChunkTime
+      && sessionStats?.liveStreamingLastChunkTime
       && (perfNow - sessionStats.liveStreamingLastChunkTime) < CHUNK_STALE_MS;
     if (coordActive) {
       const burstElapsed = (sessionStats.liveStreamingBurstElapsed || 0) / 1000;
       const burstTokens = sessionStats.liveStreamingBurstTokens || 0;
       if (burstElapsed > 0 && burstTokens > 0) {
-        totalTokPerSec += burstTokens / burstElapsed;
-        generatingAgentCount++;
+        totalRate += burstTokens / burstElapsed;
       }
     }
 
-    computedTokPerSec = generatingAgentCount > 0
-      ? totalTokPerSec / generatingAgentCount
-      : null;
+    computedTokPerSec = totalRate;
+  } else {
+    // Priority 2: Backend-sourced generation_progress from
+    // SessionGenerationTracker (for solo orchestrator sessions).
+    const genProgress = sessionStats?.liveGenProgress;
+    const genProgressFresh = genProgress
+      && genProgress.timestamp
+      && (perfNow - genProgress.timestamp) < PROGRESS_STALE_MS;
+
+    if (genProgressFresh && genProgress.tokPerSec != null) {
+      computedTokPerSec = genProgress.tokPerSec;
+      hasActiveWorkers = (genProgress.activeRequests || 0) > 1;
+    } else {
+      // Priority 3: Frontend chunk-counting fallback for non-agentic
+      // sessions (Direct Chat) that don't go through the agentic loop.
+      const coordActive = isStreaming
+        && sessionStats?.liveStreamingLastChunkTime
+        && (perfNow - sessionStats.liveStreamingLastChunkTime) < CHUNK_STALE_MS;
+      if (coordActive) {
+        const burstElapsed = (sessionStats.liveStreamingBurstElapsed || 0) / 1000;
+        const burstTokens = sessionStats.liveStreamingBurstTokens || 0;
+        if (burstElapsed > 0 && burstTokens > 0) {
+          computedTokPerSec = burstTokens / burstElapsed;
+        }
+      }
+    }
   }
 
-  // ── Burst-averaging reducer ───────────────────────────────────
+  // ── Last-value-hold reducer ────────────────────────────────────
   const [tokPerSecState, dispatchTokPerSec] = useReducer(
     tokPerSecReducer,
     TOK_PER_SEC_INITIAL,
