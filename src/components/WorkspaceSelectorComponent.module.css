@@ -1,0 +1,262 @@
+/* ── WorkspaceSelectorComponent ────────────────────────────────────── */
+
+.wrapper {
+  position: relative;
+}
+
+/* ── Trigger button ──────────────────────────────────────────────── */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.button:hover {
+  background: var(--accent-subtle);
+  border-color: color-mix(in srgb, var(--accent-color) 30%, var(--border-color));
+}
+
+.button svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.button[data-locked] {
+  cursor: default;
+  background: transparent;
+  border-color: transparent;
+  padding-left: 4px;
+  gap: 4px;
+}
+
+.button[data-locked]:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+.buttonIcon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.lockIcon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+  transition: transform 0.15s ease;
+}
+
+/* ── Dropdown menu ───────────────────────────────────────────────── */
+
+.menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  max-width: 360px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  overflow: hidden;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: wsSlideDown 0.12s ease-out;
+}
+
+@keyframes wsSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Menu items ──────────────────────────────────────────────────── */
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.menuItem:hover {
+  background: var(--accent-subtle);
+  color: var(--text-primary);
+}
+
+.menuItemActive {
+  color: var(--accent-color);
+  background: var(--accent-subtle);
+}
+
+.menuItemIcon {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.menuItemName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menuItemPinned {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────── */
+
+.menuDivider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+/* ── Add workspace item ──────────────────────────────────────────── */
+
+.addItem {
+  color: var(--accent-color);
+  opacity: 0.85;
+}
+
+.addItem:hover {
+  opacity: 1;
+  color: var(--accent-color);
+}
+
+/* ── Add workspace inline form ───────────────────────────────────── */
+
+.addSection {
+  padding: 6px 6px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: wsSlideDown 0.1s ease-out;
+}
+
+.addInputRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.addInput {
+  flex: 1;
+  font-size: 11.5px;
+  font-family: var(--font-mono, monospace);
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+
+.addInput::placeholder {
+  color: var(--text-muted);
+}
+
+.addInput:focus {
+  border-color: var(--accent-color);
+}
+
+.addInput.invalid {
+  border-color: var(--danger, #ef4444);
+}
+
+.addInput.valid {
+  border-color: var(--success, #22c55e);
+}
+
+.addButton {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  background: var(--accent-color);
+  color: var(--bg-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.addButton:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.addButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Validation feedback ─────────────────────────────────────────── */
+
+.validationRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  font-size: 10px;
+  animation: wsSlideDown 0.1s ease-out;
+}
+
+.validationRow.success {
+  color: var(--success, #22c55e);
+}
+
+.validationRow.error {
+  color: var(--danger, #ef4444);
+}
+
+.validationRow.info {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono, monospace);
+}

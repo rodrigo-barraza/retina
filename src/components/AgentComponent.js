@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { BotMessageSquare, Paperclip, X, ClipboardList, Zap, Settings, Wrench, Brain, Plug, GitBranch, Repeat, ListChecks, BookOpen, Info, Activity, CornerDownLeft, Send, Square, SlidersHorizontal, ChevronDown, Monitor, Lock } from "lucide-react";
+import { BotMessageSquare, Paperclip, X, ClipboardList, Zap, Settings, Wrench, Brain, Plug, GitBranch, Repeat, ListChecks, BookOpen, Info, Activity, CornerDownLeft, Send, Square, SlidersHorizontal } from "lucide-react";
 import PrismService from "../services/PrismService.js";
 import ToolsApiService from "../services/ToolsApiService.js";
 import ThreePanelLayout, { layoutStyles } from "./ThreePanelLayout.js";
@@ -42,7 +42,7 @@ import useToolToggles from "../hooks/useToolToggles.js";
 import useModelMemory from "../hooks/useModelMemory.js";
 import AgentPickerComponent from "./AgentPickerComponent.js";
 import AgentBadgeComponent from "./AgentBadgeComponent.js";
-import { useWorkspace } from "./WorkspaceContext";
+import WorkspaceSelectorComponent from "./WorkspaceSelectorComponent";
 
 
 // ── Per-agent empty state config ─────────────────────────────────
@@ -186,11 +186,7 @@ export default function AgentComponent({
   const [pendingImages, setPendingImages] = useState([]);
   const [lightboxSrc, setLightboxSrc] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const dragCounter = useRef(0);
-  const workspaceMenuRef = useRef(null);
-
-  const { workspaces, currentWorkspace, setCurrentWorkspace } = useWorkspace();
 
   // Phase 1: Agentic controls
   const [autoApprove, setAutoApprove] = useState(false);
@@ -552,6 +548,17 @@ export default function AgentComponent({
           if (session?.stats) {
             setBackendSessionStats(session.stats);
             setRequestsRefreshKey((k) => k + 1);
+            // Clear incremental background usage from the message —
+            // the backend aggregate now includes those requests.
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last?.role === "assistant" && last._backgroundUsage) {
+                const updated = [...prev];
+                updated[updated.length - 1] = { ...last, _backgroundUsage: undefined };
+                return updated;
+              }
+              return prev;
+            });
           }
         })
         .catch(() => {}); // silently ignore if no requests yet
@@ -616,17 +623,7 @@ export default function AgentComponent({
     setPendingImages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Close workspace dropdown on outside click
-  useEffect(() => {
-    if (!showWorkspaceMenu) return;
-    const handleClickOutside = (e) => {
-      if (workspaceMenuRef.current && !workspaceMenuRef.current.contains(e.target)) {
-        setShowWorkspaceMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showWorkspaceMenu]);
+
 
   const handleDragEnter = useCallback(
     (e) => {
@@ -1451,6 +1448,7 @@ export default function AgentComponent({
                   _backgroundUsage: {
                     inputTokens: bg.inputTokens + (data.usage?.inputTokens || 0),
                     outputTokens: bg.outputTokens + (data.usage?.outputTokens || 0),
+                    requests: (bg.requests || 0) + (data.usage?.requests || 1),
                   },
                 };
               } else if (!last.usage) {
@@ -2130,7 +2128,7 @@ export default function AgentComponent({
                       // ── Backend is source of truth (all requests incl. background) ──
                       messageCount: messages.length,
                       deletedCount: 0,
-                      requestCount: backendSessionStats.requestCount,
+                      requestCount: (backendSessionStats.requestCount || 0) + (bgUsage?.requests || 0),
                       uniqueModels: backendSessionStats.models,
                       uniqueProviders,
                     totalTokens: (() => {
@@ -2191,7 +2189,7 @@ export default function AgentComponent({
                     return {
                       messageCount: messages.length,
                       deletedCount: 0,
-                      requestCount,
+                      requestCount: requestCount + (bgUsage?.requests || 0),
                       uniqueModels,
                       uniqueProviders,
                       totalTokens: (() => {
@@ -2458,42 +2456,11 @@ export default function AgentComponent({
         {messages.length === 0 ? (
           <div className={chatStyles.workspaceRow}>
             <span className={chatStyles.workspaceLabel}>New conversation in</span>
-            <div className={chatStyles.workspaceDropdown} ref={workspaceMenuRef}>
-              <button
-                type="button"
-                className={chatStyles.workspaceButton}
-                onClick={() => setShowWorkspaceMenu((v) => !v)}
-                title={currentWorkspace?.path ?? "Switch workspace"}
-              >
-                <Monitor className={chatStyles.workspaceButtonIcon} />
-                <span>{currentWorkspace?.name ?? "Workspace"}</span>
-                {workspaces.length > 1 && <ChevronDown size={12} />}
-              </button>
-              {showWorkspaceMenu && workspaces.length > 1 && (
-                <div className={chatStyles.workspaceMenu}>
-                  {workspaces.map((w) => (
-                    <button
-                      key={w.id}
-                      className={`${chatStyles.workspaceMenuItem} ${currentWorkspace?.path === w.path ? chatStyles.workspaceMenuItemActive : ""}`}
-                      onClick={() => { setCurrentWorkspace(w); setShowWorkspaceMenu(false); }}
-                      title={w.path}
-                    >
-                      {w.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <WorkspaceSelectorComponent />
           </div>
         ) : (
           <div className={chatStyles.workspaceRowLocked}>
-            <div className={chatStyles.workspaceDropdown}>
-              <div className={chatStyles.workspaceButton}>
-                <Monitor className={chatStyles.workspaceButtonIcon} />
-                <span>{currentWorkspace?.name ?? "Workspace"}</span>
-                <Lock className={chatStyles.lockIcon} />
-              </div>
-            </div>
+            <WorkspaceSelectorComponent locked />
           </div>
         )}
         <form

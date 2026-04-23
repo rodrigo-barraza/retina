@@ -11,9 +11,6 @@ import {
   MicOff,
   Send,
   Square,
-  ChevronDown,
-  Monitor,
-  Lock,
 } from "lucide-react";
 import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
 import ImagePreviewComponent from "./ImagePreviewComponent";
@@ -29,7 +26,7 @@ import styles from "./ChatArea.module.css";
 import { ALL_CONSOLE_PROMPTS } from "../arrays.js";
 import { useEffect, useRef, useState } from "react";
 import PrismService from "../services/PrismService";
-import { useWorkspace } from "./WorkspaceContext";
+import WorkspaceSelectorComponent from "./WorkspaceSelectorComponent";
 import { shuffleArray } from "../utils/utilities";
 
 import ToggleSwitchComponent from "./ToggleSwitch";
@@ -181,12 +178,8 @@ export default function ChatArea({
   onPixelTransitionComplete,
 }) {
   const [showToolsBubble, setShowToolsBubble] = useState(false);
-  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const messagesListRef = useRef(null);
   const toolsBubbleRef = useRef(null);
-  const workspaceMenuRef = useRef(null);
-
-  const { workspaces, currentWorkspace, setCurrentWorkspace } = useWorkspace();
 
   // Compute selected model to know which tools it supports
   const currentProviderModels = Array.from(
@@ -299,17 +292,7 @@ export default function ChatArea({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showToolsBubble]);
 
-  // Close workspace dropdown on outside click
-  useEffect(() => {
-    if (!showWorkspaceMenu) return;
-    const handleClickOutside = (e) => {
-      if (workspaceMenuRef.current && !workspaceMenuRef.current.contains(e.target)) {
-        setShowWorkspaceMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showWorkspaceMenu]);
+
   const nonTextTypes = supportedInputTypes.filter((t) => t !== "text");
   const hasFileInput = !isTTSModel && nonTextTypes.length > 0;
   const imageOnly = nonTextTypes.length === 1 && nonTextTypes[0] === "image";
@@ -881,42 +864,11 @@ export default function ChatArea({
         {messages.length === 0 ? (
           <div className={styles.workspaceRow}>
             <span className={styles.workspaceLabel}>New conversation in</span>
-            <div className={styles.workspaceDropdown} ref={workspaceMenuRef}>
-              <button
-                type="button"
-                className={styles.workspaceButton}
-                onClick={() => setShowWorkspaceMenu((v) => !v)}
-                title={currentWorkspace?.path ?? "Switch workspace"}
-              >
-                <Monitor className={styles.workspaceButtonIcon} />
-                <span>{currentWorkspace?.name ?? "Workspace"}</span>
-                {workspaces.length > 1 && <ChevronDown size={12} />}
-              </button>
-              {showWorkspaceMenu && workspaces.length > 1 && (
-                <div className={styles.workspaceMenu}>
-                  {workspaces.map((w) => (
-                    <button
-                      key={w.id}
-                      className={`${styles.workspaceMenuItem} ${currentWorkspace?.path === w.path ? styles.workspaceMenuItemActive : ""}`}
-                      onClick={() => { setCurrentWorkspace(w); setShowWorkspaceMenu(false); }}
-                      title={w.path}
-                    >
-                      {w.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <WorkspaceSelectorComponent />
           </div>
         ) : (
           <div className={styles.workspaceRowLocked}>
-            <div className={styles.workspaceDropdown}>
-              <div className={styles.workspaceButton}>
-                <Monitor className={styles.workspaceButtonIcon} />
-                <span>{currentWorkspace?.name ?? "Workspace"}</span>
-                <Lock className={styles.lockIcon} />
-              </div>
-            </div>
+            <WorkspaceSelectorComponent locked />
           </div>
         )}
         {showToolsBubble && activeTools.length > 0 && (
