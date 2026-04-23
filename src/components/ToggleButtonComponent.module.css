@@ -20,19 +20,19 @@
   background: color-mix(in srgb, var(--text-muted) 6%, transparent);
   border: 1px solid color-mix(in srgb, var(--text-muted) 22%, transparent);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
   user-select: none;
   position: relative;
 
   & svg {
     flex-shrink: 0;
     opacity: 0.55;
-    transition: color 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+    transition: color 0.1s, filter 0.1s, opacity 0.1s;
   }
 
   & span {
     opacity: 0.7;
-    transition: color 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+    transition: color 0.1s, filter 0.1s, opacity 0.1s;
   }
 
   &:hover {

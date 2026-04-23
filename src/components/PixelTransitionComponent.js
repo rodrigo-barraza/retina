@@ -3,110 +3,55 @@
 import { useEffect, useRef, useCallback } from "react";
 
 /**
- * PixelTransitionComponent — GPU-accelerated pixelation transition using
- * canvas downscale/upscale (nearest-neighbor sampling).
+ * PixelTransitionComponent — optimized SVG-filter pixelation transition.
  *
- * Instead of the expensive SVG filter chain (feImage → feTile → feComposite →
- * feMorphology + DOM mutations per frame), this captures the target element
- * via a CSS `image-rendering: pixelated` overlay canvas. The canvas samples
- * at progressively lower resolutions, and the browser's GPU handles the
- * nearest-neighbor upscale — zero per-frame DOM mutations, zero feMorphology.
+ * True DOM pixelation requires SVG feMorphology (dilate) — CSS has no native
+ * "pixelate" filter primitive. The filter chain is:
+ *   feImage (1×1 sample tile) → feTile → feComposite (sample source) → feMorphology (dilate)
+ *
+ * GPU optimizations applied:
+ *   1. Each blockSize produces a self-contained inline SVG data-URI filter —
+ *      zero live DOM filter elements, zero per-frame DOM mutations.
+ *   2. Filter strings are cached in a Map so repeated blockSizes are free.
+ *   3. The rAF loop only touches `el.style.filter` when the quantized
+ *      blockSize actually changes, skipping redundant frames.
+ *   4. `will-change: filter` promotes the element to its own compositor layer
+ *      before animation starts, isolating repaints to that layer only.
  *
  * Props:
  *   phase        — 'out' (sharp → pixelated), 'in' (pixelated → sharp), or null
- *   duration     — transition duration in ms (default 1000)
- *   maxBlockSize — maximum pixel block size at peak pixelation (default 24)
+ *   duration     — transition duration in ms (default 3000)
+ *   maxBlockSize — max pixel block size at peak pixelation (default 24)
  *   onComplete   — callback fired when the transition finishes
- *   targetRef    — ref to the DOM element to apply the filter to
+ *   targetRef    — ref to the DOM element to apply the effect to
  */
 export default function PixelTransitionComponent({
   phase = null,
-  duration = 1000,
+  duration = 3000,
   maxBlockSize = 24,
   onComplete,
   targetRef,
 }) {
-  const canvasRef = useRef(null);
   const rafRef = useRef(null);
   const startTimeRef = useRef(null);
+  const lastBlockRef = useRef(0);
+  const filterCacheRef = useRef(new Map());
 
-  // Store latest props in refs so the rAF loop always sees current values
+  // Latest props always available inside the rAF closure
   const propsRef = useRef({ phase, duration, maxBlockSize, onComplete, targetRef });
   propsRef.current = { phase, duration, maxBlockSize, onComplete, targetRef };
 
-  // Easing: ease-in-out cubic
-  const ease = useCallback((t) => {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  }, []);
+  /** Ease-in-out cubic */
+  const ease = useCallback(
+    (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+    [],
+  );
 
   /**
-   * Apply pixelation to the canvas overlay by capturing the target element's
-   * current visual state via a downscale/upscale pass.
-   *
-   * blockSize=1 → sharp (no pixelation), blockSize=N → each "pixel" is N×N.
-   * The browser's `image-rendering: pixelated` on the canvas CSS handles the
-   * nearest-neighbor upscale on the GPU.
+   * Build (or retrieve from cache) a CSS `filter: url(...)` value for a given
+   * blockSize. The entire SVG filter is encoded as an inline data URI — no
+   * live DOM nodes, no getElementById lookups, no per-frame mutations.
    */
-  const applyPixelation = useCallback((blockSize) => {
-    const canvas = canvasRef.current;
-    const target = propsRef.current.targetRef?.current;
-    if (!canvas || !target) return;
-
-    const rect = target.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-
-    // The canvas logical size matches the target element
-    const w = Math.round(rect.width);
-    const h = Math.round(rect.height);
-
-    if (blockSize <= 1) {
-      // No pixelation — hide the overlay
-      canvas.style.opacity = "0";
-      canvas.style.pointerEvents = "none";
-      return;
-    }
-
-    // Downscaled resolution — this is what gets drawn, then
-    // CSS `image-rendering: pixelated` stretches it back up
-    const scaledW = Math.max(1, Math.ceil(w / blockSize));
-    const scaledH = Math.max(1, Math.ceil(h / blockSize));
-
-    // Set canvas backing store to the downscaled size
-    canvas.width = scaledW;
-    canvas.height = scaledH;
-
-    // CSS size stays full — the browser upscales with nearest-neighbor
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
-    canvas.style.opacity = "1";
-    canvas.style.pointerEvents = "auto";
-
-    const ctx = canvas.getContext("2d", { willReadFrequently: false });
-    ctx.imageSmoothingEnabled = false;
-
-    // We can't directly capture DOM into canvas (no html2canvas dependency),
-    // so instead we use CSS filter on the target element to achieve the
-    // pixelation effect. The canvas overlay approach requires either
-    // html2canvas or OffscreenCanvas with DOM painting — both heavy.
-    //
-    // Better approach: apply a CSS-only pixelation via the target's backdrop.
-    // We set the target's CSS to use a tiny-resolution background trick.
-    //
-    // Actually, the most performant approach for DOM pixelation is to use
-    // CSS `filter` with a custom SVG filter that we update ONCE per block
-    // size change (not per frame). The key optimization over the old approach:
-    // - Only update the filter when blockSize actually changes (not every rAF)
-    // - Pre-build the SVG data URI once per block size
-    // - No DOM mutations — just swap the filter attribute string
-
-    // Fall through to the optimized SVG filter path below
-  }, []);
-
-  // ── Optimized SVG filter: pre-built data URIs, no DOM mutations ──
-  // Build a CSS filter URL for a given block size. Each unique blockSize
-  // produces a self-contained inline SVG filter — no DOM elements to mutate.
-  const filterCacheRef = useRef(new Map());
-
   const getFilterCSS = useCallback((blockSize) => {
     if (blockSize <= 1) return "none";
 
@@ -116,16 +61,15 @@ export default function PixelTransitionComponent({
     const center = Math.floor(blockSize / 2);
     const radius = Math.ceil((blockSize - 1) / 2);
 
-    // Build self-contained inline SVG filter as a data URI
-    const patternSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${blockSize}" height="${blockSize}"><rect x="${center}" y="${center}" width="1" height="1" fill="black"/></svg>`;
-    const patternB64 = btoa(patternSvg);
-    const patternHref = `data:image/svg+xml;base64,${patternB64}`;
+    // 1×1 pixel sample tile positioned at the block center
+    const tileSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${blockSize}" height="${blockSize}"><rect x="${center}" y="${center}" width="1" height="1" fill="black"/></svg>`;
+    const tileHref = `data:image/svg+xml;base64,${btoa(tileSvg)}`;
 
-    // The entire filter as an inline SVG data URI — zero DOM nodes
+    // Self-contained inline SVG filter — feImage→feTile→feComposite→feMorphology
     const filterSvg = [
       `<svg xmlns="http://www.w3.org/2000/svg">`,
       `<filter id="p" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">`,
-      `<feImage href="${patternHref}" result="s" x="0" y="0" width="${blockSize}" height="${blockSize}"/>`,
+      `<feImage href="${tileHref}" result="s" x="0" y="0" width="${blockSize}" height="${blockSize}"/>`,
       `<feTile in="s" result="t"/>`,
       `<feComposite in="SourceGraphic" in2="t" operator="in" result="c"/>`,
       `<feMorphology in="c" operator="dilate" radius="${radius}"/>`,
@@ -133,15 +77,12 @@ export default function PixelTransitionComponent({
       `</svg>`,
     ].join("");
 
-    const encoded = `url('data:image/svg+xml,${encodeURIComponent(filterSvg)}#p')`;
-    filterCacheRef.current.set(blockSize, encoded);
-    return encoded;
+    const value = `url('data:image/svg+xml,${encodeURIComponent(filterSvg)}#p')`;
+    filterCacheRef.current.set(blockSize, value);
+    return value;
   }, []);
 
-  // Track the last applied block size to skip redundant filter updates
-  const lastBlockSizeRef = useRef(0);
-
-  // rAF tick
+  /** rAF animation tick — stored in a ref to avoid stale closures */
   const tickRef = useRef(null);
   tickRef.current = (timestamp) => {
     if (!startTimeRef.current) startTimeRef.current = timestamp;
@@ -160,46 +101,49 @@ export default function PixelTransitionComponent({
       return;
     }
 
-    // Only touch the DOM when block size actually changes
-    if (blockSize !== lastBlockSizeRef.current) {
-      lastBlockSizeRef.current = blockSize;
+    // Only mutate the DOM when the quantized block size actually changes
+    if (blockSize !== lastBlockRef.current) {
+      lastBlockRef.current = blockSize;
       const el = p.targetRef?.current;
       if (el) {
-        if (blockSize <= 1) {
-          el.style.filter = "";
-        } else {
-          el.style.filter = getFilterCSS(blockSize);
-        }
+        el.style.filter = blockSize <= 1 ? "" : getFilterCSS(blockSize);
       }
     }
 
     if (rawProgress < 1) {
       rafRef.current = requestAnimationFrame(tickRef.current);
     } else {
-      // Animation complete — only remove filter after 'in' (de-pixelation)
-      // Keep it applied after 'out' so the element stays pixelated between phases
+      // Transition complete
       if (p.phase === "in") {
         const el = p.targetRef?.current;
-        if (el) el.style.filter = "";
+        if (el) {
+          el.style.filter = "";
+          el.style.willChange = "";
+        }
       }
-      lastBlockSizeRef.current = 0;
+      lastBlockRef.current = 0;
       p.onComplete?.();
     }
   };
 
   useEffect(() => {
     if (!phase) {
-      // Clear any active animation
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (targetRef?.current) {
-        targetRef.current.style.filter = "";
+      const el = targetRef?.current;
+      if (el) {
+        el.style.filter = "";
+        el.style.willChange = "";
       }
-      lastBlockSizeRef.current = 0;
+      lastBlockRef.current = 0;
       return;
     }
 
+    // Promote to compositor layer before the first frame
+    const el = targetRef?.current;
+    if (el) el.style.willChange = "filter";
+
     startTimeRef.current = null;
-    lastBlockSizeRef.current = 0;
+    lastBlockRef.current = 0;
     rafRef.current = requestAnimationFrame(tickRef.current);
 
     return () => {
@@ -208,6 +152,6 @@ export default function PixelTransitionComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  // No DOM output needed — the filter is applied directly to the target element
+  // Renderless — effect is applied directly to the target element
   return null;
 }

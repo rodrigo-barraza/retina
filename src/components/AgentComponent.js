@@ -246,6 +246,29 @@ export default function AgentComponent({
   const pendingSessionRef = useRef(null);
   const pendingNewSessionRef = useRef(false);
 
+  // ── Adaptive pixel transition timing ───────────────────────
+  // Track session load durations and use an EMA to predict the "out" duration.
+  // The "in" (reveal) phase is always a fixed 1000ms.
+  const PIXEL_IN_DURATION = 1000;
+  const PIXEL_DEFAULT_OUT = 3000;
+  const PIXEL_LS_KEY = "pixel-transition:load-ema";
+  const pixelLoadStartRef = useRef(null);
+  const pixelOutDuration = useMemo(() => {
+    if (typeof window === "undefined") return PIXEL_DEFAULT_OUT;
+    const stored = localStorage.getItem(PIXEL_LS_KEY);
+    return stored ? Math.round(Math.max(800, Math.min(Number(stored), 8000))) : PIXEL_DEFAULT_OUT;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pixelTransition]); // intentional: re-read localStorage when a new transition starts
+
+  /** Record a completed session load and update the EMA in localStorage. */
+  const recordPixelLoadTime = useCallback((elapsed) => {
+    const stored = localStorage.getItem(PIXEL_LS_KEY);
+    const alpha = 0.3; // EMA smoothing — higher = more reactive to recent loads
+    const prev = stored ? Number(stored) : PIXEL_DEFAULT_OUT;
+    const next = alpha * elapsed + (1 - alpha) * prev;
+    localStorage.setItem(PIXEL_LS_KEY, String(Math.round(next)));
+  }, []);
+
   const textareaRef = useRef(null);
   const endRef = useRef(null);
   const abortRef = useRef(null);
@@ -1826,6 +1849,7 @@ export default function AgentComponent({
     }
     // Trigger pixelation out → reset → pixelation in
     pendingNewSessionRef.current = true;
+    pixelLoadStartRef.current = performance.now();
     setPixelOutDone(false);
     setPendingSessionReady(false);
     pendingSessionRef.current = null;
@@ -1851,6 +1875,7 @@ export default function AgentComponent({
       }
 
       // Phase 1: pixelate OUT + fetch in parallel
+      pixelLoadStartRef.current = performance.now();
       setPixelOutDone(false);
       setPendingSessionReady(false);
       pendingSessionRef.current = null;
@@ -1975,10 +2000,15 @@ export default function AgentComponent({
       pendingSessionRef.current = null;
     }
 
+    // Record actual load time and update the EMA for future transitions
+    if (pixelLoadStartRef.current) {
+      recordPixelLoadTime(performance.now() - pixelLoadStartRef.current);
+      pixelLoadStartRef.current = null;
+    }
     setPixelOutDone(false);
     setPendingSessionReady(false);
     setPixelTransition("in");
-  }, [pixelOutDone, pendingSessionReady, resetSessionState]);
+  }, [pixelOutDone, pendingSessionReady, resetSessionState, recordPixelLoadTime]);
 
   const handleDeleteSession = useCallback(
     async (convId) => {
@@ -2394,8 +2424,8 @@ export default function AgentComponent({
     <div className={chatStyles.container}>
       <PixelTransitionComponent
         phase={pixelTransition}
-        duration={1000}
-        maxBlockSize={24}
+        duration={pixelTransition === "in" ? PIXEL_IN_DURATION : pixelOutDuration}
+        maxBlockSize={72}
         onComplete={() => {
           if (pixelTransition === "out") {
             setPixelOutDone(true);

@@ -22,12 +22,10 @@
   cursor: pointer;
   user-select: none;
   transition:
-    background 0.2s,
-    border-color 0.2s,
-    color 0.2s,
-    transform 0.15s,
-    box-shadow 0.2s,
-    font-size 0.25s ease;
+    background 0.1s,
+    border-color 0.1s,
+    color 0.1s,
+    transform 0.1s;
   flex-shrink: 0;
 }
 
