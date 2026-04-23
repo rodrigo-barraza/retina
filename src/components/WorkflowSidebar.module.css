@@ -40,7 +40,7 @@
   height: 26px;
   border-radius: var(--border-radius-sm);
   color: var(--text-muted);
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast);
 
   &:hover {
     background: var(--accent-subtle);
@@ -106,7 +106,7 @@
   background: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--border-radius-sm);
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast);
   white-space: nowrap;
 
   &:hover {

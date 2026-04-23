@@ -12,6 +12,6 @@
 
   /* GPU compositing — keeps the canvas on its own layer
      to avoid triggering repaints on parent DOM elements */
-  will-change: contents;
+
   contain: strict;
 }

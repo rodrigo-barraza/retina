@@ -575,7 +575,7 @@
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   white-space: nowrap;
 
   &:hover {
@@ -622,11 +622,11 @@
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+    filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.6));
   }
   50% {
     opacity: 0.5;
-    box-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
+    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.3));
   }
 }
 
@@ -648,7 +648,7 @@
 .liveMicReady {
   background: var(--accent-color) !important;
   color: #fff !important;
-  transition: all 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
 
 .liveMicReady:hover {
@@ -660,25 +660,27 @@
   position: relative;
   background: #ef4444 !important;
   color: #fff !important;
-  animation: liveMicPulse 1.5s ease-in-out infinite;
 }
 
-.liveMicBtn:hover {
-  background: #dc2626 !important;
+.liveMicBtn::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(239, 68, 68, 0.4);
+  animation: liveMicRing 1.5s ease-in-out infinite;
+  pointer-events: none;
+  will-change: transform, opacity;
 }
 
-.liveMicActive {
-  color: #fff;
-  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.5));
-}
-
-@keyframes liveMicPulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+@keyframes liveMicRing {
+  0%, 100% {
+    transform: scale(0.7);
+    opacity: 0.6;
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    transform: scale(1);
+    opacity: 0;
   }
 }
 

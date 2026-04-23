@@ -23,7 +23,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   animation: scrambleGlitch 0.15s steps(1) infinite;
-  will-change: contents;
+
 }
 
 /* Caret — rainbow gradient, blinking */

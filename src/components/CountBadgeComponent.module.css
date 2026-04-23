@@ -26,23 +26,19 @@
 
 .stateNew {
   background: var(--count-badge-new, #22d3ee);
-  box-shadow: 0 0 6px 1px color-mix(in srgb, var(--count-badge-new, #22d3ee) 50%, transparent);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--count-badge-new, #22d3ee) 50%, transparent));
   animation: countBadgeNewPulse 1.6s ease-in-out infinite;
-  will-change: box-shadow, transform;
+  will-change: transform, filter;
 }
 
 @keyframes countBadgeNewPulse {
-  0% {
-    box-shadow: 0 0 4px 0px color-mix(in srgb, var(--count-badge-new, #22d3ee) 35%, transparent);
+  0%, 100% {
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--count-badge-new, #22d3ee) 35%, transparent));
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 8px 2px color-mix(in srgb, var(--count-badge-new, #22d3ee) 60%, transparent);
+    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--count-badge-new, #22d3ee) 60%, transparent));
     transform: scale(1.1);
-  }
-  100% {
-    box-shadow: 0 0 4px 0px color-mix(in srgb, var(--count-badge-new, #22d3ee) 35%, transparent);
-    transform: scale(1);
   }
 }
 

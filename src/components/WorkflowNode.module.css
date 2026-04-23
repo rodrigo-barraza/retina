@@ -69,7 +69,7 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast);
 
   &:hover {
     background: var(--danger-subtle);
@@ -80,7 +80,7 @@
 /* ── Ports ── */
 .port {
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: filter var(--transition-fast), transform var(--transition-fast);
 
   &:hover {
     filter: brightness(1.3);
@@ -211,7 +211,7 @@
   border: 1px solid var(--border-color);
   color: var(--text-muted);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
   z-index: 2;
 
   &:hover {
@@ -340,7 +340,7 @@
   padding: 3px 6px;
   border: 1px dashed var(--border-color);
   border-radius: 2px;
-  transition: all var(--transition-fast);
+  transition: border-color var(--transition-fast), color var(--transition-fast);
   width: 100%;
 
   &:hover {

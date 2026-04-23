@@ -155,7 +155,7 @@
   pointer-events: none;
   transform: translate(-50%, -50%);
   opacity: 0.85;
-  will-change: transform, filter, left, top;
+  will-change: transform, filter;
 }
 
 .rainbowCanvas {
@@ -214,7 +214,7 @@
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast);
   position: relative;
   white-space: nowrap;
   cursor: pointer;
@@ -629,7 +629,7 @@
   color: var(--text-muted);
   font-size: 12px;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast);
 
   &:hover {
     background: var(--accent-subtle);

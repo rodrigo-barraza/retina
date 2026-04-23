@@ -7,7 +7,7 @@
   background: color-mix(in srgb, var(--tool-color) 6%, var(--bg-card));
   border: 1px solid color-mix(in srgb, var(--tool-color) 18%, transparent);
   border-left: 3px solid var(--tool-color);
-  transition: all 0.25s ease;
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   animation: fadeIn 0.4s ease-out both;
   cursor: pointer;
   user-select: none;
@@ -27,19 +27,16 @@
 .cardGlow {
   border-color: color-mix(in srgb, var(--tool-color) 35%, transparent);
   animation: cardGlowPulse 1.4s ease-in-out infinite;
+  will-change: filter;
 }
 
 @keyframes cardGlowPulse {
   0%,
   100% {
-    box-shadow:
-      0 0 8px color-mix(in srgb, var(--tool-color) 15%, transparent),
-      0 0 0 1px color-mix(in srgb, var(--tool-color) 12%, transparent);
+    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--tool-color) 15%, transparent));
   }
   50% {
-    box-shadow:
-      0 0 18px color-mix(in srgb, var(--tool-color) 30%, transparent),
-      0 0 0 2px color-mix(in srgb, var(--tool-color) 20%, transparent);
+    filter: drop-shadow(0 0 18px color-mix(in srgb, var(--tool-color) 30%, transparent));
   }
 }
 
@@ -97,7 +94,7 @@
   background: color-mix(in srgb, var(--tool-color) 12%, transparent);
   color: var(--tool-color);
   flex-shrink: 0;
-  transition: all 0.25s ease;
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
 /* ── Info ──────────────────────────────────────────────────── */
@@ -132,7 +129,7 @@
   border-radius: 999px;
   background: color-mix(in srgb, var(--tool-color) 15%, transparent);
   color: var(--tool-color);
-  transition: all 0.25s ease;
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
 .subtitle {
@@ -158,7 +155,7 @@
   border: 1px solid color-mix(in srgb, #22c55e 20%, transparent);
   flex-shrink: 0;
   white-space: nowrap;
-  transition: all 0.25s ease;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   filter: hue-rotate(0deg);
   animation: rainbowHue 4s linear infinite;
   will-change: filter;
