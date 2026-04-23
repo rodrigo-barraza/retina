@@ -281,7 +281,7 @@ function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
  * and merges tool results into the preceding assistant's toolCalls.
  * Soft-deleted messages are always included (with their `deleted` flag)
  * so they render in-place as ghostly apparitions.
- * Use this in both /conversations and /admin/conversations for consistency.
+ * Use this in both /chat and /admin/conversations for consistency.
  */
 export function prepareDisplayMessages(rawMessages) {
   if (!rawMessages || rawMessages.length === 0) return [];

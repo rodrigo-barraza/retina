@@ -58,7 +58,7 @@ function OriginBadge({ origin }) {
  * MediaCardComponent — a reusable card for rendering media previews.
  *
  * @param {object}   media           — the media item ({ url, mediaType, origin, convId, convTitle, model, timestamp })
- * @param {string}   [convBasePath]  — base path for conversation links (default: "/conversations")
+ * @param {string}   [convBasePath]  — base path for conversation links (default: "/admin/conversations")
  * @param {boolean}  [compact]       — smaller variant for drawers / side panels
  * @param {boolean}  [showInfo]      — show the footer with conv link, model, and date (default: true)
  * @param {boolean}  [showOrigin]    — show the origin badge overlay (default: true)
@@ -69,7 +69,7 @@ function OriginBadge({ origin }) {
  */
 export default function MediaCardComponent({
   media,
-  convBasePath = "/conversations",
+  convBasePath = "/admin/conversations",
   compact = false,
   showInfo = true,
   showOrigin = true,

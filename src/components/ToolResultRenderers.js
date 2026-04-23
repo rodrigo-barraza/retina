@@ -832,15 +832,12 @@ function WorkerStatusBar({ activity }) {
     ? (phase === "failed" ? "Worker failed" : `Done · ${toolCount} tool${toolCount !== 1 ? "s" : ""} used`)
     : (toolCount > 0 ? `${toolCount} tools used` : "Worker idle");
 
-  // Per-worker tok/s from burst-scoped generation progress data.
-  // Only show during generating/thinking phases (not while a tool is executing).
+  // Per-worker tok/s from the backend's burst-scoped generation progress.
+  // Use the pre-computed value directly — it's authoritative from the
+  // CoordinatorService which tracks per-worker burst counters independently.
   let tokPerSec = null;
   if (!isToolActive && (phase === "generating" || phase === "thinking")) {
-    const { outputTokens = 0, firstChunkTime, lastChunkTime } = activity;
-    if (outputTokens > 1 && firstChunkTime && lastChunkTime) {
-      const elapsedSec = (lastChunkTime - firstChunkTime) / 1000;
-      if (elapsedSec > 0) tokPerSec = outputTokens / elapsedSec;
-    }
+    tokPerSec = activity.tokPerSec ?? null;
   }
 
   return (
@@ -874,38 +871,50 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
   // ── Live tok/s ticker ────────────────────────────────────────
   // Tick every 500ms while any worker is actively generating so
   // the per-worker speed badge stays current.
-  const CHUNK_STALE_MS = 2000;
-  const [tickNow, setTickNow] = useState(() => Date.now());
   const hasActiveWorkers = useMemo(() => {
     if (!workerToolActivity) return false;
-    const now = tickNow; // use tickNow to subscribe to ticker
-    return Object.values(workerToolActivity).some((a) => {
-      if (!a.lastChunkTime) return false;
-      return (now - a.lastChunkTime) < CHUNK_STALE_MS;
-    });
-  }, [workerToolActivity, tickNow]);
+    return Object.values(workerToolActivity).some(
+      (a) => a.phase === "generating" || a.phase === "thinking",
+    );
+  }, [workerToolActivity]);
 
+  const [, setTick] = useState(0);
   useEffect(() => {
     if (!hasActiveWorkers) return;
-    const id = setInterval(() => setTickNow(Date.now()), 500);
+    const id = setInterval(() => setTick((t) => t + 1), 500);
     return () => clearInterval(id);
   }, [hasActiveWorkers]);
 
-  // Compute tok/s for a single worker from its activity entry
+  // Use backend-computed per-worker tok/s directly. Only show when the
+  // worker is in an active generation phase.
   const getWorkerTokPerSec = (activity) => {
-    if (!activity?.lastChunkTime || !activity?.firstChunkTime) return null;
-    if ((tickNow - activity.lastChunkTime) >= CHUNK_STALE_MS) return null;
-    const elapsed = (activity.lastChunkTime - activity.firstChunkTime) / 1000;
-    if (elapsed < 0.1 || !activity.outputTokens || activity.outputTokens < 2) return null;
-    return activity.outputTokens / elapsed;
+    if (!activity?.tokPerSec) return null;
+    if (activity.phase !== "generating" && activity.phase !== "thinking") return null;
+    return activity.tokPerSec;
   };
 
-  // Resolve live worker activity for a member — by agentId or description match
-  const getActivity = (member) => {
+  // Build an ordered list of workerIds from workerToolActivity.
+  // Keys arrive in insertion order (Map-like semantics of plain objects in V8),
+  // which matches the spawn order from the coordinator.
+  const orderedWorkerIds = useMemo(() => {
+    if (!workerToolActivity) return [];
+    return Object.keys(workerToolActivity);
+  }, [workerToolActivity]);
+
+  // Resolve live worker activity for a member — by agentId, positional
+  // index, or description match.  Positional matching is the primary
+  // strategy for the "calling" state (before tool result arrives and
+  // agent_id is available), because workers with identical descriptions
+  // would all resolve to the first match via description.includes().
+  const getActivity = (member, memberIndex) => {
     if (!workerToolActivity) return null;
+    // 1. Exact match by agent_id (available in result/done state)
     if (member.agent_id) return workerToolActivity[member.agent_id] || null;
-    // createTeam() prefixes descriptions: "[teamName] description"
-    // Match by inclusion since the SSE-stored description has the prefix
+    // 2. Positional match by spawn order (calling state — most reliable)
+    if (memberIndex != null && orderedWorkerIds[memberIndex]) {
+      return workerToolActivity[orderedWorkerIds[memberIndex]] || null;
+    }
+    // 3. Fallback: description match (only reliable when descriptions are unique)
     if (member.description) {
       return Object.values(workerToolActivity).find(
         (v) => v.description && v.description.includes(member.description),
@@ -935,7 +944,7 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
           <StatusBadge success={true} label="running" />
         </div>
         {argMembers.map((member, i) => {
-          const activity = getActivity(member);
+          const activity = getActivity(member, i);
           const tokPerSec = getWorkerTokPerSec(activity);
           return (
             <div key={i} className={styles.rendererBlock} style={{ marginTop: 4 }}>
@@ -988,7 +997,7 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
       {hasError && <div className={styles.errorText}>{parsed.error}</div>}
 
       {resultMembers.map((member, i) => {
-        const activity = getActivity(member);
+        const activity = getActivity(member, i);
         const isTerminal = member.status === "completed" || member.status === "failed" || member.status === "stopped";
         const isCompleted = member.status === "completed";
         const isFailed = member.status === "failed";

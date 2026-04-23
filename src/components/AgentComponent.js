@@ -96,7 +96,7 @@ export default function AgentComponent({
   const isNoAgent = agentId === "NONE";
   const activeAgentData = agents.find((a) => a.id === agentId);
   // Direct Chat omits project so it uses the default x-project header — this
-  // routes persistence to the conversations collection (same as /conversations page).
+  // routes persistence to the conversations collection.
   // Agent modes use the persona's project so persistence goes to agent_sessions.
   const agentProject = isNoAgent ? undefined : (activeAgentData?.project || PROJECT_AGENT);
   const agentBackgroundImage = activeAgentData?.backgroundImage || "";
@@ -740,7 +740,7 @@ export default function AgentComponent({
                 ...(settings.systemPrompt ? { systemPrompt: settings.systemPrompt } : {}),
               },
               // Omit project — falls back to x-project header ("retina"),
-              // routing to the conversations collection (parity with /conversations page)
+              // routing to the conversations collection
               traceId,
             }
           : {
@@ -760,7 +760,7 @@ export default function AgentComponent({
               ...(settings.reasoningEffort && { reasoningEffort: settings.reasoningEffort }),
               ...(settings.thinkingBudget && { thinkingBudget: settings.thinkingBudget }),
               // Local models need enough context for MCP tool schemas + session
-              minContextLength: 30_000,
+              minContextLength: 40_000,
               project: agentProject,
               agentSessionId,
               conversationMeta: { title: resolvedTitle },
@@ -1342,22 +1342,24 @@ export default function AgentComponent({
                 const last = updated[updated.length - 1];
                 if (last?.role === "assistant") {
                   const wp = last._workerGenerationProgress || {};
+                  const existing = wp[data.workerId] || {};
                   updated[updated.length - 1] = {
                     ...last,
                     _workerGenerationProgress: {
                       ...wp,
                       [data.workerId]: {
-                        // Burst-scoped values for tok/s computation
-                        outputTokens: data.outputTokens,
-                        firstChunkTime: data.firstChunkTime,
-                        lastChunkTime: data.lastChunkTime,
+                        ...existing,
+                        // Burst-scoped values for tok/s computation — only update when present
+                        ...(data.outputTokens != null && { outputTokens: data.outputTokens }),
+                        ...(data.firstChunkTime != null && { firstChunkTime: data.firstChunkTime }),
+                        ...(data.lastChunkTime != null && { lastChunkTime: data.lastChunkTime }),
                         // Cumulative total for token badge count
-                        totalOutputTokens: data.totalOutputTokens || data.outputTokens,
-                        // Backend-computed metrics from SessionGenerationTracker
-                        tokPerSec: data.tokPerSec ?? wp[data.workerId]?.tokPerSec,
-                        inputTokens: data.inputTokens,
-                        totalTokens: data.totalTokens,
-                        avgTtft: data.avgTtft,
+                        totalOutputTokens: data.totalOutputTokens || data.outputTokens || existing.totalOutputTokens,
+                        // Per-worker tok/s from burst counters
+                        tokPerSec: data.tokPerSec ?? existing.tokPerSec,
+                        ...(data.inputTokens != null && { inputTokens: data.inputTokens }),
+                        ...(data.totalTokens != null && { totalTokens: data.totalTokens }),
+                        ...(data.avgTtft != null && { avgTtft: data.avgTtft }),
                       },
                     },
                   };
@@ -1366,21 +1368,25 @@ export default function AgentComponent({
               });
               // Also store on workerToolActivity so TeamCreateRenderer can
               // display live per-worker metrics on each worker's header
-              setWorkerToolActivity((prev) => ({
-                ...prev,
-                [data.workerId]: {
-                  ...(prev[data.workerId] || { toolCount: 0, currentTool: null, iteration: 0, toolNames: {} }),
-                  outputTokens: data.outputTokens,
-                  firstChunkTime: data.firstChunkTime,
-                  lastChunkTime: data.lastChunkTime,
-                  totalOutputTokens: data.totalOutputTokens || data.outputTokens,
-                  // Backend-computed metrics from SessionGenerationTracker
-                  tokPerSec: data.tokPerSec ?? prev[data.workerId]?.tokPerSec,
-                  inputTokens: data.inputTokens,
-                  totalTokens: data.totalTokens,
-                  avgTtft: data.avgTtft,
-                },
-              }));
+              setWorkerToolActivity((prev) => {
+                const existing = prev[data.workerId] || { toolCount: 0, currentTool: null, iteration: 0, toolNames: {} };
+                return {
+                  ...prev,
+                  [data.workerId]: {
+                    ...existing,
+                    // Burst-scoped values — only update when present to prevent undefined overwrites
+                    ...(data.outputTokens != null && { outputTokens: data.outputTokens }),
+                    ...(data.firstChunkTime != null && { firstChunkTime: data.firstChunkTime }),
+                    ...(data.lastChunkTime != null && { lastChunkTime: data.lastChunkTime }),
+                    totalOutputTokens: data.totalOutputTokens || data.outputTokens || existing.totalOutputTokens,
+                    // Per-worker tok/s from burst counters
+                    tokPerSec: data.tokPerSec ?? existing.tokPerSec,
+                    ...(data.inputTokens != null && { inputTokens: data.inputTokens }),
+                    ...(data.totalTokens != null && { totalTokens: data.totalTokens }),
+                    ...(data.avgTtft != null && { avgTtft: data.avgTtft }),
+                  },
+                };
+              });
             } else if (data.message === "complete") {
               // Worker finished — clear phase so StatusBar stops showing "Generating..."
               setWorkerToolActivity((prev) => ({
@@ -1621,7 +1627,7 @@ export default function AgentComponent({
       };
       const updatedMessages = [...currentMessages, userMessage];
       // Insert placeholder assistant message so the aiNode
-      // (with blinking cursor) appears immediately — matches /conversations
+      // (with blinking cursor) appears immediately
       setMessages([
         ...updatedMessages,
         {

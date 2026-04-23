@@ -237,7 +237,7 @@ export function formatTimeAgo(isoString) {
 
 /**
  * Get unique model names from assistant messages.
- * Shared between HomePage, AgentComponent, and admin/conversations.
+ * Shared between AgentComponent and admin/conversations.
  */
 export function getUniqueModels(messages) {
   return [

@@ -119,7 +119,7 @@ export default function useTokenRate(sessionStats) {
     hasActiveWorkers = (genProgress.activeRequests || 0) > 1;
   } else {
     // ── Frontend chunk-counting fallback ─────────────────────
-    // Used by regular conversation sessions (HomePage) that
+    // Used by regular conversation sessions (Direct Chat) that
     // don't go through the agentic loop.
     let totalTokPerSec = 0;
     let generatingAgentCount = 0;

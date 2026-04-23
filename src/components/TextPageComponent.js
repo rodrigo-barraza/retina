@@ -30,7 +30,7 @@ const ORIGIN_FILTERS = [
 
 export default function TextPageComponent({ mode = "user", dateRange: externalDateRange, onCountChange }) {
   const isAdmin = mode === "admin";
-  const convBasePath = isAdmin ? "/admin/conversations" : "/conversations";
+  const convBasePath = "/admin/conversations";
 
   const [texts, setTexts] = useState([]);
   const [total, setTotal] = useState(0);

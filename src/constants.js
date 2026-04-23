@@ -22,7 +22,6 @@ export const SK_INFERENCE_MODE = "inferenceMode";
 // Value shape: { provider, model, isLocal }
 export const SK_MODEL_MEMORY_AGENT = "modelMemory:agent";
 export const SK_MODEL_MEMORY_AGENT_PREFIX = "modelMemory:agent:";
-export const SK_MODEL_MEMORY_CONVERSATIONS = "modelMemory:conversations";
 export const SK_MODEL_MEMORY_SYNTHESIS = "modelMemory:synthesis";
 export const SK_MODEL_MEMORY_BENCHMARKS = "modelMemory:benchmarks";
 
@@ -31,7 +30,6 @@ export const SK_MODEL_MEMORY_BENCHMARKS = "modelMemory:benchmarks";
 // Value shape: { disabledBuiltIns: string[], toolToggles: { key: boolean } }
 export const SK_TOOL_MEMORY_AGENT = "toolMemory:agent";
 export const SK_TOOL_MEMORY_AGENT_PREFIX = "toolMemory:agent:";
-export const SK_TOOL_MEMORY_CONVERSATIONS = "toolMemory:conversations";
 export const SK_TOOL_MEMORY_SYNTHESIS = "toolMemory:synthesis";
 export const SK_TOOL_MEMORY_BENCHMARKS = "toolMemory:benchmarks";
 
@@ -58,7 +56,7 @@ export const LS_ADMIN_PROJECT_FILTER = "admin:projectFilter";
 export const LS_DATE_RANGE = "retina-date-range";
 export const LS_WORKSPACE_ROOT = "retina:workspace";
 
-// ── Settings defaults (shared by HomePage, Agent, admin) ──────
+// ── Settings defaults (shared by Agent, admin) ──────
 export const SETTINGS_DEFAULTS = {
   provider: "",
   model: "",

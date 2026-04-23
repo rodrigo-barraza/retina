@@ -24,7 +24,6 @@ import {
   Box,
   Hash,
   Bot,
-  MessageSquare,
   Activity,
   Clock,
   CheckCircle,
@@ -36,7 +35,6 @@ import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
 import StorageService from "../services/StorageService.js";
 import {
   SK_MODEL_MEMORY_AGENT,
-  SK_MODEL_MEMORY_CONVERSATIONS,
   LOCAL_PROVIDERS,
 } from "../constants.js";
 import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
@@ -255,26 +253,10 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
                   model: m.key,
                   isLocal: LOCAL_PROVIDERS.has(m.provider),
                 });
-                router.push("/agents");
+                router.push("/chat");
               }}
             >
               Use in Agents
-            </ButtonComponent>
-            <ButtonComponent
-              variant="secondary"
-              size="sm"
-              icon={MessageSquare}
-              fullWidth
-              onClick={() => {
-                StorageService.set(SK_MODEL_MEMORY_CONVERSATIONS, {
-                  provider: m.provider,
-                  model: m.key,
-                  isLocal: LOCAL_PROVIDERS.has(m.provider),
-                });
-                router.push("/conversations");
-              }}
-            >
-              Use in Conversation
             </ButtonComponent>
           </div>
 

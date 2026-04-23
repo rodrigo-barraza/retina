@@ -49,14 +49,7 @@ const USER_NAV_SECTIONS = [
   {
     label: "Workspace",
     items: [
-      { href: "/agents", label: "Agents", icon: Bot, alsoMatches: ["/coding-agent"] },
-      {
-        href: "/",
-        label: "Conversations",
-        icon: MessageSquare,
-        exact: true,
-        alsoMatches: ["/conversations"],
-      },
+      { href: "/chat", label: "Chat", icon: Bot, alsoMatches: ["/coding-agent", "/agents"] },
       { href: "/settings", label: "Settings", icon: Settings },
     ],
   },

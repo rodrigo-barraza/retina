@@ -1,16 +1,59 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Calendar } from "lucide-react";
 import { DateTime } from "luxon";
 import TooltipComponent from "./TooltipComponent";
 import styles from "./DateTimeBadgeComponent.module.css";
 
 /**
- * DateTimeBadgeComponent — a compact datetime pill badge.
+ * Computes the short relative/absolute label and the optimal
+ * refresh interval (adaptive tick rate) for the next update.
  *
- * Renders a relative or short-form timestamp; on hover,
- * a TooltipComponent shows the full date and time.
+ * Returns { label: string, intervalMs: number }
+ */
+function computeLabel(dt, relative) {
+  if (!dt || !dt.isValid) return { label: "", intervalMs: 0 };
+
+  const now = DateTime.now();
+  const diff = now.diff(dt, ["days", "hours", "minutes", "seconds"]);
+  const totalSeconds = diff.as("seconds");
+
+  // Relative for recent timestamps (< 24h)
+  if (relative && totalSeconds >= 0 && totalSeconds < 86400) {
+    if (totalSeconds < 5) return { label: "just now", intervalMs: 1_000 };
+    if (totalSeconds < 60)
+      return {
+        label: `${Math.floor(totalSeconds)}s ago`,
+        intervalMs: 1_000,
+      };
+    const mins = Math.floor(totalSeconds / 60);
+    if (mins < 60)
+      return { label: `${mins}m ago`, intervalMs: 60_000 };
+    const hrs = Math.floor(mins / 60);
+    return { label: `${hrs}h ago`, intervalMs: 3_600_000 };
+  }
+
+  // Relative for slightly older (days)
+  if (relative && totalSeconds >= 0) {
+    const days = Math.floor(totalSeconds / 86400);
+    if (days === 1) return { label: "yesterday", intervalMs: 3_600_000 };
+    if (days < 7) return { label: `${days}d ago`, intervalMs: 3_600_000 };
+  }
+
+  // Absolute short form — no live refresh needed
+  if (dt.year === now.year) {
+    return { label: dt.toFormat("MMM d, h:mm a"), intervalMs: 0 };
+  }
+  return { label: dt.toFormat("MMM d, yyyy"), intervalMs: 0 };
+}
+
+/**
+ * DateTimeBadgeComponent — a compact datetime pill badge with
+ * adaptive live-refresh (adaptive tick rate).
+ *
+ * Refreshes every 1 s when < 60 s old, every 1 min when < 60 min,
+ * every 1 h when < 24 h, then stops refreshing for older dates.
  *
  * Props:
  *   date       — ISO string, Date, or epoch ms
@@ -38,35 +81,35 @@ export default function DateTimeBadgeComponent({
     return dt.toFormat("EEEE, MMMM d, yyyy 'at' h:mm:ss a");
   }, [dt]);
 
-  const shortLabel = useMemo(() => {
-    if (!dt || !dt.isValid) return "";
-    const now = DateTime.now();
-    const diff = now.diff(dt, ["days", "hours", "minutes", "seconds"]);
-    const totalSeconds = diff.as("seconds");
+  // --- Adaptive tick rate ---
+  // A monotonic counter that forces re-computation of the label.
+  // The effect only bumps this counter — no synchronous setState in the body.
+  const [tick, setTick] = useState(0);
 
-    // Relative for recent timestamps
-    if (relative && totalSeconds >= 0 && totalSeconds < 86400) {
-      if (totalSeconds < 5) return "just now";
-      if (totalSeconds < 60) return `${Math.floor(totalSeconds)}s ago`;
-      const mins = Math.floor(totalSeconds / 60);
-      if (mins < 60) return `${mins}m ago`;
-      const hrs = Math.floor(mins / 60);
-      return `${hrs}h ago`;
-    }
+  const { label: shortLabel, intervalMs } = useMemo(
+    () => computeLabel(dt, relative),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dt, relative, tick],
+  );
 
-    // Relative for slightly older
-    if (relative && totalSeconds >= 0) {
-      const days = Math.floor(totalSeconds / 86400);
-      if (days === 1) return "yesterday";
-      if (days < 7) return `${days}d ago`;
-    }
+  useEffect(() => {
+    if (!dt || !dt.isValid || !intervalMs) return;
 
-    // Absolute short form
-    if (dt.year === now.year) {
-      return dt.toFormat("MMM d, h:mm a");
-    }
-    return dt.toFormat("MMM d, yyyy");
-  }, [dt, relative]);
+    let timerId;
+
+    const schedule = () => {
+      const { intervalMs: nextMs } = computeLabel(dt, relative);
+      if (!nextMs) return;
+      timerId = setTimeout(() => {
+        setTick((t) => t + 1);
+        schedule();
+      }, nextMs);
+    };
+
+    schedule();
+
+    return () => clearTimeout(timerId);
+  }, [dt, relative, intervalMs]);
 
   if (!dt || !dt.isValid) return null;
 

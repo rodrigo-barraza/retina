@@ -222,66 +222,7 @@ export default class PrismService {
   }
 
   /**
-   * Patch a conversation — update fields without generation (edit/delete messages, rename, etc.).
-   * @param {string} id
-   * @param {object} fields - { title?, messages?, systemPrompt?, settings? }
-   * @returns {Promise<object>}
-   */
-  static async patchConversation(id, fields) {
-    return PrismService._request(`/conversations/${id}`, {
-      method: "PATCH",
-      body: fields,
-    });
-  }
 
-  /**
-   * Get workflows that include this conversation.
-   * @param {string} id - Conversation ID
-   * @returns {Promise<Array<{ _id, workflowName, updatedAt }>>}
-   */
-  static async getConversationWorkflows(id) {
-    return PrismService._request(`/conversations/${id}/workflows`, {
-      method: "GET",
-    });
-  }
-
-  /**
-   * List conversations for a specific project.
-   * @param {string} project - Project identifier (e.g. "retina-console")
-   * @returns {Promise<Array>}
-   */
-  static async getConversationsByProject(project) {
-    return PrismService._request(
-      `/conversations?project=${encodeURIComponent(project)}`,
-      { method: "GET" },
-    );
-  }
-
-  /**
-   * Get a single conversation by ID within a specific project.
-   * @param {string} id
-   * @param {string} project
-   * @returns {Promise<object>}
-   */
-  static async getConversationByProject(id, project) {
-    return PrismService._request(
-      `/conversations/${id}?project=${encodeURIComponent(project)}`,
-      { method: "GET" },
-    );
-  }
-
-  /**
-   * Delete a conversation within a specific project.
-   * @param {string} id
-   * @param {string} project
-   * @returns {Promise<object>}
-   */
-  static async deleteConversationByProject(id, project) {
-    return PrismService._request(
-      `/conversations/${id}?project=${encodeURIComponent(project)}`,
-      { method: "DELETE" },
-    );
-  }
 
   // ── Agent Sessions ─────────────────────────────────────────
 

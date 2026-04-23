@@ -76,7 +76,7 @@ export default function RequestsTableComponent({
       onRowMouseEnter={onRowMouseEnter}
       onRowMouseLeave={onRowMouseLeave}
       getRowClassName={getRowClassName}
-      getRowKey={(r, i) => r.requestId || r._id || `req-${i}`}
+      getRowKey={(r, i) => `${r.requestId || r._id || "req"}-${i}`}
       emptyText={emptyText}
       mini={mini}
       storageKey="requests"

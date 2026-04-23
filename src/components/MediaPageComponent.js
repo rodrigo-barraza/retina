@@ -96,7 +96,7 @@ export default function MediaPageComponent({
   onCountChange,
 }) {
   const isAdmin = mode === "admin";
-  const convBasePath = isAdmin ? "/admin/conversations" : "/conversations";
+  const convBasePath = "/admin/conversations";
 
   const [media, setMedia] = useState([]);
   const [total, setTotal] = useState(0);

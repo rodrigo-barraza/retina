@@ -986,7 +986,7 @@ export default function SynthesisComponent() {
                 )}
                 {conversationId && !isGenerating && (
                   <a
-                    href={`/conversations/${conversationId}`}
+                    href={`/admin/conversations/${conversationId}`}
                     className={styles.convLink}
                     title="View persisted conversation"
                   >

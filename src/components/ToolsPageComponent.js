@@ -209,7 +209,7 @@ function ToolDetailModal({ tool, onClose, agents, stats, allTools }) {
     const allToolNames = allTools.map((t) => t.name);
     const disabledBuiltIns = allToolNames.filter((n) => n !== tool.name);
     StorageService.set("toolMemory:agent:NONE", { disabledBuiltIns });
-    router.push("/agents?agent=NONE&fc=true&thinking=true");
+    router.push("/chat?agent=NONE&fc=true&thinking=true");
   };
 
   // Close on Escape

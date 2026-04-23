@@ -22,7 +22,7 @@ import ModalDialogComponent from "./ModalDialogComponent";
 import BenchmarkFormComponent from "./BenchmarkFormComponent";
 import SummaryBarComponent from "./SummaryBarComponent";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent";
-import AgentPickerPopoverComponent from "./AgentPickerPopoverComponent";
+import AgentPickerComponent from "./AgentPickerComponent";
 import BenchmarksTableComponent from "./BenchmarksTableComponent";
 import ChatPreviewComponent from "./ChatPreviewComponent";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
@@ -1005,8 +1005,13 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                   : `${selectedInstances.length} Models Selected`
             }
           />
-          <AgentPickerPopoverComponent
-            agentCount={agentInstances.length}
+          <AgentPickerComponent
+            agents={[
+              { id: "CODING", name: "Coding Agent", description: "File system, git, command execution, and web tools", toolCount: 6 },
+              { id: "LUPOS", name: "Lupos", description: "Image generation, web search, trends, media, and weather", toolCount: 6 },
+            ]}
+            addMode
+            addCount={agentInstances.length}
             onAddAgent={handleAddAgent}
           />
         </div>

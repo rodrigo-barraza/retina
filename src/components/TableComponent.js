@@ -447,7 +447,6 @@ export default function TableComponent({
                 return (
                   <Fragment key={key}>
                     <tr
-                      key={key}
                       ref={
                         isHighlighted && highlightedRowRef
                           ? highlightedRowRef

@@ -13,7 +13,7 @@ import {
  * useSessionStats — memoised session statistics from a messages array.
  *
  * Replaces the 5–6 line `useMemo` block that was copy-pasted across
- * HomePage, AgentComponent, AdminAgentViewerComponent, and
+ * AgentComponent, AdminAgentViewerComponent, and
  * admin/conversations/page.
  *
  * @param {Array} messages — the messages array to derive stats from

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Download, MessageSquare, GitBranch, FolderOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import HistoryItemComponent from "../../../components/HistoryItemComponent";
@@ -39,8 +39,7 @@ import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import styles from "./page.module.css";
 
-
-
+const POLL_INTERVAL = 5000;
 
 
 export default function RequestsPage() {
@@ -67,12 +66,14 @@ export default function RequestsPage() {
   });
 
   const [hoveredConversationId, setHoveredConversationId] = useState(null);
+  const initialLoadDone = useRef(false);
+  const fetchGenRef = useRef(0);
 
   const LIMIT = 50;
 
   const loadRequests = useCallback(async () => {
+    const gen = fetchGenRef.current;
     try {
-
       const params = { page, limit: LIMIT, sort, order };
       if (projectFilter) params.project = projectFilter;
       Object.entries(filters).forEach(([k, v]) => {
@@ -81,24 +82,60 @@ export default function RequestsPage() {
       Object.assign(params, buildDateRangeParams(dateRange));
 
       const data = await IrisService.getRequests(params);
+      if (gen !== fetchGenRef.current) return;
       setRequests(data.data || []);
       setTotal(data.total || 0);
     } catch (err) {
+      if (gen !== fetchGenRef.current) return;
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (gen !== fetchGenRef.current) return;
+      if (!initialLoadDone.current) {
+        initialLoadDone.current = true;
+        setLoading(false);
+      }
     }
   }, [page, sort, order, filters, dateRange, projectFilter]);
 
   useEffect(() => {
-    // Immediately enter loading state and clear stale data when filters change
+    // Bump generation to invalidate any in-flight requests from previous effect
+    fetchGenRef.current += 1;
+    initialLoadDone.current = false;
     setLoading(true);
     setError(null);
-    setRequests([]);
-    setTotal(0);
 
     loadRequests();
+
+    // Subscribe to change stream SSE for real-time updates
+    let pollInterval = null;
+    let debounceTimer = null;
+    const debouncedLoad = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(loadRequests, 800);
+    };
+    const es = IrisService.subscribeCollectionChanges({
+      onStatus: (data) => {
+        if (!data.changeStreams) {
+          // No Change Streams — fall back to polling
+          if (!pollInterval) {
+            pollInterval = setInterval(loadRequests, POLL_INTERVAL);
+          }
+        }
+      },
+      onChange: (event) => {
+        if (event.collection === "requests") {
+          debouncedLoad();
+        }
+      },
+    });
+
+    return () => {
+      es.close();
+      if (pollInterval) clearInterval(pollInterval);
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
   }, [loadRequests]);
+
 
   // Fetch associations when a request is selected
   useEffect(() => {
