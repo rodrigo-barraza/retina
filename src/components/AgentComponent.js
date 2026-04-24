@@ -871,7 +871,7 @@ export default function AgentComponent({
               ...(settings.reasoningEffort && { reasoningEffort: settings.reasoningEffort }),
               ...(settings.thinkingBudget && { thinkingBudget: settings.thinkingBudget }),
               // Local models need enough context for MCP tool schemas + session
-              minContextLength: 60_000,
+              minContextLength: 65_000,
               project: agentProject,
               agentSessionId,
               conversationMeta: { title: resolvedTitle },

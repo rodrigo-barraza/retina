@@ -15,6 +15,10 @@ import {
   ScrollText,
   FolderOpen,
   MessageSquare,
+  Timer,
+  Wrench,
+  Bot,
+  FolderKanban,
 } from "lucide-react";
 import IrisService from "../../services/IrisService";
 import PrismService from "../../services/PrismService";
@@ -23,6 +27,7 @@ import {
   formatCost,
   formatLatency,
   formatTokensPerSec,
+  formatElapsedTime,
   buildDateRangeParams,
 } from "../../utils/utilities";
 import StatsCard from "../../components/StatsCard";
@@ -378,6 +383,18 @@ export default function DashboardPage() {
           count={loading ? "—" : formatNumber(stats?.totalRequests)}
           label="Requests"
         />
+        <ResourceCardComponent
+          href="/admin/agent-sessions"
+          icon={Bot}
+          count={loading ? "—" : formatNumber(stats?.agentCount)}
+          label="Agents"
+        />
+        <ResourceCardComponent
+          href="#"
+          icon={FolderKanban}
+          count={loading ? "—" : formatNumber(stats?.workspaceCount)}
+          label="Workspaces"
+        />
       </div>
 
       {/* Stats Row */}
@@ -410,6 +427,14 @@ export default function DashboardPage() {
           loading={loading}
         />
         <StatsCard
+          label="Total Duration"
+          value={loading ? "..." : formatElapsedTime(stats?.totalDuration)}
+          subtitle="Cumulative request time"
+          icon={Timer}
+          variant="info"
+          loading={loading}
+        />
+        <StatsCard
           label="Avg Latency"
           value={loading ? "..." : formatLatency(stats?.avgLatency)}
           subtitle={
@@ -417,6 +442,14 @@ export default function DashboardPage() {
           }
           icon={Clock}
           variant="success"
+          loading={loading}
+        />
+        <StatsCard
+          label="Tool Calls"
+          value={loading ? "..." : formatNumber(stats?.totalToolCalls)}
+          subtitle="Total tool invocations"
+          icon={Wrench}
+          variant="info"
           loading={loading}
         />
         <StatsCard

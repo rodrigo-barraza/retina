@@ -8,14 +8,14 @@
 /* ── Resource Navigation Strip ── */
 .resourceNav {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 12px;
 }
 
 /* Stats grid */
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 16px;
 }
 
@@ -49,11 +49,11 @@
 /* Responsive */
 @media (max-width: 1200px) {
   .resourceNav {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .statsGrid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 

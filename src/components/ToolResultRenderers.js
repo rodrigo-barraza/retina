@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, Suspense, lazy } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -23,6 +23,10 @@ import {
   Zap,
 } from "lucide-react";
 import MarkdownContent from "./MarkdownContent";
+// Lazy-load MessageList to break circular dependency:
+// MessageList → ToolResultRenderers → MessageList
+const LazyMessageList = lazy(() => import("./MessageList"));
+import { prepareDisplayMessages } from "./MessageList";
 import { ToolBadgeRow } from "./ToolBadgeComponent";
 import StatusBarComponent from "./StatusBarComponent.js";
 import PrismService from "../services/PrismService";
@@ -1058,9 +1062,18 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
                   )}
                   {memberExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 </button>
-                {memberExpanded && member.result && (
+                {memberExpanded && (
                   <div className={styles.workerResultBody}>
-                    <MarkdownContent content={member.result} />
+                    {member.messages?.length > 0 ? (
+                      <Suspense fallback={null}>
+                        <LazyMessageList
+                          messages={prepareDisplayMessages(member.messages)}
+                          readOnly
+                        />
+                      </Suspense>
+                    ) : member.result ? (
+                      <MarkdownContent content={member.result} />
+                    ) : null}
                   </div>
                 )}
               </div>

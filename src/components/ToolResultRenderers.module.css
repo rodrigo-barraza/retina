@@ -710,12 +710,10 @@
 }
 
 .workerResultBody {
-  padding: 6px 10px 10px;
+  padding: 10px 6px 10px;
   border-top: 1px solid color-mix(in srgb, var(--accent-color, #6366f1) 12%, transparent);
   font-size: 12px;
   color: var(--text-secondary);
-  max-height: 400px;
-  overflow-y: auto;
 }
 
 @keyframes workerResultFadeIn {
