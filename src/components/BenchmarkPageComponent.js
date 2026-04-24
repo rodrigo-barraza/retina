@@ -21,8 +21,11 @@ const INITIAL_FORM = {
   name: "",
   prompt: "",
   systemPrompt: "",
+  benchmarkMode: "model",
   assertions: [{ expectedValue: "", matchMode: "contains" }],
   assertionOperator: "AND",
+  agentAssertions: [],
+  agentAssertionOperator: "AND",
 };
 
 export default function BenchmarkPageComponent({ navSidebar, rightSidebar }) {
@@ -33,19 +36,32 @@ export default function BenchmarkPageComponent({ navSidebar, rightSidebar }) {
   const [saving, setSaving] = useState(false);
 
   // ── Validation ─────────────────────────────────────────────
-  const isValid = form.name && form.prompt && form.assertions?.some((a) => a.expectedValue);
+  const mode = form.benchmarkMode || "model";
+  const hasModelAssertion = form.assertions?.some((a) => a.expectedValue);
+  const hasAgentAssertion = form.agentAssertions?.length > 0;
+
+  const isValid = (() => {
+    if (!form.name || !form.prompt) return false;
+    if (mode === "model") return hasModelAssertion;
+    if (mode === "agent") return hasAgentAssertion;
+    // Combined: at least one of either
+    return hasModelAssertion || hasAgentAssertion;
+  })();
 
   // ── Create ─────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
-      const { assertions, assertionOperator, ...rest } = form;
+      const { assertions, assertionOperator, agentAssertions, agentAssertionOperator, benchmarkMode, ...rest } = form;
       const payload = {
         ...rest,
+        benchmarkMode,
         expectedValue: assertions[0]?.expectedValue || "",
         matchMode: assertions[0]?.matchMode || "contains",
         assertions,
         assertionOperator,
+        agentAssertions: agentAssertions || [],
+        agentAssertionOperator: agentAssertionOperator || "AND",
       };
       const created = await PrismService.createBenchmark(payload);
       setForm(INITIAL_FORM);
@@ -102,4 +118,3 @@ export default function BenchmarkPageComponent({ navSidebar, rightSidebar }) {
     </ThreePanelLayout>
   );
 }
-

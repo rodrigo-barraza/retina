@@ -176,7 +176,11 @@ export default function ModelPickerPopoverComponent({
       })
     : allModels;
 
-  // ── Position the popover relative to trigger, flipping above when clipped ─
+  // ── Collision-aware popover positioning ──────────────────────────────
+  // Keeps the popover fully within the viewport on all four edges.
+  // Prefers anchoring below the trigger, flips above when there's more
+  // room, and falls back to viewport-centering when neither direction
+  // has enough space.
   const positionPopover = useCallback(() => {
     if (!triggerRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
@@ -184,6 +188,7 @@ export default function ModelPickerPopoverComponent({
     const viewportH = window.innerHeight;
     const popoverW = Math.min(1600, viewportW - 32);
     const gap = 8;
+    const pad = 16; // minimum distance from viewport edges
 
     // Estimate popover height as its max-height (75dvh)
     const maxPopoverH = viewportH * 0.75;
@@ -192,7 +197,7 @@ export default function ModelPickerPopoverComponent({
     const shouldFlip = spaceBelow < maxPopoverH && spaceAbove > spaceBelow;
     setFlipped(shouldFlip);
 
-    // Center horizontally relative to the ChatArea (the main content section)
+    // ── Horizontal: center on ChatArea, clamp to viewport ──────────
     const chatArea = document.querySelector("[data-chat-area]");
     let left;
     if (chatArea) {
@@ -201,25 +206,47 @@ export default function ModelPickerPopoverComponent({
     } else {
       left = viewportW / 2 - popoverW / 2;
     }
+    left = Math.max(pad, Math.min(left, viewportW - pad - popoverW));
 
-    // Clamp to viewport edges
-    if (left < 16) left = 16;
-    if (left + popoverW > viewportW - 16) left = viewportW - 16 - popoverW;
+    // ── Vertical: anchor to trigger, then clamp / center ───────────
+    const style = { left, width: popoverW };
 
     if (shouldFlip) {
-      // Anchor bottom edge to just above the trigger
-      setPopoverStyle({
-        bottom: viewportH - triggerRect.top + gap,
-        left,
-        width: popoverW,
-      });
+      // Prefer anchoring bottom edge just above the trigger
+      const bottom = viewportH - triggerRect.top + gap;
+      // If this pushes the top edge above the viewport, clamp
+      const impliedTop = viewportH - bottom - maxPopoverH;
+      if (impliedTop < pad) {
+        // Not enough room even when flipped — center vertically
+        const centeredTop = Math.max(pad, (viewportH - maxPopoverH) / 2);
+        style.top = centeredTop;
+        style.bottom = "auto";
+        style.maxHeight = viewportH - centeredTop - pad;
+      } else {
+        style.bottom = bottom;
+      }
     } else {
-      setPopoverStyle({
-        top: triggerRect.bottom + gap,
-        left,
-        width: popoverW,
-      });
+      // Prefer anchoring top edge just below the trigger
+      const top = triggerRect.bottom + gap;
+      // If this pushes the bottom edge below the viewport, clamp
+      if (top + maxPopoverH > viewportH - pad) {
+        // Shrink or center
+        const availableH = viewportH - pad - top;
+        if (availableH < 200) {
+          // Barely any room below — center vertically instead
+          const centeredTop = Math.max(pad, (viewportH - maxPopoverH) / 2);
+          style.top = centeredTop;
+          style.maxHeight = viewportH - centeredTop - pad;
+        } else {
+          style.top = top;
+          style.maxHeight = availableH;
+        }
+      } else {
+        style.top = top;
+      }
     }
+
+    setPopoverStyle(style);
   }, []);
 
   const openPopover = useCallback(() => {

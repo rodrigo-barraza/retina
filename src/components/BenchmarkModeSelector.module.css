@@ -1,0 +1,71 @@
+/* ── Benchmark Mode Selector ──────────────────────────────── */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.container {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+}
+
+/* Sliding pill (GPU-composited) */
+.pill {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  height: calc(100% - 6px);
+  background: var(--accent-subtle);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 25%, transparent);
+  border-radius: calc(var(--border-radius-sm) - 2px);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, width;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.option {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--border-radius-sm) - 2px);
+  cursor: pointer;
+  transition: color 0.2s;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.option:hover {
+  color: var(--text-secondary);
+}
+
+.option.active {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.description {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  padding-left: 2px;
+  line-height: 1.4;
+}

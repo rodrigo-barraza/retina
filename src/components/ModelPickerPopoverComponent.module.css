@@ -156,7 +156,6 @@
   display: flex;
   flex-direction: column;
   max-height: 75dvh;
-  height: 100%;
   transition: left 0.5s ease;
   animation: popoverInDown 0.18s cubic-bezier(0.2, 0, 0, 1.1) forwards;
 }

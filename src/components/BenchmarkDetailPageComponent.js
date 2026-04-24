@@ -92,8 +92,11 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     name: "",
     prompt: "",
     systemPrompt: "",
+    benchmarkMode: "model",
     assertions: [{ expectedValue: "", matchMode: "contains" }],
     assertionOperator: "AND",
+    agentAssertions: [],
+    agentAssertionOperator: "AND",
   });
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
@@ -576,8 +579,11 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
       name: `${benchmark.name} (copy)`,
       prompt: benchmark.prompt,
       systemPrompt: benchmark.systemPrompt || "",
+      benchmarkMode: benchmark.benchmarkMode || "model",
       assertions,
       assertionOperator: benchmark.assertionOperator || "AND",
+      agentAssertions: benchmark.agentAssertions || [],
+      agentAssertionOperator: benchmark.agentAssertionOperator || "AND",
     });
     setShowModal(true);
   }, [benchmark]);
@@ -585,13 +591,16 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
-      const { assertions, assertionOperator, ...rest } = form;
+      const { assertions, assertionOperator, agentAssertions, agentAssertionOperator, benchmarkMode, ...rest } = form;
       const payload = {
         ...rest,
+        benchmarkMode,
         expectedValue: assertions[0]?.expectedValue || "",
         matchMode: assertions[0]?.matchMode || "contains",
         assertions,
         assertionOperator,
+        agentAssertions: agentAssertions || [],
+        agentAssertionOperator: agentAssertionOperator || "AND",
       };
       const created = await PrismService.createBenchmark(payload);
       setShowModal(false);
@@ -1062,7 +1071,11 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
               {benchmark.name}
             </div>
             <div className={styles.detailMeta}>
-              {(() => {
+              <BadgeComponent variant="info">
+                {benchmark.benchmarkMode === "agent" ? "Agent" : benchmark.benchmarkMode === "combined" ? "Combined" : "Model"}
+              </BadgeComponent>
+              {/* Model assertions (text match) */}
+              {(benchmark.benchmarkMode || "model") !== "agent" && (() => {
                 const assertions = benchmark.assertions?.length > 0
                   ? benchmark.assertions
                   : [{ expectedValue: benchmark.expectedValue, matchMode: benchmark.matchMode || "contains" }];
@@ -1081,6 +1094,24 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                   </span>
                 ));
               })()}
+              {/* Agent assertions (behavioral) */}
+              {(benchmark.benchmarkMode === "agent" || benchmark.benchmarkMode === "combined") &&
+                benchmark.agentAssertions?.map((a, i) => (
+                  <span key={`agent-${i}`} style={{ display: "contents" }}>
+                    {(i > 0 || (benchmark.benchmarkMode === "combined" && benchmark.assertions?.length > 0)) && (
+                      <BadgeComponent variant={
+                        (benchmark.agentAssertionOperator || "AND") === "OR" ? "warning" : "info"
+                      }>
+                        {benchmark.agentAssertionOperator || "AND"}
+                      </BadgeComponent>
+                    )}
+                    <BadgeComponent variant="accent">
+                      {a.type?.replace(/_/g, " ")}
+                      {a.operand ? ` ${a.operator || "≥"} ${a.operand}` : ""}
+                    </BadgeComponent>
+                  </span>
+                ))
+              }
               {benchmark.tags?.map((tag) => (
                 <span key={tag} className={styles.tag}>
                   {tag}
@@ -1268,7 +1299,13 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                 size="sm"
                 onClick={handleSave}
                 loading={saving}
-                disabled={!form.name || !form.prompt || !form.assertions?.some(a => a.expectedValue)}
+                disabled={(() => {
+                  if (!form.name || !form.prompt) return true;
+                  const m = form.benchmarkMode || "model";
+                  if (m === "model") return !form.assertions?.some(a => a.expectedValue);
+                  if (m === "agent") return !form.agentAssertions?.length;
+                  return !form.assertions?.some(a => a.expectedValue) && !form.agentAssertions?.length;
+                })()}
               >
                 Create Clone
               </ButtonComponent>

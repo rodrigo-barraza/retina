@@ -6,19 +6,23 @@ import TextAreaComponent from "./TextAreaComponent";
 import IconButtonComponent from "./IconButtonComponent";
 import ButtonComponent from "./ButtonComponent";
 import BadgeComponent from "./BadgeComponent";
+import BenchmarkModeSelector from "./BenchmarkModeSelector";
+import AgentAssertionsComponent from "./AgentAssertionsComponent";
 import { benchmarkPresets } from "../utils/benchmarkPresets";
 import styles from "./BenchmarkFormComponent.module.css";
 
 /**
  * BenchmarkFormComponent — Shared form body for creating/cloning benchmarks.
  *
- * Supports multiple "assertions" — each is an { expectedValue, matchMode } pair.
- * Assertions can be combined with AND or OR logic (conjunction vs disjunction).
+ * Supports three benchmark modes:
+ *   - "model"    → Model Benchmark — text match assertions only
+ *   - "agent"    → Agent Benchmark — behavioral assertions (replied, tools, thinking, turns)
+ *   - "combined" → Combined — both text match + behavioral assertions
  *
  * Used by both BenchmarkPageComponent (New) and BenchmarkDetailPageComponent (Clone)
  * to eliminate the duplicated form field markup.
  *
- * @param {object}   form       — { name, systemPrompt, prompt, assertions, assertionOperator }
+ * @param {object}   form       — { name, systemPrompt, prompt, benchmarkMode, assertions, assertionOperator, agentAssertions, agentAssertionOperator }
  * @param {Function} onChange   — (updater) => void — receives a state updater fn
  * @param {Array}    matchModes — Array of { value, label } for match mode dropdown
  */
@@ -40,14 +44,21 @@ export default function BenchmarkFormComponent({ form, onChange, matchModes }) {
         prompt: preset.prompt,
         assertions: preset.assertions.map(a => ({ ...a })), // deep copy
         assertionOperator: preset.assertionOperator || "AND",
+        // Presets are model benchmarks by default
+        benchmarkMode: "model",
       }));
       // Reset the select back to default so it can be used again if needed
       e.target.value = "";
     }
   };
 
-  // ── Assertion helpers ─────────────────────────────────────
+  const handleModeChange = (mode) => {
+    onChange((f) => ({ ...f, benchmarkMode: mode }));
+  };
 
+  const mode = form.benchmarkMode || "model";
+
+  // ── Model Assertion helpers ─────────────────────────────────
   const assertions = form.assertions || [
     { expectedValue: form.expectedValue || "", matchMode: form.matchMode || "contains" },
   ];
@@ -84,8 +95,30 @@ export default function BenchmarkFormComponent({ form, onChange, matchModes }) {
 
   const operator = form.assertionOperator || "AND";
 
+  // ── Agent Assertion helpers ─────────────────────────────────
+  const agentAssertions = form.agentAssertions || [];
+
+  const handleAgentAssertionsChange = (next) => {
+    onChange((f) => ({ ...f, agentAssertions: next }));
+  };
+
+  const handleAgentOperatorChange = (next) => {
+    onChange((f) => ({ ...f, agentAssertionOperator: next }));
+  };
+
+  // Whether to show model assertions section
+  const showModelAssertions = mode === "model" || mode === "combined";
+  // Whether to show agent assertions section
+  const showAgentAssertions = mode === "agent" || mode === "combined";
+
   return (
     <>
+      {/* ── Benchmark Mode ── */}
+      <BenchmarkModeSelector
+        value={mode}
+        onChange={handleModeChange}
+      />
+
       <FormGroupComponent label="Load Preset (Optional)">
         <select onChange={handlePresetChange} defaultValue="">
           <option value="" disabled>-- Select an industry standard benchmark --</option>
@@ -126,78 +159,92 @@ export default function BenchmarkFormComponent({ form, onChange, matchModes }) {
         />
       </FormGroupComponent>
 
-      {/* ── Assertions ── */}
-      <div className={styles.assertionsSection}>
-        <div className={styles.assertionsHeader}>
-          <span className={styles.assertionsLabel}>Assertions</span>
-          {assertions.length > 1 && (
-            <button
-              type="button"
-              className={`${styles.operatorToggle} ${operator === "OR" ? styles.operatorOr : ""}`}
-              onClick={toggleOperator}
-              title={`Switch to ${operator === "AND" ? "OR" : "AND"} — currently requires ${operator === "AND" ? "ALL" : "ANY"} to pass`}
+      {/* ── Model Assertions (text match) ── */}
+      {showModelAssertions && (
+        <div className={styles.assertionsSection}>
+          <div className={styles.assertionsHeader}>
+            <span className={styles.assertionsLabel}>
+              {mode === "combined" ? "Output Assertions" : "Assertions"}
+            </span>
+            {assertions.length > 1 && (
+              <button
+                type="button"
+                className={`${styles.operatorToggle} ${operator === "OR" ? styles.operatorOr : ""}`}
+                onClick={toggleOperator}
+                title={`Switch to ${operator === "AND" ? "OR" : "AND"} — currently requires ${operator === "AND" ? "ALL" : "ANY"} to pass`}
+              >
+                {operator}
+              </button>
+            )}
+            <ButtonComponent
+              variant="disabled"
+              size="xs"
+              icon={Plus}
+              onClick={addAssertion}
             >
-              {operator}
-            </button>
-          )}
-          <ButtonComponent
-            variant="disabled"
-            size="xs"
-            icon={Plus}
-            onClick={addAssertion}
-          >
-            Add
-          </ButtonComponent>
-        </div>
+              Add
+            </ButtonComponent>
+          </div>
 
-        <div className={styles.assertionsList}>
-          {assertions.map((a, i) => (
-            <div key={i} className={styles.assertionRow}>
-              {/* Operator divider between assertions */}
-              {i > 0 && (
-                <div className={styles.operatorDivider}>
-                  <span className={styles.operatorDividerLine} />
-                  <BadgeComponent variant={operator === "OR" ? "warning" : "accent"} mini>
-                    {operator}
-                  </BadgeComponent>
-                  <span className={styles.operatorDividerLine} />
-                </div>
-              )}
-              <div className={styles.assertionFields}>
-                <FormGroupComponent label={i === 0 ? "Expected Value" : `Expected Value ${i + 1}`}>
-                  <input
-                    type="text"
-                    value={a.expectedValue}
-                    onChange={updateAssertion(i, "expectedValue")}
-                    placeholder="Paris"
-                  />
-                </FormGroupComponent>
-
-                <FormGroupComponent label="Match Mode">
-                  <select value={a.matchMode} onChange={updateAssertion(i, "matchMode")}>
-                    {matchModes.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                </FormGroupComponent>
-
-                {assertions.length > 1 && (
-                  <div className={styles.assertionRemove}>
-                    <IconButtonComponent
-                      icon={<Trash2 size={14} />}
-                      onClick={() => removeAssertion(i)}
-                      variant="destructive"
-                      tooltip="Remove assertion"
-                    />
+          <div className={styles.assertionsList}>
+            {assertions.map((a, i) => (
+              <div key={i} className={styles.assertionRow}>
+                {/* Operator divider between assertions */}
+                {i > 0 && (
+                  <div className={styles.operatorDivider}>
+                    <span className={styles.operatorDividerLine} />
+                    <BadgeComponent variant={operator === "OR" ? "warning" : "accent"} mini>
+                      {operator}
+                    </BadgeComponent>
+                    <span className={styles.operatorDividerLine} />
                   </div>
                 )}
+                <div className={styles.assertionFields}>
+                  <FormGroupComponent label={i === 0 ? "Expected Value" : `Expected Value ${i + 1}`}>
+                    <input
+                      type="text"
+                      value={a.expectedValue}
+                      onChange={updateAssertion(i, "expectedValue")}
+                      placeholder="Paris"
+                    />
+                  </FormGroupComponent>
+
+                  <FormGroupComponent label="Match Mode">
+                    <select value={a.matchMode} onChange={updateAssertion(i, "matchMode")}>
+                      {matchModes.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
+                  </FormGroupComponent>
+
+                  {assertions.length > 1 && (
+                    <div className={styles.assertionRemove}>
+                      <IconButtonComponent
+                        icon={<Trash2 size={14} />}
+                        onClick={() => removeAssertion(i)}
+                        variant="destructive"
+                        tooltip="Remove assertion"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ── Agent Assertions (behavioral) ── */}
+      {showAgentAssertions && (
+        <AgentAssertionsComponent
+          assertions={agentAssertions}
+          assertionOperator={form.agentAssertionOperator || "AND"}
+          onAssertionsChange={handleAgentAssertionsChange}
+          onOperatorChange={handleAgentOperatorChange}
+        />
+      )}
     </>
   );
 }
