@@ -72,7 +72,7 @@ function parseEnvFile(filePath) {
  * Create a Vault client instance.
  *
  * @param {object} options
- * @param {string} [options.vaultUrl]         - Vault service URL (default: http://localhost:5599)
+ * @param {string} [options.vaultUrl]         - Vault service URL (default: http://192.168.86.2:5599)
  * @param {string} [options.vaultToken]       - Bearer token for Vault auth
  * @param {string} [options.fallbackEnvFile]  - Path to .env file for offline/manual fallback
  * @param {string[]} [options.keys]           - Specific keys to request (omit for all)
