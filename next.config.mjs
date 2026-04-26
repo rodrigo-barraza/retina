@@ -19,6 +19,7 @@ Object.assign(process.env, secrets);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   allowedDevOrigins: ["retina.clankerbox.com"],
   turbopack: {},
 
