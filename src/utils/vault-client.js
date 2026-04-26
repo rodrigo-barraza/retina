@@ -1,25 +1,32 @@
 // ============================================================
 // Vault Client — Secret Bootstrap Utility
 // ============================================================
-// Fetches secrets from the Vault service at startup and
-// exports them as named constants for ESM import.
+// Fetches secrets from multiple sources and merges them with
+// clear precedence rules for flexible deployment.
 //
-// Falls back to reading the master .env file directly if
-// Vault is unreachable (manual mode).
+// Resolution order (first wins per key):
+//   1. process.env (manual env vars, Docker --env)
+//   2. Local .env  (project-level overrides for local dev)
+//   3. Vault       (production secret server)
+//   4. Fallback    (shared vault/.env for offline dev)
 //
-// Usage (in any service's secrets.js):
+// Usage (in any service's boot.js):
 //
-//   import { createVaultClient } from "./src/utils/vault-client.js";
+//   import { createVaultClient } from "./utils/vault-client.js";
 //
-//   const vault = createVaultClient({ fallbackEnvFile: "../vault/.env" });
+//   const vault = createVaultClient({
+//     localEnvFile: "./.env",           // project-level overrides
+//     fallbackEnvFile: "../vault/.env", // shared fallback
+//   });
 //   const secrets = await vault.fetch();
 //
-//   export const OPENAI_API_KEY = secrets.OPENAI_API_KEY || "";
-//   export const MONGO_URI = secrets.MONGO_URI || "";
+// For local development:
+//   cp .env.example .env
+//   Fill in only the values you need to override.
 //
 // Configuration:
-//   The client reads VAULT_URL and VAULT_TOKEN from process.env,
-//   or you can pass them directly.
+//   The client reads VAULT_URL and VAULT_TOKEN from process.env
+//   (or from the local .env), or you can pass them directly.
 // ============================================================
 
 import { readFileSync, existsSync } from "fs";
@@ -37,8 +44,7 @@ function parseEnvFile(filePath) {
   const absolutePath = resolve(filePath);
 
   if (!existsSync(absolutePath)) {
-    console.warn(`⚠️  Env file not found: ${absolutePath}`);
-    return {};
+    return null;
   }
 
   const content = readFileSync(absolutePath, "utf-8");
@@ -72,17 +78,17 @@ function parseEnvFile(filePath) {
  * Create a Vault client instance.
  *
  * @param {object} options
- * @param {string} [options.vaultUrl]         - Vault service URL (default: http://192.168.86.2:5599)
- * @param {string} [options.vaultToken]       - Bearer token for Vault auth
- * @param {string} [options.fallbackEnvFile]  - Path to .env file for offline/manual fallback
- * @param {string[]} [options.keys]           - Specific keys to request (omit for all)
- * @param {string} [options.prefix]           - Filter by key prefix
- * @param {string} [options.exclude]          - Exclude keys matching these prefixes (comma-separated)
+ * @param {string} [options.localEnvFile]      - Project-level .env for local dev overrides (highest priority)
+ * @param {string} [options.vaultUrl]          - Vault service URL (default: http://192.168.86.2:5599)
+ * @param {string} [options.vaultToken]        - Bearer token for Vault auth
+ * @param {string} [options.fallbackEnvFile]   - Path to shared .env file for offline fallback (lowest priority)
+ * @param {string[]} [options.keys]            - Specific keys to request from Vault (omit for all)
+ * @param {string} [options.prefix]            - Filter Vault keys by prefix
+ * @param {string} [options.exclude]           - Exclude Vault keys matching these prefixes (comma-separated)
  */
 export function createVaultClient(options = {}) {
   const {
-    vaultUrl = process.env.VAULT_URL || DEFAULT_VAULT_URL,
-    vaultToken = process.env.VAULT_TOKEN || "",
+    localEnvFile,
     fallbackEnvFile,
     keys,
     prefix,
@@ -91,11 +97,32 @@ export function createVaultClient(options = {}) {
 
   return {
     /**
-     * Fetch secrets from Vault, falling back to the .env file.
-     * Returns a plain object of { KEY: "value" } pairs.
+     * Fetch and merge secrets from all sources.
+     *
+     * Merge order (later sources fill in gaps, never overwrite):
+     *   1. Local .env       → project-level overrides
+     *   2. Vault service    → production secrets
+     *   3. Fallback .env    → shared vault/.env for offline dev
+     *
+     * Returns: plain object of { KEY: "value" } pairs.
      */
     async fetch() {
-      // ── Try Vault first ────────────────────────────────────
+      const merged = {};
+
+      // ── 1. Local .env (highest priority) ────────────────────
+      if (localEnvFile) {
+        const local = parseEnvFile(localEnvFile);
+        if (local) {
+          Object.assign(merged, local);
+          console.warn(`📋 Local .env → loaded ${Object.keys(local).length} overrides`);
+        }
+      }
+
+      // Resolve vault connection from local overrides or process.env
+      const vaultUrl = options.vaultUrl || merged.VAULT_URL || process.env.VAULT_URL || DEFAULT_VAULT_URL;
+      const vaultToken = options.vaultToken || merged.VAULT_TOKEN || process.env.VAULT_TOKEN || "";
+
+      // ── 2. Vault service ────────────────────────────────────
       if (vaultToken) {
         try {
           const params = new URLSearchParams();
@@ -116,8 +143,15 @@ export function createVaultClient(options = {}) {
           }
 
           const secrets = await res.json();
+
+          // Merge — local .env values take precedence
+          for (const [key, value] of Object.entries(secrets)) {
+            if (merged[key] === undefined) {
+              merged[key] = value;
+            }
+          }
+
           console.warn(`🔐 Vault → loaded ${Object.keys(secrets).length} secrets`);
-          return secrets;
         } catch (err) {
           console.warn(`⚠️  Vault unreachable (${err.message})`);
         }
@@ -125,16 +159,28 @@ export function createVaultClient(options = {}) {
         console.warn("⚠️  No VAULT_TOKEN set — skipping Vault");
       }
 
-      // ── Fallback: read .env file directly ──────────────────
+      // ── 3. Fallback: shared .env file ───────────────────────
       if (fallbackEnvFile) {
-        console.warn("📄 Falling back to .env file");
-        const parsed = parseEnvFile(fallbackEnvFile);
-        console.warn(`📄 Loaded ${Object.keys(parsed).length} vars from ${fallbackEnvFile}`);
-        return parsed;
+        const fallback = parseEnvFile(fallbackEnvFile);
+        if (fallback) {
+          let filled = 0;
+          for (const [key, value] of Object.entries(fallback)) {
+            if (merged[key] === undefined) {
+              merged[key] = value;
+              filled++;
+            }
+          }
+          if (filled > 0) {
+            console.warn(`📄 Fallback .env → filled ${filled} remaining vars`);
+          }
+        }
       }
 
-      console.warn("⚠️  No fallback .env configured — returning empty secrets");
-      return {};
+      if (Object.keys(merged).length === 0) {
+        console.warn("⚠️  No secrets loaded from any source");
+      }
+
+      return merged;
     },
   };
 }

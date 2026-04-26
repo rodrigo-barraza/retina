@@ -9,6 +9,7 @@ import { createVaultClient } from "./src/utils/vault-client.js";
 
 // ── Bootstrap secrets at build/dev time ────────────────────────
 const vault = createVaultClient({
+  localEnvFile: "./.env",
   fallbackEnvFile: "../vault/.env",
 });
 
