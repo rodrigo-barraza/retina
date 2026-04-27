@@ -10,7 +10,7 @@ import { createVaultClient } from "./src/utils/vault-client.js";
 // ── Bootstrap secrets at build/dev time ────────────────────────
 const vault = createVaultClient({
   localEnvFile: "./.env",
-  fallbackEnvFile: "../vault/.env",
+  fallbackEnvFile: "../vault-service/.env",
 });
 
 const secrets = await vault.fetch();
@@ -28,10 +28,10 @@ const nextConfig = {
   // Only non-sensitive config values are exposed here —
   // production URLs are hardcoded in config.js anyway.
   env: {
-    RETINA_PORT: secrets.RETINA_PORT || "3333",
-    PRISM_URL: secrets.PRISM_URL || "http://localhost:7777",
+    RETINA_CLIENT_PORT: secrets.RETINA_CLIENT_PORT || "3333",
+    PRISM_SERVICE_URL: secrets.PRISM_SERVICE_URL || "http://localhost:7777",
     PRISM_WS_URL: secrets.PRISM_WS_URL || "ws://localhost:7777",
-    TOOLS_API_URL: secrets.TOOLS_API_URL || "http://localhost:5590",
+    TOOLS_SERVICE_URL: secrets.TOOLS_SERVICE_URL || "http://localhost:5590",
     MINIO_PUBLIC_URL: secrets.MINIO_PUBLIC_URL || "",
   },
 };

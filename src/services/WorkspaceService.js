@@ -1,7 +1,7 @@
-import { PRISM_URL } from "../../config.js";
+import { PRISM_SERVICE_URL } from "../../config.js";
 import { getBaseHeaders } from "./serviceHeaders.js";
 
-const API_BASE = PRISM_URL;
+const API_BASE = PRISM_SERVICE_URL;
 
 /**
  * WorkspaceService — fetches and manages configured workspace roots via Prism.

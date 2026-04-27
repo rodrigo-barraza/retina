@@ -1,4 +1,4 @@
-import { TOOLS_API_URL } from "../../config.js";
+import { TOOLS_SERVICE_URL } from "../../config.js";
 
 /**
  * ToolsApiService — client-side service for querying the
@@ -6,7 +6,7 @@ import { TOOLS_API_URL } from "../../config.js";
  */
 export default class ToolsApiService {
   static async _fetch(path) {
-    const res = await fetch(`${TOOLS_API_URL}${path}`);
+    const res = await fetch(`${TOOLS_SERVICE_URL}${path}`);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || `tools-api error: ${res.status}`);
@@ -39,7 +39,7 @@ export default class ToolsApiService {
   // ---------------------------------------------------------------------------
 
   static async _post(path, body) {
-    const res = await fetch(`${TOOLS_API_URL}${path}`, {
+    const res = await fetch(`${TOOLS_SERVICE_URL}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

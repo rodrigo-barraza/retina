@@ -6,10 +6,10 @@
 // ============================================================
 
 import {
-  RETINA_PORT as SECRETS_PORT,
-  PRISM_URL as DEFAULT_PRISM_URL,
+  RETINA_CLIENT_PORT as SECRETS_PORT,
+  PRISM_SERVICE_URL as DEFAULT_PRISM_SERVICE_URL,
   PRISM_WS_URL as DEFAULT_PRISM_WS_URL,
-  TOOLS_API_URL as DEFAULT_TOOLS_API_URL,
+  TOOLS_SERVICE_URL as DEFAULT_TOOLS_SERVICE_URL,
   MINIO_PUBLIC_URL as DEFAULT_MINIO_URL,
 } from "./secrets.js";
 
@@ -24,18 +24,18 @@ export const IS_LOCALHOST = !IS_PRODUCTION;
 // Environment-aware project name — isolates data between dev and prod
 export const PROJECT_NAME = IS_PRODUCTION ? "retina-web" : "retina";
 
-export const PRISM_URL = IS_PRODUCTION
+export const PRISM_SERVICE_URL = IS_PRODUCTION
   ? "https://prism.clankerbox.com"
-  : DEFAULT_PRISM_URL;
+  : DEFAULT_PRISM_SERVICE_URL;
 
 export const PRISM_WS_URL = IS_PRODUCTION
   ? "wss://prism.clankerbox.com"
   : DEFAULT_PRISM_WS_URL;
 
 // Sun Tools API (unified)
-export const TOOLS_API_URL = IS_PRODUCTION
+export const TOOLS_SERVICE_URL = IS_PRODUCTION
   ? "https://tools.clankerbox.com"
-  : DEFAULT_TOOLS_API_URL;
+  : DEFAULT_TOOLS_SERVICE_URL;
 
 // MinIO file storage (direct bucket URL)
 export const MINIO_URL = IS_PRODUCTION
