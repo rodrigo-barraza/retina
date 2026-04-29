@@ -1,4 +1,4 @@
-import BadgeComponent from "../../../components/BadgeComponent";
+import { BadgeComponent } from "@rodrigo-barraza/components";
 import ProportionBarComponent from "../../../components/ProportionBarComponent";
 import {
   createdAtColumn,

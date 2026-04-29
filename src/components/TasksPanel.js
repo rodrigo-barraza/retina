@@ -46,7 +46,7 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
   const [newDescription, setNewDescription] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // ── Load ────────────────────────────────────────────────────
+  // -- Load ----------------------------------------------------
 
   const loadTasks = useCallback(async () => {
     // Only show full spinner on first load (no data yet)
@@ -81,7 +81,7 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
     loadTasks();
   }, [loadTasks, refreshKey]);
 
-  // ── Create ─────────────────────────────────────────────────
+  // -- Create -------------------------------------------------
 
   const handleCreate = useCallback(async (e) => {
     e.preventDefault();
@@ -103,7 +103,7 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
     }
   }, [project, newSubject, newDescription, loadTasks]);
 
-  // ── Status cycle ───────────────────────────────────────────
+  // -- Status cycle -------------------------------------------
 
   const handleCycleStatus = useCallback(async (task) => {
     const idx = STATUS_CYCLE.indexOf(task.status);
@@ -127,7 +127,7 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
     }
   }, [loadTasks]);
 
-  // ── Delete ─────────────────────────────────────────────────
+  // -- Delete -------------------------------------------------
 
   const handleDelete = useCallback(async (task) => {
     try {
@@ -142,7 +142,7 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
     }
   }, [loadTasks]);
 
-  // ── Loading ────────────────────────────────────────────────
+  // -- Loading ------------------------------------------------
 
   if (loading) {
     return (
@@ -155,7 +155,7 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────
+  // -- Error --------------------------------------------------
 
   if (error) {
     return (
@@ -167,11 +167,11 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
     );
   }
 
-  // ── Render ─────────────────────────────────────────────────
+  // -- Render -------------------------------------------------
 
   return (
     <div className={styles.container}>
-      {/* ── Header ──────────────────────────────────────────── */}
+      {/* -- Header -------------------------------------------- */}
       <div className={styles.header}>
         <span className={styles.headerTitle}>
           Tasks {summary ? `(${summary.total})` : ""}
@@ -193,7 +193,7 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
         </button>
       </div>
 
-      {/* ── Summary badges ──────────────────────────────────── */}
+      {/* -- Summary badges ------------------------------------ */}
       {summary && summary.total > 0 && (
         <div className={styles.summaryRow}>
           {STATUS_CYCLE.map((s) => {
@@ -216,7 +216,7 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
         </div>
       )}
 
-      {/* ── New Task Form ──────────────────────────────────── */}
+      {/* -- New Task Form ------------------------------------ */}
       {showNewForm && (
         <form className={styles.newTaskForm} onSubmit={handleCreate}>
           <input
@@ -257,7 +257,7 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
         </form>
       )}
 
-      {/* ── Empty ─────────────────────────────────────────── */}
+      {/* -- Empty ------------------------------------------- */}
       {tasks.length === 0 && (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>
@@ -272,7 +272,7 @@ export default function TasksPanel({ project, refreshKey, agentSessionId, onCoun
         </div>
       )}
 
-      {/* ── Task list ─────────────────────────────────────── */}
+      {/* -- Task list --------------------------------------- */}
       {tasks.map((task) => {
         const cfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
         const StatusIcon = cfg.icon;

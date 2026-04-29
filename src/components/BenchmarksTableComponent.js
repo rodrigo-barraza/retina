@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import TableComponent from "./TableComponent";
+import { TableComponent } from "@rodrigo-barraza/components";
 import {
   benchmarkStatusColumn,
   benchmarkModelColumn,

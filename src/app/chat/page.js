@@ -70,7 +70,7 @@ function AgentsPageInner() {
   const forceFc = searchParams.get("fc") === "true";
   const forceThinking = searchParams.get("thinking") === "true";
 
-  // ── Deep-link params: model + conversation ──────────────────
+  // -- Deep-link params: model + conversation ------------------
   const initialModel = searchParams.get("model") || null;
   const initialConversationId = searchParams.get("conversation") || null;
 
@@ -81,7 +81,7 @@ function AgentsPageInner() {
       .catch(console.error);
   }, []);
 
-  // ── Strip stale URL params on mount when conversation is present ──
+  // -- Strip stale URL params on mount when conversation is present --
   // If the URL arrives with ?conversation=...&model=...&agent=..., remove
   // model and agent immediately — the conversation data owns those values.
   useEffect(() => {

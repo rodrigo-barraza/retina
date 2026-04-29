@@ -22,8 +22,7 @@ import SearchFilterComponent from "./SearchFilterComponent";
 import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
 import ImagePreviewComponent from "./ImagePreviewComponent";
 import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
-import PaginationComponent from "./PaginationComponent";
-import TableComponent from "./TableComponent";
+import { PaginationComponent, TableComponent } from "@rodrigo-barraza/components";
 import PageHeaderComponent from "./PageHeaderComponent";
 import SearchInputComponent from "./SearchInputComponent";
 import FilterDropdownComponent from "./FilterDropdownComponent";
@@ -461,7 +460,7 @@ export default function MediaPageComponent({
 
         {loading && <LoadingMessage message="Loading media..." />}
 
-        {/* ── Grid View ── */}
+        {/* -- Grid View -- */}
         {!loading && viewMode === "grid" && (
           <div className={styles.mediaGrid}>
             {displayMedia.map((m, i) => {
@@ -482,7 +481,7 @@ export default function MediaPageComponent({
           </div>
         )}
 
-        {/* ── List View ── */}
+        {/* -- List View -- */}
         {!loading && viewMode === "list" && (
           <div className={styles.listWrapper}>
             <TableComponent

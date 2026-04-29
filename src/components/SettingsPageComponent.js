@@ -8,8 +8,7 @@ import { useWorkspace } from "./WorkspaceContext";
 import PageHeaderComponent from "./PageHeaderComponent";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent";
 import CustomAgentsPanel from "./CustomAgentsPanel";
-import ButtonComponent from "./ButtonComponent";
-import CardComponent from "./CardComponent";
+import { ButtonComponent, CardComponent } from "@rodrigo-barraza/components";
 import styles from "./SettingsPageComponent.module.css";
 
 /**
@@ -29,7 +28,7 @@ export default function SettingsPageComponent() {
   const [customAgents, setCustomAgents] = useState([]);
   const [availableTools, setAvailableTools] = useState([]);
 
-  // ── Workspace state ────────────────────────────────────────────────
+  // -- Workspace state ------------------------------------------------
   const { refreshWorkspaces } = useWorkspace();
   const [wsWorkspaces, setWsWorkspaces] = useState([]);
   const [wsAddPath, setWsAddPath] = useState("");
@@ -45,7 +44,7 @@ export default function SettingsPageComponent() {
     return `/mnt/${m[1].toLowerCase()}/${m[2].replace(/\\/g, "/")}`;
   };
 
-  // ── Load config + settings on mount ────────────────────────────────
+  // -- Load config + settings on mount --------------------------------
   useEffect(() => {
     PrismService.getConfigWithLocalModels({
       onConfig: setConfig,
@@ -76,7 +75,7 @@ export default function SettingsPageComponent() {
       .catch(console.error);
   }, []);
 
-  // ── Persist changes ────────────────────────────────────────────────
+  // -- Persist changes ------------------------------------------------
   const persistSettings = useCallback(
     async (updatedSettings) => {
       setSaving(true);
@@ -95,7 +94,7 @@ export default function SettingsPageComponent() {
     [],
   );
 
-  // ── Memory model change handlers ───────────────────────────────────
+  // -- Memory model change handlers -----------------------------------
   const handleExtractionModelSelect = useCallback(
     (provider, model) => {
       const updated = {
@@ -141,7 +140,7 @@ export default function SettingsPageComponent() {
     [settings, persistSettings],
   );
 
-  // ── Agent model change handlers ────────────────────────────────────
+  // -- Agent model change handlers ------------------------------------
   const handleSubagentModelSelect = useCallback(
     (provider, model) => {
       const updated = {
@@ -157,7 +156,7 @@ export default function SettingsPageComponent() {
     [settings, persistSettings],
   );
 
-  // ── Reset to defaults ──────────────────────────────────────────────
+  // -- Reset to defaults ----------------------------------------------
   const handleResetMemory = useCallback(async () => {
     if (!defaults?.memory) return;
     const updated = { memory: { ...defaults.memory } };
@@ -165,7 +164,7 @@ export default function SettingsPageComponent() {
     await persistSettings(updated);
   }, [defaults, persistSettings]);
 
-  // ── Workspace handlers ─────────────────────────────────────────────
+  // -- Workspace handlers ---------------------------------------------
   const handleWsPathChange = useCallback((value) => {
     setWsAddPath(value);
     setWsValidation(null);
@@ -225,7 +224,7 @@ export default function SettingsPageComponent() {
     await persistSettings(updated);
   }, [defaults, persistSettings]);
 
-  // ── Custom agents refresh ──────────────────────────────────────────
+  // -- Custom agents refresh ------------------------------------------
   const loadCustomAgents = useCallback(async () => {
     try {
       const list = await PrismService.getCustomAgents();
@@ -235,7 +234,7 @@ export default function SettingsPageComponent() {
     }
   }, []);
 
-  // ── Loading state ──────────────────────────────────────────────────
+  // -- Loading state --------------------------------------------------
   if (!config || !settings) {
     return (
       <div className={styles.container}>
@@ -266,7 +265,7 @@ export default function SettingsPageComponent() {
         </span>
       </PageHeaderComponent>
 
-      {/* ── Workspaces Section ──────────────────────────────────────── */}
+      {/* -- Workspaces Section ---------------------------------------- */}
       <CardComponent className={styles.section}>
         <CardComponent.Header
           icon={FolderOpen}
@@ -351,7 +350,7 @@ export default function SettingsPageComponent() {
         </CardComponent.Body>
       </CardComponent>
 
-      {/* ── Custom Agents Section ──────────────────────────────────── */}
+      {/* -- Custom Agents Section ------------------------------------ */}
       <CardComponent className={styles.section}>
         <CardComponent.Header
           icon={Bot}
@@ -366,7 +365,7 @@ export default function SettingsPageComponent() {
         />
       </CardComponent>
 
-      {/* ── Memory Models Section ──────────────────────────────────── */}
+      {/* -- Memory Models Section ------------------------------------ */}
       <CardComponent className={styles.section}>
         <CardComponent.Header
           icon={Brain}
@@ -456,7 +455,7 @@ export default function SettingsPageComponent() {
         </CardComponent.Footer>
       </CardComponent>
 
-      {/* ── Agent Defaults Section ─────────────────────────────────── */}
+      {/* -- Agent Defaults Section ----------------------------------- */}
       <CardComponent className={styles.section}>
         <CardComponent.Header
           icon={Network}

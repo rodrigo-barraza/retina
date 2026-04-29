@@ -11,7 +11,7 @@ import {
   Clock,
 } from "lucide-react";
 import PrismService from "../services/PrismService";
-import ButtonComponent from "./ButtonComponent";
+import { ButtonComponent } from "@rodrigo-barraza/components";
 import CostBadgeComponent from "./CostBadgeComponent";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
 import BenchmarkBarComponent from "./BenchmarkBarComponent";
@@ -35,7 +35,7 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
   const [search, setSearch] = useState("");
   const [activeBenchmarkIds, setActiveBenchmarkIds] = useState(new Set());
 
-  // ── Load benchmarks ────────────────────────────────────────
+  // -- Load benchmarks ----------------------------------------
   const loadBenchmarks = useCallback(async () => {
     try {
       const { benchmarks: data } = await PrismService.getBenchmarks();
@@ -51,7 +51,7 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
     loadBenchmarks();
   }, [loadBenchmarks]);
 
-  // ── Adaptive poll: only keep polling while benchmarks are active ──
+  // -- Adaptive poll: only keep polling while benchmarks are active --
   useEffect(() => {
     let cancelled = false;
     let interval = null;
@@ -86,7 +86,7 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
     };
   }, []);
 
-  // ── Filtered list ──────────────────────────────────────────
+  // -- Filtered list ------------------------------------------
   const filtered = useMemo(() => {
     if (!search.trim()) return benchmarks;
     const q = search.toLowerCase();
@@ -99,7 +99,7 @@ export default function BenchmarkSidebarComponent({ activeBenchmarkId }) {
     );
   }, [benchmarks, search]);
 
-  // ── Navigate ───────────────────────────────────────────────
+  // -- Navigate -----------------------------------------------
   const navigate = useCallback(
     (benchmark) => {
       router.push(`/benchmarks/${benchmark.id}`);

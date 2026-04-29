@@ -5,7 +5,7 @@
 // and injects them into process.env for the app.
 // ============================================================
 
-import { createVaultClient } from "./src/utils/vault-client.js";
+import { createVaultClient } from "@rodrigo-barraza/utilities/src/vault.js";
 
 // ── Bootstrap secrets at build/dev time ────────────────────────
 const vault = createVaultClient({
@@ -23,7 +23,7 @@ const nextConfig = {
   output: "standalone",
   allowedDevOrigins: ["retina.clankerbox.com"],
   turbopack: {},
-  transpilePackages: ["@rodrigo-barraza/components"],
+  transpilePackages: ["@rodrigo-barraza/components", "@rodrigo-barraza/utilities"],
 
   // Expose resolved values to both server and client bundles.
   // Only non-sensitive config values are exposed here —

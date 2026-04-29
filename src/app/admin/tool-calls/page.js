@@ -10,8 +10,7 @@ import {
   Activity,
 } from "lucide-react";
 import ToolsApiService from "../../../services/ToolsApiService";
-import TableComponent from "../../../components/TableComponent";
-import BadgeComponent from "../../../components/BadgeComponent";
+import { BadgeComponent, TableComponent } from "@rodrigo-barraza/components";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import {
@@ -23,7 +22,7 @@ import {
 } from "../../../utils/utilities";
 import styles from "./page.module.css";
 
-// ── Column definitions for per-tool stats table ──────────────
+// -- Column definitions for per-tool stats table --------------
 function getToolColumns() {
   return [
     {
@@ -109,7 +108,7 @@ function getToolColumns() {
   ];
 }
 
-// ── Domain breakdown columns ─────────────────────────────────
+// -- Domain breakdown columns ---------------------------------
 function getDomainColumns() {
   return [
     {
@@ -149,7 +148,7 @@ function getDomainColumns() {
   ];
 }
 
-// ── Slowest calls columns ────────────────────────────────────
+// -- Slowest calls columns ------------------------------------
 function getSlowestColumns() {
   return [
     {
@@ -240,7 +239,7 @@ export default function ToolCallsPage() {
     loadStats();
   }, [loadStats]);
 
-  // ── Header controls ────────────────────────────────────────
+  // -- Header controls ----------------------------------------
   useEffect(() => {
     setControls(
       <>
@@ -260,12 +259,12 @@ export default function ToolCallsPage() {
     if (stats) setTitleBadge(formatNumber(stats.totalCalls));
   }, [setTitleBadge, stats]);
 
-  // ── Column definitions (stable) ────────────────────────────
+  // -- Column definitions (stable) ----------------------------
   const toolColumns = useMemo(() => getToolColumns(), []);
   const domainColumns = useMemo(() => getDomainColumns(), []);
   const slowestColumns = useMemo(() => getSlowestColumns(), []);
 
-  // ── Sorted data ────────────────────────────────────────────
+  // -- Sorted data --------------------------------------------
   const sortedTools = useMemo(() => {
     if (!stats?.byTool) return [];
     const arr = [...stats.byTool];
@@ -288,7 +287,7 @@ export default function ToolCallsPage() {
     return arr;
   }, [stats, domainSort, domainOrder]);
 
-  // ── Derived computed stats ─────────────────────────────────
+  // -- Derived computed stats ---------------------------------
   const avgLatencyAll = useMemo(() => {
     if (!stats?.byTool?.length) return 0;
     const totalMs = stats.byTool.reduce((sum, t) => sum + t.avgMs * t.count, 0);
@@ -306,7 +305,7 @@ export default function ToolCallsPage() {
 
   return (
     <div className={styles.page}>
-      {/* ── Summary Cards ── */}
+      {/* -- Summary Cards -- */}
       <div className={styles.summaryGrid}>
         <div className={styles.statCard}>
           <div className={styles.statIcon}>
@@ -355,7 +354,7 @@ export default function ToolCallsPage() {
         </div>
       </div>
 
-      {/* ── Per-Tool Statistics ── */}
+      {/* -- Per-Tool Statistics -- */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>
           <Zap size={16} /> Per-Tool Statistics
@@ -376,7 +375,7 @@ export default function ToolCallsPage() {
         />
       </section>
 
-      {/* ── Domain Breakdown ── */}
+      {/* -- Domain Breakdown -- */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>
           <Activity size={16} /> Domain Breakdown
@@ -397,7 +396,7 @@ export default function ToolCallsPage() {
         />
       </section>
 
-      {/* ── Slowest Calls ── */}
+      {/* -- Slowest Calls -- */}
       {stats?.slowest?.length > 0 && (
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>
@@ -414,7 +413,7 @@ export default function ToolCallsPage() {
         </section>
       )}
 
-      {/* ── Error Breakdown ── */}
+      {/* -- Error Breakdown -- */}
       {stats?.errorsByTool?.length > 0 && (
         <section className={styles.section}>
           <h2 className={`${styles.sectionTitle} ${styles.errorTitle}`}>

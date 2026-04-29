@@ -18,7 +18,7 @@ import ModelBadgeComponent from "./ModelBadgeComponent";
 import { MODALITY_COLORS } from "./WorkflowNodeConstants";
 import styles from "./MediaCardComponent.module.css";
 
-/* ── Helpers ── */
+/* -- Helpers -- */
 
 function resolveUrl(url) {
   if (!url || typeof url !== "string") return null;
@@ -184,5 +184,5 @@ export default function MediaCardComponent({
   );
 }
 
-/* ── Re-exports for consumers ── */
+/* -- Re-exports for consumers -- */
 export { resolveUrl, MediaTypeIcon, OriginBadge };

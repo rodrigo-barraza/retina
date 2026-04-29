@@ -30,8 +30,7 @@ import ModelPickerPopoverComponent from "../../components/ModelPickerPopoverComp
 import HistoryList from "../../components/HistoryList";
 import ThreePanelLayout from "../../components/ThreePanelLayout";
 import NavigationSidebarComponent from "../../components/NavigationSidebarComponent";
-import { useToast } from "../../components/ToastComponent";
-import ButtonComponent from "../../components/ButtonComponent";
+import { ButtonComponent, useToast } from "@rodrigo-barraza/components";
 import { copyToClipboard } from "../../utils/utilities";
 import styles from "./page.module.css";
 
@@ -978,7 +977,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
     setSelectedNodeId(newNode.id);
   }, []);
 
-  // ── Dirty-tracking: is the current state different from last saved? ──
+  // -- Dirty-tracking: is the current state different from last saved? --
   const hasUnsavedChanges = useMemo(() => {
     // Blank workflow (no nodes) is never saveable
     if (nodes.length === 0) return false;
@@ -989,7 +988,7 @@ export default function WorkflowsPage({ initialWorkflowId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowName, nodes, edges, savedSnapshotVersion]);
 
-  // ── Memos for ThreePanelLayout panels ──
+  // -- Memos for ThreePanelLayout panels --
 
   const selectedNode = useMemo(
     () => nodes.find((n) => n.id === selectedNodeId) || null,

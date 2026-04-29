@@ -23,7 +23,7 @@ export default function WorkspaceSelectorComponent({ locked = false, className }
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // ── Add workspace state ────────────────────────────────────
+  // -- Add workspace state ------------------------------------
   const [showAdd, setShowAdd] = useState(false);
   const [addPath, setAddPath] = useState("");
   const [validation, setValidation] = useState(null);
@@ -38,7 +38,7 @@ export default function WorkspaceSelectorComponent({ locked = false, className }
     return `/mnt/${m[1].toLowerCase()}/${m[2].replace(/\\/g, "/")}`;
   };
 
-  // ── Close on outside click ─────────────────────────────────
+  // -- Close on outside click ---------------------------------
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e) => {
@@ -53,7 +53,7 @@ export default function WorkspaceSelectorComponent({ locked = false, className }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  // ── Path validation (debounced) ────────────────────────────
+  // -- Path validation (debounced) ----------------------------
   const handlePathChange = useCallback((value) => {
     setAddPath(value);
     setValidation(null);
@@ -69,7 +69,7 @@ export default function WorkspaceSelectorComponent({ locked = false, className }
     }, 400);
   }, []);
 
-  // ── Add workspace handler ──────────────────────────────────
+  // -- Add workspace handler ----------------------------------
   const handleAdd = useCallback(async () => {
     if (!addPath.trim() || adding) return;
     setAdding(true);
@@ -93,7 +93,7 @@ export default function WorkspaceSelectorComponent({ locked = false, className }
     }
   }, [addPath, adding, refreshWorkspaces]);
 
-  // ── Locked state (mid-conversation) ────────────────────────
+  // -- Locked state (mid-conversation) ------------------------
   if (locked) {
     return (
       <div className={`${styles.wrapper} ${className || ""}`}>
@@ -106,7 +106,7 @@ export default function WorkspaceSelectorComponent({ locked = false, className }
     );
   }
 
-  // ── Interactive state ──────────────────────────────────────
+  // -- Interactive state --------------------------------------
   return (
     <div className={`${styles.wrapper} ${className || ""}`} ref={menuRef}>
       <button

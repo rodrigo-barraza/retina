@@ -64,7 +64,7 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
   const hasData = useRef(false);
   const pollRef = useRef(null);
 
-  // ── Load ──────────────────────────────────────────────────
+  // -- Load --------------------------------------------------
 
   const loadWorkers = useCallback(async () => {
     if (!hasData.current) setLoading(true);
@@ -107,7 +107,7 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
     return () => clearInterval(pollRef.current);
   }, [workers, loadWorkers]);
 
-  // ── Loading ─────────────────────────────────────────────────
+  // -- Loading -------------------------------------------------
 
   if (loading) {
     return (
@@ -120,7 +120,7 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────
+  // -- Error --------------------------------------------------
 
   if (error) {
     return (
@@ -136,7 +136,7 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
 
   return (
     <div className={styles.container}>
-      {/* ── Header ──────────────────────────────────────────── */}
+      {/* -- Header -------------------------------------------- */}
       <div className={styles.header}>
         <span className={styles.headerTitle}>
           Workers {workers.length > 0 ? `(${workers.length})` : ""}
@@ -151,7 +151,7 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
         </button>
       </div>
 
-      {/* ── Empty ─────────────────────────────────────────── */}
+      {/* -- Empty ------------------------------------------- */}
       {workers.length === 0 && (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>
@@ -166,7 +166,7 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
         </div>
       )}
 
-      {/* ── Worker list ─────────────────────────────────────── */}
+      {/* -- Worker list --------------------------------------- */}
       {workers.map((worker) => {
         const statusLabel = STATUS_LABEL[worker.status] || worker.status;
         const statusClass = STATUS_CLASS[worker.status] || "statusPending";
@@ -182,7 +182,7 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
             key={worker.agentId}
             className={`${styles.workerCard} ${cardClass ? styles[cardClass] : ""}`}
           >
-            {/* ── Title row (HistoryItem-style) ─────────────── */}
+            {/* -- Title row (HistoryItem-style) --------------- */}
             <div className={styles.titleRow}>
               <span className={styles.agentBadge}>
                 Agent {getAgentNumber(worker.agentId)}
@@ -199,7 +199,7 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
               </div>
             )}
 
-            {/* ── Meta row (time, cost — HistoryItem-style) ── */}
+            {/* -- Meta row (time, cost — HistoryItem-style) -- */}
             <div className={styles.meta}>
               {worker.durationMs > 0 && (
                 <span className={`${styles.metaItem} ${isLive ? styles.durationLive : ""}`}>
@@ -227,7 +227,7 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
               )}
             </div>
 
-            {/* ── Model badge ────────────────────────────────── */}
+            {/* -- Model badge ---------------------------------- */}
             {worker.resolvedModel && (
               <ModelBadgeComponent
                 models={[worker.resolvedModel.replace(/-\d{8}$/, "")]}
@@ -237,12 +237,12 @@ export default function WorkersPanel({ agentSessionId, refreshKey, onCountChange
               />
             )}
 
-            {/* ── Modality icons ─────────────────────────────── */}
+            {/* -- Modality icons ------------------------------- */}
             {isComplete && (
               <ModalityIconComponent modalities={workerModalities} size={10} />
             )}
 
-            {/* ── Live tool activity (SSE-driven) ────────────── */}
+            {/* -- Live tool activity (SSE-driven) -------------- */}
             {isLive && workerToolActivity[worker.agentId]?.currentTool && (
               <div className={styles.liveActivity}>
                 <span className={styles.liveDot} />

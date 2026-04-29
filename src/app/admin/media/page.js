@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import SelectDropdown from "../../../components/SelectDropdown";
+import { SelectComponent } from "@rodrigo-barraza/components";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import MediaPageComponent from "../../../components/MediaPageComponent";
@@ -13,7 +13,7 @@ export default function AdminMediaPage() {
 
   useEffect(() => {
     setControls(
-      <SelectDropdown
+      <SelectComponent
         value={projectFilter || ""}
         options={projectOptions}
         onChange={handleProjectChange}

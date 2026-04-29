@@ -39,7 +39,7 @@ function ensureContext() {
   return ctx;
 }
 
-// ─── Sound generators ──────────────────────────────────────────────
+// --- Sound generators ----------------------------------------------
 
 /**
  * Build (or return cached) a mono AudioBuffer containing a very
@@ -198,16 +198,16 @@ function getButtonClickBuffer() {
   return buttonClickBuffer;
 }
 
-// ─── Stereo routing helper ─────────────────────────────────────────
+// --- Stereo routing helper -----------------------------------------
 
 /**
  * Route a source node through independent L/R gain stages and
  * connect to the destination.
  *
  * Topology:
- *   source → splitter(ch0) → gainL ─┐
+ *   source → splitter(ch0) → gainL -┐
  *                                     ├→ merger → destination
- *   source → splitter(ch1) → gainR ─┘
+ *   source → splitter(ch1) → gainR -┘
  *
  * Because the buffers are mono, the splitter outputs the same
  * signal on both channels. Each GainNode then scales independently
@@ -244,7 +244,7 @@ function connectStereo(source, left, right) {
   merger.connect(audio.destination);
 }
 
-// ─── Spatial stereo helper ─────────────────────────────────────────
+// --- Spatial stereo helper -----------------------------------------
 
 /**
  * Derive left/right speaker volumes (0–100) from an element's
@@ -271,7 +271,7 @@ function spatialFromEvent(event) {
   };
 }
 
-// ─── Public API ────────────────────────────────────────────────────
+// --- Public API ----------------------------------------------------
 
 const SoundService = {
   /**

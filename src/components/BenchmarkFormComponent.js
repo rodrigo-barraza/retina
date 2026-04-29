@@ -2,10 +2,8 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import FormGroupComponent from "./FormGroupComponent";
-import TextAreaComponent from "./TextAreaComponent";
+import { BadgeComponent, ButtonComponent, TextAreaComponent } from "@rodrigo-barraza/components";
 import IconButtonComponent from "./IconButtonComponent";
-import ButtonComponent from "./ButtonComponent";
-import BadgeComponent from "./BadgeComponent";
 import BenchmarkModeSelector from "./BenchmarkModeSelector";
 import AgentAssertionsComponent from "./AgentAssertionsComponent";
 import { benchmarkPresets } from "../utils/benchmarkPresets";
@@ -58,7 +56,7 @@ export default function BenchmarkFormComponent({ form, onChange, matchModes }) {
 
   const mode = form.benchmarkMode || "model";
 
-  // ── Model Assertion helpers ─────────────────────────────────
+  // -- Model Assertion helpers ---------------------------------
   const assertions = form.assertions || [
     { expectedValue: form.expectedValue || "", matchMode: form.matchMode || "contains" },
   ];
@@ -95,7 +93,7 @@ export default function BenchmarkFormComponent({ form, onChange, matchModes }) {
 
   const operator = form.assertionOperator || "AND";
 
-  // ── Agent Assertion helpers ─────────────────────────────────
+  // -- Agent Assertion helpers ---------------------------------
   const agentAssertions = form.agentAssertions || [];
 
   const handleAgentAssertionsChange = (next) => {
@@ -113,7 +111,7 @@ export default function BenchmarkFormComponent({ form, onChange, matchModes }) {
 
   return (
     <>
-      {/* ── Benchmark Mode ── */}
+      {/* -- Benchmark Mode -- */}
       <BenchmarkModeSelector
         value={mode}
         onChange={handleModeChange}
@@ -163,7 +161,7 @@ export default function BenchmarkFormComponent({ form, onChange, matchModes }) {
         />
       </FormGroupComponent>
 
-      {/* ── Model Assertions (text match) ── */}
+      {/* -- Model Assertions (text match) -- */}
       {showModelAssertions && (
         <div className={styles.assertionsSection}>
           <div className={styles.assertionsHeader}>
@@ -240,7 +238,7 @@ export default function BenchmarkFormComponent({ form, onChange, matchModes }) {
         </div>
       )}
 
-      {/* ── Agent Assertions (behavioral) ── */}
+      {/* -- Agent Assertions (behavioral) -- */}
       {showAgentAssertions && (
         <AgentAssertionsComponent
           assertions={agentAssertions}

@@ -224,7 +224,7 @@ export default class PrismService {
   /**
 
 
-  // ── Agent Sessions ─────────────────────────────────────────
+  // -- Agent Sessions -----------------------------------------
 
   /**
    * List agent sessions for a specific project.

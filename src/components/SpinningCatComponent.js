@@ -83,7 +83,7 @@ export default function SpinningCatComponent({
     }
   }, [animate]);
 
-  // ── Decode the spinning GIF into ImageBitmap textures on mount ──
+  // -- Decode the spinning GIF into ImageBitmap textures on mount --
   useEffect(() => {
     let cancelled = false;
 
@@ -133,7 +133,7 @@ export default function SpinningCatComponent({
     };
   }, []);
 
-  // ── Main animation loop (always running, speed-controlled) ───
+  // -- Main animation loop (always running, speed-controlled) ---
   const tickRef = useRef(null);
 
   useEffect(() => {
@@ -192,7 +192,7 @@ export default function SpinningCatComponent({
         renderFrame(canvasRef.current, frames, bitmaps, s.frameIndex);
       }
 
-      // ── Compute visual FX intensity (0 → 1) ──
+      // -- Compute visual FX intensity (0 → 1) --
       if (
         animateRef.current ||
         s.windingDown ||

@@ -25,7 +25,7 @@ export default function ChatPreviewComponent({
   // Optional extra className
   className,
 }) {
-  // ── MessageList mode ──
+  // -- MessageList mode --
   if (messages) {
     return (
       <div
@@ -41,7 +41,7 @@ export default function ChatPreviewComponent({
     );
   }
 
-  // ── Prompt block mode ──
+  // -- Prompt block mode --
   const hasSystem = systemPrompt?.trim();
   const hasUser = userPrompt?.trim();
 

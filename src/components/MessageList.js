@@ -34,7 +34,7 @@ import TokenCountBadgeComponent from "./TokenCountBadgeComponent";
 import CostBadgeComponent from "./CostBadgeComponent";
 import StopwatchBadgeComponent from "./StopwatchBadgeComponent";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
-import BadgeComponent from "./BadgeComponent";
+import { BadgeComponent } from "@rodrigo-barraza/components";
 import WordBadgeComponent from "./WordBadgeComponent";
 import WorkerNotificationComponent from "./WorkerNotificationComponent";
 import PlanCardComponent from "./PlanCardComponent.js";
@@ -45,7 +45,7 @@ import { getTotalInputTokens, renderToolName } from "../utils/utilities";
 
 
 
-/* ── Task notification detection (Claude Code pattern) ───────
+/* -- Task notification detection (Claude Code pattern) -------
  * Worker results arrive as user-role messages containing
  * <task-notification> XML. Detect by content so it works for
  * both live messages and already-persisted history.            */
@@ -104,7 +104,7 @@ function getMimeCategory(ref) {
   return type;
 }
 
-/* ── Sub-components ──────────────────────────────────────────── */
+/* -- Sub-components -------------------------------------------- */
 
 function ThinkingBlock({ thinking, isStreaming, children }) {
   // User can manually toggle after streaming has finished
@@ -184,7 +184,7 @@ function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
 
   return (
     <div className={`${styles.toolCallsBlock}${hasActiveCalls ? ` ${styles.toolCallsStreaming}` : ""}`}>
-      {/* ── Header toggle ── */}
+      {/* -- Header toggle -- */}
       <button
         className={styles.toolCallsToggle}
         onClick={() => setHeaderCollapsed((c) => !c)}
@@ -194,7 +194,7 @@ function ToolCallsBlock({ toolCalls, streamingOutputs, workerToolActivity }) {
         {headerCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
       </button>
 
-      {/* ── Always-visible tool cards ── */}
+      {/* -- Always-visible tool cards -- */}
       {!headerCollapsed && (
         <div className={styles.toolCallsContent}>
           {toolCalls.map((tc, j) => {
@@ -402,7 +402,7 @@ function MediaPreview({ dataUrl: rawUrl, onClick }) {
   );
 }
 
-/* ── Inline edit for messages ────────────────────────────────── */
+/* -- Inline edit for messages ---------------------------------- */
 
 function EditableMessage({
   content,
@@ -543,7 +543,7 @@ function EditableMessage({
   return null; // Assistant non-editing rendering is handled by the caller
 }
 
-/* ── Main export ─────────────────────────────────────────────── */
+/* -- Main export ----------------------------------------------- */
 
 /**
  * Shared message list component.
@@ -584,7 +584,7 @@ export default function MessageList({
   const [expandedDeletedSet, setExpandedDeletedSet] = useState(new Set());
   const hasSystemPrompt = !!(systemPrompt && systemPrompt.trim());
 
-  // ── Sticky last user message (pinned header) ─────────────
+  // -- Sticky last user message (pinned header) -------------
   const [isUserMsgScrolledPast, setIsUserMsgScrolledPast] = useState(false);
   const lastUserMsgRef = useRef(null);
   const lastUserMsgIndexRef = useRef(-1);
@@ -718,7 +718,7 @@ export default function MessageList({
     return arr;
   }, [messages]);
 
-  // ── Coalesce consecutive deleted messages into groups ──────
+  // -- Coalesce consecutive deleted messages into groups ------
   // Each group is keyed by the index of the first deleted message
   // in the run (the "leader"). Non-leader deleted messages are
   // skipped during rendering.
@@ -745,7 +745,7 @@ export default function MessageList({
     return map;
   }, [messages]);
 
-  // ── Coalesce consecutive assistant messages into groups ────
+  // -- Coalesce consecutive assistant messages into groups ----
   // Each group shares a single avatar + header. Only the first
   // message in a run of assistant messages shows the avatar.
   // "isContinuation" means this assistant msg continues the
@@ -775,7 +775,7 @@ export default function MessageList({
 
   return (
     <div className={styles.messagesList}>
-      {/* ── Sticky pinned user message ── */}
+      {/* -- Sticky pinned user message -- */}
       <div
         className={styles.stickyUserMsg}
         onMouseEnter={(e) => stickyUserMsg && SoundService.playHoverButton({ event: e })}
@@ -869,7 +869,7 @@ export default function MessageList({
                 <span className={styles.modelChangeLine} />
               </div>
             )}
-            {/* ── Deleted message group: coalesced into a single row ── */}
+            {/* -- Deleted message group: coalesced into a single row -- */}
             {msg.deleted && (() => {
               const groupInfo = deletedGroups.get(i);
               // Non-leader deleted messages are rendered inside the leader block
@@ -879,7 +879,7 @@ export default function MessageList({
               const isExpanded = expandedDeletedSet.has(i);
 
               if (!isExpanded) {
-                // ── Collapsed: single summary row ──
+                // -- Collapsed: single summary row --
                 return (
                   <div className={styles.deletedRow}>
                     <button
@@ -932,7 +932,7 @@ export default function MessageList({
                 );
               }
 
-              // ── Expanded: show all messages in the group ──
+              // -- Expanded: show all messages in the group --
               return (
                 <div className={styles.deletedExpanded}>
                   <div className={styles.deletedRow}>
@@ -1043,9 +1043,9 @@ export default function MessageList({
               </div>
             );
           })()}
-            {/* ── Normal (non-deleted) message ── */}
+            {/* -- Normal (non-deleted) message -- */}
             {!msg.deleted && (() => {
-              // ── Task notification card (replaces user bubble for worker results) ──
+              // -- Task notification card (replaces user bubble for worker results) --
               // Only renders for non-absorbed notifications (i.e. edge cases where
               // the matching team_create tool call isn't in the visible window).
               const taskNotif = msg.role === "user" ? parseTaskNotification(msg.content) : null;
@@ -1059,7 +1059,7 @@ export default function MessageList({
                   />
                 );
               }
-              // ── Normal message rendering ──
+              // -- Normal message rendering --
               return (
             <div
               ref={i === lastUserMsgIndex && msg.role === "user" ? lastUserMsgRef : undefined}
@@ -1148,7 +1148,7 @@ export default function MessageList({
                 </div>
                 )}
 
-                {/* ── Interleaved content: thinking + tool calls + text ── */}
+                {/* -- Interleaved content: thinking + tool calls + text -- */}
                 {msg.contentSegments && msg.contentSegments.length > 0 ? (
                   (() => {
                     const segs = msg.contentSegments;
@@ -1235,7 +1235,7 @@ export default function MessageList({
                       );
                     }
 
-                    // ── Normal rendering ──
+                    // -- Normal rendering --
                     // Only thinking segments go inside the ThinkingBlock.
                     // Tools and text segments render outside in their original
                     // interleaved order — this matches the post-refresh layout.

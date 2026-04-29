@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { Zap } from "lucide-react";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import styles from "./RequestCountBadgeComponent.module.css";
 
 /** Duration of the count-up tween in ms. */

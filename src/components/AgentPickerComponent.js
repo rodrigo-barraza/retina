@@ -94,7 +94,7 @@ export default function AgentPickerComponent({
 
   if (agents.length === 0) return null;
 
-  // ── Add-mode trigger label ──────────────────────────────────
+  // -- Add-mode trigger label ----------------------------------
   const addLabel = addCount === 0
     ? "Add Agent"
     : addCount === 1
@@ -105,7 +105,7 @@ export default function AgentPickerComponent({
     <div style={{ position: "relative" }}>
       <div className={styles.triggerWrap}>
         {addMode ? (
-          /* ── Add-mode trigger pill ── */
+          /* -- Add-mode trigger pill -- */
           <button
             ref={triggerRef}
             className={`${styles.trigger} ${styles.triggerAdd} ${open ? styles.triggerAddOpen : ""} ${addCount > 0 ? styles.triggerAddActive : ""}`}
@@ -125,7 +125,7 @@ export default function AgentPickerComponent({
             />
           </button>
         ) : (
-          /* ── Default trigger (active agent) ── */
+          /* -- Default trigger (active agent) -- */
           <>
             <button
               ref={triggerRef}

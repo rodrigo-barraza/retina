@@ -3,8 +3,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Cpu, HardDrive, Zap, Database, Loader2 } from "lucide-react";
 import ModalDialogComponent from "./ModalDialogComponent";
-import ToggleSwitch from "./ToggleSwitch";
-import SliderComponent from "./SliderComponent";
+import { SliderComponent, ToggleComponent } from "@rodrigo-barraza/components";
 import ProviderLogo from "./ProviderLogos";
 import { formatFileSize, formatContextTokens } from "../utils/utilities";
 import styles from "./ModelLoadConfigPanel.module.css";
@@ -81,7 +80,7 @@ export default function ModelLoadConfigPanel({ model, onLoad, onClose, service, 
     () => !!persisted,
   );
 
-  // ── Memory Estimation (from backend) ────────────────────
+  // -- Memory Estimation (from backend) --------------------
   const [memory, setMemory] = useState({ gpuGiB: 0, totalGiB: 0 });
   const [maxMemory, setMaxMemory] = useState({ gpuGiB: 0, totalGiB: 0 });
   const debounceRef = useRef(null);

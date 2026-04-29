@@ -3,8 +3,7 @@
 import { Plus, Trash2, MessageSquare, Wrench, Brain, RotateCcw } from "lucide-react";
 import FormGroupComponent from "./FormGroupComponent";
 import IconButtonComponent from "./IconButtonComponent";
-import ButtonComponent from "./ButtonComponent";
-import BadgeComponent from "./BadgeComponent";
+import { BadgeComponent, ButtonComponent } from "@rodrigo-barraza/components";
 import styles from "./AgentAssertionsComponent.module.css";
 
 /**

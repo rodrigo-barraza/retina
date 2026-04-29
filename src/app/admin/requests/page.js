@@ -19,10 +19,9 @@ import {
 } from "../../../utils/requestDetailHelpers";
 
 import RequestsTableComponent from "../../../components/RequestsTableComponent";
-import PaginationComponent from "../../../components/PaginationComponent";
+import { ButtonComponent, PaginationComponent, SelectComponent } from "@rodrigo-barraza/components";
 
 
-import SelectDropdown from "../../../components/SelectDropdown";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import {
   FilterBarComponent,
@@ -31,7 +30,6 @@ import {
   FilterSelectComponent,
   FilterClearButton,
 } from "../../../components/FilterBarComponent";
-import ButtonComponent from "../../../components/ButtonComponent";
 import RequestDetailsComponent from "../../../components/RequestDetailsComponent";
 import ChatPreviewComponent from "../../../components/ChatPreviewComponent";
 import MediaCardComponent from "../../../components/MediaCardComponent";
@@ -276,7 +274,7 @@ export default function RequestsPage() {
     setControls(
       <>
         <ErrorMessage message={error} />
-        <SelectDropdown
+        <SelectComponent
           value={projectFilter || ""}
           options={projectOptions}
           onChange={handleProjectChange}

@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Calendar } from "lucide-react";
 import { DateTime } from "luxon";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import styles from "./DateTimeBadgeComponent.module.css";
 
 /**

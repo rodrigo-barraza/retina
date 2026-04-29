@@ -1,6 +1,6 @@
 "use client";
 
-import TextAreaComponent from "./TextAreaComponent";
+import { TextAreaComponent } from "@rodrigo-barraza/components";
 import styles from "./PromptSectionComponent.module.css";
 
 /**

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import AgentCardComponent from "./AgentCardComponent";
 import ModelCardComponent from "./ModelCardComponent";
-import BadgeComponent from "./BadgeComponent";
+import { BadgeComponent } from "@rodrigo-barraza/components";
 import ChatPreviewComponent from "./ChatPreviewComponent";
 import TabBarComponent from "./TabBarComponent";
 import CostBadgeComponent from "./CostBadgeComponent";
@@ -86,7 +86,7 @@ export default function RunHistorySidebarComponent({
 
   return (
     <div className={styles.container}>
-      {/* ── Tab Bar ──────────────────────────────────────── */}
+      {/* -- Tab Bar ---------------------------------------- */}
       <TabBarComponent
         tabs={[
           {
@@ -113,7 +113,7 @@ export default function RunHistorySidebarComponent({
           ════════════════════════════════════════════════════ */}
       {activeTab === "general" && (
         <div className={styles.tabContent}>
-          {/* ── Assertions ──────────────────────────────── */}
+          {/* -- Assertions -------------------------------- */}
           {assertions.length > 0 && (
             <div className={styles.assertionsSection}>
               <div className={styles.sectionLabel}>
@@ -142,7 +142,7 @@ export default function RunHistorySidebarComponent({
             </div>
           )}
 
-          {/* ── Prompt Preview ──────────────────────────── */}
+          {/* -- Prompt Preview ---------------------------- */}
           {(benchmark.prompt || benchmark.systemPrompt) && (
             <div className={styles.promptSection}>
               <ChatPreviewComponent
@@ -155,7 +155,7 @@ export default function RunHistorySidebarComponent({
             </div>
           )}
 
-          {/* ── Model Selection ─────────────────────────── */}
+          {/* -- Model Selection --------------------------- */}
           <div className={styles.modelsSection}>
             <div className={styles.sectionLabel}>
               <Cpu size={12} />
@@ -243,7 +243,7 @@ export default function RunHistorySidebarComponent({
           ════════════════════════════════════════════════════ */}
       {activeTab === "history" && (
         <div className={styles.tabContent}>
-          {/* ── Running Banner ──────────────────────────── */}
+          {/* -- Running Banner ---------------------------- */}
           {running && (
             <div className={styles.runningBanner}>
               <Loader2 size={14} className={styles.spinIcon} />
@@ -251,7 +251,7 @@ export default function RunHistorySidebarComponent({
             </div>
           )}
 
-          {/* ── Run History List ────────────────────────── */}
+          {/* -- Run History List -------------------------- */}
           <div className={styles.list}>
             {runHistory.length === 0 ? (
               <div className={styles.empty}>

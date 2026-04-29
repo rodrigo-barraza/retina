@@ -17,9 +17,7 @@ import {
   Shield,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
-import ButtonComponent from "./ButtonComponent.js";
-import ToggleSwitchComponent from "./ToggleSwitch.js";
-import TextAreaComponent from "./TextAreaComponent.js";
+import { ButtonComponent, TextAreaComponent, ToggleComponent } from "@rodrigo-barraza/components";
 import ToolSelectionComponent from "./ToolSelectionComponent";
 import styles from "./CustomToolsPanel.module.css";
 
@@ -75,7 +73,7 @@ export default function CustomToolsPanel({
   const [jsonSuccess, setJsonSuccess] = useState(null);
   const fileInputRef = useRef(null);
 
-  // ── CRUD ─────────────────────────────────────────────────────
+  // -- CRUD -----------------------------------------------------
 
   const handleCreate = useCallback(() => {
     setEditingTool({ ...EMPTY_TOOL, parameters: [] });
@@ -185,7 +183,7 @@ export default function CustomToolsPanel({
     [onToolsChange],
   );
 
-  // ── Parameter management ─────────────────────────────────────
+  // -- Parameter management -------------------------------------
 
   const addParameter = useCallback(() => {
     setEditingTool((t) => ({
@@ -210,7 +208,7 @@ export default function CustomToolsPanel({
     }));
   }, []);
 
-  // ── JSON import ──────────────────────────────────────────────
+  // -- JSON import ----------------------------------------------
 
   /**
    * Parse a pasted/uploaded JSON in any of these OpenAI-compatible shapes:
@@ -318,7 +316,7 @@ export default function CustomToolsPanel({
     [parseJsonDefinition],
   );
 
-  // ── Tool list ────────────────────────────────────────────────
+  // -- Tool list ------------------------------------------------
 
   const enabledCustomCount = tools.filter((t) => t.enabled).length;
   const allCustomEnabled =
@@ -340,7 +338,7 @@ export default function CustomToolsPanel({
     }
   }, [allCustomEnabled, tools, onToolsChange]);
 
-  // ── Edit form ────────────────────────────────────────────────
+  // -- Edit form ------------------------------------------------
 
   if (editingTool) {
     return (
@@ -521,7 +519,7 @@ export default function CustomToolsPanel({
                         </div>
                         <div className={styles.paramFieldToggle}>
                           <label>Req</label>
-                          <ToggleSwitchComponent
+                          <ToggleComponent
                             checked={param.required}
                             onChange={(v) => updateParameter(i, "required", v)}
                             size="mini"
@@ -639,7 +637,7 @@ export default function CustomToolsPanel({
     );
   }
 
-  // ── Non-agent view: lightweight ToolSelectionComponent only ──
+  // -- Non-agent view: lightweight ToolSelectionComponent only --
   if (!agent) {
     const derivedEnabled = builtInTools
       .filter((t) => !disabledBuiltIns.has(t.name))
@@ -662,7 +660,7 @@ export default function CustomToolsPanel({
     );
   }
 
-  // ── Derive enabled tools from disabledBuiltIns for ToolSelectionComponent ──
+  // -- Derive enabled tools from disabledBuiltIns for ToolSelectionComponent --
   const derivedEnabled = builtInTools
     .filter((t) => !disabledBuiltIns.has(t.name))
     .map((t) => t.name);
@@ -679,14 +677,14 @@ export default function CustomToolsPanel({
 
   return (
     <div className={styles.container}>
-      {/* ── Built-in tools via ToolSelectionComponent ── */}
+      {/* -- Built-in tools via ToolSelectionComponent -- */}
       <ToolSelectionComponent
         availableTools={builtInTools}
         enabledTools={derivedEnabled}
         onEnabledToolsChange={handleSelectionChange}
       />
 
-      {/* ── Custom tools ── */}
+      {/* -- Custom tools -- */}
       <div
         className={styles.sectionHeader}
         onClick={() => setCustomOpen((v) => !v)}
@@ -701,7 +699,7 @@ export default function CustomToolsPanel({
           onClick={(e) => e.stopPropagation()}
         >
           {tools.length > 0 && (
-            <ToggleSwitchComponent
+            <ToggleComponent
               checked={allCustomEnabled}
               onChange={() => handleToggleAllCustom()}
               size="mini"
@@ -759,7 +757,7 @@ export default function CustomToolsPanel({
                   </span>
                 </div>
                 <div className={styles.toolCardActions}>
-                  <ToggleSwitchComponent
+                  <ToggleComponent
                     checked={tool.enabled}
                     onChange={() => handleToggle(tool)}
                     size="mini"

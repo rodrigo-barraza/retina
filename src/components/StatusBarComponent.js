@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import RainbowCanvasComponent from "./RainbowCanvasComponent.js";
 import styles from "./StatusBarComponent.module.css";
 
-// ── Shared phase vocabulary ──────────────────────────────────────────
+// -- Shared phase vocabulary ------------------------------------------
 const PHASE_LABELS = {
   starting:    "Starting...",
   loading:     "Loading...",
@@ -25,7 +25,7 @@ const PHASE_ICONS = {
   awaiting:    "⏸️",
 };
 
-// ── Per-phase canvas palettes ────────────────────────────────────────
+// -- Per-phase canvas palettes ----------------------------------------
 // Custom gradient stops fed to RainbowCanvasComponent.
 // Phases without an entry use the default full-spectrum rainbow.
 const PHASE_PALETTES = {
@@ -58,7 +58,7 @@ const PHASE_PALETTES = {
   ],
 };
 
-// ── Synthetic asymptotic progress ────────────────────────────────────
+// -- Synthetic asymptotic progress ------------------------------------
 // When the backend doesn't emit real progress events (e.g. OpenAI-compat
 // path used by agentic mode), we generate a client-side asymptotic curve
 // that approaches 95% over ~20s. This gives the user visual feedback
@@ -120,7 +120,7 @@ export default function StatusBarComponent({
   idleLabel,
 }) {
   const isWorker = variant === "worker";
-  // ── Synthetic progress when backend reports 0 ──────────────
+  // -- Synthetic progress when backend reports 0 --------------
   // The OpenAI-compat path (agentic mode) doesn't receive
   // prompt_processing.progress events from LM Studio, so progress
   // stays at 0. We fill in an asymptotic estimate client-side.

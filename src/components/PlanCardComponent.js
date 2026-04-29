@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { ClipboardList, Check, X, ChevronDown, ChevronUp } from "lucide-react";
 import MarkdownContent from "./MarkdownContent.js";
-import ButtonComponent from "./ButtonComponent.js";
+import { ButtonComponent } from "@rodrigo-barraza/components";
 import styles from "./PlanCardComponent.module.css";
 
 /**

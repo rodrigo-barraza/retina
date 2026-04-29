@@ -10,7 +10,7 @@ import {
   Cpu,
   Layers,
 } from "lucide-react";
-import BadgeComponent from "./BadgeComponent";
+import { BadgeComponent } from "@rodrigo-barraza/components";
 import ChatPreviewComponent from "./ChatPreviewComponent";
 import { AGENT_ASSERTION_TYPES } from "./AgentAssertionsComponent";
 import styles from "./BenchmarkPreviewSidebarComponent.module.css";
@@ -64,20 +64,20 @@ export default function BenchmarkPreviewSidebarComponent({ form }) {
 
   return (
     <div className={styles.container}>
-      {/* ── Mode Badge ────────────────────────────────────────── */}
+      {/* -- Mode Badge ------------------------------------------ */}
       <div className={styles.modeSection}>
         <ModeIcon size={12} />
         <span>{MODE_LABELS[mode] || "Benchmark"}</span>
       </div>
 
-      {/* ── Name Preview ─────────────────────────────────────── */}
+      {/* -- Name Preview --------------------------------------- */}
       <div className={styles.nameSection}>
         <div className={styles.nameLabel}>
           {hasName ? form.name : "Untitled Benchmark"}
         </div>
       </div>
 
-      {/* ── Validation Checklist ──────────────────────────────── */}
+      {/* -- Validation Checklist -------------------------------- */}
       <div className={styles.checklistSection}>
         <div className={styles.sectionLabel}>
           <FileText size={12} />
@@ -99,7 +99,7 @@ export default function BenchmarkPreviewSidebarComponent({ form }) {
         </div>
       </div>
 
-      {/* ── Model Assertions Preview ─────────────────────────── */}
+      {/* -- Model Assertions Preview --------------------------- */}
       {showModelAssertions && assertions.length > 0 && assertions.some((a) => a.expectedValue?.trim()) && (
         <div className={styles.assertionsSection}>
           <div className={styles.sectionLabel}>
@@ -133,7 +133,7 @@ export default function BenchmarkPreviewSidebarComponent({ form }) {
         </div>
       )}
 
-      {/* ── Agent Assertions Preview ─────────────────────────── */}
+      {/* -- Agent Assertions Preview --------------------------- */}
       {showAgentAssertions && agentAssertions.length > 0 && (
         <div className={styles.assertionsSection}>
           <div className={styles.sectionLabel}>
@@ -172,7 +172,7 @@ export default function BenchmarkPreviewSidebarComponent({ form }) {
         </div>
       )}
 
-      {/* ── Prompt Preview ────────────────────────────────────── */}
+      {/* -- Prompt Preview -------------------------------------- */}
       {(hasPrompt || form.systemPrompt?.trim()) && (
         <div className={styles.promptSection}>
           <div className={styles.sectionLabel}>

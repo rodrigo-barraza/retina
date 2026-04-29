@@ -31,7 +31,7 @@ async function fetchJSON(path, options = {}, admin = true) {
 
 
 export default class IrisService {
-  // ── Requests ──────────────────────────────────────────────
+  // -- Requests ----------------------------------------------
   static async getRequests(params = {}) {
     const query = new URLSearchParams(params).toString();
     return fetchJSON(`/requests${query ? `?${query}` : ""}`);
@@ -45,7 +45,7 @@ export default class IrisService {
     return fetchJSON(`/requests/${id}/associations`);
   }
 
-  // ── Stats ─────────────────────────────────────────────────
+  // -- Stats -------------------------------------------------
   static async getStats(params = {}) {
     const query = new URLSearchParams(params).toString();
     return fetchJSON(`/stats${query ? `?${query}` : ""}`);
@@ -77,7 +77,7 @@ export default class IrisService {
     return fetchJSON(`/stats/costs${query ? `?${query}` : ""}`);
   }
 
-  // ── Conversations ─────────────────────────────────────────
+  // -- Conversations -----------------------------------------
   static async getConversations(params = {}) {
     const query = new URLSearchParams(params).toString();
     return fetchJSON(`/conversations${query ? `?${query}` : ""}`);
@@ -95,7 +95,7 @@ export default class IrisService {
     return fetchJSON(`/conversations/${id}/workflows`, {}, false);
   }
 
-  // ── Live ──────────────────────────────────────────────────
+  // -- Live --------------------------------------------------
   static async getLiveActivity(minutes = 5) {
     return fetchJSON(`/live?minutes=${minutes}`);
   }
@@ -140,12 +140,12 @@ export default class IrisService {
     return { close: unsubscribe };
   }
 
-  // ── Health ────────────────────────────────────────────────
+  // -- Health ------------------------------------------------
   static async getHealth() {
     return fetchJSON("/health");
   }
 
-  // ── LM Studio Model Management ──────────────────────────
+  // -- LM Studio Model Management --------------------------
   static async getLmStudioModels() {
     return fetchJSON("/lm-studio/models");
   }
@@ -172,7 +172,7 @@ export default class IrisService {
     });
   }
 
-  // ── Workflows ─────────────────────────────────────────────
+  // -- Workflows ---------------------------------------------
   static async getWorkflows(params = {}) {
     const query = new URLSearchParams(params).toString();
     return fetchJSON(`/workflows${query ? `?${query}` : ""}`);
@@ -182,7 +182,7 @@ export default class IrisService {
     return fetchJSON(`/workflows/${id}`);
   }
 
-  // ── Traces ──────────────────────────────────────────────
+  // -- Traces ----------------------------------------------
   static async getTraces(params = {}) {
     const query = new URLSearchParams(params).toString();
     return fetchJSON(`/traces${query ? `?${query}` : ""}`);
@@ -200,7 +200,7 @@ export default class IrisService {
     return fetchJSON(`/sessions/${agentSessionId}/requests`);
   }
 
-  // ── Agent Sessions (admin) ────────────────────────────────
+  // -- Agent Sessions (admin) --------------------------------
   static async getAgentSessions(params = {}) {
     const query = new URLSearchParams(params).toString();
     return fetchJSON(`/agent-sessions${query ? `?${query}` : ""}`);
@@ -210,19 +210,19 @@ export default class IrisService {
     return fetchJSON(`/agent-sessions/${id}`);
   }
 
-  // ── Media ─────────────────────────────────────────────────
+  // -- Media -------------------------------------------------
   static async getMedia(params = {}) {
     const query = new URLSearchParams(params).toString();
     return fetchJSON(`/media${query ? `?${query}` : ""}`);
   }
 
-  // ── Text ──────────────────────────────────────────────────
+  // -- Text --------------------------------------------------
   static async getText(params = {}) {
     const query = new URLSearchParams(params).toString();
     return fetchJSON(`/text${query ? `?${query}` : ""}`);
   }
 
-  // ── Config (user route, admin identity) ───────────────────
+  // -- Config (user route, admin identity) -------------------
   static async getConfig() {
     const config = await fetchJSON("/config", {}, false);
     if (config?.localProviders) {
@@ -235,7 +235,7 @@ export default class IrisService {
     return fetchJSON("/config-local", {}, false);
   }
 
-  // ── Rate Limits ───────────────────────────────────────────
+  // -- Rate Limits -------------------------------------------
   static async getRateLimits() {
     return fetchJSON("/config/rate-limits", {}, false);
   }

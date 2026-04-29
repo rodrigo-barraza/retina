@@ -11,8 +11,7 @@ import {
   Layers,
 } from "lucide-react";
 import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
-import SelectDropdown from "./SelectDropdown";
-import ToggleSwitch from "./ToggleSwitch";
+import { SelectComponent, ToggleComponent } from "@rodrigo-barraza/components";
 import CycleButton from "./CycleButton";
 import ModalityIconComponent from "./ModalityIconComponent";
 import SystemPromptModal from "./SystemPromptModal";
@@ -107,7 +106,7 @@ export default function SettingsPanel({
   const isTTS = selectedModelDef?._isTTS === true;
   const isSpecialModel = isTranscription || isTTS;
 
-  // ── Live token rate + elapsed time (reusable hook) ────────────
+  // -- Live token rate + elapsed time (reusable hook) ------------
   const {
     perfNow,
     needsTicker,
@@ -118,10 +117,10 @@ export default function SettingsPanel({
     hasActiveWorkers,
   } = useTokenRate(sessionStats);
 
-  // ── Live TTFT (Time To First Token) ───────────────────────────
+  // -- Live TTFT (Time To First Token) ---------------------------
   const { liveTtft, isLiveTtft } = useTtft(sessionStats, perfNow, needsTicker);
 
-  // ── Stats tab (All / Orchestrator / Workers) ──────────────
+  // -- Stats tab (All / Orchestrator / Workers) --------------
   const [statsTab, setStatsTab] = useState("all");
   const showStatsTabBar =
     canSpawnWorkers && !!(sessionStats?.orchestrator || sessionStats?.workers);
@@ -424,7 +423,7 @@ export default function SettingsPanel({
             return voiceOptions.length > 0 ? (
               <div className={styles.formGroup}>
                 <label>Voice</label>
-                <SelectDropdown
+                <SelectComponent
                   value={currentVoice}
                   options={voiceOptions}
                   onChange={(val) => onChange({ voice: val })}
@@ -457,7 +456,7 @@ export default function SettingsPanel({
             return (
               <div className={styles.formGroup}>
                 <label>Thinking Level</label>
-                <SelectDropdown
+                <SelectComponent
                   value={currentValue}
                   options={options}
                   onChange={(val) =>
@@ -486,7 +485,7 @@ export default function SettingsPanel({
             return voiceOptions.length > 0 ? (
               <div className={styles.formGroup}>
                 <label>Voice</label>
-                <SelectDropdown
+                <SelectComponent
                   value={currentLiveVoice}
                   options={voiceOptions}
                   onChange={(val) => onChange({ liveVoice: val })}
@@ -513,7 +512,7 @@ export default function SettingsPanel({
             return (
               <div className={styles.formGroup}>
                 <label>Thinking Level</label>
-                <SelectDropdown
+                <SelectComponent
                   value={
                     settings.liveThinkingLevel ||
                     (canDisable ? "none" : selectedModelDef.thinkingLevels[0])
@@ -586,7 +585,7 @@ export default function SettingsPanel({
           </div>
         )}
 
-        {/* ── Agent Toggles (Plan, Auto, Iterations) ──────────────── */}
+        {/* -- Agent Toggles (Plan, Auto, Iterations) ---------------- */}
         {agentToggles?.length > 0 && (
           <div className={styles.section}>
             <div className={styles.sectionHeader}>Agent</div>
@@ -616,7 +615,7 @@ export default function SettingsPanel({
           </div>
         )}
 
-        {/* ── Tools ───────────────────────────────────────────────── */}
+        {/* -- Tools ------------------------------------------------- */}
         {selectedModelDef?.tools &&
           selectedModelDef.tools.length > 0 &&
           (() => {

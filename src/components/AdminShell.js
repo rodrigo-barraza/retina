@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import IrisService from "../services/IrisService";
 
 import NavigationSidebarComponent from "./NavigationSidebarComponent";
-import DatePickerComponent from "./DatePickerComponent";
+import { DatePickerComponent } from "@rodrigo-barraza/components";
 import { AdminHeaderProvider, useAdminHeader } from "./AdminHeaderContext";
 import styles from "./AdminShell.module.css";
 
@@ -92,7 +92,7 @@ function AdminShellInner({ children }) {
     };
   }, []);
 
-  // ── Change Stream SSE: detect new conversations in real time ────
+  // -- Change Stream SSE: detect new conversations in real time ----
   // Falls back to polling if Change Streams aren't available.
   useEffect(() => {
     async function fetchSessions() {

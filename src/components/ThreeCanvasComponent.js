@@ -80,7 +80,7 @@ export default function ThreeCanvasComponent({
     onTickRef.current?.(state);
   }, []);
 
-  // ── Mount / Unmount lifecycle ──
+  // -- Mount / Unmount lifecycle --
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;

@@ -46,7 +46,7 @@ export default function AssetInputOptions({ onFile, compact = false }) {
     e.stopPropagation();
   };
 
-  // ── Webcam ──
+  // -- Webcam --
   const startWebcam = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -90,7 +90,7 @@ export default function AssetInputOptions({ onFile, compact = false }) {
 
   const iconSize = compact ? 14 : 16;
 
-  // ── Webcam fullscreen view ──
+  // -- Webcam fullscreen view --
   if (showWebcam) {
     return (
       <div
@@ -127,7 +127,7 @@ export default function AssetInputOptions({ onFile, compact = false }) {
     );
   }
 
-  // ── Audio recording inline view ──
+  // -- Audio recording inline view --
   if (showAudioRec) {
     return (
       <div

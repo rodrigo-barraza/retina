@@ -15,7 +15,7 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-/* ── Glitch / scramble character pools ────────────────────── */
+/* -- Glitch / scramble character pools ---------------------- */
 
 const SYMBOLS = "!@#$%^&*†‡§¶∆∇≈≠±×÷√∫∑∏⊗⊕⊘⊙◊♠♣♥♦★☆◈⬡⬢⟁⟐⧫⬟";
 const ZALGO_COMBINING = [
@@ -112,7 +112,7 @@ export default function CycleButton({
     const isToInfinity = !Number.isFinite(value);
     const isFromInfinity = !Number.isFinite(from);
 
-    // ── Transition TO Infinity ────────────────────────────────
+    // -- Transition TO Infinity --------------------------------
     // Phase 1: count from current → 999 (first half of duration)
     // Phase 2: glitch/scramble phase (second half)
     // Phase 3: resolve to ∞
@@ -161,7 +161,7 @@ export default function CycleButton({
       };
     }
 
-    // ── Transition FROM Infinity ──────────────────────────────
+    // -- Transition FROM Infinity ------------------------------
     // Phase 1: brief glitch phase (first 30%)
     // Phase 2: count from -999 → 0 → target (remaining 70%)
     if (isFromInfinity) {
@@ -209,7 +209,7 @@ export default function CycleButton({
       };
     }
 
-    // ── Normal number → number transition
+    // -- Normal number → number transition
     setShowInfinity(false);
     setTweening(true);
     const start = performance.now();

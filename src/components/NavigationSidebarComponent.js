@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import SpinningCatComponent from "./SpinningCatComponent";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import styles from "./NavigationSidebarComponent.module.css";
 import { LS_PANEL_NAV, LS_PANEL_LEFT, LS_PANEL_RIGHT } from "../constants";
 import { generateUUID } from "../utils/utilities";
@@ -196,7 +196,7 @@ export default function NavigationSidebarComponent({
     });
   }, []);
 
-  // ── Bouncing mini cats for concurrent API calls ────────────────
+  // -- Bouncing mini cats for concurrent API calls ----------------
   // Lifecycle: active → windingDown → idle → fading → removed
   const bannerRef = useRef(null);
   const catStateRef = useRef(new Map());
@@ -328,7 +328,7 @@ export default function NavigationSidebarComponent({
         };
 
         if (p.phase === "active") {
-          // ─── Active: bouncing, FX ramping up ───
+          // --- Active: bouncing, FX ramping up ---
           p.x += p.vx * dt;
           p.y += p.vy * dt;
           p.accelTime += dt;
@@ -343,7 +343,7 @@ export default function NavigationSidebarComponent({
           if (!el.src.endsWith("cat-spinning.gif")) el.src = "/cat-spinning.gif";
 
         } else if (p.phase === "windingDown") {
-          // ─── Winding down: decelerating, FX reversing ───
+          // --- Winding down: decelerating, FX reversing ---
           const smoothing = Math.pow(0.97, dt * 60);
           p.vx *= smoothing;
           p.vy *= smoothing;
@@ -368,13 +368,13 @@ export default function NavigationSidebarComponent({
           }
 
         } else if (p.phase === "idle") {
-          // ─── Idle: sitting still, static sprite, waiting ───
+          // --- Idle: sitting still, static sprite, waiting ---
           el.style.transform = "translate(-50%, -50%)";
           el.style.filter = "drop-shadow(0 1px 4px rgba(0,0,0,0.45))";
           el.style.opacity = "0.85";
 
         } else if (p.phase === "fading") {
-          // ─── Fading: decelerating + fade/shrink over 3 seconds ───
+          // --- Fading: decelerating + fade/shrink over 3 seconds ---
           const smoothing = Math.pow(0.95, dt * 60);
           p.vx *= smoothing;
           p.vy *= smoothing;
@@ -426,7 +426,7 @@ export default function NavigationSidebarComponent({
   const navSections = mode === "admin" ? ADMIN_NAV_SECTIONS : USER_NAV_SECTIONS;
   const isAdmin = mode === "admin";
 
-  /* ── Mobile: render floating hamburger + compact popover menu ── */
+  /* -- Mobile: render floating hamburger + compact popover menu -- */
   if (isMobile) {
     return (
       <>
@@ -559,7 +559,7 @@ export default function NavigationSidebarComponent({
     );
   }
 
-  /* ── Desktop: standard collapsible sidebar ── */
+  /* -- Desktop: standard collapsible sidebar -- */
 
   return (
     <div className={`${styles.wrapper} ${!showNav ? styles.collapsed : ""} ${!navReady ? styles.noTransition : ""}`}>

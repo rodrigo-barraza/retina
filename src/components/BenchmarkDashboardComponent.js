@@ -8,7 +8,7 @@ import ThreePanelLayout from "./ThreePanelLayout";
 import SummaryBarComponent from "./SummaryBarComponent";
 import ModelsTableComponent from "./ModelsTableComponent";
 import EmptyStateComponent from "./EmptyStateComponent";
-import ButtonComponent from "./ButtonComponent";
+import { ButtonComponent } from "@rodrigo-barraza/components";
 import { formatCost } from "../utils/utilities";
 import styles from "./BenchmarkDashboardComponent.module.css";
 
@@ -76,7 +76,7 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
   const [activeTab, setActiveTab] = useState("all");
   const hasLoadedRef = useRef(false);
 
-  // ── Load stats + config + favorites ───────────────────────
+  // -- Load stats + config + favorites -----------------------
   const loadData = useCallback(async () => {
     try {
       const [data, config] = await Promise.all([
@@ -111,7 +111,7 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
       .catch(() => {});
   }, [loadData]);
 
-  // ── Favorites ──────────────────────────────────────────────
+  // -- Favorites ----------------------------------------------
   const handleToggleFavorite = useCallback(async (key) => {
     if (favoriteKeys.includes(key)) {
       setFavoriteKeys((prev) => prev.filter((k) => k !== key));
@@ -126,7 +126,7 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
     }
   }, [favoriteKeys]);
 
-  // ── Aggregate totals ──────────────────────────────────────
+  // -- Aggregate totals --------------------------------------
   const totals = useMemo(() => {
     if (!stats?.models) return null;
     return stats.models.reduce(
@@ -141,7 +141,7 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
     );
   }, [stats]);
 
-  // ── Transform stat rows → ModelsTableComponent-compatible shape ──
+  // -- Transform stat rows → ModelsTableComponent-compatible shape --
   // Enriches each stat row with config data (display_name, modalities,
   // model type, etc.) so normalizeModel() produces clean names.
   const allModelRows = useMemo(() => {
@@ -176,32 +176,32 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
     });
   }, [stats, configLookup]);
 
-  // ── Tab filtering ──────────────────────────────────
+  // -- Tab filtering ----------------------------------
   const modelRows = useMemo(() => {
     if (activeTab === "models") return allModelRows.filter((r) => !r._benchAgent);
     if (activeTab === "agents") return allModelRows.filter((r) => !!r._benchAgent);
     return allModelRows;
   }, [allModelRows, activeTab]);
 
-  // ── Tab counts ─────────────────────────────────────
+  // -- Tab counts -------------------------------------
   const tabCounts = useMemo(() => ({
     all: allModelRows.length,
     models: allModelRows.filter((r) => !r._benchAgent).length,
     agents: allModelRows.filter((r) => !!r._benchAgent).length,
   }), [allModelRows]);
 
-  // ── Composite stat identity (model + config flags) ─────────
+  // -- Composite stat identity (model + config flags) ---------
   const statId = (s) =>
     `${s?.provider}:${s?.model}:${s?.thinkingEnabled || false}:${s?.toolsEnabled || false}:${s?.agent || ""}`;
 
-  // ── Row click → select model for sidebar detail ───────────
+  // -- Row click → select model for sidebar detail -----------
   const handleRowClick = useCallback((stat) => {
     setSelectedModel((prev) =>
       statId(prev) === statId(stat) ? null : stat,
     );
   }, []);
 
-  // ── Row class for selected highlight ──────────────────────
+  // -- Row class for selected highlight ----------------------
   const getRowClassName = useCallback(
     (stat) => {
       if (selectedModel && statId(stat) === statId(selectedModel)) {
@@ -212,7 +212,7 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
     [selectedModel],
   );
 
-  // ── Detail cards for selected model (left sidebar) ────────
+  // -- Detail cards for selected model (left sidebar) --------
   const sidebarDetail = useMemo(() => {
     if (!selectedModel?.benchmarks?.length) return null;
     return (
@@ -278,7 +278,7 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
     );
   }, [selectedModel]);
 
-  // ── Render ────────────────────────────────────────────────
+  // -- Render ------------------------------------------------
   return (
     <ThreePanelLayout
       navSidebar={navSidebar}
@@ -319,7 +319,7 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
           </EmptyStateComponent>
         ) : (
           <>
-            {/* ── Summary Bar (sticky) ───────────── */}
+            {/* -- Summary Bar (sticky) ------------- */}
             <div className={styles.stickyBar}>
               <SummaryBarComponent
                 items={[
@@ -346,7 +346,7 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
               />
             </div>
 
-            {/* ── Segmented Control (Models / Agents) ── */}
+            {/* -- Segmented Control (Models / Agents) -- */}
             <div className={styles.segmented}>
               {TABS.map((tab) => {
                 const Icon = tab.icon;
@@ -366,7 +366,7 @@ export default function BenchmarkDashboardComponent({ navSidebar, rightSidebar }
               })}
             </div>
 
-            {/* ── Performance Table ──────────── */}
+            {/* -- Performance Table ------------ */}
             <ModelsTableComponent
               models={modelRows}
               mode="benchmark"

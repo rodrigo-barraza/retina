@@ -6,7 +6,7 @@ import Link from "next/link";
 import PrismService from "../services/PrismService.js";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
 import SearchInputComponent from "./SearchInputComponent";
-import DatePickerComponent from "./DatePickerComponent";
+import { DatePickerComponent } from "@rodrigo-barraza/components";
 import { parseDateValue } from "../utils/datePresets";
 import { formatTimeAgo, formatLatency } from "../utils/utilities";
 import styles from "./MemoriesPanel.module.css";
@@ -66,7 +66,7 @@ export default function MemoriesPanel({ project, agent, refreshKey, consolidatio
   const [toast, setToast] = useState(null);
   const knownIdsRef = useRef(new Set());
 
-  // ── Search & filter state ──────────────────────────────────
+  // -- Search & filter state ----------------------------------
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -191,7 +191,7 @@ export default function MemoriesPanel({ project, agent, refreshKey, consolidatio
     }
   }, [project, agent, loadMemories, loadHistory, historyOpen]);
 
-  // ── Filtered memories (client-side) ────────────────────────
+  // -- Filtered memories (client-side) ------------------------
   const filteredMemories = useMemo(() => {
     let result = memories;
 
@@ -228,7 +228,7 @@ export default function MemoriesPanel({ project, agent, refreshKey, consolidatio
 
   const isFiltered = searchQuery.trim() || dateFrom || dateTo;
 
-  // ── Not configured ──────────────────────────────────────────
+  // -- Not configured ------------------------------------------
   if (!memoryConfigured) {
     return (
       <div className={styles.container}>
@@ -251,7 +251,7 @@ export default function MemoriesPanel({ project, agent, refreshKey, consolidatio
     );
   }
 
-  // ── Loading ─────────────────────────────────────────────────
+  // -- Loading -------------------------------------------------
   if (loading) {
     return (
       <div className={styles.container}>
@@ -263,7 +263,7 @@ export default function MemoriesPanel({ project, agent, refreshKey, consolidatio
     );
   }
 
-  // ── Error ───────────────────────────────────────────────────
+  // -- Error ---------------------------------------------------
   if (error) {
     return (
       <div className={styles.container}>
@@ -274,7 +274,7 @@ export default function MemoriesPanel({ project, agent, refreshKey, consolidatio
     );
   }
 
-  // ── Empty ───────────────────────────────────────────────────
+  // -- Empty ---------------------------------------------------
   if (memories.length === 0) {
     return (
       <div className={styles.container}>
@@ -293,7 +293,7 @@ export default function MemoriesPanel({ project, agent, refreshKey, consolidatio
     );
   }
 
-  // ── List ────────────────────────────────────────────────────
+  // -- List ----------------------------------------------------
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -331,7 +331,7 @@ export default function MemoriesPanel({ project, agent, refreshKey, consolidatio
         </div>
       )}
 
-      {/* ── Search & Time Filter ──────────────────────────────── */}
+      {/* -- Search & Time Filter -------------------------------- */}
       <div className={styles.filterBar}>
         <SearchInputComponent
           value={searchQuery}
@@ -348,7 +348,7 @@ export default function MemoriesPanel({ project, agent, refreshKey, consolidatio
         />
       </div>
 
-      {/* ── Consolidation History ─────────────────────────────── */}
+      {/* -- Consolidation History ------------------------------- */}
       {historyOpen && (
         <div className={styles.historySection}>
           <div className={styles.historySectionHeader}>
@@ -377,7 +377,7 @@ export default function MemoriesPanel({ project, agent, refreshKey, consolidatio
         </div>
       )}
 
-      {/* ── No results after filtering ────────────────────────── */}
+      {/* -- No results after filtering -------------------------- */}
       {isFiltered && filteredMemories.length === 0 && (
         <div className={styles.emptyState}>
           <div className={styles.emptyTitle}>No matching memories</div>

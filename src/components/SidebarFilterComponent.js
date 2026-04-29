@@ -20,7 +20,7 @@ import {
 import ProviderLogo from "./ProviderLogos";
 import { resolveProviderLabel } from "./ProviderLogos";
 import { MODALITY_COLORS, TOOL_COLORS } from "./WorkflowNodeConstants";
-import DatePickerComponent from "./DatePickerComponent";
+import { DatePickerComponent } from "@rodrigo-barraza/components";
 import { DATE_PRESETS, formatDateDisplay, getActiveDatePreset } from "../utils/datePresets";
 import styles from "./SidebarFilterComponent.module.css";
 
@@ -240,7 +240,7 @@ export default function SidebarFilterComponent({
   return (
     <div className={styles.filterSection}>
       <div className={styles.filterRow}>
-        {/* ── Dropdown trigger ── */}
+        {/* -- Dropdown trigger -- */}
         <div className={styles.dropdownWrapper} ref={dropdownRef}>
           <button
             type="button"
@@ -262,10 +262,10 @@ export default function SidebarFilterComponent({
             />
           </button>
 
-          {/* ── Dropdown menu ── */}
+          {/* -- Dropdown menu -- */}
           {isOpen && (
             <div className={styles.dropdownMenu}>
-              {/* ── Date range presets (top) ── */}
+              {/* -- Date range presets (top) -- */}
               {showDateRange && (
                 <div className={styles.menuGroup}>
                   <div className={styles.menuGroupLabel}>Date Range</div>
@@ -405,7 +405,7 @@ export default function SidebarFilterComponent({
           )}
         </div>
 
-        {/* ── Custom DatePicker (shown when "Custom…" is clicked) ── */}
+        {/* -- Custom DatePicker (shown when "Custom…" is clicked) -- */}
         {showCustomDatePicker && showDateRange && (
           <DatePickerComponent
             from={dateFrom}
@@ -421,7 +421,7 @@ export default function SidebarFilterComponent({
           />
         )}
 
-        {/* ── Active filter badges (display-only) ── */}
+        {/* -- Active filter badges (display-only) -- */}
         {badges.length > 0 && (
           <div className={styles.badgeList}>
             {badges.map((b) => {

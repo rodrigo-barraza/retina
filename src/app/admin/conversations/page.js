@@ -23,7 +23,7 @@ import ParametersPanelComponent from "../../../components/ParametersPanelCompone
 import HistoryPanel from "../../../components/HistoryPanel";
 
 import ThreePanelLayout from "../../../components/ThreePanelLayout";
-import SelectDropdown from "../../../components/SelectDropdown";
+import { SelectComponent } from "@rodrigo-barraza/components";
 import TabBarComponent from "../../../components/TabBarComponent";
 import ModelPickerPopoverComponent from "../../../components/ModelPickerPopoverComponent";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
@@ -99,7 +99,7 @@ function ConversationsPageInner({ initialId = null, traceId = null }) {
       .catch(() => {});
   }, []);
 
-  // ── Favorites ─────────────────────────────────────────────────
+  // -- Favorites -------------------------------------------------
   const handleToggleFavorite = useCallback(async (key) => {
     if (favoriteKeys.includes(key)) {
       setFavoriteKeys((prev) => prev.filter((k) => k !== key));
@@ -369,7 +369,7 @@ function ConversationsPageInner({ initialId = null, traceId = null }) {
   useEffect(() => {
     setControls(
       <>
-        <SelectDropdown
+        <SelectComponent
           value={projectFilter || ""}
           options={projectOptions}
           onChange={handleProjectChange}

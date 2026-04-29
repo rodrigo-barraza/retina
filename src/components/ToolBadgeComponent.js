@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import { resolveToolVisuals } from "./WorkflowNodeConstants";
 import { renderToolName } from "../utils/utilities";
 import styles from "./ToolBadgeComponent.module.css";
@@ -15,7 +15,7 @@ import styles from "./ToolBadgeComponent.module.css";
  * to a consistent display label.
  */
 const TOOL_DISPLAY_NAMES = {
-  // ── Canonical capability names ──
+  // -- Canonical capability names --
   "Tool Calling": "Tool Calling",
   "Thinking": "Thinking",
   "Web Search": "Web Search",

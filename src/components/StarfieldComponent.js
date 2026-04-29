@@ -9,7 +9,7 @@ import { useRef, useEffect, useCallback } from "react";
  * Sharp pinpoint stars, subtle twinkling, parallax offset.
  */
 
-// ── Seeded RNG ──
+// -- Seeded RNG --
 
 function seededRandom(seed) {
   let s = seed;
@@ -19,7 +19,7 @@ function seededRandom(seed) {
   };
 }
 
-// ── Real northern hemisphere constellations ──
+// -- Real northern hemisphere constellations --
 // Coordinates are in a 0–1 normalized space, laid out as they roughly
 // appear across the northern sky. Each constellation has named stars
 // with (x,y) positions and a list of edge pairs (indices into the stars
@@ -368,7 +368,7 @@ const CONSTELLATIONS = [
   },
 ];
 
-// ── Star generation ──
+// -- Star generation --
 
 function generateFieldStars(count, w, h, rng) {
   const stars = [];
@@ -454,7 +454,7 @@ function generateFieldStars(count, w, h, rng) {
   return stars;
 }
 
-// ── Nebula & galactic core pre-render ──
+// -- Nebula & galactic core pre-render --
 
 function renderNebulaLayer(w, h, rng) {
   const offscreen = document.createElement("canvas");
@@ -469,7 +469,7 @@ function renderNebulaLayer(w, h, rng) {
   const cosA = Math.cos(bandAngle);
   const sinA = Math.sin(bandAngle);
 
-  // ── Galactic core glow ──
+  // -- Galactic core glow --
   // A warm, very subtle elongated glow near the densest part of the band
   const coreX = w * 0.55;
   const coreY = (bandCenterY * cosA + 0.55 * sinA) * h;
@@ -489,7 +489,7 @@ function renderNebulaLayer(w, h, rng) {
   ctx.fillRect(-coreRadius * 2, -coreRadius, coreRadius * 4, coreRadius * 2);
   ctx.restore();
 
-  // ── Milky Way diffuse glow band ──
+  // -- Milky Way diffuse glow band --
   // Multiple overlapping soft patches along the band
   const bandPatches = 8;
   for (let i = 0; i < bandPatches; i++) {
@@ -513,7 +513,7 @@ function renderNebulaLayer(w, h, rng) {
     ctx.restore();
   }
 
-  // ── Nebula patches ──
+  // -- Nebula patches --
   // Scattered across the sky — emission (red/pink), reflection (blue),
   // and a couple of subtle purple/teal wisps
   const nebulae = [
@@ -558,7 +558,7 @@ function renderNebulaLayer(w, h, rng) {
   return offscreen;
 }
 
-// ── Component ──
+// -- Component --
 
 export default function StarfieldComponent({
   className,
@@ -658,12 +658,12 @@ export default function StarfieldComponent({
       ctx.save();
       ctx.translate(px, py);
 
-      // ── Draw nebula / galactic core layer (pre-rendered) ──
+      // -- Draw nebula / galactic core layer (pre-rendered) --
       if (nebulaCanvasRef.current) {
         ctx.drawImage(nebulaCanvasRef.current, 0, 0, w, h);
       }
 
-      // ── Draw field stars with atmospheric scintillation ──
+      // -- Draw field stars with atmospheric scintillation --
       for (const star of fieldStars) {
         // Slow twinkle (intrinsic)
         const twinkle =
@@ -699,7 +699,7 @@ export default function StarfieldComponent({
         }
       }
 
-      // ── Draw constellation lines ──
+      // -- Draw constellation lines --
       if (constellations) {
         for (const c of constellations) {
           const pulse = 0.05 + 0.025 * Math.sin(t * 0.6 + c.stars[0].x * 0.01);

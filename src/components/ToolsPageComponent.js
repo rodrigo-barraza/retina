@@ -55,7 +55,7 @@ import {
   formatTimeAgo,
 } from "../utils/utilities";
 
-// ── Agent color mapping (stable hues per built-in agent) ───────
+// -- Agent color mapping (stable hues per built-in agent) -------
 const AGENT_COLORS = {
   CODING: "#3b82f6",
   OOG: "#a78bfa",
@@ -85,7 +85,7 @@ function buildToolAgentMap(agents) {
   return map;
 }
 
-// ── Domain → Icon mapping ──────────────────────────────────────
+// -- Domain → Icon mapping --------------------------------------
 const DOMAIN_ICONS = {
   "Weather & Environment": Cloud,
   "Events": Zap,
@@ -194,7 +194,7 @@ function getInputParams(tool) {
 }
 
 
-// ── Tool Detail Modal ────────────────────────────────────────────
+// -- Tool Detail Modal --------------------------------------------
 
 function ToolDetailModal({ tool, onClose, agents, stats, allTools }) {
   const router = useRouter();
@@ -456,7 +456,7 @@ function ToolDetailModal({ tool, onClose, agents, stats, allTools }) {
   );
 }
 
-// ── Tool Card (Grid view) ────────────────────────────────────────
+// -- Tool Card (Grid view) ----------------------------------------
 
 function ToolCard({ tool, onClick, agents }) {
   const paramCount = countParams(tool);
@@ -498,7 +498,7 @@ function ToolCard({ tool, onClick, agents }) {
   );
 }
 
-// ── Tool Row (List view) ─────────────────────────────────────────
+// -- Tool Row (List view) -----------------------------------------
 
 function ToolRow({ tool, onClick, agents }) {
   const paramCount = countParams(tool);
@@ -531,7 +531,7 @@ function ToolRow({ tool, onClick, agents }) {
   );
 }
 
-// ── Main Component ───────────────────────────────────────────────
+// -- Main Component -----------------------------------------------
 
 export default function ToolsPageComponent() {
   const [tools, setTools] = useState([]);
@@ -551,7 +551,7 @@ export default function ToolsPageComponent() {
   // Detail modal
   const [selectedTool, setSelectedTool] = useState(null);
 
-  // ── Fetch tools ──────────────────────────────────────────────
+  // -- Fetch tools ----------------------------------------------
   const fetchTools = useCallback(async () => {
     try {
       setLoading(true);
@@ -569,7 +569,7 @@ export default function ToolsPageComponent() {
     }
   }, []);
 
-  // ── Fetch tool usage stats (non-blocking) ────────────────────
+  // -- Fetch tool usage stats (non-blocking) --------------------
   const fetchToolStats = useCallback(async () => {
     try {
       const stats = await PrismService.getToolStats();
@@ -588,7 +588,7 @@ export default function ToolsPageComponent() {
     fetchToolStats();
   }, [fetchTools, fetchToolStats]);
 
-  // ── Refresh (re-fetch from tools-api) ────────────────────────
+  // -- Refresh (re-fetch from tools-api) ------------------------
   const handleRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
@@ -601,7 +601,7 @@ export default function ToolsPageComponent() {
     }
   }, [fetchTools]);
 
-  // ── Derived data ─────────────────────────────────────────────
+  // -- Derived data ---------------------------------------------
   const allDomains = useMemo(() => extractDomains(tools), [tools]);
   const allLabels = useMemo(() => extractLabels(tools), [tools]);
   const toolAgentMap = useMemo(() => buildToolAgentMap(agents), [agents]);
@@ -627,7 +627,7 @@ export default function ToolsPageComponent() {
 
   const grouped = useMemo(() => groupByDomain(filtered), [filtered]);
 
-  // ── Render ───────────────────────────────────────────────────
+  // -- Render ---------------------------------------------------
 
   if (loading) {
     return (

@@ -37,7 +37,7 @@ import { mergeUsedToolsWithWorkers, toolCountsToUsedTools, generateUUID } from "
 import { PROJECT_AGENT, SETTINGS_DEFAULTS, SK_MODEL_MEMORY_AGENT, SK_MODEL_MEMORY_AGENT_PREFIX, SK_TOOL_MEMORY_AGENT, SK_TOOL_MEMORY_AGENT_PREFIX, MAX_TOOL_ITERATIONS } from "../constants.js";
 import chatStyles from "./ChatArea.module.css";
 import ChatInputButton from "./ChatInputButton.js";
-import ButtonComponent from "./ButtonComponent.js";
+import { ButtonComponent } from "@rodrigo-barraza/components";
 import useToolToggles from "../hooks/useToolToggles.js";
 import useModelMemory from "../hooks/useModelMemory.js";
 import AgentPickerComponent from "./AgentPickerComponent.js";
@@ -45,7 +45,7 @@ import AgentBadgeComponent from "./AgentBadgeComponent.js";
 import WorkspaceSelectorComponent from "./WorkspaceSelectorComponent";
 
 
-// ── Per-agent empty state config ─────────────────────────────────
+// -- Per-agent empty state config ---------------------------------
 const AGENT_EMPTY_STATE = {
   CODING: {
     title: "Coding Agent",
@@ -116,7 +116,7 @@ export default function AgentComponent({
     subtitle: activeAgentData?.description || rawEmptyState.subtitle,
   };
 
-  // ── State ────────────────────────────────────────────────────
+  // -- State ----------------------------------------------------
   const [messages, setMessages] = useState([]);
   const [queuedNextTurn, setQueuedNextTurn] = useState(null);
   const inputValueRef = useRef("");
@@ -188,14 +188,14 @@ export default function AgentComponent({
   }, [isGenerating, workerToolActivity]);
   const [tasksCount, setTasksCount] = useState(0);
   const [memoryConfigured, setMemoryConfigured] = useState(false);
-  // ── Agent-scoped storage keys ─────────────────────────────────
+  // -- Agent-scoped storage keys ---------------------------------
   const toolMemoryKey = agentId === "CODING" ? SK_TOOL_MEMORY_AGENT : SK_TOOL_MEMORY_AGENT_PREFIX + agentId;
   const modelMemoryKey = agentId === "CODING" ? SK_MODEL_MEMORY_AGENT : SK_MODEL_MEMORY_AGENT_PREFIX + agentId;
 
   const { disabledBuiltIns, handleToggleBuiltIn, handleToggleAllBuiltIn } =
     useToolToggles(builtInTools, toolMemoryKey);
 
-  // ── Model memory (persist last-used model per agent) ──────────
+  // -- Model memory (persist last-used model per agent) ----------
   const { saveModel, restoreModel } = useModelMemory(modelMemoryKey);
   const [settings, setSettings] = useState({
     ...SETTINGS_DEFAULTS,
@@ -245,10 +245,10 @@ export default function AgentComponent({
   // displayed, regardless of which computation path produced the values.
   const tokenHwmRef = useRef({ input: 0, output: 0, total: 0 });
 
-  // ── Pixelation transition state ────────────────────────────
+  // -- Pixelation transition state ----------------------------
   const [pixelTransition, setPixelTransition] = useState(null); // 'out' | 'in' | null
 
-  // ── Adaptive pixel transition timing ───────────────────────
+  // -- Adaptive pixel transition timing -----------------------
   // Track session load durations via EMA to predict the "out" duration.
   // The "in" (reveal) phase is always a fixed 1000ms.
   const PIXEL_IN_DURATION = 1000;
@@ -277,7 +277,7 @@ export default function AgentComponent({
   const fileInputRef = useRef(null);
   const messagesListRef = useRef(null);
 
-  // ── Sticky auto-scroll ─────────────────────────────────────
+  // -- Sticky auto-scroll -------------------------------------
   // Only auto-scroll when the user is near the bottom of the messages container.
   // Re-engaged on send, session load, and new chat.
   const isUserNearBottomRef = useRef(true);
@@ -351,7 +351,7 @@ export default function AgentComponent({
     }
   }, [isNoAgent]);
 
-  // ── Filtered config: only tool-calling models for agents; all text models for Direct Chat ────────────
+  // -- Filtered config: only tool-calling models for agents; all text models for Direct Chat ------------
   const filteredConfig = useMemo(() => {
     if (!config) return null;
 
@@ -392,7 +392,7 @@ export default function AgentComponent({
     };
   }, [config, isNoAgent]);
 
-  // ── Model capability detection ──────────────────────────────
+  // -- Model capability detection ------------------------------
   const supportsImageInput = useMemo(() => {
     if (!filteredConfig) return false;
     const models = filteredConfig.textToText?.models?.[settings.provider] || [];
@@ -400,7 +400,7 @@ export default function AgentComponent({
     return modelDef?.inputTypes?.includes("image") ?? false;
   }, [filteredConfig, settings.provider, settings.model]);
 
-  // ── Session binding: lock model/agent when a conversation is active ──
+  // -- Session binding: lock model/agent when a conversation is active --
   // Once a session has messages, the user should not switch model or agent
   // mid-conversation — the session data owns those values.
   const isSessionLocked = useMemo(
@@ -408,7 +408,7 @@ export default function AgentComponent({
     [activeId, messages.length],
   );
 
-  // ── Effects ──────────────────────────────────────────────────
+  // -- Effects --------------------------------------------------
 
   // Sticky auto-scroll: track whether the user is near the bottom of the
   // scroll container.  When they scroll up, auto-scroll disengages; when
@@ -524,7 +524,7 @@ export default function AgentComponent({
     loadSessions();
   }, [loadSessions]);
 
-  // ── Auto-load conversation from URL ?conversation= param ──────
+  // -- Auto-load conversation from URL ?conversation= param ------
   // Runs once on mount. Fetches the full session and applies it.
   // Uses a ref guard to prevent double-loading on StrictMode re-mounts.
   useEffect(() => {
@@ -633,7 +633,7 @@ export default function AgentComponent({
     loadAgenticTools().catch(console.error);
   }, [agentId, isNoAgent]);
 
-  // ── Fetch memory settings to determine if memories are configured ──
+  // -- Fetch memory settings to determine if memories are configured --
   useEffect(() => {
     PrismService.getSettings()
       .then((s) => {
@@ -654,7 +654,7 @@ export default function AgentComponent({
     return set;
   }, [memoryConfigured]);
 
-  // ── Eager-fetch tab badge counts (fires on mount / session change) ──
+  // -- Eager-fetch tab badge counts (fires on mount / session change) --
 
   useEffect(() => {
     PrismService.getAgentMemories(agentProject, 1, agentId)
@@ -677,7 +677,7 @@ export default function AgentComponent({
   // System prompt is fully assembled server-side by SystemPromptAssembler.
   // The client sends a placeholder system message that gets replaced.
 
-  // ── Session stats for SettingsPanel ──────────────────
+  // -- Session stats for SettingsPanel ------------------
   const {
     uniqueModels, uniqueProviders, totalCost, totalTokens, requestCount,
     usedTools, modalities, elapsedTime: completedElapsedTime,
@@ -685,7 +685,7 @@ export default function AgentComponent({
     lastTimeToGeneration, liveProcessingStartTime, liveProcessingPhase, liveTtftSamples, liveGenProgress,
   } = useSessionStats(messages);
 
-  // ── Live-patch sidebar session metadata ──────────────────
+  // -- Live-patch sidebar session metadata ------------------
   // Keep the active session's entry in `sessions[]` in sync with the
   // live stats derived from messages so the HistoryPanel badges
   // (model, provider, modalities, cost) update in real-time during
@@ -736,7 +736,7 @@ export default function AgentComponent({
     });
   }, [activeId, title, modalities, uniqueModels, uniqueProviders, totalCost, backendSessionStats, messages.length]);
 
-  // ── Fetch backend-aggregate session stats ────────────────
+  // -- Fetch backend-aggregate session stats ----------------
   const fetchSessionStats = useCallback((sessionId) => {
     if (!sessionId) return;
     // Direct Chat sessions live in the conversations collection which
@@ -778,13 +778,13 @@ export default function AgentComponent({
 
 
 
-  // ── Memoize filtered messages for MessageList to prevent ref churn ──
+  // -- Memoize filtered messages for MessageList to prevent ref churn --
   const filteredMessages = useMemo(
     () => messages.filter((m) => m.role === "user" || m.role === "assistant"),
     [messages],
   );
 
-  // ── Stable input change handler ─────────────────────────────
+  // -- Stable input change handler -----------------------------
   // Uncontrolled textarea: only flip hasInput on empty↔non-empty
   // transitions to avoid re-rendering the entire component tree.
   const handleInputChange = useCallback((e) => {
@@ -809,7 +809,7 @@ export default function AgentComponent({
     }
   }, []);
 
-  // ── Image handlers ──────────────────────────────────────────
+  // -- Image handlers ------------------------------------------
   const handleImageSelect = useCallback((e) => {
     const files = Array.from(e.target.files);
     for (const file of files) {
@@ -897,7 +897,7 @@ export default function AgentComponent({
     [supportsImageInput],
   );
 
-  // ── Orchestration loop ───────────────────────────────────────
+  // -- Orchestration loop ---------------------------------------
   const runOrchestrationLoop = useCallback(
     async (sessionMessages, resolvedTitle) => {
       const currentMessages = [...sessionMessages];
@@ -908,7 +908,7 @@ export default function AgentComponent({
 
 
       await new Promise((resolve, reject) => {
-        // ── Build payload: Direct Chat (/chat) vs Agent (/agent) ──
+        // -- Build payload: Direct Chat (/chat) vs Agent (/agent) --
         const payload = isNoAgent
           ? {
               // Direct Chat: raw /chat endpoint — no agentic loop
@@ -983,7 +983,7 @@ export default function AgentComponent({
         let burstTokens = 0;         // tokens in current generation burst (resets on gap)
         let burstElapsed = 0;        // elapsed in current generation burst (resets on gap)
         const CHUNK_GAP_THRESHOLD = 500; // ms — gaps larger than this are processing/tool pauses
-        // ── Interleaved content tracking ──
+        // -- Interleaved content tracking --
         // contentSegments: ordered list of { type: "thinking", fragmentIndex } | { type: "text", fragmentIndex } | { type: "tools", toolIds: [...] }
         // textFragments: array of strings, one per text segment — the text delta between tool groups
         // thinkingFragments: array of strings, one per thinking segment — the thinking delta between tool groups
@@ -1466,7 +1466,7 @@ export default function AgentComponent({
               });
             }
           },
-          // ── Worker agent live events ─────────────────────────────
+          // -- Worker agent live events -----------------------------
           onWorkerToolExecution: (data) => {
             if (isStale()) return;
             setWorkerToolActivity((prev) => {
@@ -1755,7 +1755,7 @@ export default function AgentComponent({
     ],
   );
 
-  // ── Send handler ─────────────────────────────────────────────
+  // -- Send handler ---------------------------------------------
   // Read inputValue from ref at send-time to avoid re-creating
   // handleSend on every keystroke (the main cause of input lag).
   const pendingImagesRef = useRef(pendingImages);
@@ -1928,7 +1928,7 @@ export default function AgentComponent({
     }
   }, [isGenerating, queuedNextTurn, handleSend]);
 
-  // ── Session management ──────────────────────────────────
+  // -- Session management ----------------------------------
   const resetSessionState = useCallback(() => {
     setMessages([]);
     setToolActivity([]);
@@ -2117,7 +2117,7 @@ export default function AgentComponent({
     [activeId, handleNewChat, agentProject, isNoAgent],
   );
 
-  // ── Left sidebar: tab bar + content ──────────────────────────
+  // -- Left sidebar: tab bar + content --------------------------
   // Badge helper — 0 = greyed-out, >0 = lit, "new" if tab has unseen data
   const badgeProps = (count, tabKey) => ({
     badge: count,
@@ -2304,7 +2304,7 @@ export default function AgentComponent({
                         avgTimeToGeneration: sub.avgTimeToGeneration || null,
                       };
                     };
-                    // ── Token counts come exclusively from the backend ──
+                    // -- Token counts come exclusively from the backend --
                     // _liveGenProgress (from generation_progress SSE) carries
                     // authoritative, monotonic token counts from SessionGenerationTracker.
                     // _backgroundUsage accumulates tokens from fire-and-forget LLM calls
@@ -2326,7 +2326,7 @@ export default function AgentComponent({
                     const tokenTotal = Math.max(backendSessionStats.totalTokens, liveTotal);
 
                     return {
-                      // ── Backend is source of truth (all requests incl. background) ──
+                      // -- Backend is source of truth (all requests incl. background) --
                       messageCount: messages.length,
                       deletedCount: 0,
                       requestCount: (backendSessionStats.requestCount || 0) + (bgUsage?.requests || 0),
@@ -2375,7 +2375,7 @@ export default function AgentComponent({
                     };
                   })()
                 : (() => {
-                    // ── Client-side fallback (live generation, no backend data yet) ──
+                    // -- Client-side fallback (live generation, no backend data yet) --
                     // When _liveGenProgress exists, use backend-authoritative token
                     // counts instead of the client-side computeSessionStats math.
                     // Include _backgroundUsage from fire-and-forget LLM calls.
@@ -2506,7 +2506,7 @@ export default function AgentComponent({
     </div>
   );
 
-  // ── Center: chat area ───────────────────────────────────────
+  // -- Center: chat area ---------------------------------------
   const chatContent = (
     <div className={chatStyles.container}>
       <PixelTransitionComponent
@@ -2583,7 +2583,7 @@ export default function AgentComponent({
         <div ref={endRef} style={{ minHeight: 24 }} />
       </div>
 
-      {/* ── Status indicator bar (rainbow canvas above input) ── */}
+      {/* -- Status indicator bar (rainbow canvas above input) -- */}
       {(() => {
         const lastMsg = messages[messages.length - 1];
         const rawPhase = isGenerating ? (lastMsg?.statusPhase || "starting") : null;
@@ -2592,7 +2592,7 @@ export default function AgentComponent({
         const isAwaitingApproval = (planProposal?.status === "pending") ||
           pendingApprovals.some((a) => a.status === "pending");
 
-        // ── Derive phase from live worker activity ──────────────
+        // -- Derive phase from live worker activity --------------
         // When coordinator tools (team_create) are executing, the
         // orchestrator bar should reflect the aggregate worker state
         // rather than a static "Thinking...". Scan workerToolActivity
@@ -2804,7 +2804,7 @@ export default function AgentComponent({
     </div>
   );
 
-  // ── Layout ───────────────────────────────────────────────────
+  // -- Layout ---------------------------------------------------
   return (
     <ThreePanelLayout
       navSidebar={

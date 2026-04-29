@@ -2,10 +2,9 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Plus } from "lucide-react";
-import SelectDropdown from "./SelectDropdown";
+import { SelectComponent, TextAreaComponent } from "@rodrigo-barraza/components";
 import ModalOverlayComponent from "./ModalOverlayComponent";
 import CloseButtonComponent from "./CloseButtonComponent";
-import TextAreaComponent from "./TextAreaComponent";
 import styles from "./SystemPromptModal.module.css";
 import { LS_SYSTEM_INSTRUCTIONS } from "../constants";
 
@@ -154,7 +153,7 @@ export default function SystemPromptModal({ activePrompt, onApply, onClose }) {
         <div className={styles.body}>
           <div className={styles.field}>
             <label>Saved Instructions</label>
-            <SelectDropdown
+            <SelectComponent
               value={selectedId || ""}
               options={dropdownOptions}
               onChange={handleSelectInstruction}

@@ -32,7 +32,7 @@ const COMPLEXITY_CLASSES = {
  * @param {string} props.project - Project identifier
  */
 export default function CoordinatorPanel({ project: _project }) {
-  // ── State ─────────────────────────────────────────────────
+  // -- State -------------------------------------------------
   const [phase, setPhase] = useState("input"); // input | planning | plan | executing | review | merged
   const [task, setTask] = useState("");
   const [filesInput, setFilesInput] = useState("");
@@ -46,7 +46,7 @@ export default function CoordinatorPanel({ project: _project }) {
     setTimeout(() => setToast(null), 5000);
   }, []);
 
-  // ── Plan ──────────────────────────────────────────────────
+  // -- Plan --------------------------------------------------
   const handlePlan = useCallback(async () => {
     if (!task.trim()) return;
 
@@ -84,7 +84,7 @@ export default function CoordinatorPanel({ project: _project }) {
     }
   }, [task, filesInput, showToast]);
 
-  // ── Execute ───────────────────────────────────────────────
+  // -- Execute -----------------------------------------------
   const handleExecute = useCallback(async () => {
     if (!plan) return;
 
@@ -112,7 +112,7 @@ export default function CoordinatorPanel({ project: _project }) {
     }
   }, [plan, showToast]);
 
-  // ── Merge ─────────────────────────────────────────────────
+  // -- Merge -------------------------------------------------
   const handleMerge = useCallback(async () => {
     if (!plan?.taskId) return;
 
@@ -136,7 +136,7 @@ export default function CoordinatorPanel({ project: _project }) {
     }
   }, [plan, showToast]);
 
-  // ── Abort ─────────────────────────────────────────────────
+  // -- Abort -------------------------------------------------
   const handleAbort = useCallback(async () => {
     if (!plan?.taskId) return;
 
@@ -154,7 +154,7 @@ export default function CoordinatorPanel({ project: _project }) {
     setPhase("input");
   }, [plan, showToast]);
 
-  // ── Reset ─────────────────────────────────────────────────
+  // -- Reset -------------------------------------------------
   const handleReset = useCallback(() => {
     setPlan(null);
     setWorkers([]);
@@ -184,7 +184,7 @@ export default function CoordinatorPanel({ project: _project }) {
         </div>
       )}
 
-      {/* ── Input Phase ────────────────────────────────────── */}
+      {/* -- Input Phase -------------------------------------- */}
       {phase === "input" && (
         <div className={styles.inputSection}>
           <textarea
@@ -210,7 +210,7 @@ export default function CoordinatorPanel({ project: _project }) {
         </div>
       )}
 
-      {/* ── Planning Phase ─────────────────────────────────── */}
+      {/* -- Planning Phase ----------------------------------- */}
       {phase === "planning" && (
         <div className={styles.loading}>
           <Loader size={14} className={styles.spin} />
@@ -218,7 +218,7 @@ export default function CoordinatorPanel({ project: _project }) {
         </div>
       )}
 
-      {/* ── Plan Review Phase ──────────────────────────────── */}
+      {/* -- Plan Review Phase -------------------------------- */}
       {phase === "plan" && plan && (
         <div className={styles.planSection}>
           <div className={styles.planSummary}>
@@ -257,7 +257,7 @@ export default function CoordinatorPanel({ project: _project }) {
         </div>
       )}
 
-      {/* ── Executing Phase ────────────────────────────────── */}
+      {/* -- Executing Phase ---------------------------------- */}
       {phase === "executing" && (
         <div className={styles.loading}>
           <Loader size={14} className={styles.spin} />
@@ -265,7 +265,7 @@ export default function CoordinatorPanel({ project: _project }) {
         </div>
       )}
 
-      {/* ── Review Phase ───────────────────────────────────── */}
+      {/* -- Review Phase ------------------------------------- */}
       {phase === "review" && (
         <>
           {workers.map((w) => (
@@ -309,7 +309,7 @@ export default function CoordinatorPanel({ project: _project }) {
         </>
       )}
 
-      {/* ── Merged Phase ───────────────────────────────────── */}
+      {/* -- Merged Phase ------------------------------------- */}
       {phase === "merged" && (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>
@@ -325,7 +325,7 @@ export default function CoordinatorPanel({ project: _project }) {
         </div>
       )}
 
-      {/* ── Empty (initial) ────────────────────────────────── */}
+      {/* -- Empty (initial) ---------------------------------- */}
       {phase === "input" && !task && (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>

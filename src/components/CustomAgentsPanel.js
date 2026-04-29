@@ -71,8 +71,7 @@ import {
   Heart,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
-import ButtonComponent from "./ButtonComponent.js";
-import ToggleSwitchComponent from "./ToggleSwitch.js";
+import { ButtonComponent, ToggleComponent } from "@rodrigo-barraza/components";
 import AgentBadgeComponent from "./AgentBadgeComponent";
 import ToolSelectionComponent from "./ToolSelectionComponent";
 import styles from "./CustomAgentsPanel.module.css";
@@ -94,7 +93,7 @@ const EMPTY_AGENT = {
   usesCodingGuidelines: false,
 };
 
-// ── Curated color palette for agent theming ─────────────────────
+// -- Curated color palette for agent theming ---------------------
 const COLOR_PALETTE = [
   { hex: "#6366f1", name: "Indigo" },
   { hex: "#8b5cf6", name: "Violet" },
@@ -118,7 +117,7 @@ const COLOR_PALETTE = [
   { hex: "#64748b", name: "Slate" },
 ];
 
-// ── Curated icon palette for the icon picker ────────────────────
+// -- Curated icon palette for the icon picker --------------------
 // Stored as string name → component mapping.
 const ICON_OPTIONS = [
   { name: "Bot", icon: Bot },
@@ -208,7 +207,7 @@ export default function CustomAgentsPanel({
 
   const [error, setError] = useState(null);
 
-  // ── CRUD ─────────────────────────────────────────────────────
+  // -- CRUD -----------------------------------------------------
 
   const handleCreate = useCallback(() => {
     setEditingAgent({ ...EMPTY_AGENT, enabledTools: [] });
@@ -277,13 +276,13 @@ export default function CustomAgentsPanel({
 
 
 
-  // ── Form field updaters ──────────────────────────────────────
+  // -- Form field updaters --------------------------------------
 
   const updateField = useCallback((field, value) => {
     setEditingAgent((a) => ({ ...a, [field]: value }));
   }, []);
 
-  // ── Edit form ────────────────────────────────────────────────
+  // -- Edit form ------------------------------------------------
 
   if (editingAgent) {
     return (
@@ -488,7 +487,7 @@ export default function CustomAgentsPanel({
                   Inject workspace file structure into context
                 </span>
               </div>
-              <ToggleSwitchComponent
+              <ToggleComponent
                 checked={editingAgent.usesDirectoryTree}
                 onChange={() =>
                   updateField("usesDirectoryTree", !editingAgent.usesDirectoryTree)
@@ -505,7 +504,7 @@ export default function CustomAgentsPanel({
                   Inject generic coding conventions and coordinator orchestration mode
                 </span>
               </div>
-              <ToggleSwitchComponent
+              <ToggleComponent
                 checked={editingAgent.usesCodingGuidelines}
                 onChange={() =>
                   updateField(
@@ -556,7 +555,7 @@ export default function CustomAgentsPanel({
     );
   }
 
-  // ── Agent list view ──────────────────────────────────────────
+  // -- Agent list view ------------------------------------------
 
   return (
     <div className={styles.container}>

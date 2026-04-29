@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import ButtonComponent from "./ButtonComponent";
+import { ButtonComponent } from "@rodrigo-barraza/components";
 import {
   X,
   Brain,
@@ -220,7 +220,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
     <div className={styles.overlay}>
       <div className={styles.backdrop} onClick={onClose} />
       <div className={styles.panel}>
-        {/* ── Header ──────────────────────────────────────── */}
+        {/* -- Header ---------------------------------------- */}
         <div className={styles.header}>
           <ProviderLogo provider={m.provider} size={28} />
           <div className={styles.headerInfo}>
@@ -238,9 +238,9 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
           </button>
         </div>
 
-        {/* ── Body ────────────────────────────────────────── */}
+        {/* -- Body ------------------------------------------ */}
         <div className={styles.body}>
-          {/* ── Use Model Actions ─────────────────────────── */}
+          {/* -- Use Model Actions --------------------------- */}
           <div className={styles.useModelActions}>
             <ButtonComponent
               variant="primary"
@@ -260,7 +260,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
             </ButtonComponent>
           </div>
 
-          {/* ── Identity ─────────────────────────────────── */}
+          {/* -- Identity ----------------------------------- */}
           <div className={styles.section}>
             <div className={styles.sectionTitle}>
               <Info size={12} />
@@ -313,7 +313,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
 
           <div className={styles.divider} />
 
-          {/* ── Context & Tokens ─────────────────────────── */}
+          {/* -- Context & Tokens --------------------------- */}
           {(m.contextLength || m.maxOutputTokens || m.params || m.size) && (
             <>
               <div className={styles.section}>
@@ -390,7 +390,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
             </>
           )}
 
-          {/* ── Modalities ───────────────────────────────── */}
+          {/* -- Modalities --------------------------------- */}
           {(m.inputTypes.length > 0 || m.outputTypes.length > 0) && (
             <>
               <div className={styles.section}>
@@ -438,7 +438,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
             </>
           )}
 
-          {/* ── Media Limits ─────────────────────────────── */}
+          {/* -- Media Limits ------------------------------- */}
           {m.mediaLimits && Object.keys(m.mediaLimits).length > 0 && (
             <>
               <div className={styles.section}>
@@ -468,7 +468,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
             </>
           )}
 
-          {/* ── Tools ────────────────────────────────────── */}
+          {/* -- Tools -------------------------------------- */}
           {m.tools.length > 0 && (
             <>
               <div className={styles.section}>
@@ -507,7 +507,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
             </>
           )}
 
-          {/* ── API Capabilities ──────────────────────────── */}
+          {/* -- API Capabilities ---------------------------- */}
           {capabilities.length > 0 && (
             <>
               <div className={styles.section}>
@@ -527,7 +527,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
             </>
           )}
 
-          {/* ── Pricing ──────────────────────────────────── */}
+          {/* -- Pricing ------------------------------------ */}
           {pricingEntries.length > 0 && (
             <>
               <div className={styles.section}>
@@ -552,7 +552,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
             </>
           )}
 
-          {/* ── Arena Scores ─────────────────────────────── */}
+          {/* -- Arena Scores ------------------------------- */}
           {arenaEntries.length > 0 && (
             <>
               <div className={styles.section}>
@@ -575,7 +575,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
             </>
           )}
 
-          {/* ── Lifetime Stats ────────────────────────────── */}
+          {/* -- Lifetime Stats ------------------------------ */}
           {m.usageCount > 0 && (
             <div className={styles.section}>
               <div className={styles.sectionTitle}>
@@ -583,7 +583,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
                 Lifetime Statistics
               </div>
 
-              {/* ── Stat Cards Grid ─────────────────── */}
+              {/* -- Stat Cards Grid ------------------- */}
               <div className={styles.statsCardsGrid}>
                 <div className={styles.statsCard}>
                   <Hash size={14} className={styles.statsCardIcon} />
@@ -624,7 +624,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
                 )}
               </div>
 
-              {/* ── Success / Error Rate Bar ────────── */}
+              {/* -- Success / Error Rate Bar ---------- */}
               {(m.successCount > 0 || m.errorCount > 0) && (
                 <div className={styles.successRateRow}>
                   <div className={styles.successRateBar}>
@@ -648,7 +648,7 @@ export default function ModelDetailPanelComponent({ model, onClose }) {
                 </div>
               )}
 
-              {/* ── Detail Rows ─────────────────────── */}
+              {/* -- Detail Rows ----------------------- */}
               <div className={styles.kvGrid} style={{ marginTop: 12 }}>
                 {m.totalInputTokens > 0 && (
                   <>

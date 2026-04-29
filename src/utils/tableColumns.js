@@ -34,7 +34,7 @@ import ProportionBarComponent from "../components/ProportionBarComponent";
 import ModalityIconComponent from "../components/ModalityIconComponent";
 
 import ToolIconComponent from "../components/ToolIconComponent";
-import BadgeComponent from "../components/BadgeComponent";
+import { BadgeComponent } from "@rodrigo-barraza/components";
 import ProviderLogo from "../components/ProviderLogos";
 import { resolveProviderLabel } from "../components/ProviderLogos";
 import {
@@ -47,10 +47,10 @@ import { PROVIDER_COLORS } from "../constants";
 import DateTimeBadgeComponent from "../components/DateTimeBadgeComponent";
 import StopwatchBadgeComponent from "../components/StopwatchBadgeComponent";
 import TokenCountBadgeComponent from "../components/TokenCountBadgeComponent";
-import TooltipComponent from "../components/TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import styles from "../components/TableComponents.module.css";
 
-/* ── Helpers ────────────────────────────────────────────── */
+/* -- Helpers ---------------------------------------------- */
 
 /** Renders a muted "—" dash — replaces all inline style={{ color: "var(--text-muted)" }} */
 export const emptyDash = () => <span className={styles.emptyDash}>—</span>;
@@ -96,7 +96,7 @@ export function formatDuration(ms) {
 // Re-export PROVIDER_COLORS so existing consumers don't need to change imports
 export { PROVIDER_COLORS };
 
-/* ── Column Factories ───────────────────────────────────── */
+/* -- Column Factories ------------------------------------- */
 
 /* ·· Identity / name columns ·· */
 
@@ -571,7 +571,7 @@ export const statusColumn = () => ({
   ),
 });
 
-/* ── Benchmark result columns ──────────────────────────── */
+/* -- Benchmark result columns ---------------------------- */
 
 export const benchmarkStatusColumn = () => ({
   key: "status",
@@ -912,7 +912,7 @@ export const benchmarkMatchModeColumn = () => ({
   },
 });
 
-/* ── Benchmark Dashboard columns (aggregated model stats) ── */
+/* -- Benchmark Dashboard columns (aggregated model stats) -- */
 
 export const dashboardModelColumn = () => ({
   key: "label",

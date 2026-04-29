@@ -12,9 +12,8 @@ import {
   X,
   Radio,
 } from "lucide-react";
-import TooltipComponent from "./TooltipComponent";
+import { SliderComponent, TooltipComponent } from "@rodrigo-barraza/components";
 import RainbowCanvasComponent from "./RainbowCanvasComponent";
-import SliderComponent from "./SliderComponent";
 import styles from "./AudioPlayerRecorderComponent.module.css";
 
 function formatTime(totalSeconds) {
@@ -27,7 +26,7 @@ function formatTime(totalSeconds) {
 const BAR_WIDTH = 1.5;
 const BAR_GAP = 1;
 
-/* ── Draw waveform bars on a canvas ── */
+/* -- Draw waveform bars on a canvas -- */
 function drawBars(canvas, peaks, progress, playedColor, unplayedColor) {
   const ctx = canvas.getContext("2d");
   const w = canvas.width;
@@ -47,7 +46,7 @@ function drawBars(canvas, peaks, progress, playedColor, unplayedColor) {
   }
 }
 
-/* ── Decode audio src into peaks + true duration ── */
+/* -- Decode audio src into peaks + true duration -- */
 async function decodePeaks(src, numPeaks = 200) {
   try {
     const resp = await fetch(src);
@@ -87,7 +86,7 @@ export default function AudioPlayerRecorderComponent({
   square = false,
   streaming = false,
 }) {
-  // ─── Recorder state ───
+  // --- Recorder state ---
   const [isRecording, setIsRecording] = useState(false);
   const [recSeconds, setRecSeconds] = useState(0);
   const mediaRecorderRef = useRef(null);
@@ -99,7 +98,7 @@ export default function AudioPlayerRecorderComponent({
   const animFrameRef = useRef(null);
   const recPeaksRef = useRef([]);
 
-  // ─── Player state ───
+  // --- Player state ---
   const audioRef = useRef(null);
   const playerCanvasRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -111,7 +110,7 @@ export default function AudioPlayerRecorderComponent({
   const playAnimRef = useRef(null);
   const prevSrcRef = useRef(src);
 
-  // ── Reset player state when src changes (prevents stale audio across conversations) ──
+  // -- Reset player state when src changes (prevents stale audio across conversations) --
   useEffect(() => {
     if (prevSrcRef.current !== src) {
       prevSrcRef.current = src;
@@ -131,7 +130,7 @@ export default function AudioPlayerRecorderComponent({
     }
   }, [src]);
 
-  // ── Cleanup on unmount — stop any playing audio ──
+  // -- Cleanup on unmount — stop any playing audio --
   useEffect(() => {
     const audio = audioRef.current;
     const animRef = playAnimRef;
@@ -144,7 +143,7 @@ export default function AudioPlayerRecorderComponent({
     };
   }, []);
 
-  // ── Decode audio for playback waveform + true duration ──
+  // -- Decode audio for playback waveform + true duration --
   useEffect(() => {
     if (!src) return;
     let cancelled = false;
@@ -159,7 +158,7 @@ export default function AudioPlayerRecorderComponent({
     };
   }, [src]);
 
-  // ── Draw / redraw player waveform ──
+  // -- Draw / redraw player waveform --
   const redrawPlayer = useCallback(() => {
     const canvas = playerCanvasRef.current;
     if (!canvas || !peaks) return;
@@ -171,7 +170,7 @@ export default function AudioPlayerRecorderComponent({
     redrawPlayer();
   }, [redrawPlayer]);
 
-  // ── Smooth playback animation ──
+  // -- Smooth playback animation --
   useEffect(() => {
     if (!isPlaying) {
       if (playAnimRef.current) cancelAnimationFrame(playAnimRef.current);
@@ -187,7 +186,7 @@ export default function AudioPlayerRecorderComponent({
     };
   }, [isPlaying]);
 
-  // ── Recorder: waveform ──
+  // -- Recorder: waveform --
   const stopWaveform = useCallback(() => {
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
@@ -316,7 +315,7 @@ export default function AudioPlayerRecorderComponent({
     stopWaveform();
   };
 
-  // ── Player helpers ──
+  // -- Player helpers --
   const togglePlayback = () => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -353,9 +352,9 @@ export default function AudioPlayerRecorderComponent({
     document.body.removeChild(a);
   };
 
-  // ───────────────────────────────────────────
+  // -------------------------------------------
   // MODE: Streaming (live audio indicator)
-  // ───────────────────────────────────────────
+  // -------------------------------------------
   if (streaming && !src) {
     return (
       <div
@@ -383,9 +382,9 @@ export default function AudioPlayerRecorderComponent({
     );
   }
 
-  // ───────────────────────────────────────────
+  // -------------------------------------------
   // MODE: Playback
-  // ───────────────────────────────────────────
+  // -------------------------------------------
   if (src) {
     if (square) {
       return (
@@ -540,9 +539,9 @@ export default function AudioPlayerRecorderComponent({
     );
   }
 
-  // ───────────────────────────────────────────
+  // -------------------------------------------
   // MODE: Recording (active)
-  // ───────────────────────────────────────────
+  // -------------------------------------------
   if (isRecording) {
     return (
       <div className={`${styles.audioThumb} ${styles.audioRecording}`}>
@@ -574,9 +573,9 @@ export default function AudioPlayerRecorderComponent({
     );
   }
 
-  // ───────────────────────────────────────────
+  // -------------------------------------------
   // MODE: Idle (mic button)
-  // ───────────────────────────────────────────
+  // -------------------------------------------
   return (
     <TooltipComponent label="Record audio" position="top" trigger="hover">
       <button

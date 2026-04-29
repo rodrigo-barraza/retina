@@ -35,10 +35,10 @@ import {
   FlaskConical,
 } from "lucide-react";
 import { renderToolName } from "../utils/utilities";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import styles from "./ToolSelectionComponent.module.css";
 
-// ── Domain icon mapping (mirrors CustomToolsPanel) ──────────────
+// -- Domain icon mapping (mirrors CustomToolsPanel) --------------
 const DOMAIN_ICONS = {
   "Weather & Environment": CloudSun,
   Events: CalendarDays,
@@ -139,7 +139,7 @@ const DOMAIN_ORDER = [
   "Other",
 ];
 
-// ── Label taxonomy — icon mapping & ordering ────────────────
+// -- Label taxonomy — icon mapping & ordering ----------------
 const LABEL_ICONS = {
   coding: Code2,
   web: Globe2,
@@ -212,7 +212,7 @@ const LABEL_ORDER = [
   "meta",
 ];
 
-// ── Tri-state checkbox: global select-all ───────────────────────
+// -- Tri-state checkbox: global select-all -----------------------
 function MasterCheckbox({ enabledCount, totalCount, onToggle, label }) {
   const ref = useRef(null);
   const allChecked = totalCount > 0 && enabledCount === totalCount;
@@ -236,7 +236,7 @@ function MasterCheckbox({ enabledCount, totalCount, onToggle, label }) {
   );
 }
 
-// ── Tri-state checkbox: per-domain select-all ───────────────────
+// -- Tri-state checkbox: per-domain select-all -------------------
 function DomainCheckbox({ domainEnabled, totalCount, onToggle }) {
   const ref = useRef(null);
   const allChecked = totalCount > 0 && domainEnabled === totalCount;
@@ -283,7 +283,7 @@ export default function ToolSelectionComponent({
   const [collapsedDomains, setCollapsedDomains] = useState(new Set());
   const [groupMode, setGroupMode] = useState("domain");
 
-  // ── Resolve enabledTools → flat Set of tool names ────────────
+  // -- Resolve enabledTools → flat Set of tool names ------------
   const resolveEnabledTools = useCallback(
     (entries) => {
       const resolved = new Set();
@@ -313,7 +313,7 @@ export default function ToolSelectionComponent({
   );
   const enabledCount = resolvedEnabledSet.size;
 
-  // ── Tool toggling ────────────────────────────────────────────
+  // -- Tool toggling --------------------------------------------
   const toggleTool = useCallback(
     (toolName) => {
       const tools = enabledTools || [];
@@ -340,7 +340,7 @@ export default function ToolSelectionComponent({
     onEnabledToolsChange([]);
   }, [onEnabledToolsChange]);
 
-  // ── Filtering ────────────────────────────────────────────────
+  // -- Filtering ------------------------------------------------
   const query = toolSearch.toLowerCase().trim();
 
   const filteredTools = useMemo(() => {
@@ -353,7 +353,7 @@ export default function ToolSelectionComponent({
     );
   }, [availableTools, query]);
 
-  // ── Group by domain ──────────────────────────────────────────
+  // -- Group by domain ------------------------------------------
   const groupedTools = useMemo(() => {
     const groups = new Map();
     for (const tool of filteredTools) {
@@ -371,7 +371,7 @@ export default function ToolSelectionComponent({
     return sorted;
   }, [filteredTools]);
 
-  // ── Group by label (tools appear under every label they carry)
+  // -- Group by label (tools appear under every label they carry)
   const groupedByLabel = useMemo(() => {
     const groups = new Map();
     for (const tool of filteredTools) {
@@ -391,7 +391,7 @@ export default function ToolSelectionComponent({
     return sorted;
   }, [filteredTools]);
 
-  // ── Collapse toggling ────────────────────────────────────────
+  // -- Collapse toggling ----------------------------------------
   const toggleDomain = useCallback((domain) => {
     setCollapsedDomains((prev) => {
       const next = new Set(prev);
@@ -401,7 +401,7 @@ export default function ToolSelectionComponent({
     });
   }, []);
 
-  // ── Toggle all tools in a group ──────────────────────────────
+  // -- Toggle all tools in a group ------------------------------
   const toggleGroupTools = useCallback(
     (groupKey, groupTools) => {
       const currentTools = enabledTools || [];
@@ -425,7 +425,7 @@ export default function ToolSelectionComponent({
     [enabledTools, groupMode, resolveEnabledTools, onEnabledToolsChange],
   );
 
-  // ── Render ───────────────────────────────────────────────────
+  // -- Render ---------------------------------------------------
   return (
     <div className={styles.toolsSection}>
       <div className={styles.toolsSectionHeader}>

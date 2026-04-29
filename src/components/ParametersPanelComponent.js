@@ -1,8 +1,7 @@
 "use client";
 
 import { Settings2 } from "lucide-react";
-import SelectDropdown from "./SelectDropdown";
-import SliderComponent from "./SliderComponent";
+import { SelectComponent, SliderComponent } from "@rodrigo-barraza/components";
 import styles from "./SettingsPanel.module.css";
 
 export default function ParametersPanelComponent({
@@ -160,7 +159,7 @@ export default function ParametersPanelComponent({
                 {settings.reasoningEffort || "high"}
               </div>
             ) : (
-              <SelectDropdown
+              <SelectComponent
                 value={settings.reasoningEffort || "high"}
                 options={[
                   { value: "none", label: "None" },
@@ -183,7 +182,7 @@ export default function ParametersPanelComponent({
                   {settings.reasoningSummary || "auto"}
                 </div>
               ) : (
-                <SelectDropdown
+                <SelectComponent
                   value={settings.reasoningSummary || "auto"}
                   options={[
                     { value: "auto", label: "Auto" },
@@ -208,7 +207,7 @@ export default function ParametersPanelComponent({
             ) && (
               <div className={styles.formGroup}>
                 <label>Reasoning Effort</label>
-                <SelectDropdown
+                <SelectComponent
                   value={settings.reasoningEffort || "high"}
                   options={[
                     { value: "low", label: "Low" },
@@ -224,7 +223,7 @@ export default function ParametersPanelComponent({
               selectedModelDef?.thinkingLevels && (
                 <div className={styles.formGroup}>
                   <label>Thinking Level</label>
-                  <SelectDropdown
+                  <SelectComponent
                     value={settings.thinkingLevel || "high"}
                     options={selectedModelDef.thinkingLevels.map((level) => ({
                       value: level,
@@ -253,7 +252,7 @@ export default function ParametersPanelComponent({
       {selectedModelDef?.verbosity && (
         <div className={styles.formGroup}>
           <label>Verbosity</label>
-          <SelectDropdown
+          <SelectComponent
             value={settings.verbosity || ""}
             options={[
               { value: "", label: "Default" },
@@ -374,7 +373,7 @@ export default function ParametersPanelComponent({
           {selectedModelDef?.jsonMode && (
             <div className={styles.formGroup}>
               <label>Response Format</label>
-              <SelectDropdown
+              <SelectComponent
                 value={settings.responseFormat || ""}
                 options={[
                   { value: "", label: "Default (Text)" },
@@ -389,7 +388,7 @@ export default function ParametersPanelComponent({
           {["openai", "anthropic"].includes(settings.provider) && (
             <div className={styles.formGroup}>
               <label>Service Tier</label>
-              <SelectDropdown
+              <SelectComponent
                 value={settings.serviceTier || ""}
                 options={[
                   { value: "", label: "Default" },

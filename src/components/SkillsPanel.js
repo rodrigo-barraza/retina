@@ -11,8 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import PrismService from "../services/PrismService.js";
-import ToggleSwitchComponent from "./ToggleSwitch.js";
-import ButtonComponent from "./ButtonComponent.js";
+import { ButtonComponent, ToggleComponent } from "@rodrigo-barraza/components";
 import styles from "./SkillsPanel.module.css";
 
 const CONTENT_WARN_CHARS = 2000;
@@ -32,7 +31,7 @@ export default function SkillsPanel({ skills, onSkillsChange, project }) {
   const [saving, setSaving] = useState(false);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
 
-  // ── CRUD ─────────────────────────────────────────────────────
+  // -- CRUD -----------------------------------------------------
 
   const handleCreate = useCallback(() => {
     setEditingSkill({
@@ -117,7 +116,7 @@ export default function SkillsPanel({ skills, onSkillsChange, project }) {
     [skills, onSkillsChange],
   );
 
-  // ── Edit / Create Form ───────────────────────────────────────
+  // -- Edit / Create Form ---------------------------------------
 
   if (editingSkill) {
     const contentLen = editingSkill.content?.length || 0;
@@ -219,7 +218,7 @@ export default function SkillsPanel({ skills, onSkillsChange, project }) {
     );
   }
 
-  // ── List View ────────────────────────────────────────────────
+  // -- List View ------------------------------------------------
 
   return (
     <div className={styles.container}>
@@ -229,7 +228,7 @@ export default function SkillsPanel({ skills, onSkillsChange, project }) {
         </span>
         <div className={styles.headerActions}>
           {skills.length > 0 && (
-            <ToggleSwitchComponent
+            <ToggleComponent
               checked={skills.length > 0 && skills.every((s) => s.enabled)}
               onChange={handleToggleAll}
               size="mini"

@@ -41,7 +41,7 @@ import RequestsTableComponent from "../../components/RequestsTableComponent";
 import ConversationsTableComponent from "../../components/ConversationsTableComponent";
 import TracesTableComponent from "../../components/TracesTableComponent";
 
-import SelectDropdown from "../../components/SelectDropdown";
+import { SelectComponent } from "@rodrigo-barraza/components";
 import { ErrorMessage } from "../../components/StateMessageComponent";
 import { useAdminHeader } from "../../components/AdminHeaderContext";
 import useProjectFilter from "../../hooks/useProjectFilter";
@@ -199,7 +199,7 @@ export default function DashboardPage() {
   // Inject project dropdown into AdminShell header
   useEffect(() => {
     setControls(
-      <SelectDropdown
+      <SelectComponent
         value={projectFilter || ""}
         options={projectOptions}
         onChange={handleProjectChange}
@@ -344,7 +344,7 @@ export default function DashboardPage() {
 
       <ErrorMessage message={error} />
 
-      {/* ── Resource Navigation ── */}
+      {/* -- Resource Navigation -- */}
       <div className={styles.resourceNav}>
         <ResourceCardComponent
           href="#"
@@ -474,7 +474,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ── Charts Row ── */}
+      {/* -- Charts Row -- */}
       <div className={styles.chartsRow}>
         {/* Requests Timeline — Tabbed Chart */}
         <div className={styles.chartCard}>
@@ -497,7 +497,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Projects ── */}
+      {/* -- Projects -- */}
       <div id="projects-table">
         <ProjectsTableComponent
           projects={projectStats}
@@ -507,7 +507,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ── Providers ── */}
+      {/* -- Providers -- */}
       <ProvidersTableComponent
         providers={providerData}
         totalRequests={totalProviderRequests}
@@ -515,7 +515,7 @@ export default function DashboardPage() {
         emptyText={loading ? "Loading..." : "No data yet"}
       />
 
-      {/* ── Models ── */}
+      {/* -- Models -- */}
       <ModelsTableComponent
         mode="stats"
         models={topModels}
@@ -525,7 +525,7 @@ export default function DashboardPage() {
         emptyText={loading ? "Loading..." : "No data yet"}
       />
 
-      {/* ── Recent Traces ── */}
+      {/* -- Recent Traces -- */}
       <TracesTableComponent
         sessions={recentTraces}
         compact
@@ -548,7 +548,7 @@ export default function DashboardPage() {
         emptyText={loading ? "Loading..." : "No traces yet"}
       />
 
-      {/* ── Recent Conversations ── */}
+      {/* -- Recent Conversations -- */}
       <ConversationsTableComponent
         conversations={recentConversations}
         title={
@@ -570,7 +570,7 @@ export default function DashboardPage() {
         compact
       />
 
-      {/* ── Recent Requests ── */}
+      {/* -- Recent Requests -- */}
       <RequestsTableComponent
         requests={recentRequests}
         title={

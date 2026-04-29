@@ -20,7 +20,7 @@
 
 import * as THREE from "three";
 
-// ─── Instance Registry ─────────────────────────────────────────────
+// --- Instance Registry ---------------------------------------------
 
 /** @type {Map<string, ThreeInstance>} */
 const instances = new Map();
@@ -42,7 +42,7 @@ let rafId = null;
  * @property {boolean}                  paused
  */
 
-// ─── RAF Loop ──────────────────────────────────────────────────────
+// --- RAF Loop ------------------------------------------------------
 
 function loop(timestamp) {
   for (const inst of instances.values()) {
@@ -82,7 +82,7 @@ function stopLoopIfEmpty() {
   }
 }
 
-// ─── Resize Handling ───────────────────────────────────────────────
+// --- Resize Handling -----------------------------------------------
 
 function handleResize(inst) {
   const canvas = inst.canvas;
@@ -109,7 +109,7 @@ function handleResize(inst) {
   inst.camera.updateProjectionMatrix();
 }
 
-// ─── Disposal Helpers ──────────────────────────────────────────────
+// --- Disposal Helpers ----------------------------------------------
 
 /**
  * Recursively dispose geometries, materials, and textures in a scene
@@ -147,7 +147,7 @@ function disposeSceneGraph(object) {
   }
 }
 
-// ─── Public API ────────────────────────────────────────────────────
+// --- Public API ----------------------------------------------------
 
 const ThreeService = {
   /**
@@ -187,7 +187,7 @@ const ThreeService = {
 
     const id = `three-${nextId++}`;
 
-    // ── Renderer ──
+    // -- Renderer --
     const renderer = new THREE.WebGLRenderer({
       canvas,
       antialias,
@@ -214,10 +214,10 @@ const ThreeService = {
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     }
 
-    // ── Scene ──
+    // -- Scene --
     const scene = new THREE.Scene();
 
-    // ── Camera ──
+    // -- Camera --
     const camera = new THREE.PerspectiveCamera(
       cameraFov,
       1,
@@ -226,11 +226,11 @@ const ThreeService = {
     );
     camera.position.set(...cameraPosition);
 
-    // ── Timer ──
+    // -- Timer --
     const timer = new THREE.Timer();
     if (typeof document !== "undefined") timer.connect(document);
 
-    // ── Instance ──
+    // -- Instance --
     const inst = {
       id,
       canvas,
@@ -310,7 +310,7 @@ const ThreeService = {
     };
   },
 
-  // ── Scene Graph Helpers ───────────────────────────────────────
+  // -- Scene Graph Helpers ---------------------------------------
 
   /**
    * Create a standard three-point lighting rig and add it to a scene.
@@ -393,7 +393,7 @@ const ThreeService = {
     scene.background = color ? new THREE.Color(color) : null;
   },
 
-  // ── Post-Processing Prep ─────────────────────────────────────
+  // -- Post-Processing Prep -------------------------------------
 
   /**
    * Placeholder for future EffectComposer integration.
@@ -406,7 +406,7 @@ const ThreeService = {
     return null;
   },
 
-  // ── Cleanup ──────────────────────────────────────────────────
+  // -- Cleanup --------------------------------------------------
 
   /**
    * Destroy a Three.js instance — disposes all GPU resources,

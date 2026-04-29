@@ -185,7 +185,7 @@ export default function DrawingCanvas({ src, onSave, onClose }) {
     ctx.restore();
   };
 
-  /* ── Drawing helpers ── */
+  /* -- Drawing helpers -- */
 
   const redrawAll = useCallback((strokeList) => {
     const canvas = canvasRef.current;
@@ -201,7 +201,7 @@ export default function DrawingCanvas({ src, onSave, onClose }) {
     if (bgReady) redrawAll(strokes);
   }, [strokes, bgReady, redrawAll]);
 
-  /* ── Coordinate helpers ── */
+  /* -- Coordinate helpers -- */
 
   const getPos = (e) => {
     const canvas = canvasRef.current;
@@ -218,7 +218,7 @@ export default function DrawingCanvas({ src, onSave, onClose }) {
     };
   };
 
-  /* ── Pointer handlers ── */
+  /* -- Pointer handlers -- */
 
   const handlePointerDown = (e) => {
     e.preventDefault();
@@ -281,7 +281,7 @@ export default function DrawingCanvas({ src, onSave, onClose }) {
     setDrawing(false);
   };
 
-  /* ── Actions ── */
+  /* -- Actions -- */
 
   const handleUndo = () => setStrokes((prev) => prev.slice(0, -1));
   const handleClear = () => setStrokes([]);

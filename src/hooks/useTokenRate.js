@@ -105,7 +105,7 @@ function sumWorkerThroughput(workerGenerationProgress) {
  * }}
  */
 export default function useTokenRate(sessionStats) {
-  // ── Live ticker ───────────────────────────────────────────────
+  // -- Live ticker -----------------------------------------------
   // Stores current wall-clock and performance timestamps so render
   // stays pure (no Date.now() calls in the render body).
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -124,14 +124,14 @@ export default function useTokenRate(sessionStats) {
     return () => { clearTimeout(immediate); clearInterval(id); };
   }, [needsTicker]);
 
-  // ── Elapsed time ──────────────────────────────────────────────
+  // -- Elapsed time ----------------------------------------------
   const completedTime = sessionStats?.completedElapsedTime || 0;
   const liveExtra = sessionStats?.currentTurnStart
     ? Math.max(0, (nowMs - sessionStats.currentTurnStart) / 1000)
     : 0;
   const totalElapsedTime = completedTime + liveExtra;
 
-  // ── Live tok/s computation ────────────────────────────────────
+  // -- Live tok/s computation ------------------------------------
   let computedTokPerSec = null;
   let hasActiveWorkers = false;
 
@@ -186,7 +186,7 @@ export default function useTokenRate(sessionStats) {
     }
   }
 
-  // ── Last-value-hold reducer ────────────────────────────────────
+  // -- Last-value-hold reducer ------------------------------------
   const [tokPerSecState, dispatchTokPerSec] = useReducer(
     tokPerSecReducer,
     TOK_PER_SEC_INITIAL,

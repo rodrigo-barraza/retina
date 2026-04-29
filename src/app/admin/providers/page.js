@@ -3,11 +3,10 @@
 import { useState, useEffect, useMemo } from "react";
 import IrisService from "../../../services/IrisService";
 import PrismService from "../../../services/PrismService";
-import TableComponent from "../../../components/TableComponent";
+import { SelectComponent, TableComponent } from "@rodrigo-barraza/components";
 import { resolveProviderLabel } from "../../../components/ProviderLogos";
 
 
-import SelectDropdown from "../../../components/SelectDropdown";
 import {
   LoadingMessage,
   ErrorMessage,
@@ -153,7 +152,7 @@ export default function ProvidersPage() {
   useEffect(() => {
     setControls(
       <>
-        <SelectDropdown
+        <SelectComponent
           value={projectFilter || ""}
           options={projectOptions}
           onChange={handleProjectChange}
@@ -265,7 +264,7 @@ export default function ProvidersPage() {
   );
 }
 
-// ── Rate Limit Panel ──────────────────────────────────────────
+// -- Rate Limit Panel ------------------------------------------
 
 function RateLimitPanel({ data }) {
   const { dynamic, models, note } = data;

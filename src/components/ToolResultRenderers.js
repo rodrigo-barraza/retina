@@ -33,7 +33,7 @@ import PrismService from "../services/PrismService";
 import { formatLatency, renderToolName } from "../utils/utilities";
 import styles from "./ToolResultRenderers.module.css";
 
-// ─── Helpers ──────────────────────────────────────────────────────────
+// --- Helpers ----------------------------------------------------------
 
 function basename(filePath) {
   if (!filePath) return "";
@@ -65,7 +65,7 @@ const EXT_LANG = {
   xml: "xml", toml: "toml", lua: "lua", c: "c", cpp: "cpp", h: "c",
 };
 
-// ─── Status Badge ─────────────────────────────────────────────────────
+// --- Status Badge -----------------------------------------------------
 
 function StatusBadge({ success, label }) {
   return (
@@ -76,7 +76,7 @@ function StatusBadge({ success, label }) {
   );
 }
 
-// ─── File Path Pill ───────────────────────────────────────────────────
+// --- File Path Pill ---------------------------------------------------
 
 function PathPill({ path, icon }) {
   const Icon = icon || FileText;
@@ -88,7 +88,7 @@ function PathPill({ path, icon }) {
   );
 }
 
-// ─── Collapsible Raw Result ───────────────────────────────────────────
+// --- Collapsible Raw Result -------------------------------------------
 
 function RawResultToggle({ result }) {
   const [show, setShow] = useState(false);
@@ -161,7 +161,7 @@ function InputArgsToggle({ args }) {
   );
 }
 
-// ─── Collapsible Output Result (what the model sees) ─────────────────
+// --- Collapsible Output Result (what the model sees) -----------------
 
 /**
  * Collapsible panel that shows the raw result returned to the model.
@@ -236,7 +236,7 @@ function OutputResultToggle({ result }) {
 // RENDERERS
 // ═══════════════════════════════════════════════════════════════════════
 
-// ── 1. File Read ──────────────────────────────────────────────────────
+// -- 1. File Read ------------------------------------------------------
 
 function FileReadRenderer({ result, args }) {
   const parsed = tryParse(result);
@@ -262,7 +262,7 @@ function FileReadRenderer({ result, args }) {
   );
 }
 
-// ── 2. File Write ─────────────────────────────────────────────────────
+// -- 2. File Write -----------------------------------------------------
 
 function FileWriteRenderer({ result, args }) {
   const parsed = tryParse(result);
@@ -285,7 +285,7 @@ function FileWriteRenderer({ result, args }) {
   );
 }
 
-// ── 3. String Replace ─────────────────────────────────────────────────
+// -- 3. String Replace -------------------------------------------------
 
 function StrReplaceRenderer({ result, args }) {
   const parsed = tryParse(result);
@@ -315,7 +315,7 @@ function StrReplaceRenderer({ result, args }) {
   );
 }
 
-// ── 4. Grep Search ────────────────────────────────────────────────────
+// -- 4. Grep Search ----------------------------------------------------
 
 function GrepSearchRenderer({ result, args }) {
   const parsed = tryParse(result);
@@ -359,7 +359,7 @@ function GrepSearchRenderer({ result, args }) {
   );
 }
 
-// ── 5. Directory List ─────────────────────────────────────────────────
+// -- 5. Directory List -------------------------------------------------
 
 function DirectoryListRenderer({ result, args }) {
   const parsed = tryParse(result);
@@ -393,7 +393,7 @@ function DirectoryListRenderer({ result, args }) {
   );
 }
 
-// ── 6. Glob Files ─────────────────────────────────────────────────────
+// -- 6. Glob Files -----------------------------------------------------
 
 function GlobFilesRenderer({ result, args }) {
   const parsed = tryParse(result);
@@ -426,7 +426,7 @@ function GlobFilesRenderer({ result, args }) {
   );
 }
 
-// ── 7. Web Search ─────────────────────────────────────────────────────
+// -- 7. Web Search -----------------------------------------------------
 
 function WebSearchRenderer({ result, args }) {
   const parsed = tryParse(result);
@@ -457,7 +457,7 @@ function WebSearchRenderer({ result, args }) {
   );
 }
 
-// ── 8. Fetch URL ──────────────────────────────────────────────────────
+// -- 8. Fetch URL ------------------------------------------------------
 
 function FetchUrlRenderer({ result, args }) {
   const parsed = tryParse(result);
@@ -486,7 +486,7 @@ function FetchUrlRenderer({ result, args }) {
   );
 }
 
-// ── 9. Terminal (Shell/Python/JS) ─────────────────────────────────────
+// -- 9. Terminal (Shell/Python/JS) -------------------------------------
 
 const PROMPT_PREFIXES = { bash: "$ ", python: ">>> ", javascript: "> " };
 const CONTINUATION_PREFIXES = { python: "... ", javascript: ".. " };
@@ -555,7 +555,7 @@ function TerminalRenderer({ result, args, streamingOutput, language }) {
   );
 }
 
-// ── 10. Git Operations ────────────────────────────────────────────────
+// -- 10. Git Operations ------------------------------------------------
 
 function GitStatusRenderer({ result }) {
   const parsed = tryParse(result);
@@ -644,7 +644,7 @@ function GitLogRenderer({ result }) {
   );
 }
 
-// ── 11. File Delete / Move ────────────────────────────────────────────
+// -- 11. File Delete / Move --------------------------------------------
 
 function FileDeleteRenderer({ result, args }) {
   const parsed = tryParse(result);
@@ -685,7 +685,7 @@ function FileMoveRenderer({ result, args }) {
   );
 }
 
-// ── 12. Browser Action ──────────────────────────────────────────────────────
+// -- 12. Browser Action ------------------------------------------------------
 
 const BROWSER_ACTION_LABELS = {
   navigate: "Navigate",
@@ -776,7 +776,7 @@ function BrowserActionRenderer({ result, args }) {
   );
 }
 
-// ── 13. Turtle Graphics ─────────────────────────────────────────────────────
+// -- 13. Turtle Graphics -----------------------------------------------------
 
 function TurtleDrawRenderer({ result, args }) {
   const parsed = tryParse(result);
@@ -800,7 +800,7 @@ function TurtleDrawRenderer({ result, args }) {
   );
 }
 
-// ── 14. Coordinator Tools ───────────────────────────────────────────────────
+// -- 14. Coordinator Tools ---------------------------------------------------
 
 /**
  * Mini status bar for an individual spawned worker agent.
@@ -872,7 +872,7 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
   const resultMembers = Array.isArray(rawResultMembers) ? rawResultMembers : [];
   const teamName = args?.name || parsed?.team || "";
 
-  // ── Live tok/s ticker ────────────────────────────────────────
+  // -- Live tok/s ticker ----------------------------------------
   // Tick every 500ms while any worker is actively generating so
   // the per-worker speed badge stays current.
   const hasActiveWorkers = useMemo(() => {
@@ -936,7 +936,7 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
     });
   };
 
-  // ── Calling state: no result yet, workers are running ──
+  // -- Calling state: no result yet, workers are running --
   if (!parsed) {
     return (
       <div className={styles.rendererBlock}>
@@ -976,7 +976,7 @@ function TeamCreateRenderer({ result, args, workerToolActivity }) {
     );
   }
 
-  // ── Done state: result available ──
+  // -- Done state: result available --
   const hasError = !!parsed.error;
   const succeeded = parsed.succeeded ?? resultMembers.filter((m) => m.status === "completed").length;
   const failed = parsed.failed ?? resultMembers.filter((m) => m.status === "failed").length;
@@ -1129,7 +1129,7 @@ function StopAgentRenderer({ result, args }) {
   );
 }
 
-// ── 14. Generic Fallback ────────────────────────────────────────────────────
+// -- 14. Generic Fallback ----------------------------------------------------
 
 function GenericRenderer({ result }) {
   return <RawResultToggle result={result} />;

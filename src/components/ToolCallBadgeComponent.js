@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import { resolveToolVisuals } from "./WorkflowNodeConstants";
 import { renderToolName } from "../utils/utilities";
 import styles from "./ToolCallBadgeComponent.module.css";

@@ -95,7 +95,7 @@ export default function SearchFilterComponent({
 
   return (
     <div className={styles.wrapper}>
-      {/* ── Trigger ── */}
+      {/* -- Trigger -- */}
       <div className={styles.container} ref={containerRef}>
         <div
           className={`${styles.trigger} ${open ? styles.triggerOpen : ""}`}
@@ -120,7 +120,7 @@ export default function SearchFilterComponent({
           />
         </div>
 
-        {/* ── Dropdown Menu ── */}
+        {/* -- Dropdown Menu -- */}
         {open && (
           <div className={styles.menu}>
             <button
@@ -151,7 +151,7 @@ export default function SearchFilterComponent({
         )}
       </div>
 
-      {/* ── Selected value badge ── */}
+      {/* -- Selected value badge -- */}
       {value && (
         <div className={styles.badgeList}>
           <span

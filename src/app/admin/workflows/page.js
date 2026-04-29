@@ -5,9 +5,8 @@ import { useSearchParams } from "next/navigation";
 import IrisService from "../../../services/IrisService";
 import WorkflowComponent from "../../../components/WorkflowComponent";
 import WorkflowHeaderStatsComponent from "../../../components/WorkflowHeaderStatsComponent";
-import SelectDropdown from "../../../components/SelectDropdown";
+import { SelectComponent, useToast } from "@rodrigo-barraza/components";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
-import { useToast } from "../../../components/ToastComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import { copyToClipboard, buildDateRangeParams } from "../../../utils/utilities";
@@ -168,7 +167,7 @@ function AdminWorkflowsPageInner() {
   useEffect(() => {
     setControls(
       <>
-        <SelectDropdown
+        <SelectComponent
           value={projectFilter || ""}
           options={projectOptions}
           onChange={handleProjectChange}

@@ -20,7 +20,7 @@ import SoundService from "@/services/SoundService";
 import { LOCAL_PROVIDERS } from "../constants.js";
 import styles from "./ModelPickerPopoverComponent.module.css";
 
-// ── Shared model-search store ──────────────────────────────────────────
+// -- Shared model-search store ------------------------------------------
 // Module-scoped so every ModelPickerPopoverComponent instance shares the
 // same search term. Uses useSyncExternalStore for tear-free reads.
 let _sharedSearch = "";
@@ -113,10 +113,10 @@ export default function ModelPickerPopoverComponent({
     }
   }, []);
 
-  // ── Build unified model list across all sections ─────────────────────
+  // -- Build unified model list across all sections ---------------------
   const baseModels = buildAllModels(config, modelTypeFilter);
 
-  // ── Fetch usage stats and enrich models ──────────────────────────────
+  // -- Fetch usage stats and enrich models ------------------------------
   const [usageMap, setUsageMap] = useState(null);
   const usageFetchedRef = useRef(false);
 
@@ -160,7 +160,7 @@ export default function ModelPickerPopoverComponent({
     });
   }, [baseModels, usageMap]);
 
-  // ── Filter by search ─────────────────────────────────────────────────
+  // -- Filter by search -------------------------------------------------
   const filteredModels = search.trim()
     ? allModels.filter((m) => {
         const q = search.toLowerCase();
@@ -176,7 +176,7 @@ export default function ModelPickerPopoverComponent({
       })
     : allModels;
 
-  // ── Collision-aware popover positioning ──────────────────────────────
+  // -- Collision-aware popover positioning ------------------------------
   // Keeps the popover fully within the viewport on all four edges.
   // Prefers anchoring below the trigger, flips above when there's more
   // room, and falls back to viewport-centering when neither direction
@@ -197,7 +197,7 @@ export default function ModelPickerPopoverComponent({
     const shouldFlip = spaceBelow < maxPopoverH && spaceAbove > spaceBelow;
     setFlipped(shouldFlip);
 
-    // ── Horizontal: center on ChatArea, clamp to viewport ──────────
+    // -- Horizontal: center on ChatArea, clamp to viewport ----------
     const chatArea = document.querySelector("[data-chat-area]");
     let left;
     if (chatArea) {
@@ -208,7 +208,7 @@ export default function ModelPickerPopoverComponent({
     }
     left = Math.max(pad, Math.min(left, viewportW - pad - popoverW));
 
-    // ── Vertical: anchor to trigger, then clamp / center ───────────
+    // -- Vertical: anchor to trigger, then clamp / center -----------
     const style = { left, width: popoverW };
 
     if (shouldFlip) {
@@ -282,7 +282,7 @@ export default function ModelPickerPopoverComponent({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // ── Handle model selection ─────────────────────────────────────────────
+  // -- Handle model selection ---------------------------------------------
   const handleSelect = useCallback(
     (rawModel) => {
       if (multiSelect) {
@@ -389,7 +389,7 @@ export default function ModelPickerPopoverComponent({
   }, [open, positionPopover]);
 
 
-  // ── Trigger display ───────────────────────────────────────────────────
+  // -- Trigger display ---------------------------------------------------
   const currentModel = allModels.find(
     (m) => m.provider === settings?.provider && m.name === settings?.model,
   );
@@ -471,7 +471,7 @@ export default function ModelPickerPopoverComponent({
 
   return (
     <>
-      {/* ── Trigger pill + modalities row ─────────────────────────── */}
+      {/* -- Trigger pill + modalities row --------------------------- */}
       <div className={styles.triggerWrap}>
         <button
           ref={triggerRef}
@@ -518,7 +518,7 @@ export default function ModelPickerPopoverComponent({
         )}
       </div>
 
-      {/* ── Popover portal ─────────────────────────────────────────── */}
+      {/* -- Popover portal ------------------------------------------- */}
       {open &&
         typeof document !== "undefined" &&
         createPortal(
@@ -580,7 +580,7 @@ export default function ModelPickerPopoverComponent({
   );
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────
+// -- Helpers ------------------------------------------------------------
 
 function buildAllModels(config, modelTypeFilter) {
   if (!config) return [];

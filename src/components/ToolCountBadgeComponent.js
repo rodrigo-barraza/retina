@@ -1,7 +1,7 @@
 "use client";
 
 import { FunctionSquare } from "lucide-react";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import styles from "./ToolCountBadgeComponent.module.css";
 
 /**

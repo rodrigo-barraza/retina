@@ -34,11 +34,11 @@ import {
   FilterBarComponent,
   FilterSelectComponent,
 } from "./FilterBarComponent";
-import SelectDropdown from "./SelectDropdown";
+import { SelectComponent } from "@rodrigo-barraza/components";
 import { LoadingMessage, ErrorMessage } from "./StateMessageComponent";
 import styles from "./VramBenchmarkComponent.module.css";
 
-// ── Color palette ────────────────────────────────────────────
+// -- Color palette --------------------------------------------
 
 const QUANT_COLORS = {
   Q4_0: { bg: "rgba(34,211,238,0.55)", border: "#22d3ee" },
@@ -110,7 +110,7 @@ function shortModelName(name, max = 18) {
   return short;
 }
 
-// ── Chart defaults ───────────────────────────────────────────
+// -- Chart defaults -------------------------------------------
 
 const CHART_FONT = "'Inter', sans-serif";
 
@@ -159,7 +159,7 @@ const LEGEND_STYLE = {
   },
 };
 
-// ── Custom inline datalabels plugin ──────────────────────────
+// -- Custom inline datalabels plugin --------------------------
 // Draws model name labels directly on chart data points.
 // Works per-chart without global registration issues.
 
@@ -206,7 +206,7 @@ function makeDatalabelsPlugin({ getLabel, anchor = "end", align = "top", offset 
   };
 }
 
-// ── Connector highlight plugin ───────────────────────────────
+// -- Connector highlight plugin -------------------------------
 // When hovering a bubble, highlights its connector line and sibling
 // bubbles across GPUs with a glow ring + solid bold line.
 
@@ -305,7 +305,7 @@ function makeConnectorHighlightPlugin() {
   };
 }
 
-// ── Settings info for tooltips ──────────────────────────────
+// -- Settings info for tooltips ------------------------------
 
 const SETTINGS_INFO = {
   "no-flash-attn": {
@@ -396,7 +396,7 @@ function SettingsMatrixTooltip() {
   );
 }
 
-// ── Scatter axis modes ───────────────────────────────────────
+// -- Scatter axis modes ---------------------------------------
 // Each mode maps different data dimensions to the X/Y axes of the
 // bubble chart, turning the sort dropdown into a dimension explorer.
 
@@ -472,7 +472,7 @@ const SCATTER_MODES = [
   },
 ];
 
-// ── View tabs ────────────────────────────────────────────────
+// -- View tabs ------------------------------------------------
 // Scatter label is dynamic — replaced in a memo inside the component.
 
 const VIEW_TABS = [
@@ -587,7 +587,7 @@ export default function VramBenchmarkComponent() {
   const chartInstances = useRef({});
   const searchOrigColors = useRef({});
 
-  // ── Fetch data ───────────────────────────────────────────
+  // -- Fetch data -------------------------------------------
 
   const fetchData = useCallback(async () => {
     try {
@@ -613,14 +613,14 @@ export default function VramBenchmarkComponent() {
     fetchData();
   }, [fetchData]);
 
-  // ── Distinct providers from data ────────────────────────
+  // -- Distinct providers from data ------------------------
 
   const providerOptions = useMemo(() => {
     const set = new Set(rawData.map((d) => d.provider).filter(Boolean));
     return [...set].sort();
   }, [rawData]);
 
-  // ── Process data ─────────────────────────────────────────
+  // -- Process data -----------------------------------------
 
   const models = useMemo(() => {
     let filtered = rawData.filter(
@@ -723,7 +723,7 @@ export default function VramBenchmarkComponent() {
     return result;
   }, [rawData, machineFilter, providerFilter, ctxMinVal, ctxMaxVal, parallelFilter, batchFilter, sortBy]);
 
-  // ── All filtered data (including all context per model for context chart) ─
+  // -- All filtered data (including all context per model for context chart) -
 
   const allFilteredData = useMemo(() => {
     let filtered = rawData.filter(
@@ -764,7 +764,7 @@ export default function VramBenchmarkComponent() {
     return filtered;
   }, [rawData, machineFilter, providerFilter, ctxMinVal, ctxMaxVal, parallelFilter, batchFilter]);
 
-  // ── Stats ────────────────────────────────────────────────
+  // -- Stats ------------------------------------------------
 
   const stats = useMemo(() => {
     if (models.length === 0) return null;
@@ -807,7 +807,7 @@ export default function VramBenchmarkComponent() {
     const quantCount = new Set(models.map((m) => m.quantization).filter(Boolean)).size;
     const providerCount = new Set(models.map((m) => m.provider).filter(Boolean)).size;
 
-    // ── Best Model cards for practical LLM usage ──
+    // -- Best Model cards for practical LLM usage --
 
     // 1. Fastest Response — lowest TTFT (critical for interactive chat)
     const fastestResponse = ttftModels.length > 0
@@ -859,7 +859,7 @@ export default function VramBenchmarkComponent() {
         )
       : null;
 
-    // ── Worst Model cards (counterparts) ──
+    // -- Worst Model cards (counterparts) --
 
     // W1. Slowest Throughput — lowest TPS
     const slowest = models.reduce((worst, m) =>
@@ -899,7 +899,7 @@ export default function VramBenchmarkComponent() {
         )
       : null;
 
-    // ── Build sorted card arrays by model name ──
+    // -- Build sorted card arrays by model name --
 
     // Helper — short settings tag for card subtitles
     const stag = (m) => m.settings?.label ? ` · ⚙ ${m.settings.label}` : "";
@@ -1041,7 +1041,7 @@ export default function VramBenchmarkComponent() {
     };
   }, [models]);
 
-  // ── HW label ─────────────────────────────────────────────
+  // -- HW label ---------------------------------------------
 
   const hwLabel = useMemo(() => {
     if (machineFilter === "all") {
@@ -1053,7 +1053,7 @@ export default function VramBenchmarkComponent() {
     return m ? `${shortGPU(m.gpu)} ${m.gpuVramGB} GB` : "Unknown";
   }, [machines, machineFilter]);
 
-  // ── Chart render helpers ─────────────────────────────────
+  // -- Chart render helpers ---------------------------------
 
   function destroyChart(key) {
     if (chartInstances.current[key]) {
@@ -1062,7 +1062,7 @@ export default function VramBenchmarkComponent() {
     }
   }
 
-  // ── Programmatic chart highlight on card hover ──────────
+  // -- Programmatic chart highlight on card hover ----------
   // Uses Chart.js's setActiveElements API to emulate a hover
   // on the data point(s) that match `displayName`.
 
@@ -1146,7 +1146,7 @@ export default function VramBenchmarkComponent() {
     chart.update("none");
   }, [activeView]);
 
-  // ── Scatter (dynamic axes) ───────────────────────────────
+  // -- Scatter (dynamic axes) -------------------------------
 
   const renderScatter = useCallback(() => {
     const canvas = chartRefs.scatter.current;
@@ -1377,7 +1377,7 @@ export default function VramBenchmarkComponent() {
       });
     }
 
-    // ── Reuse or create chart ──
+    // -- Reuse or create chart --
     const currentChart = chartInstances.current.scatter;
     if (currentChart) {
       // Update data — instant swap, no misleading slide-from-bottom
@@ -1474,7 +1474,7 @@ export default function VramBenchmarkComponent() {
     }
   }, [models, machineFilter, allFilteredData, activeScatterMode]);
 
-  // ── Shared range data for bar charts ──────────────────────
+  // -- Shared range data for bar charts ----------------------
 
   const { vramRanges, tpsRanges, ctxRanges } = useMemo(() => {
     const vram = {};
@@ -1525,7 +1525,7 @@ export default function VramBenchmarkComponent() {
     return { vramRanges: vram, tpsRanges: tps, ctxRanges: ctxR };
   }, [allFilteredData, rawData]);
 
-  // ── Zoom-update effects: animate x-axis range when clip values change ──
+  // -- Zoom-update effects: animate x-axis range when clip values change --
   useEffect(() => {
     const chart = chartInstances.current.scatter;
     if (!chart) return;
@@ -1757,7 +1757,7 @@ export default function VramBenchmarkComponent() {
     });
   }, [models, vramRanges]);
 
-  // ── Tokens per Second (floating range bars) ──────────────
+  // -- Tokens per Second (floating range bars) --------------
 
   const renderEfficiency = useCallback(() => {
     const canvas = chartRefs.efficiency.current;
@@ -1961,7 +1961,7 @@ export default function VramBenchmarkComponent() {
     });
   }, [models, tpsRanges]);
 
-  // ── TPS zoom-update effect ──
+  // -- TPS zoom-update effect --
   useEffect(() => {
     const chart = chartInstances.current.efficiency;
     if (!chart) return;
@@ -1971,7 +1971,7 @@ export default function VramBenchmarkComponent() {
     chart.update("zoom");
   }, [tpsClipMinVal, tpsClipMaxVal]);
 
-  // ── Quantization Distribution ────────────────────────────
+  // -- Quantization Distribution ----------------------------
 
   const renderQuantDist = useCallback(() => {
     const canvas = chartRefs.quantDist.current;
@@ -2181,7 +2181,7 @@ export default function VramBenchmarkComponent() {
     });
   }, [models]);
 
-  // ── Context Length Leaderboard ────────────────────────────
+  // -- Context Length Leaderboard ----------------------------
   // Dual-axis horizontal floating range bars — matches VRAM/TPS chart pattern.
   // Primary x: context length range (K), Secondary x: TPS range.
 
@@ -2493,7 +2493,7 @@ export default function VramBenchmarkComponent() {
     });
   }, [models, ctxRanges, tpsRanges]);
 
-  // ── Context Length Scaling ────────────────────────────────
+  // -- Context Length Scaling --------------------------------
 
   const renderContext = useCallback(() => {
     const canvas = chartRefs.context.current;
@@ -2503,7 +2503,7 @@ export default function VramBenchmarkComponent() {
     const ctx = canvas.getContext("2d");
     const showAllMachines = machineFilter === "all";
 
-    // ── Group data ──
+    // -- Group data --
     // When all machines: group by model+hostname so each GPU gets its own line
     // When single machine: group by model only (original behavior)
     const groups = {};
@@ -2537,7 +2537,7 @@ export default function VramBenchmarkComponent() {
 
     if (sortedGroups.length === 0) return;
 
-    // ── Assign stable color per model name ──
+    // -- Assign stable color per model name --
     const uniqueModels = [...new Set(sortedGroups.map((g) => g.modelName))];
     const modelColorMap = {};
     uniqueModels.forEach((name, i) => {
@@ -2644,7 +2644,7 @@ export default function VramBenchmarkComponent() {
     });
   }, [allFilteredData, machineFilter]);
 
-  // ── Destroy chart when switching tabs ──
+  // -- Destroy chart when switching tabs --
   const prevViewRef = useRef(activeView);
   useEffect(() => {
     const prev = prevViewRef.current;
@@ -2690,13 +2690,13 @@ export default function VramBenchmarkComponent() {
     renderContext,
   ]);
 
-  // ── Search highlight — dims non-matching chart elements ──
+  // -- Search highlight — dims non-matching chart elements --
 
   const applySearchHighlight = useCallback((term) => {
     const chart = chartInstances.current[activeView];
     if (!chart) return;
 
-    // ── Color utility helpers ──
+    // -- Color utility helpers --
     function dimColor(color, targetAlpha) {
       if (!color || typeof color !== "string") return color;
       // rgba(r, g, b, a)
@@ -2736,7 +2736,7 @@ export default function VramBenchmarkComponent() {
     const datasets = chart.data.datasets;
     const cacheKey = activeView;
 
-    // ── Restore originals if search is cleared ──
+    // -- Restore originals if search is cleared --
     if (!term) {
       const cache = searchOrigColors.current[cacheKey];
       if (cache) {
@@ -2754,7 +2754,7 @@ export default function VramBenchmarkComponent() {
 
     const needle = term.toLowerCase();
 
-    // ── Snapshot original colors on first search ──
+    // -- Snapshot original colors on first search --
     if (!searchOrigColors.current[cacheKey]) {
       const snapshot = {};
       for (let di = 0; di < datasets.length; di++) {
@@ -2773,7 +2773,7 @@ export default function VramBenchmarkComponent() {
 
     const cache = searchOrigColors.current[cacheKey];
 
-    // ── Apply per-element dimming ──
+    // -- Apply per-element dimming --
     for (let di = 0; di < datasets.length; di++) {
       const ds = datasets[di];
       // Skip connector lines
@@ -2825,7 +2825,7 @@ export default function VramBenchmarkComponent() {
     renderCtxLeaderboard, renderContext,
   ]);
 
-  // ── Subtitle for header ──────────────────────────────────
+  // -- Subtitle for header ----------------------------------
 
    const subtitle = useMemo(() => {
     const parts = [
@@ -2837,7 +2837,7 @@ export default function VramBenchmarkComponent() {
     return parts.join(" · ");
   }, [rawData.length, machines.length, settingsFilter, hwLabel]);
 
-  // ── Chart descriptions per view ──────────────────────────
+  // -- Chart descriptions per view --------------------------
 
   const settingsDesc = settingsFilter !== "all" && settingsFilter !== "default"
     ? ` (${settingsFilter} settings)`
@@ -2852,7 +2852,7 @@ export default function VramBenchmarkComponent() {
     context: "How VRAM consumption scales as context window size increases per model.",
   };
 
-  // ── Loading / Error ──────────────────────────────────────
+  // -- Loading / Error --------------------------------------
 
   if (loading && rawData.length === 0) {
     return (
@@ -2876,7 +2876,7 @@ export default function VramBenchmarkComponent() {
     );
   }
 
-  // ── Render ───────────────────────────────────────────────
+  // -- Render -----------------------------------------------
 
   return (
     <>
@@ -2900,7 +2900,7 @@ export default function VramBenchmarkComponent() {
         {/* Stats cards */}
         {stats && (
           <div className={styles.statsGrid}>
-            {/* ── Summary stats (single-width) ── */}
+            {/* -- Summary stats (single-width) -- */}
             <StatsCard
               label="Models Profiled"
               value={stats.n}
@@ -2947,7 +2947,7 @@ export default function VramBenchmarkComponent() {
               variant="accent"
             />
 
-            {/* ── Model cards (wide, 2-col span, sorted by model name) ── */}
+            {/* -- Model cards (wide, 2-col span, sorted by model name) -- */}
             {stats.modelCards.map((card) => (
               <StatsCard
                 key={card.key}
@@ -3021,7 +3021,7 @@ export default function VramBenchmarkComponent() {
                 </button>
               )}
             </div>
-            <SelectDropdown
+            <SelectComponent
               value={settingsFilter}
               onChange={(val) => {
                 setSettingsFilter(val);

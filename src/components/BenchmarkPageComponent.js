@@ -6,7 +6,7 @@ import { Target } from "lucide-react";
 import PrismService from "../services/PrismService";
 import ThreePanelLayout from "./ThreePanelLayout";
 import BenchmarkPreviewSidebarComponent from "./BenchmarkPreviewSidebarComponent";
-import ButtonComponent from "./ButtonComponent";
+import { ButtonComponent } from "@rodrigo-barraza/components";
 import BenchmarkFormComponent from "./BenchmarkFormComponent";
 import styles from "./BenchmarkPageComponent.module.css";
 
@@ -31,11 +31,11 @@ const INITIAL_FORM = {
 export default function BenchmarkPageComponent({ navSidebar, rightSidebar }) {
   const router = useRouter();
 
-  // ── State ──────────────────────────────────────────────────
+  // -- State --------------------------------------------------
   const [form, setForm] = useState(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
 
-  // ── Validation ─────────────────────────────────────────────
+  // -- Validation ---------------------------------------------
   const mode = form.benchmarkMode || "model";
   const hasModelAssertion = form.assertions?.some((a) => a.expectedValue);
   const hasAgentAssertion = form.agentAssertions?.length > 0;
@@ -48,7 +48,7 @@ export default function BenchmarkPageComponent({ navSidebar, rightSidebar }) {
     return hasModelAssertion || hasAgentAssertion;
   })();
 
-  // ── Create ─────────────────────────────────────────────────
+  // -- Create -------------------------------------------------
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
@@ -75,7 +75,7 @@ export default function BenchmarkPageComponent({ navSidebar, rightSidebar }) {
     }
   }, [form, router]);
 
-  // ── Render ─────────────────────────────────────────────────
+  // -- Render -------------------------------------------------
   return (
     <ThreePanelLayout
       navSidebar={navSidebar}

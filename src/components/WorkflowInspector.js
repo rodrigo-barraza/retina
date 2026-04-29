@@ -23,7 +23,7 @@ import TextContentComponent from "./TextContentComponent";
 import MessageList from "./MessageList";
 import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
 import AssetInputOptions from "./AssetInputOptions";
-import ToggleSwitchComponent from "./ToggleSwitch";
+import { ToggleComponent } from "@rodrigo-barraza/components";
 import PrismService from "../services/PrismService";
 import { copyToClipboard } from "../utils/utilities";
 
@@ -71,7 +71,7 @@ export default function WorkflowInspector({
   const [toolBuiltInOpen, setToolBuiltInOpen] = useState(true);
   const [toolCustomOpen, setToolCustomOpen] = useState(true);
 
-  // ── Resize logic ──
+  // -- Resize logic --
   const [inspectorWidth, setInspectorWidth] = useState(getStoredWidth);
   const isDragging = useRef(false);
 
@@ -705,7 +705,7 @@ export default function WorkflowInspector({
                       </span>
                     )}
                   </div>
-                  <ToggleSwitchComponent
+                  <ToggleComponent
                     checked={!isDisabled}
                     onChange={() => toggleTool(name)}
                     size="mini"

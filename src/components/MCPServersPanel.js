@@ -28,7 +28,7 @@ export default function MCPServersPanel({ servers, onServersChange, project }) {
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
   const [error, setError] = useState(null);
 
-  // ── CRUD ─────────────────────────────────────────────────────
+  // -- CRUD -----------------------------------------------------
 
   const handleCreate = useCallback(() => {
     setEditingServer({
@@ -112,7 +112,7 @@ export default function MCPServersPanel({ servers, onServersChange, project }) {
     [onServersChange],
   );
 
-  // ── Connect / Disconnect ─────────────────────────────────────
+  // -- Connect / Disconnect -------------------------------------
 
   const handleConnect = useCallback(
     async (server) => {
@@ -147,7 +147,7 @@ export default function MCPServersPanel({ servers, onServersChange, project }) {
     [onServersChange],
   );
 
-  // ── Edit / Create Form ───────────────────────────────────────
+  // -- Edit / Create Form ---------------------------------------
 
   if (editingServer) {
     const isStdio = editingServer.transport === "stdio";
@@ -301,7 +301,7 @@ export default function MCPServersPanel({ servers, onServersChange, project }) {
     );
   }
 
-  // ── List View ────────────────────────────────────────────────
+  // -- List View ------------------------------------------------
 
   const connectedCount = servers.filter((s) => s.connected).length;
 

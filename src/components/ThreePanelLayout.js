@@ -121,7 +121,7 @@ export default function ThreePanelLayout({
     });
   }, []);
 
-  /* ── Mobile: auto-close sidebar when a [data-panel-close] element is clicked ── */
+  /* -- Mobile: auto-close sidebar when a [data-panel-close] element is clicked -- */
   const handleSidebarClick = useCallback(
     (closeFn) => (e) => {
       if (!isMobile) return;
@@ -132,7 +132,7 @@ export default function ThreePanelLayout({
     [isMobile],
   );
 
-  /* ── Mobile: dismiss all open sidebars ── */
+  /* -- Mobile: dismiss all open sidebars -- */
   const dismissSidebars = useCallback(() => {
     if (!isMobile) return;
     if (showLeft) {

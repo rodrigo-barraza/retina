@@ -7,7 +7,7 @@ import {
   Filter,
   Calendar,
 } from "lucide-react";
-import DatePickerComponent from "./DatePickerComponent";
+import { DatePickerComponent } from "@rodrigo-barraza/components";
 import { DATE_PRESETS, formatDateDisplay, getActiveDatePreset } from "../utils/datePresets";
 import SoundService from "@/services/SoundService";
 import styles from "./FilterDropdownComponent.module.css";
@@ -127,7 +127,7 @@ export default function FilterDropdownComponent({
   return (
     <div className={styles.filterSection} style={fullWidth ? { width: "100%", boxSizing: "border-box", padding: "0 12px" } : undefined}>
       <div className={styles.filterRow} style={fullWidth ? { flexDirection: "column" } : undefined}>
-        {/* ── Dropdown trigger ── */}
+        {/* -- Dropdown trigger -- */}
         <div className={styles.dropdownWrapper} ref={dropdownRef} style={fullWidth ? { width: "100%" } : undefined}>
           <button
             type="button"
@@ -150,10 +150,10 @@ export default function FilterDropdownComponent({
             />
           </button>
 
-          {/* ── Dropdown menu ── */}
+          {/* -- Dropdown menu -- */}
           {isOpen && (
             <div className={styles.dropdownMenu}>
-              {/* ── Date range presets (top) ── */}
+              {/* -- Date range presets (top) -- */}
               {showDateRange && (
                 <div className={styles.menuGroup}>
                   <div className={styles.menuGroupLabel}>Date Range</div>
@@ -191,7 +191,7 @@ export default function FilterDropdownComponent({
                 </div>
               )}
 
-              {/* ── Dynamic filter groups ── */}
+              {/* -- Dynamic filter groups -- */}
               {groups.map((group) => {
                 const { label, items = [], activeKeys, isSingleSelect, onToggle } = group;
                 if (items.length === 0) return null;
@@ -230,7 +230,7 @@ export default function FilterDropdownComponent({
           )}
         </div>
 
-        {/* ── Custom DatePicker ── */}
+        {/* -- Custom DatePicker -- */}
         {showCustomDatePicker && showDateRange && (
           <DatePickerComponent
             from={dateFrom}
@@ -247,7 +247,7 @@ export default function FilterDropdownComponent({
         )}
       </div>
 
-      {/* ── Active filter badges ── */}
+      {/* -- Active filter badges -- */}
       {badges.length > 0 && (
         <div className={styles.badgeList}>
           {badges.map((b) => {

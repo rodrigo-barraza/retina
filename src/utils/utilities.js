@@ -1,24 +1,39 @@
+// ============================================================
+// Retina Client — Utilities
+// ============================================================
+// Functions shared across the workspace are re-exported from
+// @rodrigo-barraza/utilities. Retina-specific helpers remain
+// defined here as local exports.
+// ============================================================
+
 import { DateTime } from "luxon";
 
-/**
- * Generate a RFC 4122 v4 UUID.
- *
- * Prefers `crypto.randomUUID()` when available (secure contexts: HTTPS / localhost).
- * Falls back to `crypto.getRandomValues()` which works in ALL browser contexts,
- * including plain HTTP over LAN IPs (e.g. http://192.168.x.x).
- */
-export function generateUUID() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  // Fallback: construct UUID v4 from getRandomValues (available in insecure contexts)
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
-  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10
-  const hex = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
+// -- Re-exports from @rodrigo-barraza/utilities ----------------
+// These were previously defined inline. Consumers don't need
+// to change their import paths.
+
+export {
+  generateUUID,
+  formatNumber,
+  formatTokenCount,
+  formatCost,
+  formatCostAdaptive,
+  formatLatency,
+  formatLatencyMs,
+  formatContextTokens,
+  formatFileSize,
+  formatTokensPerSec,
+  formatCompact,
+  formatElapsedTime,
+  formatDuration,
+  shuffleArray,
+  renderToolName,
+  humanizeToolName,
+  sleep,
+  timeAgo as formatTimeAgo,
+} from "@rodrigo-barraza/utilities";
+
+// -- Retina-specific utilities ---------------------------------
 
 /**
  * Build the JSON body for LM Studio load requests.
@@ -36,29 +51,6 @@ export function buildLmStudioLoadBody(model, options = {}) {
 }
 
 /**
- * Format a number with K/M abbreviation (truncated, no decimals).
- * @see {@link formatCompact} — similar but with adaptive decimal precision
- * @see {@link formatTokenCount} — full numeric display with separators
- * @see {@link formatContextTokens} — context-window-specific formatting
- */
-export function formatNumber(n) {
-  if (n === null || n === undefined) return "0";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return n.toLocaleString();
-}
-
-/**
- * Format a token count as full value with thousands separators.
- * Unlike formatNumber, this never abbreviates to K/M.
- * e.g. 1234567 → "1,234,567"
- */
-export function formatTokenCount(n) {
-  if (n === null || n === undefined || n === 0) return "0";
-  return Number(n).toLocaleString();
-}
-
-/**
  * Get the total input token count from a usage object.
  * Providers like Anthropic and Google split prompt tokens into
  * new + cache_read + cache_write. This aggregates all three.
@@ -70,38 +62,6 @@ export function getTotalInputTokens(usage) {
     (usage.cacheReadInputTokens || 0) +
     (usage.cacheCreationInputTokens || 0)
   );
-}
-
-export function formatCost(n) {
-  if (n === null || n === undefined) return "$0.00";
-  return `$${n.toFixed(5)}`;
-}
-
-/**
- * Format a USD cost with adaptive precision.
- * Costs < $0.01 show 4 decimals, otherwise 2.
- * E.g. 0.0034 → "$0.0034", 1.50 → "$1.50"
- */
-export function formatCostAdaptive(cost) {
-  if (!cost || cost === 0) return "$0.00";
-  if (cost < 0.01) return `$${cost.toFixed(4)}`;
-  return `$${cost.toFixed(2)}`;
-}
-
-export function formatLatency(seconds) {
-  if (seconds === null || seconds === undefined) return "-";
-  if (seconds >= 60) return `${(seconds / 60).toFixed(1)}m`;
-  if (seconds >= 1) return `${seconds.toFixed(1)}s`;
-  return `${Math.round(seconds * 1000)}ms`;
-}
-
-/**
- * Format a latency value given in **milliseconds**.
- * Thin wrapper over formatLatency(seconds) for call sites that have ms values.
- */
-export function formatLatencyMs(ms) {
-  if (!ms) return "—";
-  return formatLatency(ms / 1000);
 }
 
 /**
@@ -118,32 +78,6 @@ export function formatDateTime(isoString) {
     return dt.toFormat("MMM d, h:mm:ss a");
   }
   return dt.toFormat("MMM d, yyyy, h:mm:ss a");
-}
-
-
-/**
- * Convert a snake_case function name to a human-readable title.
- * Strips common prefixes: get_, mcp__<server>__
- * e.g. "get_stock_price" → "Stock Price", "mcp__github__list_repos" → "List Repos"
- */
-export function renderToolName(name) {
-  return name
-    .replace(/^(get_|mcp__\w+__)/, "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-/**
- * Extended tool name humanization — strips a broad set of verb prefixes
- * before title-casing. Use for display contexts where the action verb
- * is redundant (e.g. tool catalog pages).
- * e.g. "search_web_results" → "Web Results", "execute_python" → "Python"
- */
-export function humanizeToolName(name) {
-  return name
-    .replace(/^(get|set|search|list|create|delete|update|fetch|read|write|check|run|execute|find|query|rank|lookup|send|track|stop|cancel|submit|browse|navigate|click|scroll|type|clear|wait|close|open|save|load|ask|plan|log|emit|extract|consolidate|manage|add|remove|use|exit|enter)_/i, "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /**
@@ -167,37 +101,6 @@ export function buildDateRangeParams(dateRange) {
 }
 
 /**
- * Format a context window token count (e.g. 128000 → "128K", 1000000 → "1M").
- * @see {@link formatNumber} — general-purpose K/M abbreviation
- * @see {@link formatCompact} — adaptive precision for arbitrary numbers
- */
-export function formatContextTokens(tokens) {
-  if (!tokens) return null;
-  if (tokens >= 1_000_000)
-    return `${(tokens / 1_000_000).toFixed(tokens % 1_000_000 === 0 ? 0 : 1)}M`;
-  return `${Math.round(tokens / 1000)}K`;
-}
-
-/**
- * Format a byte count as human-readable file size (GB, MB, KB).
- */
-export function formatFileSize(bytes) {
-  if (!bytes) return null;
-  if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toFixed(1)} GB`;
-  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
-  return `${(bytes / 1024).toFixed(0)} KB`;
-}
-
-/**
- * Format tokens-per-second with consistent precision.
- * Returns "X.X" or "—" for null/zero values.
- */
-export function formatTokensPerSec(value) {
-  if (value === null || value === undefined || value === 0) return "—";
-  return `${Number(value).toFixed(1)}`;
-}
-
-/**
  * Copy text to clipboard with error handling.
  * Returns true on success, false on failure.
  */
@@ -209,51 +112,6 @@ export async function copyToClipboard(text) {
     return false;
   }
 }
-
-/**
- * Format a large number compactly with adaptive decimal precision.
- * e.g. 10000000 → "10M", 3500 → "3.5K", 42 → "42"
- *
- * Unlike formatNumber, this keeps a decimal when the value isn't
- * a clean multiple (3.5K vs 4K) and uses toLocaleString for
- * values under 1 000.
- *
- * @see {@link formatNumber} — simpler version without adaptive decimals
- * @see {@link formatContextTokens} — context-window-specific formatting
- */
-export function formatCompact(n) {
-  if (n == null) return "—";
-  if (n >= 1_000_000)
-    return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
-  if (n >= 1_000)
-    return `${(n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1)}K`;
-  return n.toLocaleString();
-}
-
-/**
- * Human-readable relative timestamp from an ISO date string.
- * Covers both fine-grained ("just now", "30s ago") and
- * coarse-grained ("today", "yesterday", "3d ago") ranges.
- */
-export function formatTimeAgo(isoString) {
-  if (!isoString) return "";
-  const diff = Date.now() - new Date(isoString).getTime();
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 5) return "just now";
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 0) return "today";
-  if (days === 1) return "yesterday";
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return months === 1 ? "1 month ago" : `${months} months ago`;
-}
-
-
 
 /**
  * Get unique model names from assistant messages.
@@ -526,19 +384,6 @@ export function mergeUsedToolsWithWorkers(clientTools, backendToolCounts, worker
 }
 
 /**
- * Shuffle an array in-place using the Fisher–Yates algorithm.
- * Returns a new shuffled copy — does not mutate the original.
- */
-export function shuffleArray(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-/**
  * Derive modality flags from a session's messages array.
  * Returns an object with boolean flags for each modality
  * (textIn, textOut, imageIn, imageOut, audioIn, audioOut,
@@ -681,18 +526,3 @@ export function getSessionElapsedTime(messages) {
   }
   return total;
 }
-
-/**
- * Format an elapsed duration (in seconds) into a human-readable string.
- * e.g. 5 → "5s", 65 → "1m 5s", 3665 → "1h 1m"
- */
-export function formatElapsedTime(seconds) {
-  if (seconds == null || seconds <= 0) return "0s";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
-  return `${s}s`;
-}
-

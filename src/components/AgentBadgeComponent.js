@@ -5,7 +5,7 @@ import { renderAgentIcon } from "./AgentPickerComponent";
 import ThreeCanvasComponent from "./ThreeCanvasComponent";
 import styles from "./AgentBadgeComponent.module.css";
 
-// ── Agent gradient lookup ──────────────────────────────────────────
+// -- Agent gradient lookup ------------------------------------------
 const AGENT_GRADIENTS = {
   NONE:     ["#64748b", "#94a3b8"],
   CODING:   ["#6366f1", "#818cf8"],
@@ -22,7 +22,7 @@ function resolveGradient(agent) {
   return AGENT_GRADIENTS[agent?.id] || FALLBACK_GRADIENT;
 }
 
-// ── Canvas texture helpers ─────────────────────────────────────────
+// -- Canvas texture helpers -----------------------------------------
 
 /** Draw a rounded-rect gradient fill on a canvas context. */
 function drawGradientBase(ctx, s, gradient) {
@@ -49,7 +49,7 @@ function loadSvgImage(svgMarkup) {
   });
 }
 
-// ── Static Coin Sub-component (flat, matches SVG badge) ────────────
+// -- Static Coin Sub-component (flat, matches SVG badge) ------------
 
 const TEX_SIZE = 256;
 
@@ -67,7 +67,7 @@ function CoinStatic({ agent, size }) {
   const hasPaintedRef = useRef(false);
   const gradient = useMemo(() => resolveGradient(agent), [agent]);
 
-  // ── Three.js scene setup — single flat plane ──
+  // -- Three.js scene setup — single flat plane --
   const handleSetup = useCallback(({ scene, camera, THREE }) => {
     // Orthographic-style: push camera back, use tight FOV so plane fills view
     camera.position.set(0, 0, 20);
@@ -102,7 +102,7 @@ function CoinStatic({ agent, size }) {
     hasPaintedRef.current = false;
   }, [gradient]);
 
-  // ── Capture SVG icon from the hidden rendered element ──
+  // -- Capture SVG icon from the hidden rendered element --
   useEffect(() => {
     if (!iconRef.current) return;
 
@@ -154,7 +154,7 @@ function CoinStatic({ agent, size }) {
   );
 }
 
-// ── Main Component ─────────────────────────────────────────────────
+// -- Main Component -------------------------------------------------
 
 /**
  * AgentBadgeComponent — Reusable rounded-square icon badge for an agent persona.

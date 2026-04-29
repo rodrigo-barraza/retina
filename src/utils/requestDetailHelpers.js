@@ -12,7 +12,7 @@ import {
   formatLatency,
   formatTokensPerSec,
 } from "./utilities";
-import BadgeComponent from "../components/BadgeComponent";
+import { BadgeComponent } from "@rodrigo-barraza/components";
 import ModelBadgeComponent from "../components/ModelBadgeComponent";
 import ProvidersBadgeComponent from "../components/ProvidersBadgeComponent";
 import TokenCountBadgeComponent from "../components/TokenCountBadgeComponent";
@@ -24,7 +24,7 @@ import CostBadgeComponent from "../components/CostBadgeComponent";
 import ToolIconComponent from "../components/ToolIconComponent";
 import { prepareDisplayMessages } from "../components/MessageList";
 
-/* ── Media extraction ──────────────────────────────────────────── */
+/* -- Media extraction -------------------------------------------- */
 
 /**
  * Recursively walk request/response payloads and collect media URLs
@@ -86,7 +86,7 @@ export function getMediaTypeFromRef(ref) {
   return "image";
 }
 
-/* ── Detail sections builder ───────────────────────────────────── */
+/* -- Detail sections builder ------------------------------------- */
 
 /**
  * Build the 4-section array (General, Usage, Timing, Parameters)
@@ -304,7 +304,7 @@ export function buildRequestDetailSections(req) {
   ];
 }
 
-/* ── Chat message reconstruction ───────────────────────────────── */
+/* -- Chat message reconstruction --------------------------------- */
 
 /**
  * Reconstruct a displayable chat message array from the raw

@@ -5,7 +5,7 @@
 // subset is shown in the Console's empty state on each load.
 // ============================================================
 
-// ── Weather / Environment (Nimbus) ──────────────────────────
+// -- Weather / Environment (Nimbus) --------------------------
 
 export const WEATHER_PROMPTS = [
   "What's the weather like right now?",
@@ -159,7 +159,7 @@ export const SPACE_PROMPTS = [
   "Is the interplanetary magnetic field southward?",
 ];
 
-// ── Events (Beacon) ─────────────────────────────────────────
+// -- Events (Beacon) -----------------------------------------
 
 export const EVENT_PROMPTS = [
   "Are there any events this weekend?",
@@ -184,7 +184,7 @@ export const EVENT_PROMPTS = [
   "What events can I go to for free tonight?",
 ];
 
-// ── Commodities / Markets ───────────────────────────────────
+// -- Commodities / Markets -----------------------------------
 
 export const COMMODITY_PROMPTS = [
   "What are the top commodity movers today?",
@@ -209,7 +209,7 @@ export const COMMODITY_PROMPTS = [
   "What are the best performing commodities this week?",
 ];
 
-// ── Finance / Stocks ────────────────────────────────────────
+// -- Finance / Stocks ----------------------------------------
 
 export const FINANCE_PROMPTS = [
   "What's Apple's stock price right now?",
@@ -234,7 +234,7 @@ export const FINANCE_PROMPTS = [
   "How has the CPI changed over the past year?",
 ];
 
-// ── Trends ──────────────────────────────────────────────────
+// -- Trends --------------------------------------------------
 
 export const TREND_PROMPTS = [
   "What's trending on Reddit?",
@@ -259,7 +259,7 @@ export const TREND_PROMPTS = [
   "What's trending in science?",
 ];
 
-// ── Products ────────────────────────────────────────────────
+// -- Products ------------------------------------------------
 
 export const PRODUCT_PROMPTS = [
   "Search for wireless headphones",
@@ -284,7 +284,7 @@ export const PRODUCT_PROMPTS = [
   "What e-readers are available?",
 ];
 
-// ── Knowledge ───────────────────────────────────────────────
+// -- Knowledge -----------------------------------------------
 
 export const KNOWLEDGE_PROMPTS = [
   "Define the word 'ephemeral'",
@@ -309,7 +309,7 @@ export const KNOWLEDGE_PROMPTS = [
   "What are the borders of France?",
 ];
 
-// ── Anime / Movies / TV ─────────────────────────────────────
+// -- Anime / Movies / TV -------------------------------------
 
 export const ENTERTAINMENT_PROMPTS = [
   "What anime is airing this season?",
@@ -334,7 +334,7 @@ export const ENTERTAINMENT_PROMPTS = [
   "Find action movies with a rating above 8",
 ];
 
-// ── Health / Nutrition / Fitness ─────────────────────────────
+// -- Health / Nutrition / Fitness -----------------------------
 
 export const HEALTH_PROMPTS = [
   "What are the side effects of ibuprofen?",
@@ -359,7 +359,7 @@ export const HEALTH_PROMPTS = [
   "What meats have the highest B12 content?",
 ];
 
-// ── Transit ─────────────────────────────────────────────────
+// -- Transit -------------------------------------------------
 
 export const TRANSIT_PROMPTS = [
   "When is the next bus at stop 51479?",
@@ -376,7 +376,7 @@ export const TRANSIT_PROMPTS = [
   "Are there any bus stops with wheelchair access nearby?",
 ];
 
-// ── Utilities (Currency, Time, Places, Maps) ────────────────
+// -- Utilities (Currency, Time, Places, Maps) ----------------
 
 export const UTILITY_PROMPTS = [
   "Convert 100 USD to CAD",
@@ -401,7 +401,7 @@ export const UTILITY_PROMPTS = [
   "Where's the nearest grocery store?",
 ];
 
-// ── Science (Periodic Table, Exoplanets, World Bank) ────────
+// -- Science (Periodic Table, Exoplanets, World Bank) --------
 
 export const SCIENCE_PROMPTS = [
   "Tell me about the element gold",
@@ -426,7 +426,7 @@ export const SCIENCE_PROMPTS = [
   "What's the CO2 emissions per capita for China?",
 ];
 
-// ── Multi-Tool / Cross-API (designed to trigger 2+ tools) ───
+// -- Multi-Tool / Cross-API (designed to trigger 2+ tools) ---
 
 export const MULTI_TOOL_PROMPTS = [
   // Weather + Events
@@ -520,7 +520,7 @@ export const MULTI_TOOL_PROMPTS = [
   "How are the Big Tech stocks doing and what tech topics are trending on Reddit?",
 ];
 
-// ── Cross-API / General ─────────────────────────────────────
+// -- Cross-API / General -------------------------------------
 
 export const GENERAL_PROMPTS = [
   "Give me a full status of everything right now",
@@ -535,7 +535,7 @@ export const GENERAL_PROMPTS = [
   "Is today a good day to be outside?",
 ];
 
-// ── All prompts combined ────────────────────────────────────
+// -- All prompts combined ------------------------------------
 
 export const ALL_CONSOLE_PROMPTS = [
   ...WEATHER_PROMPTS,

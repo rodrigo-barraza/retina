@@ -11,13 +11,13 @@
  * constants hold the full key string.
  */
 
-// ── StorageService keys (auto-prefixed "retina:<key>") ───────────
+// -- StorageService keys (auto-prefixed "retina:<key>") -----------
 export const SK_THEME = "theme";
 export const SK_LAST_PROVIDER = "lastProvider";
 export const SK_LAST_MODEL = "lastModel";
 export const SK_INFERENCE_MODE = "inferenceMode";
 
-// ── Page-scoped model memory keys (auto-prefixed "retina:<key>") ──
+// -- Page-scoped model memory keys (auto-prefixed "retina:<key>") --
 // Each page remembers the last-used model independently.
 // Value shape: { provider, model, isLocal }
 export const SK_MODEL_MEMORY_AGENT = "modelMemory:agent";
@@ -25,7 +25,7 @@ export const SK_MODEL_MEMORY_AGENT_PREFIX = "modelMemory:agent:";
 export const SK_MODEL_MEMORY_SYNTHESIS = "modelMemory:synthesis";
 export const SK_MODEL_MEMORY_BENCHMARKS = "modelMemory:benchmarks";
 
-// ── Page-scoped tool toggle memory keys (auto-prefixed "retina:<key>") ──
+// -- Page-scoped tool toggle memory keys (auto-prefixed "retina:<key>") --
 // Each page remembers which tools are toggled on/off.
 // Value shape: { disabledBuiltIns: string[], toolToggles: { key: boolean } }
 export const SK_TOOL_MEMORY_AGENT = "toolMemory:agent";
@@ -33,7 +33,7 @@ export const SK_TOOL_MEMORY_AGENT_PREFIX = "toolMemory:agent:";
 export const SK_TOOL_MEMORY_SYNTHESIS = "toolMemory:synthesis";
 export const SK_TOOL_MEMORY_BENCHMARKS = "toolMemory:benchmarks";
 
-// ── Application constants ────────────────────────────────────────
+// -- Application constants ----------------------------------------
 export const MAX_TOOL_ITERATIONS = 25;
 export const PROJECT_AGENT = "coding";
 
@@ -44,7 +44,7 @@ export const PROJECT_AGENT = "coding";
  */
 export const LOCAL_PROVIDERS = new Set(["lm-studio", "ollama", "vllm", "llama-cpp"]);
 
-// ── Raw localStorage keys (no namespace prefix) ─────────────────
+// -- Raw localStorage keys (no namespace prefix) -----------------
 export const LS_PANEL_LEFT = "panel_left";
 export const LS_PANEL_RIGHT = "panel_right";
 export const LS_PANEL_NAV = "panel_nav";
@@ -56,7 +56,7 @@ export const LS_ADMIN_PROJECT_FILTER = "admin:projectFilter";
 export const LS_DATE_RANGE = "retina-date-range";
 export const LS_WORKSPACE_ROOT = "retina:workspace";
 
-// ── Settings defaults (shared by Agent, admin) ──────
+// -- Settings defaults (shared by Agent, admin) ------
 export const SETTINGS_DEFAULTS = {
   provider: "",
   model: "",
@@ -77,7 +77,7 @@ export const SETTINGS_DEFAULTS = {
   reasoningSummary: "",
 };
 
-// ── Chart / UI color palette ─────────────────────────────────────
+// -- Chart / UI color palette -------------------------------------
 /** Cycled by row index for provider charts, tables, and distribution bars. */
 export const PROVIDER_COLORS = [
   "#6366f1", "#a855f7", "#ec4899", "#f59e0b",

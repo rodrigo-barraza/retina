@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Download } from "lucide-react";
 import ToolsApiService from "../../../services/ToolsApiService";
 import JsonViewerComponent from "../../../components/JsonViewerComponent";
-import TableComponent from "../../../components/TableComponent";
-import PaginationComponent from "../../../components/PaginationComponent";
+import { ButtonComponent, PaginationComponent, TableComponent } from "@rodrigo-barraza/components";
 import { ErrorMessage } from "../../../components/StateMessageComponent";
 import {
   FilterBarComponent,
@@ -14,7 +13,6 @@ import {
   FilterSelectComponent,
   FilterClearButton,
 } from "../../../components/FilterBarComponent";
-import ButtonComponent from "../../../components/ButtonComponent";
 import RequestDetailsComponent from "../../../components/RequestDetailsComponent";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import {
@@ -27,7 +25,7 @@ import {
 import { getToolRequestsColumns } from "./toolRequestsColumns";
 import styles from "./page.module.css";
 
-// ── Domain options (from ToolSchemaService TOOL_DOMAINS) ─────────
+// -- Domain options (from ToolSchemaService TOOL_DOMAINS) ---------
 const DOMAIN_OPTIONS = [
   { value: "", label: "All" },
   { value: "Weather & Environment", label: "Weather" },
@@ -122,7 +120,7 @@ export default function ToolRequestsPage() {
     setPage(1);
   }
 
-  // ── Column definitions ─────────────────────────────────────────
+  // -- Column definitions -----------------------------------------
   const totalDuration = useMemo(
     () => toolCalls.reduce((sum, tc) => sum + (tc.elapsedMs || 0), 0) || 1,
     [toolCalls],
@@ -133,7 +131,7 @@ export default function ToolRequestsPage() {
     [totalDuration],
   );
 
-  // ── CSV Export ─────────────────────────────────────────────────
+  // -- CSV Export -------------------------------------------------
   const exportCSV = useCallback(() => {
     const headers = [
       "Timestamp", "Tool", "Domain", "Method", "Agent", "User",
@@ -164,7 +162,7 @@ export default function ToolRequestsPage() {
 
   const totalPages = Math.ceil(total / LIMIT);
 
-  // ── Build detail sections for the drawer ──────────────────────
+  // -- Build detail sections for the drawer ----------------------
   function buildDetailSections(tc) {
     if (!tc) return [];
     return [
@@ -240,7 +238,7 @@ export default function ToolRequestsPage() {
     ];
   }
 
-  // ── Header controls ────────────────────────────────────────────
+  // -- Header controls --------------------------------------------
   useEffect(() => {
     setControls(
       <>

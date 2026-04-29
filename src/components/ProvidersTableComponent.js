@@ -1,4 +1,4 @@
-import TableComponent from "./TableComponent";
+import { TableComponent } from "@rodrigo-barraza/components";
 import ProportionBarComponent from "./ProportionBarComponent";
 import {
   providerColumn,

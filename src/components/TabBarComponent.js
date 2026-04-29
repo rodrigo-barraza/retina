@@ -2,7 +2,7 @@
 
 import styles from "./TabBarComponent.module.css";
 import CountBadgeComponent from "./CountBadgeComponent";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import SoundService from "@/services/SoundService";
 
 /**

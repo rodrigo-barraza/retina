@@ -55,7 +55,7 @@ export default function WorkflowCanvas({
       return new Set();
     }
   });
-  // ── View persistence helpers ──
+  // -- View persistence helpers --
   const getStoredViews = () => {
     try {
       return JSON.parse(localStorage.getItem(LS_WORKFLOW_VIEWS) || "{}");
@@ -137,7 +137,7 @@ export default function WorkflowCanvas({
     [nodes, screenToSvg, onSelectNode],
   );
 
-  // ── Touch support ──
+  // -- Touch support --
   const touchRef = useRef({ type: null, lastDist: 0, nodeId: null });
 
   const getTouchDist = (touches) => {
@@ -224,7 +224,7 @@ export default function WorkflowCanvas({
     [dragging, connecting, isPanning, screenToSvg, onUpdateNodePosition],
   );
 
-  // ── Collision repulsion via requestAnimationFrame (only while dragging) ──
+  // -- Collision repulsion via requestAnimationFrame (only while dragging) --
   // Keep refs to the latest values so the RAF loop always sees fresh state.
   const nodesRef = useRef(nodes);
   const onUpdatePosRef = useRef(onUpdateNodePosition);
@@ -418,7 +418,7 @@ export default function WorkflowCanvas({
     const container = containerRef.current;
     container?.addEventListener("wheel", handleWheel, { passive: false });
 
-    // ── Touch handlers ──
+    // -- Touch handlers --
     const handleTouchStart = (e) => {
       if (!container?.contains(e.target)) return;
 

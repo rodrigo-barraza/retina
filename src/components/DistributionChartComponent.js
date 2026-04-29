@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Sector } from "recharts";
-import SelectDropdown from "./SelectDropdown";
+import { SelectComponent } from "@rodrigo-barraza/components";
 import ChartTabsComponent from "./ChartTabsComponent";
 import { formatNumber, formatCost, formatLatency } from "../utils/utilities";
 import styles from "./DistributionChartComponent.module.css";
@@ -27,7 +27,7 @@ const STATUS_COLORS = {
   Error: "#ef4444",
 };
 
-/* ── Metric definitions ── */
+/* -- Metric definitions -- */
 
 const METRICS = [
   { value: "requests", label: "Requests" },
@@ -171,7 +171,7 @@ function buildStatusEntries(stats) {
   return entries;
 }
 
-/* ── Active sector renderer with glow and center text ── */
+/* -- Active sector renderer with glow and center text -- */
 
 function ActiveSectorRenderer(props) {
   const {
@@ -295,17 +295,17 @@ export default function DistributionChartComponent({
 
   return (
     <div className={styles.container}>
-      {/* ── Metric selector + title ── */}
+      {/* -- Metric selector + title -- */}
       <div className={styles.metricRow}>
         {title && <h2 className={styles.title}>{title}</h2>}
-        <SelectDropdown
+        <SelectComponent
           value={activeMetric}
           options={METRICS}
           onChange={handleMetricChange}
         />
       </div>
 
-      {/* ── Tab bar ── */}
+      {/* -- Tab bar -- */}
       <div className={styles.header}>
         {!isStatus && (
           <ChartTabsComponent
@@ -324,7 +324,7 @@ export default function DistributionChartComponent({
         )}
       </div>
 
-      {/* ── Chart + Legend ── */}
+      {/* -- Chart + Legend -- */}
       <div className={styles.body}>
         {pieData.length > 0 ? (
           <>

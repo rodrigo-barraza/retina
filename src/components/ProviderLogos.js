@@ -228,7 +228,7 @@ export const PROVIDER_LABELS = {
   "llama-cpp": "llama.cpp",
 };
 
-// ── Multi-instance nickname registry ────────────────────────────
+// -- Multi-instance nickname registry ----------------------------
 // Populated from the /config response's `localProviders` array.
 // Maps instance IDs (e.g. "lm-studio-2") → { nickname, instanceNumber }
 

@@ -10,7 +10,7 @@ import {
   Link,
   ImagePlus,
 } from "lucide-react";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import { MODALITY_COLORS, TOOL_COLORS } from "./WorkflowNodeConstants";
 import styles from "./ModelToolsComponent.module.css";
 

@@ -11,9 +11,9 @@ import {
   buildRequestDetailSections,
   reconstructChatMessages,
 } from "../../../utils/requestDetailHelpers";
-import PaginationComponent from "../../../components/PaginationComponent";
+import { PaginationComponent } from "@rodrigo-barraza/components";
 import TracesTableComponent from "../../../components/TracesTableComponent";
-import SelectDropdown from "../../../components/SelectDropdown";
+import { SelectComponent } from "@rodrigo-barraza/components";
 import { useAdminHeader } from "../../../components/AdminHeaderContext";
 import useProjectFilter from "../../../hooks/useProjectFilter";
 import RequestDetailsComponent from "../../../components/RequestDetailsComponent";
@@ -161,7 +161,7 @@ export default function TracesPage() {
   useEffect(() => {
     setControls(
       <>
-        <SelectDropdown
+        <SelectComponent
           value={projectFilter || ""}
           options={projectOptions}
           onChange={handleProjectChange}

@@ -3,11 +3,11 @@
 import { useMemo, useRef, useCallback, useState } from "react";
 import { MessageSquare, Plus } from "lucide-react";
 import HistoryList from "./HistoryList";
-import ButtonComponent from "./ButtonComponent";
+import { ButtonComponent } from "@rodrigo-barraza/components";
 import { getModalities } from "../utils/utilities";
 import styles from "./HistoryPanel.module.css";
 
-/* ── Glitch text generator (ported from CycleButton) ──────── */
+/* -- Glitch text generator (ported from CycleButton) -------- */
 const SYMBOLS = "!@#$%^&*†‡§¶∆∇≈≠±×÷√∫∑∏⊗⊕⊘⊙◊♠♣♥♦★☆◈⬡⬢⟁⟐⧫⬟";
 const ZALGO = [
   "\u0300","\u0301","\u0302","\u0303","\u0304","\u0305","\u0306",

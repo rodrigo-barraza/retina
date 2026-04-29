@@ -20,7 +20,7 @@ import {
   Terminal,
 } from "lucide-react";
 
-// ── Modality Icons (icon, label, color) ──
+// -- Modality Icons (icon, label, color) --
 export const MODALITY_ICONS = {
   text: { icon: Type, label: "Text", color: "#6366f1" },
   image: { icon: Image, label: "Image", color: "#10b981" },
@@ -43,7 +43,7 @@ export const MODALITY_ICONS = {
   thinking: { icon: Brain, label: "Thinking", color: "#eab308" },
 };
 
-// ── Modality Colors ──
+// -- Modality Colors --
 export const MODALITY_COLORS = {
   text: "#6366f1",
   image: "#10b981",
@@ -58,7 +58,7 @@ export const MODALITY_COLORS = {
   thinking: "#eab308",
 };
 
-// ── Tool Colors ──
+// -- Tool Colors --
 export const TOOL_COLORS = {
   Thinking: "#eab308",
   "Tool Calling": "#f97316",
@@ -73,7 +73,7 @@ export const TOOL_COLORS = {
   "Image Generation": "#f43f5e",
 };
 
-// ── Tool Icon Map (Component references — render as <Icon size={n} />) ──
+// -- Tool Icon Map (Component references — render as <Icon size={n} />) --
 export const TOOL_ICON_MAP = {
   Thinking: Brain,
   "Tool Calling": Parentheses,
@@ -102,7 +102,7 @@ export function resolveToolVisuals(name) {
   };
 }
 
-// ── Tools that support toggle switches ──
+// -- Tools that support toggle switches --
 export const TOGGLEABLE_TOOLS = new Set([
   "Thinking",
   "Web Search",
@@ -114,7 +114,7 @@ export const TOGGLEABLE_TOOLS = new Set([
   "Image Generation",
 ]);
 
-// ── Asset-type Icons ──
+// -- Asset-type Icons --
 export const ASSET_ICONS = {
   text: Type,
   audio: Volume2,
@@ -125,14 +125,14 @@ export const ASSET_ICONS = {
   thinking: Brain,
 };
 
-// ── Role labels for conversation compound ports ──
+// -- Role labels for conversation compound ports --
 export const ROLE_LABELS = {
   system: "System Prompt",
   user: "User",
   assistant: "Assistant",
 };
 
-// ── Dimension Constants ──
+// -- Dimension Constants --
 export const NODE_WIDTH_BASE = 220;
 export const ASSET_NODE_WIDTH_BASE = 200;
 export const MODALITY_ICON_WIDTH = 18;
@@ -145,7 +145,7 @@ export const ASSET_CONTENT_HEIGHT_COMPACT = 175;
 export const CONFIG_AREA_HEIGHT = 160;
 export const ASSET_INFO_HEIGHT = 80;
 
-// ── Compound port ID helpers for conversation input nodes ──
+// -- Compound port ID helpers for conversation input nodes --
 // Port format: "{msgIndex}.{modality}" e.g. "0.text", "1.image"
 export function parseCompoundPort(portId) {
   const dotIdx = portId.indexOf(".");
@@ -161,7 +161,7 @@ export function getBaseModality(portId) {
   return parsed ? parsed.modality : portId;
 }
 
-// ── Node dimensions ──
+// -- Node dimensions --
 export function getNodeWidth(node) {
   if (node.nodeType) {
     if (node.modality === "conversation") {

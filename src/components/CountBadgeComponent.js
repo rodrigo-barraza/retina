@@ -1,6 +1,6 @@
 "use client";
 
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import styles from "./CountBadgeComponent.module.css";
 
 /**

@@ -40,7 +40,7 @@ import styles from "./AdminAgentViewerComponent.module.css";
 export default function AdminAgentViewerComponent() {
   const { setTitleBadge, setControls } = useAdminHeader();
 
-  // ── State ────────────────────────────────────────────────────
+  // -- State ----------------------------------------------------
   const [messages, setMessages] = useState([]);
   const [agentSessionId, setAgentSessionId] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -72,7 +72,7 @@ export default function AdminAgentViewerComponent() {
 
   const endRef = useRef(null);
 
-  // ── Effects ──────────────────────────────────────────────────
+  // -- Effects --------------------------------------------------
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -155,7 +155,7 @@ export default function AdminAgentViewerComponent() {
       .catch(() => {});
   }, []);
 
-  // ── Filtered config: only function-calling models ────────────
+  // -- Filtered config: only function-calling models ------------
   const filteredConfig = useMemo(() => {
     if (!config) return null;
     const textModelsMap = config.textToText?.models || {};
@@ -185,7 +185,7 @@ export default function AdminAgentViewerComponent() {
     };
   }, [config]);
 
-  // ── Session stats ───────────────────────────────────────────
+  // -- Session stats -------------------------------------------
   const {
     uniqueModels, uniqueProviders, totalCost, totalTokens, requestCount,
     usedTools, modalities, elapsedTime: completedElapsedTime,
@@ -199,7 +199,7 @@ export default function AdminAgentViewerComponent() {
       .catch(() => {});
   }, []);
 
-  // ── Session selection ────────────────────────────────────────
+  // -- Session selection ----------------------------------------
   const handleSelectSession = useCallback(
     async (conv) => {
       try {
@@ -250,10 +250,10 @@ export default function AdminAgentViewerComponent() {
   // Tool count for badge
   const allToolCount = builtInTools.length + customTools.length;
 
-  // ── Badge helper ─────────────────────────────────────────────
+  // -- Badge helper ---------------------------------------------
   const badgeProps = (count) => ({ badge: count, badgeDisabled: count === 0 });
 
-  // ── Left sidebar: tab bar + content ──────────────────────────
+  // -- Left sidebar: tab bar + content --------------------------
   const leftPanel = (
     <>
       <TabBarComponent
@@ -415,7 +415,7 @@ export default function AdminAgentViewerComponent() {
     </>
   );
 
-  // ── Center: chat area (read-only) ───────────────────────────
+  // -- Center: chat area (read-only) ---------------------------
   const chatContent = (
     <div className={chatStyles.container}>
       <div className={chatStyles.messagesList}>
@@ -448,7 +448,7 @@ export default function AdminAgentViewerComponent() {
     </div>
   );
 
-  // ── Layout (within AdminShell's main area) ──────────────────
+  // -- Layout (within AdminShell's main area) ------------------
   return (
     <div className={styles.viewer}>
       {/* Mini header: session title + model badge + panel toggles */}

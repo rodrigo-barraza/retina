@@ -33,7 +33,7 @@ export default class LiveSessionService {
     this.connected = false;
   }
 
-  // ── Connection ─────────────────────────────────────────────
+  // -- Connection ---------------------------------------------
 
   /**
    * Connect to Prism's /ws/live and set up a Live API session.
@@ -191,7 +191,7 @@ export default class LiveSessionService {
     this.connected = false;
   }
 
-  // ── Input ──────────────────────────────────────────────────
+  // -- Input --------------------------------------------------
 
   sendText(text) {
     if (this.ws?.readyState === WebSocket.OPEN) {
@@ -206,7 +206,7 @@ export default class LiveSessionService {
     }
   }
 
-  // ── Microphone ─────────────────────────────────────────────
+  // -- Microphone ---------------------------------------------
 
   async startMicrophone() {
     if (this.isRecording) return;
@@ -295,7 +295,7 @@ export default class LiveSessionService {
     }
   }
 
-  // ── Audio Playback ─────────────────────────────────────────
+  // -- Audio Playback -----------------------------------------
 
   // Lazily create a dedicated 24kHz playback context with a persistent
   // AudioWorklet. The worklet maintains a ring buffer queue on the audio
@@ -356,7 +356,7 @@ export default class LiveSessionService {
     }
   }
 
-  // ── Audio Utils ────────────────────────────────────────────
+  // -- Audio Utils --------------------------------------------
 
   _convertFloat32ToInt16(buffer) {
     const buf = new Int16Array(buffer.length);

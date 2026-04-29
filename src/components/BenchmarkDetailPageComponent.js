@@ -16,8 +16,7 @@ import {
 import PrismService from "../services/PrismService";
 import ThreePanelLayout from "./ThreePanelLayout";
 import RunHistorySidebarComponent from "./RunHistorySidebarComponent";
-import ButtonComponent from "./ButtonComponent";
-import BadgeComponent from "./BadgeComponent";
+import { BadgeComponent, ButtonComponent } from "@rodrigo-barraza/components";
 import ModalDialogComponent from "./ModalDialogComponent";
 import BenchmarkFormComponent from "./BenchmarkFormComponent";
 import SummaryBarComponent from "./SummaryBarComponent";
@@ -79,7 +78,7 @@ function resolveModelKeyForContent(liveDataMap, sourceModel) {
 
 export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningChange, navSidebar, rightSidebar }) {
   const router = useRouter();
-  // ── State ──────────────────────────────────────────────────
+  // -- State --------------------------------------------------
   const [benchmark, setBenchmark] = useState(null);
   const [loading, setLoading] = useState(true);
   const [latestRun, setLatestRun] = useState(null);
@@ -223,7 +222,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
   // Convenience: expose the number of active models for the summary bar
   const activeModelCount = activeModels.size;
 
-  // ── Load benchmark detail ──────────────────────────────────
+  // -- Load benchmark detail ----------------------------------
   const loadBenchmark = useCallback(async () => {
     setLoading(true);
     try {
@@ -251,7 +250,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     loadBenchmark();
   }, [loadBenchmark]);
 
-  // ── Shared live-state helpers (single source of truth) ─────
+  // -- Shared live-state helpers (single source of truth) -----
 
   /** Reset all live streaming refs and state. Called on run complete, error, and stop. */
   const resetLiveState = useCallback(() => {
@@ -282,7 +281,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
       setStreamingTotal(data.totalModels || 0);
     },
 
-    // ── Model lifecycle — supports concurrent models across providers ──
+    // -- Model lifecycle — supports concurrent models across providers --
     onModelStart: (data) => {
       const modelKey = `${data.provider}:${data.model}`;
 
@@ -388,7 +387,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
       });
     },
 
-    // ── Live content events — route to the correct model via _sourceModel tag ──
+    // -- Live content events — route to the correct model via _sourceModel tag --
     onChunk: (content, sourceModel) => {
       const key = resolveModelKeyForContent(liveDataRef.current, sourceModel);
       if (key) {
@@ -404,7 +403,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
       }
     },
 
-    // ── Tool call events (same pattern as /coding-agent) ───
+    // -- Tool call events (same pattern as /coding-agent) ---
     onToolCall: (tc) => {
       const key = resolveModelKeyForContent(liveDataRef.current, tc._sourceModel);
       if (!key) return;
@@ -437,7 +436,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     ...overrides,
   }), [resetModelLiveState]);
 
-  // ── Reconnect to an in-progress run on mount ──────────────
+  // -- Reconnect to an in-progress run on mount --------------
   useEffect(() => {
     let cancelled = false;
 
@@ -488,7 +487,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     };
   }, [benchmarkId, buildBenchmarkSSECallbacks, resetLiveState]);
 
-  // ── Load Prism config (drives model picker + size column) ──
+  // -- Load Prism config (drives model picker + size column) --
   useEffect(() => {
     (async () => {
       try {
@@ -520,7 +519,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
       .catch(() => {});
   }, []);
 
-  // ── Favorites ──────────────────────────────────────────────
+  // -- Favorites ----------------------------------------------
   const handleToggleFavorite = useCallback(async (key) => {
     if (favoriteKeys.includes(key)) {
       setFavoriteKeys((prev) => prev.filter((k) => k !== key));
@@ -541,7 +540,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     [prismConfig],
   );
 
-  // ── Selected model objects (derived) ───────────────────────
+  // -- Selected model objects (derived) -----------------------
   // Each instance is enriched with full model config data.
   const selectedModels = useMemo(() => {
     const configMap = new Map();
@@ -569,7 +568,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     return map;
   }, [allModels]);
 
-  // ── Clone ──────────────────────────────────────────────────
+  // -- Clone --------------------------------------------------
   const openClone = useCallback(() => {
     if (!benchmark) return;
     const assertions = benchmark.assertions?.length > 0
@@ -614,7 +613,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     }
   }, [form, router]);
 
-  // ── Run benchmark ──────────────────────────────────────────
+  // -- Run benchmark ------------------------------------------
   const handleRun = useCallback(async () => {
     if (!benchmark) return;
     setRunning(true);
@@ -688,7 +687,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     }));
   }, [benchmark, selectedModels, agentInstances, allModels, benchmarkId, thinkingMap, toolsMap, buildBenchmarkSSECallbacks, resetLiveState]);
 
-  // ── Stop benchmark ─────────────────────────────────────────
+  // -- Stop benchmark -----------------------------------------
   const handleStop = useCallback(async () => {
     // 1. Explicitly tell the server to abort (reliable — dedicated HTTP POST)
     try {
@@ -732,7 +731,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     } catch { /* noop */ }
   }, [streamingResults, benchmarkId, resetLiveState]);
 
-  // ── View a past run ────────────────────────────────────────
+  // -- View a past run ----------------------------------------
   const viewRun = useCallback((run) => {
     setLatestRun(run);
     setActiveRunId(run.id);
@@ -840,7 +839,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     });
   }, [selectedInstances, thinkingMap, toolsMap]);
 
-  // ── Add model instance to selection (always adds, never toggles) ────
+  // -- Add model instance to selection (always adds, never toggles) ----
   const handleModelSelect = useCallback((rawModel) => {
     const instance = {
       instanceId: generateUUID(),
@@ -898,7 +897,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     StorageService.set(SK_MODEL_MEMORY_BENCHMARKS, { instances: [], agents: [], thinkingMap: {}, toolsMap: {} });
   }, []);
 
-  // ── Toggle thinking per instance ──────────────────────────
+  // -- Toggle thinking per instance --------------------------
   const handleToggleThinking = useCallback((instanceId) => {
     setThinkingMap((prev) => {
       const next = { ...prev, [instanceId]: !prev[instanceId] };
@@ -909,7 +908,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     });
   }, []);
 
-  // ── Toggle tools per instance ─────────────────────────────
+  // -- Toggle tools per instance -----------------------------
   const handleToggleTools = useCallback((instanceId) => {
     setToolsMap((prev) => {
       const next = { ...prev, [instanceId]: !prev[instanceId] };
@@ -920,7 +919,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     });
   }, []);
 
-  // ── Delete benchmark ──────────────────────────────────────
+  // -- Delete benchmark --------------------------------------
   const handleDelete = useCallback(async () => {
     setDeleting(true);
     try {
@@ -934,7 +933,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
 
 
 
-  // ── Loading state ──────────────────────────────────────────
+  // -- Loading state ------------------------------------------
   if (loading) {
     return (
       <ThreePanelLayout
@@ -974,7 +973,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
     );
   }
 
-  // ── Render ─────────────────────────────────────────────────
+  // -- Render -------------------------------------------------
   return (
     <ThreePanelLayout
       navSidebar={navSidebar}
@@ -1065,7 +1064,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
         </div>
 
           <div className={styles.detailPanel}>
-          {/* ── Benchmark Info ── */}
+          {/* -- Benchmark Info -- */}
           <div className={styles.detailHeader}>
             <div className={styles.detailTitle}>
               {benchmark.name}
@@ -1122,7 +1121,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
 
 
 
-          {/* ── Running Progress ── */}
+          {/* -- Running Progress -- */}
           {running && (() => {
             const totalExpected = streamingTotal || selectedModels.length;
             const completed = streamingResults.length;
@@ -1160,7 +1159,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
                 </ButtonComponent>
               </div>
 
-              {/* ── Live Summary Bar ── */}
+              {/* -- Live Summary Bar -- */}
               <SummaryBarComponent
                 live
                 items={[
@@ -1200,7 +1199,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             );
           })()}
 
-          {/* ── Results ── */}
+          {/* -- Results -- */}
           {latestRun && !running && (
             <div className={styles.resultsSection}>
               <div className={styles.resultsSectionHeader}>
@@ -1249,7 +1248,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             </div>
           )}
 
-          {/* ── Chat Preview: selected result or live streaming ── */}
+          {/* -- Chat Preview: selected result or live streaming -- */}
           {(selectedResult || viewedActiveModel) ? (
             <ChatPreviewComponent
               systemPrompt={benchmark.systemPrompt}
@@ -1279,7 +1278,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
         </div>
         </div>
 
-      {/* ── Clone Modal ── */}
+      {/* -- Clone Modal -- */}
       {showModal && (
         <ModalDialogComponent
           title="Clone Benchmark"
@@ -1320,7 +1319,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
         </ModalDialogComponent>
       )}
 
-      {/* ── Delete Confirmation Modal ── */}
+      {/* -- Delete Confirmation Modal -- */}
       {showDeleteModal && (
         <ModalDialogComponent
           title="Delete Benchmark"

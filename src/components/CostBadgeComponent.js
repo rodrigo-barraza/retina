@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { Coins } from "lucide-react";
 import { formatCost } from "../utils/utilities";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import styles from "./CostBadgeComponent.module.css";
 
 /** Duration of the count-up tween in ms. */

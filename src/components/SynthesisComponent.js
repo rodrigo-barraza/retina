@@ -20,17 +20,14 @@ import NavigationSidebarComponent from "./NavigationSidebarComponent.js";
 import ThreePanelLayout from "./ThreePanelLayout.js";
 import SettingsPanel from "./SettingsPanel.js";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent.js";
-import SelectDropdown from "./SelectDropdown.js";
+import { BadgeComponent, ButtonComponent, SelectComponent, TextAreaComponent } from "@rodrigo-barraza/components";
 import TabBarComponent from "./TabBarComponent.js";
 import EmptyStateComponent from "./EmptyStateComponent.js";
 import PromptSectionComponent from "./PromptSectionComponent.js";
 import CollapsibleBlockComponent from "./CollapsibleBlockComponent.js";
 import MessageList from "./MessageList.js";
-import ButtonComponent from "./ButtonComponent.js";
 import IconButtonComponent from "./IconButtonComponent.js";
-import TextAreaComponent from "./TextAreaComponent.js";
 import CopyButtonComponent from "./CopyButtonComponent.js";
-import BadgeComponent from "./BadgeComponent.js";
 import JsonViewerComponent from "./JsonViewerComponent.js";
 import SynthesisHistoryPanel from "./SynthesisHistoryPanel.js";
 import { SETTINGS_DEFAULTS, SK_MODEL_MEMORY_SYNTHESIS } from "../constants.js";
@@ -104,7 +101,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 export default function SynthesisComponent() {
-  // ── Config & model state ──────────────────────────────────────
+  // -- Config & model state --------------------------------------
   const [config, setConfig] = useState(null);
   const [settings, setSettings] = useState({
     ...SETTINGS_DEFAULTS,
@@ -112,10 +109,10 @@ export default function SynthesisComponent() {
   });
   const [leftTab, setLeftTab] = useState("config"); // "config" | "output"
 
-  // ── Model memory (persist last-used model per page) ──────────
+  // -- Model memory (persist last-used model per page) ----------
   const { saveModel, restoreModel } = useModelMemory(SK_MODEL_MEMORY_SYNTHESIS);
 
-  // ── Synthesis state ───────────────────────────────────────────
+  // -- Synthesis state -------------------------------------------
   const [systemPrompt, setSystemPrompt] = useState("");
 
   const [userPersona, setUserPersona] = useState("");
@@ -139,12 +136,12 @@ export default function SynthesisComponent() {
   const messagesEndRef = useRef(null);
   const [conversationId, setConversationId] = useState(null);
 
-  // ── History state ─────────────────────────────────────────────
+  // -- History state ---------------------------------------------
   const [synthesisConversations, setSynthesisConversations] = useState([]);
   const [activeHistoryId, setActiveHistoryId] = useState(null);
   const [favoriteKeys, setFavoriteKeys] = useState([]);
 
-  // ── Load synthesis history ─────────────────────────────────────
+  // -- Load synthesis history -------------------------------------
   const loadSynthesisHistory = useCallback(async () => {
     try {
       const runs = await PrismService.getSynthesisRuns();
@@ -154,7 +151,7 @@ export default function SynthesisComponent() {
     }
   }, []);
 
-  // ── Load config ───────────────────────────────────────────────
+  // -- Load config -----------------------------------------------
   useEffect(() => {
     PrismService.getConfigWithLocalModels({
       onConfig: (cfg) => {
@@ -187,7 +184,7 @@ export default function SynthesisComponent() {
       .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Favorites ─────────────────────────────────────────────────
+  // -- Favorites -------------------------------------------------
   const handleToggleFavorite = useCallback(async (key) => {
     if (favoriteKeys.includes(key)) {
       setFavoriteKeys((prev) => prev.filter((k) => k !== key));
@@ -202,7 +199,7 @@ export default function SynthesisComponent() {
     }
   }, [favoriteKeys]);
 
-  // ── Filtered config: text-to-text models only ─────────────────
+  // -- Filtered config: text-to-text models only -----------------
   const filteredConfig = useMemo(() => {
     if (!config) return null;
     return {
@@ -213,7 +210,7 @@ export default function SynthesisComponent() {
     };
   }, [config]);
 
-  // ── Model selection handler ───────────────────────────────────
+  // -- Model selection handler -----------------------------------
   const handleSelectModel = useCallback((provider, model) => {
     setSettings((s) => ({ ...s, provider, model }));
     saveModel(provider, model);
@@ -225,7 +222,7 @@ export default function SynthesisComponent() {
 
 
 
-  // ── Compute final messages array (SFT format) ─────────────────
+  // -- Compute final messages array (SFT format) -----------------
   const sftOutput = useMemo(() => {
     const msgs = [];
     if (systemPrompt.trim()) {
@@ -247,12 +244,12 @@ export default function SynthesisComponent() {
 
   const sftJsonString = useMemo(() => JSON.stringify(sftData, null, 2), [sftData]);
 
-  // ── Auto-scroll messages ──────────────────────────────────────
+  // -- Auto-scroll messages --------------------------------------
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [generatedMessages, generationProgress]);
 
-  // ── Seed message management ───────────────────────────────────
+  // -- Seed message management -----------------------------------
   const addSeedMessage = useCallback((role = "user") => {
     setSeedMessages((prev) => [...prev, { role, content: "" }]);
   }, []);
@@ -277,7 +274,7 @@ export default function SynthesisComponent() {
     setSeedsExpanded(true);
   }, []);
 
-  // ── Generation logic (real back-and-forth /chat calls) ─────────
+  // -- Generation logic (real back-and-forth /chat calls) ---------
   const handleGenerate = useCallback(async () => {
     if (!settings.provider || !settings.model) return;
 
@@ -348,7 +345,7 @@ export default function SynthesisComponent() {
         if (abortedRef.current) break;
 
         if (nextRole === "assistant") {
-          // ─── ASSISTANT TURN: genuine model response ───────────
+          // --- ASSISTANT TURN: genuine model response -----------
           const turnMeta = conversationCreated ? undefined : convMeta;
           let turnThinking = "";
 
@@ -385,7 +382,7 @@ export default function SynthesisComponent() {
           setGenerationProgress("");
           nextRole = "user";
         } else {
-          // ─── USER TURN: simulated user message ───────────────
+          // --- USER TURN: simulated user message ---------------
           const userSystemPrompt = buildUserSimulationPrompt(userPersona);
 
           // Role-swap the conversation so the user-simulator model sees the
@@ -578,7 +575,7 @@ export default function SynthesisComponent() {
     setLeftTab("config");
   }, []);
 
-  // ── History selection ─────────────────────────────────────────
+  // -- History selection -----------------------------------------
   const handleSelectHistory = useCallback(async (run) => {
     try {
       // Restore the synthesis config
@@ -650,7 +647,7 @@ export default function SynthesisComponent() {
     URL.revokeObjectURL(url);
   }, [sftJsonString]);
 
-  // ── Edit generated message ────────────────────────────────────
+  // -- Edit generated message ------------------------------------
   const updateGeneratedMessage = useCallback((index, content) => {
     setGeneratedMessages((prev) =>
       prev.map((m, i) => (i === index ? { ...m, content } : m)),
@@ -661,7 +658,7 @@ export default function SynthesisComponent() {
     setGeneratedMessages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  // ── Render ────────────────────────────────────────────────────
+  // -- Render ----------------------------------------------------
 
   const leftPanel = (
     <>
@@ -843,7 +840,7 @@ export default function SynthesisComponent() {
                 <Sparkles size={13} />
                 Category
               </div>
-              <SelectDropdown
+              <SelectComponent
                 value={category}
                 options={CATEGORY_OPTIONS}
                 onChange={setCategory}
@@ -1041,7 +1038,7 @@ export default function SynthesisComponent() {
   );
 }
 
-// ── Helpers ─────────────────────────────────────────────────────
+// -- Helpers -----------------------------------------------------
 
 /**
  * Stream a single chat turn and return the collected text.

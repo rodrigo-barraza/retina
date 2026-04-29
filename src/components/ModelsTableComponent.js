@@ -27,12 +27,11 @@ import {
   MODALITY_COLORS,
   TOOL_COLORS,
 } from "./WorkflowNodeConstants";
-import TableComponent from "./TableComponent";
+import { TableComponent, TooltipComponent } from "@rodrigo-barraza/components";
 import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
 import ModelBadgeComponent from "./ModelBadgeComponent";
 import ModelTypeBadgeComponent from "./ModelTypeBadgeComponent";
 import ToolIconComponent from "./ToolIconComponent";
-import TooltipComponent from "./TooltipComponent";
 import SearchInputComponent from "./SearchInputComponent";
 import FilterDropdownComponent from "./FilterDropdownComponent";
 import { FilterBarComponent } from "./FilterBarComponent";
@@ -246,7 +245,7 @@ function buildRow(rawModel, favorites = []) {
 }
 
 
-/* ── Stats mode helpers ─────────────────────────────────────── */
+/* -- Stats mode helpers --------------------------------------- */
 
 /**
  * Build stats-mode columns from tableColumns.js factories.
@@ -351,7 +350,7 @@ export default function ModelsTableComponent({
   onToggleSelect,
   getRowClassName,
 }) {
-  /* ── Stats-only mode (simple passthrough) ── */
+  /* -- Stats-only mode (simple passthrough) -- */
   if (mode === "stats") {
     const totalRequests =
       (totalRequestsProp ??
@@ -375,7 +374,7 @@ export default function ModelsTableComponent({
     );
   }
 
-  /* ── Model / Full / Benchmark modes (rich table with filters) ── */
+  /* -- Model / Full / Benchmark modes (rich table with filters) -- */
   return (
     <ModelsTableInner
       models={models}
@@ -635,7 +634,7 @@ function ModelsTableInner({
       });
     }
 
-    // ── Benchmark priority columns (Pass Rate, Passed, Failed) ──
+    // -- Benchmark priority columns (Pass Rate, Passed, Failed) --
     if (isBenchmark) {
       cols.push({
         key: "benchPassRate",
@@ -834,7 +833,7 @@ function ModelsTableInner({
       });
     }
 
-    // ── Benchmark config columns (Thinking, Tools) ──
+    // -- Benchmark config columns (Thinking, Tools) --
     if (isBenchmark) {
       cols.push({
         key: "benchThinking",
@@ -864,7 +863,7 @@ function ModelsTableInner({
       });
     }
 
-    // ── Benchmark remaining columns (Tests, Avg Latency, Cost) ──
+    // -- Benchmark remaining columns (Tests, Avg Latency, Cost) --
     if (isBenchmark) {
       cols.push({
         key: "benchTests",
@@ -910,7 +909,7 @@ function ModelsTableInner({
       });
     }
 
-    // ── Stats columns (full mode only) ──
+    // -- Stats columns (full mode only) --
     if (isFull && hasUsage) {
       const usageTotal = filtered.reduce((s, m) => s + (m.usageCount || 0), 0) || 1;
       cols.push({
@@ -1137,7 +1136,7 @@ function ModelsTableInner({
       });
     }
 
-    // ── Full mode: add cost & latency from stats ──
+    // -- Full mode: add cost & latency from stats --
     if (isFull) {
       cols.push({
         key: "totalCost",

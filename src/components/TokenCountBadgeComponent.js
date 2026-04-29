@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { Hash } from "lucide-react";
-import TooltipComponent from "./TooltipComponent";
+import { TooltipComponent } from "@rodrigo-barraza/components";
 import styles from "./TokenCountBadgeComponent.module.css";
 
 /** Duration of the count-up tween in ms. */
