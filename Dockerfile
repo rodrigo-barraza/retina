@@ -13,7 +13,7 @@ FROM node:22-alpine AS base
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN apk add --no-cache git && npm ci
 
 # --- Build ---
 FROM base AS builder
