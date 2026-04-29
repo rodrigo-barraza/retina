@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { WorkspaceProvider } from "../components/WorkspaceContext";
 import "./globals.css";
+import "@rodrigo-barraza/components/styles";
 
 const inter = Inter({
   variable: "--font-sans",
