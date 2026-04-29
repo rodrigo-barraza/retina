@@ -91,7 +91,13 @@ export default function AgentComponent({
   agents = [],
   initialFcEnabled = false,
   initialThinkingEnabled = false,
+  initialModel = null,
+  initialConversationId = null,
 }) {
+  // Track whether the URL model param has been applied — prevents re-apply on re-render
+  const urlModelAppliedRef = useRef(false);
+  // Track whether the URL conversation param has been consumed
+  const urlConversationAppliedRef = useRef(false);
   const agentId = propAgentId;
   const isNoAgent = agentId === "NONE";
   const activeAgentData = agents.find((a) => a.id === agentId);
@@ -433,7 +439,29 @@ export default function AgentComponent({
   }, []);
 
   // Fetch Prism config and restore remembered model (or auto-select first FC-capable)
+  // URL ?model= param takes highest priority over localStorage memory.
   useEffect(() => {
+    /** Try to apply the URL model param against the given config. */
+    const tryApplyUrlModel = (cfg) => {
+      if (!initialModel || urlModelAppliedRef.current) return false;
+      const [urlProvider, ...rest] = initialModel.split(":");
+      const urlModelName = rest.join(":"); // handles model names with colons
+      if (!urlProvider || !urlModelName) return false;
+      const providerModels = cfg.textToText?.models?.[urlProvider] || [];
+      const modelDef = providerModels.find((m) => m.name === urlModelName);
+      if (!modelDef) return false; // model not (yet) in config — may arrive with local merge
+      // FC gate for agent mode
+      if (!isNoAgent && !modelDef.tools?.includes("Tool Calling")) return false;
+      setSettings((s) => ({
+        ...s,
+        provider: urlProvider,
+        model: urlModelName,
+        temperature: modelDef.defaultTemperature ?? 1.0,
+      }));
+      urlModelAppliedRef.current = true;
+      return true;
+    };
+
     const fcFallback = (cfg) => {
       const textModels = cfg.textToText?.models || {};
       for (const provider of cfg.providerList || []) {
@@ -457,11 +485,17 @@ export default function AgentComponent({
     PrismService.getConfigWithLocalModels({
       onConfig: (cfg) => {
         setConfig(cfg);
-        restoreModel(cfg, setSettings, { fcOnly: !isNoAgent, fallback: fcFallback });
+        // URL model param takes priority over localStorage memory
+        if (!tryApplyUrlModel(cfg)) {
+          restoreModel(cfg, setSettings, { fcOnly: !isNoAgent, fallback: fcFallback });
+        }
       },
       onLocalMerge: (merged) => {
         setConfig(merged);
-        restoreModel(merged, setSettings, { fcOnly: !isNoAgent, fallback: fcFallback });
+        // Retry URL model param in case the model is a local model
+        if (!tryApplyUrlModel(merged)) {
+          restoreModel(merged, setSettings, { fcOnly: !isNoAgent, fallback: fcFallback });
+        }
       },
     }).catch(console.error);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -481,6 +515,56 @@ export default function AgentComponent({
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
+
+  // ── Auto-load conversation from URL ?conversation= param ──────
+  // Runs once on mount. Fetches the full session and applies it.
+  // Uses a ref guard to prevent double-loading on StrictMode re-mounts.
+  useEffect(() => {
+    if (!initialConversationId || urlConversationAppliedRef.current) return;
+    urlConversationAppliedRef.current = true;
+
+    (async () => {
+      try {
+        const full = isNoAgent
+          ? await PrismService.getConversation(initialConversationId)
+          : await PrismService.getAgentSession(initialConversationId, agentProject);
+        if (!full) return;
+
+        const displayMessages = prepareDisplayMessages(full.messages || []);
+        scrollBehaviorRef.current = "instant";
+        isUserNearBottomRef.current = true;
+        setMessages(displayMessages);
+        setAgentSessionId(full.id || generateUUID());
+        setTraceId(full.traceId || null);
+        setActiveId(full.id);
+        setTitle(full.title || (isNoAgent ? "Direct Chat" : "Agent"));
+        setToolActivity([]);
+        setWorkerToolActivity({});
+
+        const lastAssistant = [...(full.messages || [])]
+          .reverse()
+          .find((m) => m.role === "assistant" && m.provider);
+        if (lastAssistant) {
+          const gs = lastAssistant.generationSettings || {};
+          setSettings((prev) => ({
+            ...prev,
+            ...(lastAssistant.provider && { provider: lastAssistant.provider }),
+            ...(lastAssistant.model && { model: lastAssistant.model }),
+            ...(gs.temperature !== undefined && { temperature: gs.temperature }),
+            ...(gs.maxTokens !== undefined && { maxTokens: gs.maxTokens }),
+            ...(gs.thinkingEnabled !== undefined && { thinkingEnabled: gs.thinkingEnabled }),
+            ...(gs.reasoningEffort && { reasoningEffort: gs.reasoningEffort }),
+            ...(gs.thinkingBudget && { thinkingBudget: gs.thinkingBudget }),
+            ...(full.systemPrompt != null && { systemPrompt: full.systemPrompt }),
+          }));
+        }
+        setBackendSessionStats(full.stats || null);
+        tokenHwmRef.current = { input: 0, output: 0, total: 0 };
+      } catch (err) {
+        console.error("Failed to preload conversation from URL:", err);
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load custom tools
   const loadCustomTools = useCallback(async () => {
@@ -1726,6 +1810,7 @@ export default function AgentComponent({
         // Optimistic: add the session to the history list immediately
         const now = new Date().toISOString();
         setActiveId(agentSessionId);
+        window.dispatchEvent(new CustomEvent("conversation:change", { detail: { conversationId: agentSessionId } }));
         setSessions((prev) => [
           { id: agentSessionId, title: resolvedTitle, updatedAt: now, createdAt: now },
           ...prev,
@@ -1850,6 +1935,8 @@ export default function AgentComponent({
     tokenHwmRef.current = { input: 0, output: 0, total: 0 };
     isUserNearBottomRef.current = true;
     textareaRef.current?.focus();
+    // Clear conversation from URL
+    window.dispatchEvent(new CustomEvent("conversation:change", { detail: { conversationId: null } }));
   }, [isNoAgent]);
 
   const handleNewChat = useCallback(() => {
@@ -1884,6 +1971,7 @@ export default function AgentComponent({
       setMessages(snap.messages);
       setAgentSessionId(full.id);
       setActiveId(full.id);
+      window.dispatchEvent(new CustomEvent("conversation:change", { detail: { conversationId: full.id } }));
       setTitle(snap.title);
       setToolActivity(snap.toolActivity || []);
       setWorkerToolActivity(snap.workerToolActivity || {});
@@ -1907,6 +1995,7 @@ export default function AgentComponent({
       setAgentSessionId(full.id || generateUUID());
       setTraceId(full.traceId || null);
       setActiveId(full.id);
+      window.dispatchEvent(new CustomEvent("conversation:change", { detail: { conversationId: full.id } }));
       setTitle(full.title || "Agent");
       setToolActivity([]);
       setWorkerToolActivity({});
@@ -1928,6 +2017,12 @@ export default function AgentComponent({
           // Conversations store systemPrompt at root — restore for Direct Chat
           ...(full.systemPrompt != null && { systemPrompt: full.systemPrompt }),
         }));
+        // Sync the URL model param with the loaded session's model
+        if (lastAssistant.provider && lastAssistant.model) {
+          window.dispatchEvent(new CustomEvent("model:change", {
+            detail: { provider: lastAssistant.provider, model: lastAssistant.model },
+          }));
+        }
       }
       setBackendSessionStats(full.stats || null);
       tokenHwmRef.current = { input: 0, output: 0, total: 0 };
@@ -2761,6 +2856,7 @@ export default function AgentComponent({
                 temperature: temp,
               }));
               saveModel(provider, modelName);
+              window.dispatchEvent(new CustomEvent("model:change", { detail: { provider, model: modelName } }));
             }}
             favorites={favoriteKeys}
             onToggleFavorite={async (key) => {

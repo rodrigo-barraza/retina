@@ -28,6 +28,24 @@ export default function AgentsPage() {
   );
 }
 
+/**
+ * Helper to build a URLSearchParams from the current params,
+ * apply a set of updates, and return the URL string.
+ * Keys with null/undefined values are removed.
+ */
+function buildUrl(currentParams, updates) {
+  const params = new URLSearchParams(currentParams.toString());
+  for (const [key, value] of Object.entries(updates)) {
+    if (value == null || value === "") {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
+  }
+  const qs = params.toString();
+  return qs ? `/chat?${qs}` : "/chat";
+}
+
 function AgentsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -52,6 +70,10 @@ function AgentsPageInner() {
   const forceFc = searchParams.get("fc") === "true";
   const forceThinking = searchParams.get("thinking") === "true";
 
+  // ── Deep-link params: model + conversation ──────────────────
+  const initialModel = searchParams.get("model") || null;
+  const initialConversationId = searchParams.get("conversation") || null;
+
   // Fetch agent personas on mount — prepend "No Agent" synthetic entry
   useEffect(() => {
     PrismService.getAgentPersonas()
@@ -66,16 +88,55 @@ function AgentsPageInner() {
       if (newId && newId !== activeAgentId) {
         setLocalAgentId(newId);
         localStorage.setItem(LS_ACTIVE_AGENT, newId);
-        router.replace(`/chat?agent=${encodeURIComponent(newId)}`, { scroll: false });
+        router.replace(
+          buildUrl(searchParams, { agent: encodeURIComponent(newId) }),
+          { scroll: false },
+        );
       }
     },
-    [activeAgentId, router],
+    [activeAgentId, router, searchParams],
+  );
+
+  // Listen for model:change events from AgentComponent — sync URL
+  const handleModelChange = useCallback(
+    (e) => {
+      const { provider, model } = e.detail || {};
+      if (!provider || !model) return;
+      const modelKey = `${provider}:${model}`;
+      const current = searchParams.get("model");
+      if (current === modelKey) return;
+      router.replace(
+        buildUrl(searchParams, { model: modelKey }),
+        { scroll: false },
+      );
+    },
+    [router, searchParams],
+  );
+
+  // Listen for conversation:change events from AgentComponent — sync URL
+  const handleConversationChange = useCallback(
+    (e) => {
+      const { conversationId } = e.detail || {};
+      const current = searchParams.get("conversation");
+      if (current === (conversationId || null)) return;
+      router.replace(
+        buildUrl(searchParams, { conversation: conversationId || null }),
+        { scroll: false },
+      );
+    },
+    [router, searchParams],
   );
 
   useEffect(() => {
     window.addEventListener("agent:switch", handleAgentSwitch);
-    return () => window.removeEventListener("agent:switch", handleAgentSwitch);
-  }, [handleAgentSwitch]);
+    window.addEventListener("model:change", handleModelChange);
+    window.addEventListener("conversation:change", handleConversationChange);
+    return () => {
+      window.removeEventListener("agent:switch", handleAgentSwitch);
+      window.removeEventListener("model:change", handleModelChange);
+      window.removeEventListener("conversation:change", handleConversationChange);
+    };
+  }, [handleAgentSwitch, handleModelChange, handleConversationChange]);
 
   // Persist to localStorage on change
   useEffect(() => {
@@ -90,6 +151,8 @@ function AgentsPageInner() {
         agents={agents}
         initialFcEnabled={forceFc}
         initialThinkingEnabled={forceThinking}
+        initialModel={initialModel}
+        initialConversationId={initialConversationId}
       />
     </main>
   );
