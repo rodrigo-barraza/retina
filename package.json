@@ -15,8 +15,8 @@
     "deploy:dry": "bash deploy.sh --dry-run"
   },
   "dependencies": {
-    "@rodrigo-barraza/components": "github:rodrigo-barraza/components",
-    "@rodrigo-barraza/utilities": "github:rodrigo-barraza/utilities",
+    "@rodrigo-barraza/components": "github:rodrigo-barraza/components-library",
+    "@rodrigo-barraza/utilities": "github:rodrigo-barraza/utilities-library",
     "chart.js": "^4.5.1",
     "gifuct-js": "^2.1.2",
     "lucide-react": "^0.577.0",
