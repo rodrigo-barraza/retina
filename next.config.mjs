@@ -23,6 +23,7 @@ const nextConfig = {
   output: "standalone",
   allowedDevOrigins: ["retina.clankerbox.com"],
   turbopack: {},
+  transpilePackages: ["@rodrigo-barraza/components"],
 
   // Expose resolved values to both server and client bundles.
   // Only non-sensitive config values are exposed here —

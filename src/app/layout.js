@@ -1,8 +1,8 @@
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { WorkspaceProvider } from "../components/WorkspaceContext";
+import { ComponentsProvider } from "@rodrigo-barraza/components";
 import "./globals.css";
-import "@rodrigo-barraza/components/styles";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -53,7 +53,9 @@ export default function RootLayout({ children }) {
       </head>
       <body className={inter.variable}>
         <ThemeProvider>
-          <WorkspaceProvider>{children}</WorkspaceProvider>
+          <ComponentsProvider sound>
+            <WorkspaceProvider>{children}</WorkspaceProvider>
+          </ComponentsProvider>
         </ThemeProvider>
       </body>
     </html>

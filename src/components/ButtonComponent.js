@@ -1,30 +1,9 @@
 /**
- * Local re-export of ButtonComponent from @rodrigo-barraza/components
- * with SoundService wired in. All existing imports point here so
- * callers don't need to change their onClick / onMouseEnter handlers.
+ * Re-export ButtonComponent from @rodrigo-barraza/components.
+ *
+ * Sound and styling are handled by the library when the app is
+ * wrapped with <ComponentsProvider sound>. This file exists
+ * so existing relative imports throughout the codebase continue
+ * to resolve without changes.
  */
-import { forwardRef } from "react";
-import { ButtonComponent as BaseButtonComponent } from "@rodrigo-barraza/components";
-import SoundService from "@/services/SoundService";
-
-const ButtonComponent = forwardRef(function ButtonComponent(
-  { onClick, onMouseEnter, ...rest },
-  ref,
-) {
-  return (
-    <BaseButtonComponent
-      ref={ref}
-      onMouseEnter={(e) => {
-        SoundService.playHoverButton({ event: e });
-        onMouseEnter?.(e);
-      }}
-      onClick={(e) => {
-        SoundService.playClickButton({ event: e });
-        onClick?.(e);
-      }}
-      {...rest}
-    />
-  );
-});
-
-export default ButtonComponent;
+export { ButtonComponent as default } from "@rodrigo-barraza/components";
