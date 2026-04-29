@@ -81,6 +81,22 @@ function AgentsPageInner() {
       .catch(console.error);
   }, []);
 
+  // ── Strip stale URL params on mount when conversation is present ──
+  // If the URL arrives with ?conversation=...&model=...&agent=..., remove
+  // model and agent immediately — the conversation data owns those values.
+  useEffect(() => {
+    const conv = searchParams.get("conversation");
+    if (!conv) return;
+    const hasModel = searchParams.has("model");
+    const hasAgent = searchParams.has("agent");
+    if (hasModel || hasAgent) {
+      router.replace(
+        buildUrl(searchParams, { model: null, agent: null }),
+        { scroll: false },
+      );
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Listen for agent:switch events from AgentComponent
   const handleAgentSwitch = useCallback(
     (e) => {
@@ -114,15 +130,26 @@ function AgentsPageInner() {
   );
 
   // Listen for conversation:change events from AgentComponent — sync URL
+  // When a conversation is active, strip model & agent from URL — the
+  // conversation data is the source of truth for those values.
   const handleConversationChange = useCallback(
     (e) => {
       const { conversationId } = e.detail || {};
       const current = searchParams.get("conversation");
       if (current === (conversationId || null)) return;
-      router.replace(
-        buildUrl(searchParams, { conversation: conversationId || null }),
-        { scroll: false },
-      );
+      if (conversationId) {
+        // Conversation active → keep only conversation param
+        router.replace(
+          buildUrl(searchParams, { conversation: conversationId, model: null, agent: null }),
+          { scroll: false },
+        );
+      } else {
+        // New chat → clear conversation param, keep everything else
+        router.replace(
+          buildUrl(searchParams, { conversation: null }),
+          { scroll: false },
+        );
+      }
     },
     [router, searchParams],
   );

@@ -400,6 +400,14 @@ export default function AgentComponent({
     return modelDef?.inputTypes?.includes("image") ?? false;
   }, [filteredConfig, settings.provider, settings.model]);
 
+  // ── Session binding: lock model/agent when a conversation is active ──
+  // Once a session has messages, the user should not switch model or agent
+  // mid-conversation — the session data owns those values.
+  const isSessionLocked = useMemo(
+    () => Boolean(activeId && messages.length > 0),
+    [activeId, messages.length],
+  );
+
   // ── Effects ──────────────────────────────────────────────────
 
   // Sticky auto-scroll: track whether the user is near the bottom of the
@@ -2017,12 +2025,8 @@ export default function AgentComponent({
           // Conversations store systemPrompt at root — restore for Direct Chat
           ...(full.systemPrompt != null && { systemPrompt: full.systemPrompt }),
         }));
-        // Sync the URL model param with the loaded session's model
-        if (lastAssistant.provider && lastAssistant.model) {
-          window.dispatchEvent(new CustomEvent("model:change", {
-            detail: { provider: lastAssistant.provider, model: lastAssistant.model },
-          }));
-        }
+        // Model/agent URL params are stripped when conversation:change fires —
+        // the loaded session's data is the source of truth.
       }
       setBackendSessionStats(full.stats || null);
       tokenHwmRef.current = { input: 0, output: 0, total: 0 };
@@ -2837,12 +2841,13 @@ export default function AgentComponent({
                 // Emit a custom event or call a callback
                 window.dispatchEvent(new CustomEvent("agent:switch", { detail: { agentId: id } }));
               }}
-              disabled={isGenerating}
+              disabled={isGenerating || isSessionLocked}
             />
           )}
           <ModelPickerPopoverComponent
             config={filteredConfig}
             settings={settings}
+            readOnly={isSessionLocked}
             onSelectModel={(provider, modelName) => {
               const modelDef =
                 (filteredConfig?.textToText?.models?.[provider] || []).find(
