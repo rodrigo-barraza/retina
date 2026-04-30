@@ -4,6 +4,10 @@ import { WorkspaceProvider } from "../components/WorkspaceContext";
 import { ComponentsProvider } from "@rodrigo-barraza/components";
 import "./globals.css";
 
+// Force all pages to render dynamically — prevents SSG prerender
+// failures during Docker builds when Vault/Prism APIs are unreachable
+export const dynamic = "force-dynamic";
+
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
