@@ -22,9 +22,8 @@ import SearchFilterComponent from "./SearchFilterComponent";
 import ProviderLogo, { resolveProviderLabel } from "./ProviderLogos";
 import ImagePreviewComponent from "./ImagePreviewComponent";
 import AudioPlayerRecorderComponent from "./AudioPlayerRecorderComponent";
-import { PaginationComponent, TableComponent } from "@rodrigo-barraza/components";
+import { PaginationComponent, TableComponent, SearchInputComponent } from "@rodrigo-barraza/components";
 import PageHeaderComponent from "./PageHeaderComponent";
-import SearchInputComponent from "./SearchInputComponent";
 import FilterDropdownComponent from "./FilterDropdownComponent";
 import { LoadingMessage, EmptyMessage } from "./StateMessageComponent";
 import {

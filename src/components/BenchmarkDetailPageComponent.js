@@ -16,8 +16,8 @@ import {
 import PrismService from "../services/PrismService";
 import ThreePanelLayout from "./ThreePanelLayout";
 import RunHistorySidebarComponent from "./RunHistorySidebarComponent";
-import { BadgeComponent, ButtonComponent } from "@rodrigo-barraza/components";
-import ModalDialogComponent from "./ModalDialogComponent";
+import { BadgeComponent, ButtonComponent, ModalComponent } from "@rodrigo-barraza/components";
+
 import BenchmarkFormComponent from "./BenchmarkFormComponent";
 import SummaryBarComponent from "./SummaryBarComponent";
 import ModelPickerPopoverComponent from "./ModelPickerPopoverComponent";
@@ -1280,7 +1280,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
 
       {/* -- Clone Modal -- */}
       {showModal && (
-        <ModalDialogComponent
+        <ModalComponent
           title="Clone Benchmark"
           size="xl"
           onClose={() => setShowModal(false)}
@@ -1316,12 +1316,12 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             onChange={setForm}
             matchModes={MATCH_MODES}
           />
-        </ModalDialogComponent>
+        </ModalComponent>
       )}
 
       {/* -- Delete Confirmation Modal -- */}
       {showDeleteModal && (
-        <ModalDialogComponent
+        <ModalComponent
           title="Delete Benchmark"
           size="sm"
           onClose={() => setShowDeleteModal(false)}
@@ -1350,7 +1350,7 @@ export default function BenchmarkDetailPageComponent({ benchmarkId, onRunningCha
             Are you sure you want to delete <strong style={{ color: "var(--text-primary)" }}>{benchmark.name}</strong>?
             This will permanently remove the benchmark and all {runHistory.length > 0 ? `${runHistory.length} ` : ""}associated test run{runHistory.length !== 1 ? "s" : ""}.
           </p>
-        </ModalDialogComponent>
+        </ModalComponent>
       )}
     </ThreePanelLayout>
   );

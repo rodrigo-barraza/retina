@@ -5,8 +5,7 @@ import { Brain, RefreshCw, User, MessageSquare, FolderKanban, ExternalLink, Tras
 import Link from "next/link";
 import PrismService from "../services/PrismService.js";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
-import SearchInputComponent from "./SearchInputComponent";
-import { DatePickerComponent } from "@rodrigo-barraza/components";
+import { DatePickerComponent, SearchInputComponent } from "@rodrigo-barraza/components";
 import { parseDateValue } from "../utils/datePresets";
 import { formatTimeAgo, formatLatency } from "../utils/utilities";
 import styles from "./MemoriesPanel.module.css";

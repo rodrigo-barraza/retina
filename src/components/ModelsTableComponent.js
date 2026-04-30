@@ -27,12 +27,11 @@ import {
   MODALITY_COLORS,
   TOOL_COLORS,
 } from "./WorkflowNodeConstants";
-import { TableComponent, TooltipComponent } from "@rodrigo-barraza/components";
+import { TableComponent, TooltipComponent, SearchInputComponent } from "@rodrigo-barraza/components";
 import ProvidersBadgeComponent from "./ProvidersBadgeComponent";
 import ModelBadgeComponent from "./ModelBadgeComponent";
 import ModelTypeBadgeComponent from "./ModelTypeBadgeComponent";
 import ToolIconComponent from "./ToolIconComponent";
-import SearchInputComponent from "./SearchInputComponent";
 import FilterDropdownComponent from "./FilterDropdownComponent";
 import { FilterBarComponent } from "./FilterBarComponent";
 import ProportionBarComponent from "./ProportionBarComponent";

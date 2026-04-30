@@ -1,8 +1,7 @@
 "use client";
 
 import styles from "./TabBarComponent.module.css";
-import CountBadgeComponent from "./CountBadgeComponent";
-import { TooltipComponent } from "@rodrigo-barraza/components";
+import { CountBadgeComponent, TooltipComponent } from "@rodrigo-barraza/components";
 import SoundService from "@/services/SoundService";
 
 /**

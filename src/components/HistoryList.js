@@ -5,7 +5,7 @@ import { Star } from "lucide-react";
 import ProviderLogo, { PROVIDER_LABELS, resolveProviderLabel } from "./ProviderLogos";
 import { MODALITY_FILTERS, TOOL_FILTERS } from "./SidebarFilterComponent";
 import FilterDropdownComponent from "./FilterDropdownComponent";
-import SearchInputComponent from "./SearchInputComponent";
+import { SearchInputComponent } from "@rodrigo-barraza/components";
 import HistoryItemComponent from "./HistoryItemComponent";
 import styles from "./HistoryList.module.css";
 import { LS_DATE_RANGE } from "../constants";

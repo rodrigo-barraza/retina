@@ -11,11 +11,10 @@ import {
   Clock,
 } from "lucide-react";
 import PrismService from "../services/PrismService";
-import { ButtonComponent } from "@rodrigo-barraza/components";
+import { ButtonComponent, SearchInputComponent } from "@rodrigo-barraza/components";
 import CostBadgeComponent from "./CostBadgeComponent";
 import DateTimeBadgeComponent from "./DateTimeBadgeComponent";
 import BenchmarkBarComponent from "./BenchmarkBarComponent";
-import SearchInputComponent from "./SearchInputComponent";
 import SoundService from "@/services/SoundService";
 import styles from "./BenchmarkSidebarComponent.module.css";
 
